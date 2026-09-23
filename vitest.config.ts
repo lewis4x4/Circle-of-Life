@@ -12,6 +12,7 @@ export default defineConfig({
       "src/**/*.test.ts",
       "src/**/*.test.tsx",
       "scripts/check-package-manager.test.mjs",
+      "scripts/check-migration-order.test.mjs",
     ],
   },
   resolve: {

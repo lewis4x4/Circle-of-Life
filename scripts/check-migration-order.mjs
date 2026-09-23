@@ -2,36 +2,23 @@
 /**
  * Validates SQL migration filenames under MIGRATIONS_DIR (default: supabase/migrations).
  * Pattern: NNN_snake_case_name.sql — 3-digit prefix, contiguous from 001, no duplicates.
+ * The only permitted gaps are the numbers in ALLOWED_GAPS, each with its reason.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
-const dir = process.env.MIGRATIONS_DIR
-  ? path.resolve(process.env.MIGRATIONS_DIR)
-  : path.resolve(process.cwd(), "supabase/migrations");
-
-function fail(msg) {
-  console.error(`[migrations:check] FAIL: ${msg}`);
-  process.exit(1);
-}
-
-function ok(msg) {
-  console.log(`[migrations:check] PASS: ${msg}`);
-  process.exit(0);
-}
-
-if (!fs.existsSync(dir)) {
-  ok(`no migrations directory at ${dir} (skipped)`);
-}
-
-const entries = fs.readdirSync(dir);
-const sqlFiles = entries.filter((f) => f.endsWith(".sql"));
-
-if (sqlFiles.length === 0) {
-  ok(`no .sql files in ${dir}`);
-}
+/**
+ * Numbers that may be missing from the sequence. Every entry names why. Any other
+ * gap still fails. When a listed number later gains a real file, the check passes
+ * and prints a notice naming the entry to delete, so cleanup never breaks main.
+ */
+export const ALLOWED_GAPS = {
+  476: "retired: COL-668 med_tech_shift_from_time_clock, PR #728 closed unmerged; applied to Haven HFO Staging only, never production. Never reuse this number.",
+  477: "held for open PR #729 (billing rate rules); remove this entry once #729 merges.",
+};
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
 // Supabase CLI's default migration filename format is a 14-digit timestamp
@@ -39,38 +26,94 @@ const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
 // migration runner handles that — but we accept them so they don't fail
 // the NNN-format gate.
 const supabaseCliPattern = /^\d{14}_[a-z0-9][a-z0-9_]*\.sql$/;
-const nums = [];
 
-for (const file of sqlFiles) {
-  if (supabaseCliPattern.test(file)) continue;
-  const m = file.match(pattern);
-  if (!m) {
-    fail(
-      `invalid migration name "${file}" — expected NNN_snake_case.sql (lowercase snake after prefix)`,
-    );
+const pad = (n) => String(n).padStart(3, "0");
+
+/**
+ * Pure check over a list of filenames. Returns { ok, message, notices }.
+ * `allowedGaps` defaults to ALLOWED_GAPS; tests pass their own.
+ */
+export function checkMigrationSequence(fileNames, allowedGaps = ALLOWED_GAPS) {
+  const sqlFiles = fileNames.filter((f) => f.endsWith(".sql"));
+  if (sqlFiles.length === 0) {
+    return { ok: true, message: "no .sql files", notices: [] };
   }
-  nums.push(Number(m[1], 10));
-}
 
-const sorted = [...nums].sort((a, b) => a - b);
-const unique = new Set(sorted);
-if (unique.size !== sorted.length) {
-  fail("duplicate migration numeric prefix detected");
-}
-
-const min = sorted[0];
-const max = sorted[sorted.length - 1];
-if (min !== 1) {
-  fail(`migrations must start at 001 (found minimum ${String(min).padStart(3, "0")})`);
-}
-
-for (let i = 0; i < sorted.length; i++) {
-  const expected = i + 1;
-  if (sorted[i] !== expected) {
-    fail(
-      `gap in migration sequence: expected ${String(expected).padStart(3, "0")}, found ${String(sorted[i]).padStart(3, "0")}`,
-    );
+  const nums = [];
+  for (const file of sqlFiles) {
+    if (supabaseCliPattern.test(file)) continue;
+    const m = file.match(pattern);
+    if (!m) {
+      return {
+        ok: false,
+        message: `invalid migration name "${file}" — expected NNN_snake_case.sql (lowercase snake after prefix)`,
+        notices: [],
+      };
+    }
+    nums.push(Number(m[1]));
   }
+
+  const sorted = [...nums].sort((a, b) => a - b);
+  const present = new Set(sorted);
+  if (present.size !== sorted.length) {
+    return { ok: false, message: "duplicate migration numeric prefix detected", notices: [] };
+  }
+  if (sorted.length === 0) {
+    return { ok: true, message: `${sqlFiles.length} migration(s), none numbered`, notices: [] };
+  }
+
+  const min = sorted[0];
+  const max = sorted[sorted.length - 1];
+  if (min !== 1) {
+    return { ok: false, message: `migrations must start at 001 (found minimum ${pad(min)})`, notices: [] };
+  }
+
+  const allowed = new Set(Object.keys(allowedGaps).map(Number));
+  const skipped = [];
+  for (let n = 1; n <= max; n++) {
+    if (present.has(n)) continue;
+    if (allowed.has(n)) {
+      skipped.push(n);
+      continue;
+    }
+    return { ok: false, message: `gap in migration sequence: ${pad(n)} is missing and is not on the allowed-gap list`, notices: [] };
+  }
+
+  const notices = [...allowed]
+    .filter((n) => present.has(n))
+    .sort((a, b) => a - b)
+    .map((n) => `allowed gap ${pad(n)} now has a migration file; delete its entry from ALLOWED_GAPS in scripts/check-migration-order.mjs`);
+
+  const gapNote = skipped.length ? ` (allowed gaps: ${skipped.map(pad).join(", ")})` : "";
+  return {
+    ok: true,
+    message: `${sqlFiles.length} migration(s) — sequence 001..${pad(max)}${gapNote}`,
+    notices,
+  };
 }
 
-ok(`${sqlFiles.length} migration(s) in ${dir} — sequence 001..${String(max).padStart(3, "0")}`);
+function main() {
+  const dir = process.env.MIGRATIONS_DIR
+    ? path.resolve(process.env.MIGRATIONS_DIR)
+    : path.resolve(process.cwd(), "supabase/migrations");
+
+  if (!fs.existsSync(dir)) {
+    console.log(`[migrations:check] PASS: no migrations directory at ${dir} (skipped)`);
+    return 0;
+  }
+
+  const result = checkMigrationSequence(fs.readdirSync(dir));
+  for (const notice of result.notices) {
+    console.log(`[migrations:check] NOTICE: ${notice}`);
+  }
+  if (!result.ok) {
+    console.error(`[migrations:check] FAIL: ${result.message}`);
+    return 1;
+  }
+  console.log(`[migrations:check] PASS: ${result.message} in ${dir}`);
+  return 0;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exit(main());
+}
