@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { fetchOutOfHouse, sinceLabel, type OutOfHouseRow } from '@/lib/residents/out-of-house';
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /**
  * Tier 2 disclosure under the census group: who is out of house right now.
@@ -24,7 +25,7 @@ export function OutOfHousePanel({ facilityId, facilityName, refreshKey = 0 }: { 
       {error ? <p role="alert" className="text-sm">Out of house list unavailable: {error}</p>
         : rows === null ? <p role="status" className="text-xs text-muted-foreground">Reading the roster…</p>
         : rows.length === 0 ? <p className="text-xs text-muted-foreground">No residents are out of house.</p>
-        : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Residents out of house, hospital first</caption>
+        : <HorizontalScroll label="Residents out of house"><table className="w-full text-left text-sm"><caption className="sr-only">Residents out of house, hospital first</caption>
           <thead><tr>{['Resident', 'Room', 'Status', 'Since', ''].map((label, index) => <th key={index} scope="col" className="py-1 pr-3 text-xs font-medium text-muted-foreground">{label || <span className="sr-only">Record</span>}</th>)}</tr></thead>
           <tbody>{rows.map(row => <tr key={row.id} className="border-t border-border">
             <th scope="row" className="py-1.5 pr-3 font-medium">{row.name}</th>
@@ -32,7 +33,7 @@ export function OutOfHousePanel({ facilityId, facilityName, refreshKey = 0 }: { 
             <td className="py-1.5 pr-3">{row.label}</td>
             <td className="py-1.5 pr-3 tabular-nums">{sinceLabel(row.since)}</td>
             <td className="py-1.5"><Link href={`/admin/residents/${row.id}`} className="underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Open record<span className="sr-only"> for {row.name}</span></Link></td>
-          </tr>)}</tbody></table></div>}
+          </tr>)}</tbody></table></HorizontalScroll>}
     </div>
   </details>;
 }

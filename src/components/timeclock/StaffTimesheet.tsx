@@ -45,6 +45,7 @@ import {
 } from "@/lib/timeclock/display-copy";
 import { PUNCH_TYPES, formatKioskTime, type PunchType } from "@/lib/timeclock/kiosk-contract";
 import { canReviewTimeclock, loadOrganizationPayPeriod, loadStaffTimeclock, type TimeclockStaff } from "@/lib/timeclock/load";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const FIELD = "mt-1 block h-9 w-full rounded-[8px] border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 const LABEL = "text-xs font-medium text-muted-foreground";
@@ -437,53 +438,55 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
 
           <details className="rounded-xl border border-border bg-card p-4">
             <summary className="cursor-pointer text-sm font-semibold">{TIMECLOCK_FULL_HISTORY}</summary>
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-sm">
-                <caption className="sr-only">Every punch and correction for this person in the loaded window</caption>
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th scope="col" className="px-2 py-1">When</th>
-                    <th scope="col" className="px-2 py-1">Entry</th>
-                    <th scope="col" className="px-2 py-1">Actor</th>
-                    <th scope="col" className="px-2 py-1">Recorded</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {punches.map((p) => (
-                    <tr key={p.id} className="border-t border-border">
-                      <td className="px-2 py-1 tabular-nums">{formatDateTime(p.punched_at)}</td>
-                      <td className="px-2 py-1">
-                        Punch {PUNCH_TYPE_LABELS[p.punch_type]}
-                        {p.captured_offline ? " (offline)" : ""}
-                        {(p.flags ?? []).length ? ` [${(p.flags ?? []).join(", ")}]` : ""}
-                      </td>
-                      <td className="px-2 py-1 text-muted-foreground">Kiosk</td>
-                      <td className="px-2 py-1 tabular-nums text-muted-foreground">{p.device_time ? formatDateTime(p.device_time) : ""}</td>
+            <div className="mt-3">
+              <HorizontalScroll label="Timesheet history">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">Every punch and correction for this person in the loaded window</caption>
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <th scope="col" className="px-2 py-1">When</th>
+                      <th scope="col" className="px-2 py-1">Entry</th>
+                      <th scope="col" className="px-2 py-1">Actor</th>
+                      <th scope="col" className="px-2 py-1">Recorded</th>
                     </tr>
-                  ))}
-                  {corrections.map((c) => (
-                    <tr key={c.id} className="border-t border-border">
-                      <td className="px-2 py-1 tabular-nums">{c.corrected_punched_at ? formatDateTime(c.corrected_punched_at) : ""}</td>
-                      <td className="px-2 py-1">
-                        {c.correction_type === "acknowledge" ? `Acknowledged ${c.exception_key ?? ""}` : `${CORRECTION_TYPE_LABELS[c.correction_type]}${c.punch_type ? ` ${PUNCH_TYPE_LABELS[c.punch_type]}` : ""}`}
-                        {" · "}
-                        {CORRECTION_REASON_LABELS[c.reason]}
-                        {c.note ? ` · ${c.note}` : ""}
-                      </td>
-                      <td className="px-2 py-1 font-mono text-xs text-muted-foreground">{c.corrected_by.slice(0, 8)}</td>
-                      <td className="px-2 py-1 tabular-nums text-muted-foreground">{formatDateTime(c.corrected_at)}</td>
-                    </tr>
-                  ))}
-                  {rejections.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-2 py-1 tabular-nums">{r.device_time ? formatDateTime(r.device_time) : ""}</td>
-                      <td className="px-2 py-1">Offline {r.punch_type} refused at sync ({r.reason})</td>
-                      <td className="px-2 py-1 text-muted-foreground">Kiosk</td>
-                      <td className="px-2 py-1 tabular-nums text-muted-foreground">{formatDateTime(r.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {punches.map((p) => (
+                      <tr key={p.id} className="border-t border-border">
+                        <td className="px-2 py-1 tabular-nums">{formatDateTime(p.punched_at)}</td>
+                        <td className="px-2 py-1">
+                          Punch {PUNCH_TYPE_LABELS[p.punch_type]}
+                          {p.captured_offline ? " (offline)" : ""}
+                          {(p.flags ?? []).length ? ` [${(p.flags ?? []).join(", ")}]` : ""}
+                        </td>
+                        <td className="px-2 py-1 text-muted-foreground">Kiosk</td>
+                        <td className="px-2 py-1 tabular-nums text-muted-foreground">{p.device_time ? formatDateTime(p.device_time) : ""}</td>
+                      </tr>
+                    ))}
+                    {corrections.map((c) => (
+                      <tr key={c.id} className="border-t border-border">
+                        <td className="px-2 py-1 tabular-nums">{c.corrected_punched_at ? formatDateTime(c.corrected_punched_at) : ""}</td>
+                        <td className="px-2 py-1">
+                          {c.correction_type === "acknowledge" ? `Acknowledged ${c.exception_key ?? ""}` : `${CORRECTION_TYPE_LABELS[c.correction_type]}${c.punch_type ? ` ${PUNCH_TYPE_LABELS[c.punch_type]}` : ""}`}
+                          {" · "}
+                          {CORRECTION_REASON_LABELS[c.reason]}
+                          {c.note ? ` · ${c.note}` : ""}
+                        </td>
+                        <td className="px-2 py-1 font-mono text-xs text-muted-foreground">{c.corrected_by.slice(0, 8)}</td>
+                        <td className="px-2 py-1 tabular-nums text-muted-foreground">{formatDateTime(c.corrected_at)}</td>
+                      </tr>
+                    ))}
+                    {rejections.map((r) => (
+                      <tr key={r.id} className="border-t border-border">
+                        <td className="px-2 py-1 tabular-nums">{r.device_time ? formatDateTime(r.device_time) : ""}</td>
+                        <td className="px-2 py-1">Offline {r.punch_type} refused at sync ({r.reason})</td>
+                        <td className="px-2 py-1 text-muted-foreground">Kiosk</td>
+                        <td className="px-2 py-1 tabular-nums text-muted-foreground">{formatDateTime(r.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </HorizontalScroll>
             </div>
           </details>
         </>

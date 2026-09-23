@@ -27,6 +27,7 @@ import {
 } from "@/lib/executive/standup-page-state";
 import { RecordDetailHeader } from "@/design-system/components/record-detail";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
@@ -510,36 +511,38 @@ export default function ExecutiveStandupBoardPage() {
               return (
                 <section key={section.sectionKey}>
                   <h3 className="mb-4 text-2xl font-semibold tracking-tight text-foreground">{section.sectionLabel}</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Previous</th>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Current</th>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Source</th>
-                          <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Confidence</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {section.metrics.map((metric) => {
-                          return (
-                            <tr key={metric.key} className="border-b border-border/50 align-top">
-                              <td className="px-3 py-3">
-                                <div className="font-medium text-foreground">{metric.label}</div>
-                                <div className="mt-1 text-xs text-muted-foreground">{metric.description}</div>
-                              </td>
-                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.fromValue}</td>
-                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.toValue}</td>
-                              <td className="px-3 py-3 tabular-nums text-muted-foreground">{metric.delta}</td>
-                              <td className="px-3 py-3 text-muted-foreground">{metric.sourceMode}</td>
-                              <td className="px-3 py-3 text-muted-foreground">{metric.confidenceBand}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <div>
+                    <HorizontalScroll label="Stand Up section">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Previous</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Current</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Source</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Confidence</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {section.metrics.map((metric) => {
+                            return (
+                              <tr key={metric.key} className="border-b border-border/50 align-top">
+                                <td className="px-3 py-3">
+                                  <div className="font-medium text-foreground">{metric.label}</div>
+                                  <div className="mt-1 text-xs text-muted-foreground">{metric.description}</div>
+                                </td>
+                                <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.fromValue}</td>
+                                <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.toValue}</td>
+                                <td className="px-3 py-3 tabular-nums text-muted-foreground">{metric.delta}</td>
+                                <td className="px-3 py-3 text-muted-foreground">{metric.sourceMode}</td>
+                                <td className="px-3 py-3 text-muted-foreground">{metric.confidenceBand}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </HorizontalScroll>
                   </div>
                 </section>
               );
@@ -555,34 +558,36 @@ export default function ExecutiveStandupBoardPage() {
                       <CardTitle>{section.sectionLabel}</CardTitle>
                       <CardDescription>Full section listing, including low-signal or incomplete rows intentionally kept out of the primary packet.</CardDescription>
                     </CardHeader>
-                    <CardContent className="overflow-x-auto">
-                      <table className="min-w-full border-collapse text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
-                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Previous</th>
-                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Current</th>
-                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
-                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Source</th>
-                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Confidence</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {section.metrics.map((metric) => (
-                            <tr key={`appendix-${metric.key}`} className="border-b border-border/50 align-top">
-                              <td className="px-3 py-3">
-                                <div className="font-medium text-foreground">{metric.label}</div>
-                                <div className="mt-1 text-xs text-muted-foreground">{metric.description}</div>
-                              </td>
-                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.fromValue}</td>
-                              <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.toValue}</td>
-                              <td className="px-3 py-3 tabular-nums text-muted-foreground">{metric.delta}</td>
-                              <td className="px-3 py-3 text-muted-foreground">{metric.sourceMode}</td>
-                              <td className="px-3 py-3 text-muted-foreground">{metric.confidenceBand}</td>
+                    <CardContent>
+                      <HorizontalScroll label="Stand Up facility table">
+                        <table className="min-w-full border-collapse text-sm">
+                          <thead>
+                            <tr className="border-b border-border">
+                              <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
+                              <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Previous</th>
+                              <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Current</th>
+                              <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
+                              <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Source</th>
+                              <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Confidence</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {section.metrics.map((metric) => (
+                              <tr key={`appendix-${metric.key}`} className="border-b border-border/50 align-top">
+                                <td className="px-3 py-3">
+                                  <div className="font-medium text-foreground">{metric.label}</div>
+                                  <div className="mt-1 text-xs text-muted-foreground">{metric.description}</div>
+                                </td>
+                                <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.fromValue}</td>
+                                <td className="px-3 py-3 tabular-nums font-semibold text-foreground">{metric.toValue}</td>
+                                <td className="px-3 py-3 tabular-nums text-muted-foreground">{metric.delta}</td>
+                                <td className="px-3 py-3 text-muted-foreground">{metric.sourceMode}</td>
+                                <td className="px-3 py-3 text-muted-foreground">{metric.confidenceBand}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </HorizontalScroll>
                     </CardContent>
                   </Card>
                 );

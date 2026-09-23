@@ -34,6 +34,7 @@ import {
 import { formatSearchToolUserEmailDisplay } from "@/lib/admin/settings/search-tool-display-copy";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 // ── Sub-components ───────────────────────────────────────────
 
@@ -399,112 +400,114 @@ export function SearchToolDashboard() {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[200px]">
-                    Tool
-                  </th>
-                  <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[100px]">
-                    Tier
-                  </th>
-                  {MATRIX_DISPLAY_ROLES.map((role) => (
-                    <th
-                      key={role}
-                      className="pb-3 text-center text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 min-w-[70px]"
-                    >
-                      {ROLE_LABELS[role]?.split(" ")[0] ?? role}
+          <div>
+            <HorizontalScroll label="Search tools">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[200px]">
+                      Tool
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(
-                  Object.entries(toolsByTier) as [
-                    SearchToolTier,
-                    typeof SEARCH_TOOLS,
-                  ][]
-                ).map(([tier, tools]) => {
-                  if (tools.length === 0) return null;
-                  const isExpanded = expandedTiers.has(tier);
-                  const meta = TIER_META[tier];
+                    <th className="pb-3 text-left text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 w-[100px]">
+                      Tier
+                    </th>
+                    {MATRIX_DISPLAY_ROLES.map((role) => (
+                      <th
+                        key={role}
+                        className="pb-3 text-center text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 min-w-[70px]"
+                      >
+                        {ROLE_LABELS[role]?.split(" ")[0] ?? role}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(
+                    Object.entries(toolsByTier) as [
+                      SearchToolTier,
+                      typeof SEARCH_TOOLS,
+                    ][]
+                  ).map(([tier, tools]) => {
+                    if (tools.length === 0) return null;
+                    const isExpanded = expandedTiers.has(tier);
+                    const meta = TIER_META[tier];
 
-                  return (
-                    <React.Fragment key={tier}>
-                      {/* Tier group header */}
-                      <tr>
-                        <td colSpan={2 + MATRIX_DISPLAY_ROLES.length}>
-                          <button
-                            onClick={() => toggleTier(tier)}
-                            className="flex w-full items-center gap-2 rounded-lg py-2 text-left transition-colors hover:bg-white/5"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown
-                                className="h-3.5 w-3.5"
-                                style={{ color: meta.color }}
-                              />
-                            ) : (
-                              <ChevronRight
-                                className="h-3.5 w-3.5"
-                                style={{ color: meta.color }}
-                              />
-                            )}
-                            <span
-                              className="text-xs font-semibold uppercase tracking-wider"
-                              style={{ color: meta.color }}
+                    return (
+                      <React.Fragment key={tier}>
+                        {/* Tier group header */}
+                        <tr>
+                          <td colSpan={2 + MATRIX_DISPLAY_ROLES.length}>
+                            <button
+                              onClick={() => toggleTier(tier)}
+                              className="flex w-full items-center gap-2 rounded-lg py-2 text-left transition-colors hover:bg-white/5"
                             >
-                              {meta.label}
-                            </span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                              ({tools.length} tool{tools.length > 1 ? "s" : ""})
-                            </span>
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* Tool rows */}
-                      {isExpanded &&
-                        tools.map((tool) => (
-                          <tr
-                            key={tool.name}
-                            className="group/row border-t border-white/5 transition-colors hover:bg-white/[0.02]"
-                          >
-                            <td className="py-2.5 pr-3">
-                              <div>
-                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                                  {tool.label}
-                                </p>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                                  {tool.description}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="py-2.5">
-                              <TierBadge tier={tool.tier} />
-                            </td>
-                            {MATRIX_DISPLAY_ROLES.map((role) => (
-                              <td key={role} className="py-2.5 text-center">
-                                <PolicyToggle
-                                  label={`${tool.label} for ${ROLE_LABELS[role] ?? role}`}
-                                  enabled={
-                                    policyMap[tool.name]?.[role] ?? false
-                                  }
-                                  saving={saving}
-                                  canEdit={canEdit}
-                                  onToggle={() =>
-                                    togglePolicy(tool.name, role)
-                                  }
+                              {isExpanded ? (
+                                <ChevronDown
+                                  className="h-3.5 w-3.5"
+                                  style={{ color: meta.color }}
                                 />
+                              ) : (
+                                <ChevronRight
+                                  className="h-3.5 w-3.5"
+                                  style={{ color: meta.color }}
+                                />
+                              )}
+                              <span
+                                className="text-xs font-semibold uppercase tracking-wider"
+                                style={{ color: meta.color }}
+                              >
+                                {meta.label}
+                              </span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                ({tools.length} tool{tools.length > 1 ? "s" : ""})
+                              </span>
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* Tool rows */}
+                        {isExpanded &&
+                          tools.map((tool) => (
+                            <tr
+                              key={tool.name}
+                              className="group/row border-t border-white/5 transition-colors hover:bg-white/[0.02]"
+                            >
+                              <td className="py-2.5 pr-3">
+                                <div>
+                                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                                    {tool.label}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                                    {tool.description}
+                                  </p>
+                                </div>
                               </td>
-                            ))}
-                          </tr>
-                        ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                              <td className="py-2.5">
+                                <TierBadge tier={tool.tier} />
+                              </td>
+                              {MATRIX_DISPLAY_ROLES.map((role) => (
+                                <td key={role} className="py-2.5 text-center">
+                                  <PolicyToggle
+                                    label={`${tool.label} for ${ROLE_LABELS[role] ?? role}`}
+                                    enabled={
+                                      policyMap[tool.name]?.[role] ?? false
+                                    }
+                                    saving={saving}
+                                    canEdit={canEdit}
+                                    onToggle={() =>
+                                      togglePolicy(tool.name, role)
+                                    }
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
         )}
       </div>

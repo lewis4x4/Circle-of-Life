@@ -179,8 +179,8 @@ export default function AdminNewStaffingSnapshotPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New ratio snapshot</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Record a point-in-time census and coverage count. Ratio is residents ÷ staff on duty; compliance is ratio ≤
-            required (lower ratio means more staff per resident).
+            Record a point-in-time census and coverage count. Ratio is residents ÷ staff on duty. Staffing ratio check
+            is off: ratios are recorded for reference, never scored.
           </p>
         </div>
       </div>
