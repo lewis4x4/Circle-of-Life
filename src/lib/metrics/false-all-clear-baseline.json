@@ -103,9 +103,6 @@
   "src/components/home/PastDueStrip.tsx": {
     "silent-zero": 1
   },
-  "src/components/incidents/AdminIncidentDetailPageClient.tsx": {
-    "all-clear-copy": 1
-  },
   "src/components/operations/OperationsCalendarPage.tsx": {
     "silent-zero": 1
   },

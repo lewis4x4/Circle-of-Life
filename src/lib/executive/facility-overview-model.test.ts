@@ -299,6 +299,22 @@ describe("buildInsuranceCostDisplay", () => {
       expect(recorded.breakdownLine).toBe("$1,000.00 premiums across 1 policy · $0.00 incurred losses (paid plus reserves) across 0 claims");
     }
   });
+
+  it("does not show $0.00 premiums when no policy has a premium recorded (COL-649)", () => {
+    const base = { periodStart: "2025-09-15", periodEnd: "2026-09-15", premiumsCents: 0, incurredLossesCents: 0, tcorCents: 0, policyRows: 3, policiesWithStatedPremium: 0, claimRows: 0 };
+    const display = buildInsuranceCostDisplay(base);
+    expect(display.state).toBe("recorded");
+    if (display.state === "recorded") {
+      expect(display.total).toBe("Premiums not recorded");
+      expect(display.breakdownLine).toMatch(/^No premium recorded on 3 policies · /);
+      expect(display.breakdownLine).not.toContain("$0.00 premiums");
+    }
+
+    const partial = buildInsuranceCostDisplay({ ...base, premiumsCents: 50000, tcorCents: 50000, policiesWithStatedPremium: 2 });
+    if (partial.state === "recorded") {
+      expect(partial.breakdownLine).toMatch(/^\$500\.00 premiums on 2 of 3 policies \(1 with no premium recorded\)/);
+    }
+  });
 });
 
 describe("date and freshness helpers", () => {
