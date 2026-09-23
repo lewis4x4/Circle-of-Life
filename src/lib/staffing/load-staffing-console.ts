@@ -18,6 +18,7 @@ import {
   type StaffingCoverageScope,
 } from "@/lib/staffing/staffing-coverage-scope";
 import type { Database } from "@/types/database";
+import { fetchStaffingRatioCheckOn } from "@/lib/staffing/ratio-check";
 
 export type SnapshotRow = {
   id: string;
@@ -82,6 +83,8 @@ export type StaffingConsoleData = {
   attendance: AttendanceEventRow[];
   /** What the gap and credential panels examined; null when that read failed. */
   coverageScope: StaffingCoverageScope | null;
+  /** Whether the facility's staffing-ratio check is on (a ratio rule set is assigned). */
+  ratioCheckOn: boolean;
 };
 
 type SupabaseSnapshotRow = {
@@ -357,7 +360,7 @@ export async function loadStaffingConsole(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database>,
 ): Promise<StaffingConsoleData> {
-  const [snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope] =
+  const [snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope, ratioCheckOn] =
     await Promise.all([
       fetchSnapshotsFromSupabase(selectedFacilityId, supabase),
       fetchExpiredCertificationWarnings(selectedFacilityId, supabase),
@@ -366,9 +369,10 @@ export async function loadStaffingConsole(
       fetchStaffRequisitions(selectedFacilityId, supabase),
       fetchAttendanceEvents(selectedFacilityId, supabase),
       fetchCoverageScopeOrNull(selectedFacilityId, supabase),
+      fetchStaffingRatioCheckOn(selectedFacilityId, supabase),
     ]);
 
-  return { snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope };
+  return { snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope, ratioCheckOn };
 }
 
 /** A failed scope read must not blank the console; the panels say "could not be checked" instead. */
