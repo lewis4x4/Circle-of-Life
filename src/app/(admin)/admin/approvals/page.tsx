@@ -404,7 +404,7 @@ export default function AdminApprovalsInboxPage() {
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Everything waiting on an approver, in one queue: shift swaps, completed time punches,
             mileage reimbursements, and knowledge-base publish reviews. Actions here write the same
-            records as the source hubs (RLS-scoped).
+            records as the source hubs, and you see only the facilities you have access to.
             {facilityScoped
               ? " Staff queues follow your facility selector; KB reviews are organization-wide."
               : " Showing all facilities your role can access."}

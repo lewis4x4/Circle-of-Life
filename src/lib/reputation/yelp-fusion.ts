@@ -32,7 +32,7 @@ type YelpReviewsResponse = {
 export async function fetchYelpBusinessReviews(businessId: string): Promise<YelpFusionReview[]> {
   const key = process.env.YELP_FUSION_API_KEY?.trim();
   if (!key) {
-    throw new Error("YELP_FUSION_API_KEY is not configured");
+    throw new Error("Yelp review import is not set up for Haven yet. Ask support to finish the setup.");
   }
   const url = `${YELP_FUSION_BASE}/businesses/${encodeURIComponent(businessId)}/reviews`;
   const res = await fetch(url, {

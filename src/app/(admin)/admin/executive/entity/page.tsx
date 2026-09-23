@@ -86,7 +86,7 @@ export default function ExecutiveEntityIndexPage() {
           Entities
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Drill down by legal entity; each page lists facilities with a KPI strip (Module 24).
+          Drill down by legal entity; each page lists its facilities with their key numbers.
         </p>
       </div>
 

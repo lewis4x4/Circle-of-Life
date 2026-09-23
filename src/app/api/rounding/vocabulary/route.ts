@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "facilityId is required" }, { status: 400 });
   }
   if (!UUID_PATTERN.test(facilityId)) {
-    return NextResponse.json({ error: "facilityId must be a UUID" }, { status: 400 });
+    return NextResponse.json({ error: "Choose a facility." }, { status: 400 });
   }
 
   const hasAccess = await assertRoundingFacilityAccess(context, facilityId);

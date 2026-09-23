@@ -24,7 +24,7 @@ export async function POST(
 
   if (!yelpPartnerReviewPostKey()) {
     return NextResponse.json(
-      { error: "Yelp reply posting is not configured (set YELP_PARTNER_API_KEY or YELP_FUSION_API_KEY)." },
+      { error: "Replying on Yelp is not set up for Haven yet. Ask support to finish the setup." },
       { status: 503 },
     );
   }

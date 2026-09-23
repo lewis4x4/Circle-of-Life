@@ -42,7 +42,7 @@ export default function AdminFinanceHubPageClient({
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Finance</h1>
             <p className="text-sm text-muted-foreground">
-              Entity and facility general ledger (Module 17) — chart of accounts, journal entries, ledger.
+              Entity and facility general ledger — chart of accounts, journal entries, ledger.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {roleLabel} drill-in: use finance to confirm whether portfolio pressure is operational, billing-timing, or period-close related.

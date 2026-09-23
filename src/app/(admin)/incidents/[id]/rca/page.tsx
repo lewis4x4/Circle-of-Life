@@ -36,7 +36,7 @@ type FactorGroup = {
 const FACTOR_GROUPS: FactorGroup[] = [
   {
     title: "Contributing factors",
-    description: "Aligns with incident contributing_factors vocabulary (spec 07).",
+    description: "The same factor list used on the incident report.",
     options: [
       { id: "medication_change", label: "Medication change" },
       { id: "new_footwear", label: "New footwear" },
@@ -603,7 +603,7 @@ export default function AdminIncidentRcaPage() {
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
         title="Root cause workspace"
-        subtitle="Structured RCA per spec 07 — persisted on save; marking complete records operator attestation (not a regulatory sign-off)."
+        subtitle="Root cause analysis for this incident. Saved as you go; marking it complete records your attestation (not a regulatory sign-off)."
         statusChips={
           <>
             <Badge variant="outline" className="tabular-nums text-xs">

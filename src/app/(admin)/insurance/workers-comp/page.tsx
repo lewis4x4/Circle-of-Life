@@ -64,7 +64,7 @@ export default function InsuranceWorkersCompPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Workers’ compensation</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Facility-scoped WC claim headers (OSHA 300 detail is out of Core scope).
+          Workers’ compensation claims for this facility. OSHA 300 log detail is not kept here.
         </p>
       </div>
       {authLoading ? (
