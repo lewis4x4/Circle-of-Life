@@ -147,7 +147,7 @@ describe("AdminBillingRentRollPage", () => {
     }
     expect(screen.queryByRole("columnheader", { name: "Other source" })).not.toBeInTheDocument();
 
-    expect(screen.getByRole("link", { name: "Baker, Jimmie" })).toHaveAttribute("href", "/admin/residents/res-baker/billing");
+    expect(screen.getByRole("link", { name: "Jimmie Baker" })).toHaveAttribute("href", "/admin/residents/res-baker/billing");
     expect(screen.getByText("7-B")).toBeInTheDocument();
     expect(screen.getByText("No bed linked")).toBeInTheDocument();
     expect(screen.getByText("UHC")).toBeInTheDocument();
