@@ -23,6 +23,7 @@ import {
   FAMILY_BULLETIN_DASHBOARD_TILE_TITLE,
 } from "@/lib/admin/family-bulletin-dashboard-copy";
 import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
+import { describeCountTile } from "@/lib/metrics/head-count";
 import { Users, FileText, MessageSquare, Truck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
@@ -95,6 +96,14 @@ export function AssistantDashboardPageClient({
   );
 
   const metricsReady = !isLoading && brief != null;
+  const pendingDocsTile = describeCountTile(brief?.pendingDocs, metricsReady, {
+    positive: "Awaiting action",
+    zero: "All processed",
+  });
+  const bulletinTile = describeCountTile(brief?.staffBulletinNotes, metricsReady, {
+    positive: FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE,
+    zero: FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL,
+  });
 
   if (error && !brief) {
     return <ErrorState onRetry={load} message={error} />;
@@ -131,14 +140,8 @@ export function AssistantDashboardPageClient({
           display={pendingDocsDisplay}
           isMetric={adminAssistantDashboardKpiTileIsMetric(pendingDocsDisplay)}
           icon={FileText}
-          urgency={metricsReady && (brief?.pendingDocs ?? 0) > 0 ? "critical" : "normal"}
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.pendingDocs ?? 0) > 0
-                ? "Awaiting action"
-                : "All processed"
-          }
+          urgency={pendingDocsTile.attention ? "critical" : "normal"}
+          subLabel={pendingDocsTile.subLabel}
           href="/admin/knowledge/admin"
         />
         <StatCard
@@ -147,13 +150,7 @@ export function AssistantDashboardPageClient({
           isMetric={adminAssistantDashboardKpiTileIsMetric(bulletinDisplay)}
           icon={MessageSquare}
           urgency="normal"
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.staffBulletinNotes ?? 0) > 0
-                ? FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE
-                : FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL
-          }
+          subLabel={bulletinTile.subLabel}
           href="/admin/family-messages"
         />
         <StatCard

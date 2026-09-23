@@ -6,22 +6,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatCoordinatorDashboardResidentName } from "@/lib/coordinator/dashboard-brief-display-copy";
+import { headCountOrNull, type HeadCountReply } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
 export type CoordinatorDashboardBrief = {
-  activeCarePlans: number;
-  reviewsDue14d: number;
-  pendingAssessments: number;
-  staffBulletinNotes: number;
-  activeAdmissions: number;
-  recentConditionChanges: number;
+  /** Counts are null when the read failed — never shown as 0. */
+  activeCarePlans: number | null;
+  reviewsDue14d: number | null;
+  pendingAssessments: number | null;
+  staffBulletinNotes: number | null;
+  activeAdmissions: number | null;
+  recentConditionChanges: number | null;
   carePlansDue: Array<{ residentId?: string; id: string; residentName: string; reviewDate: string }>;
   pendingAdmissions: Array<{ id: string; name: string; daysSinceInquiry: number }>;
 };
 
-type CountResponse = { count: number | null };
 type ScopedQuery<T> = { eq(column: string, value: string): T };
 type ReviewListRow = {
   resident_id: string;
@@ -102,12 +103,12 @@ export async function fetchCoordinatorDashboardBrief(
   }));
 
   return {
-    activeCarePlans: (carePlansRes as CountResponse).count ?? 0,
-    reviewsDue14d: (reviewsDueRes as CountResponse).count ?? 0,
-    pendingAssessments: (assessmentsRes as CountResponse).count ?? 0,
-    staffBulletinNotes: (bulletinRes as CountResponse).count ?? 0,
-    activeAdmissions: (admissionsRes as CountResponse).count ?? 0,
-    recentConditionChanges: (conditionRes as CountResponse).count ?? 0,
+    activeCarePlans: headCountOrNull(carePlansRes as HeadCountReply),
+    reviewsDue14d: headCountOrNull(reviewsDueRes as HeadCountReply),
+    pendingAssessments: headCountOrNull(assessmentsRes as HeadCountReply),
+    staffBulletinNotes: headCountOrNull(bulletinRes as HeadCountReply),
+    activeAdmissions: headCountOrNull(admissionsRes as HeadCountReply),
+    recentConditionChanges: headCountOrNull(conditionRes as HeadCountReply),
     carePlansDue,
     pendingAdmissions,
   };

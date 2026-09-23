@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 
 export type ResidentAssuranceRiskResident = {
   id: string;
@@ -236,10 +237,10 @@ export async function fetchResidentAssuranceCommandBrief(
   const highOrCritical = latestScores.filter((row) => row.risk_tier === "critical" || row.risk_tier === "high");
 
   return {
-    activeWatches: activeWatchesRes.count ?? 0,
-    pendingWatchApprovals: pendingWatchApprovalsRes.count ?? 0,
-    openEscalations: openEscalationsRes.count ?? 0,
-    openIntegrityFlags: openIntegrityFlagsRes.count ?? 0,
+    activeWatches: requireHeadCount(activeWatchesRes, "Active watches"),
+    pendingWatchApprovals: requireHeadCount(pendingWatchApprovalsRes, "Pending watch approvals"),
+    openEscalations: requireHeadCount(openEscalationsRes, "Open escalations"),
+    openIntegrityFlags: requireHeadCount(openIntegrityFlagsRes, "Open integrity flags"),
     criticalSafetyResidents: latestScores.filter((row) => row.risk_tier === "critical").length,
     highOrCriticalSafetyResidents: highOrCritical.length,
     highRiskResidents: highOrCritical
@@ -318,10 +319,10 @@ export async function fetchResidentAssuranceFacilityHeatMap(
 
   return facilities.map((facility, index) => {
     const [activeRes, pendingRes, escalationsRes, integrityRes] = perFacility[index]!;
-    const activeWatches = activeRes.count ?? 0;
-    const pendingWatchApprovals = pendingRes.count ?? 0;
-    const openEscalations = escalationsRes.count ?? 0;
-    const openIntegrityFlags = integrityRes.count ?? 0;
+    const activeWatches = requireHeadCount(activeRes, "Active watches");
+    const pendingWatchApprovals = requireHeadCount(pendingRes, "Pending watch approvals");
+    const openEscalations = requireHeadCount(escalationsRes, "Open escalations");
+    const openIntegrityFlags = requireHeadCount(integrityRes, "Open integrity flags");
     const criticalSafetyResidents = criticalByFacility.get(facility.id) ?? 0;
     const highOrCriticalSafetyResidents = highOrCriticalByFacility.get(facility.id) ?? 0;
     const heatScore =

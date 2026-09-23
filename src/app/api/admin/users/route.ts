@@ -25,6 +25,7 @@ import {
 import { mergeMustChangePasswordSetting } from "@/lib/auth/must-change-password";
 import { writeUserAuditEntry } from "@/lib/audit/user-management-audit";
 import { logError } from "@/lib/observability/logger";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 
 type UserProfileRow = Pick<
   Database["public"]["Tables"]["user_profiles"]["Row"],
@@ -174,9 +175,9 @@ export async function GET(request: NextRequest) {
 
   const queryResult = await query;
   const users = (queryResult.data ?? []) as UserProfileRow[];
-  const count = queryResult.count ?? 0;
   const queryErr = queryResult.error;
-  if (queryErr) {
+  const count = headCountOrNull(queryResult);
+  if (queryErr || count === null) {
     return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
   }
 
