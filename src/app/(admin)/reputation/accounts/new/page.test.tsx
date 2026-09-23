@@ -117,6 +117,7 @@ describe("AdminReputationAccountNewPage auth hydration", () => {
     render(<AdminReputationAccountNewPage />);
 
     fireEvent.change(screen.getByLabelText("Label"), { target: { value: "Main campus Google" } });
+    fireEvent.change(screen.getByLabelText("Platform"), { target: { value: "google_business" } });
     fireEvent.click(screen.getByRole("button", { name: "Save listing" }));
 
     expect(await screen.findByText("permission denied for table reputation_accounts")).toBeInTheDocument();
@@ -132,6 +133,7 @@ describe("AdminReputationAccountNewPage auth hydration", () => {
     render(<AdminReputationAccountNewPage />);
 
     fireEvent.change(screen.getByLabelText("Label"), { target: { value: "Main campus Google" } });
+    fireEvent.change(screen.getByLabelText("Platform"), { target: { value: "google_business" } });
     fireEvent.click(screen.getByRole("button", { name: "Save listing" }));
 
     await waitFor(() => {

@@ -5,6 +5,8 @@ import {
   isAdminEligibleAppRole,
   isDietaryRole,
   isFacilityOperatorRole,
+  isMedTechBlockedAdminPath,
+  isMedTechRole,
   isRecruiterAllowedAdminPath,
   isRecruiterRole,
   isOrgAdminAppRole,
@@ -72,8 +74,10 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   if (role === "housekeeper") {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
-  if (isDietaryRole(role) && nextUrl.pathname === "/admin/dietary-dashboard") {
-    return NextResponse.redirect(new URL("/dietary", nextUrl.origin));
+  // Cook is not admin-eligible; send it to its own app rather than to a login
+  // screen that reads as "you are signed out" (COL-627 matrix).
+  if (isDietaryRole(role)) {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
   if (role === "family") {
     return NextResponse.redirect(new URL("/family", nextUrl.origin));
@@ -91,6 +95,10 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   }
   // Recruiter: referrals, pipeline and reputation only (owner ruling 2026-09-22).
   if (isRecruiterRole(role) && !isRecruiterAllowedAdminPath(nextUrl.pathname)) {
+    return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
+  }
+  // Med-Tech: no finance, payroll or staff areas (owner ruling 2026-09-23).
+  if (isMedTechRole(role) && isMedTechBlockedAdminPath(nextUrl.pathname)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 
