@@ -159,3 +159,12 @@ export function billingOverviewKpiStripHelperLine(ctx: BillingOverviewKpiContext
   }
   return `${loadedCount} of ${totalCount} AR snapshot tiles loaded — empty tiles name what is still missing.`;
 }
+
+/**
+ * Text for a percentage tile: the empty-state copy when there is one, else the
+ * rounded percentage. A null percentage is never shown as 0% (COL-708).
+ */
+export function billingOverviewPercentText(emptyCopy: string | null, pct: number | null): string {
+  if (emptyCopy != null) return emptyCopy;
+  return pct == null || !Number.isFinite(pct) ? "Not available" : `${Math.round(pct)}%`;
+}

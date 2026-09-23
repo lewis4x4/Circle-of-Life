@@ -25,14 +25,14 @@ export function KBHealthPanel({ health, loading }: KBHealthPanelProps) {
     {
       label: "Chunks",
       value: health.totalChunks,
-      sub: `${health.avgChunksPerDoc.toFixed(0)} avg/doc`,
+      sub: health.avgChunksPerDoc === null ? "No documents yet" : `${health.avgChunksPerDoc.toFixed(0)} avg/doc`,
       icon: Database,
       color: "text-green-500",
     },
     {
       label: "Embedding Coverage",
-      value: `${health.embeddingCoverage.toFixed(1)}%`,
-      sub: "vectors indexed",
+      value: health.embeddingCoverage === null ? "No chunks yet" : `${health.embeddingCoverage.toFixed(1)}%`,
+      sub: health.embeddingCoverage === null ? "nothing to index" : "vectors indexed",
       icon: Zap,
       color: "text-primary",
     },

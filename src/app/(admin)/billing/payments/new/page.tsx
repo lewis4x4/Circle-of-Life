@@ -326,10 +326,14 @@ export default function AdminNewPaymentPage() {
               </CardTitle>
             </div>
             <CardDescription>
-              {billingCurrency.format((allocation?.allocated ?? 0) / 100)} applied
-              {" to invoices"}.
-              {" "}{billingCurrency.format((allocation?.unapplied ?? 0) / 100)} remains unapplied.
-              .
+              {allocation ? (
+                <>
+                  {billingCurrency.format(allocation.allocated / 100)} applied to invoices.{" "}
+                  {billingCurrency.format(allocation.unapplied / 100)} remains unapplied.
+                </>
+              ) : (
+                "The receipt did not say how the payment was applied. Check the payments list."
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
