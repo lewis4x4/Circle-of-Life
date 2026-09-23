@@ -11,6 +11,9 @@ import { RecordDetailHeader, RecordDetailSection } from "@/design-system/compone
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { canManageVendorMaster } from "@/lib/vendors/vendor-role-helpers";
+import { formatMetric } from "@/lib/metrics/metric-state";
+import { VENDOR_DETAIL_COUNTS_LOADING, vendorDetailCounts } from "@/lib/vendors/vendor-detail-counts";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { formatVendorCategoryLabel, vendorStatusUiLabel } from "@/lib/vendors/vendor-category-ui";
 
@@ -27,7 +30,7 @@ export default function VendorDetailPage() {
   const [vendor, setVendor] = useState<VendorRow | null>(null);
   const [facilities, setFacilities] = useState<FacilityMini[]>([]);
   const [linked, setLinked] = useState<string[]>([]);
-  const [counts, setCounts] = useState({ contracts: 0, pos: 0, invoices: 0 });
+  const [counts, setCounts] = useState(VENDOR_DETAIL_COUNTS_LOADING);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [addFacilityId, setAddFacilityId] = useState<string>("");
@@ -90,11 +93,7 @@ export default function VendorDetailPage() {
         .eq("vendor_id", id)
         .is("deleted_at", null),
     ]);
-    setCounts({
-      contracts: ct.count ?? 0,
-      pos: po.count ?? 0,
-      invoices: inv.count ?? 0,
-    });
+    setCounts(vendorDetailCounts(ct, po, inv));
     setLoading(false);
   }, [supabase, id, organizationId]);
 
@@ -156,7 +155,16 @@ export default function VendorDetailPage() {
                 className="rounded-[8px] border border-border bg-card p-[14px] shadow-[var(--shadow-card)] transition-all duration-[var(--motion-duration)] ease-[var(--motion-ease)] hover:-translate-y-0.5"
               >
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-                <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+                <p
+                  className={cn(
+                    "mt-2",
+                    value.status === "value"
+                      ? "text-2xl font-semibold tabular-nums text-foreground"
+                      : "text-base font-medium leading-8 text-muted-foreground",
+                  )}
+                >
+                  {formatMetric(value)}
+                </p>
               </div>
             ))}
           </div>

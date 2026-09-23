@@ -12,7 +12,7 @@ export default function KnowledgeAdminRoute() {
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100">
             Knowledge Base Admin
           </h1>
-          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Manage documents, review gaps, and monitor health
           </p>
         </div>

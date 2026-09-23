@@ -104,7 +104,7 @@ for (const [label, producer] of [["app", app], ["Edge", edge]] as const) {
       for (const payers of [scenario.payers, [...scenario.payers].reverse()]) {
         const result = await producer.buildMonthlyInvoicePreview(clientFor({ ...scenario, payers }) as never, { facilityId, billingYear: 2026, billingMonth: 5 });
         expect(result.preview).toEqual([]);
-        expect(result.error).toMatch(/Multiple primary/i);
+        expect(result.blockers?.map(blocker => blocker.reason).join(" ")).toMatch(/Multiple primary/i);
       }
     });
 
@@ -113,7 +113,23 @@ for (const [label, producer] of [["app", app], ["Edge", edge]] as const) {
       client.tables.residents.push({ ...client.tables.residents[0], id: "otherwise-billable-private" });
       const result = await producer.buildMonthlyInvoicePreview(client as never, { facilityId, billingYear: 2026, billingMonth: 5 });
       expect(result.preview).toEqual([]);
-      expect(result.error).toMatch(/Split billing/i);
+      expect(result.blockers?.map(blocker => blocker.reason).join(" ")).toMatch(/Split billing/i);
+    });
+
+    it("names every resident whose dates block billing, not only the first (COL-662)", async () => {
+      const client = clientFor(scenarios.find(row => row.name.startsWith("unknown admission"))!);
+      const base = client.tables.residents[0];
+      client.tables.residents.push(
+        { ...base, id: "reversed-dates", first_name: "Second", last_name: "Resident", admission_date: "2026-05-20", discharge_date: "2026-05-10" },
+        { ...base, id: "billable", first_name: "Third", last_name: "Resident", admission_date: "2025-01-01" },
+      );
+      const result = await producer.buildMonthlyInvoicePreview(client as never, { facilityId, billingYear: 2026, billingMonth: 5 });
+      expect(result.preview).toEqual([]);
+      expect(result.error).toMatch(/2 residents/);
+      expect(result.blockers).toEqual([
+        { residentId, residentName: "Synthetic Resident", reason: "No admission date on file." },
+        { residentId: "reversed-dates", residentName: "Second Resident", reason: "Discharge date is before the admission date." },
+      ]);
     });
   });
 }

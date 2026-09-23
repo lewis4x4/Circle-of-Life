@@ -113,18 +113,18 @@ export default function InsuranceClaimsPage() {
             <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
               Claim Log
             </h3>
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-muted-foreground">
               {showLoading ? "Loading…" : `${rows.length} claims`}
             </span>
           </div>
 
           <MotionList className="space-y-3">
             {showLoading ? (
-              <p className="text-sm font-mono text-slate-500 pl-2" role="status" aria-live="polite">
+              <p className="text-sm font-mono text-muted-foreground pl-2" role="status" aria-live="polite">
                 {INSURANCE_CLAIMS_LOADING_LIST_COPY}
               </p>
             ) : rows.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
+              <div className="p-12 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Claims</p>
                 <p className="text-sm opacity-80 mt-1">No insurance claims have been tracked yet.</p>
               </div>
@@ -156,7 +156,7 @@ export default function InsuranceClaimsPage() {
                         >
                           {enumLabel(r.status)}
                         </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           Loss: {formattedDate}
                         </span>
                         {r.incident_id && (
@@ -170,7 +170,7 @@ export default function InsuranceClaimsPage() {
                       </div>
                       <div className="flex gap-6 mt-3">
                         <div>
-                          <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">
+                          <p className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground mb-0.5">
                             Reserve
                           </p>
                           <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
@@ -178,7 +178,7 @@ export default function InsuranceClaimsPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">
+                          <p className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground mb-0.5">
                             Paid
                           </p>
                           <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
@@ -186,7 +186,7 @@ export default function InsuranceClaimsPage() {
                           </p>
                         </div>
                         <div className="flex-1">
-                          <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">
+                          <p className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground mb-0.5">
                             Claim #
                           </p>
                           <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">

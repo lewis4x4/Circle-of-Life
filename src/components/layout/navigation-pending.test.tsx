@@ -5,15 +5,17 @@ import type { Window as HappyWindow } from 'happy-dom';
 import type { ComponentProps } from 'react';
 import { NavigationPendingProvider, HavenNavLink, useNavigationPending, registerRouteLeaveGuard, navigateWithLeaveGuard, standUpHasDocumentEntry, useRouteTransitionPending } from './navigation-pending';
 
-const mocks = vi.hoisted(() => ({ push: vi.fn() }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/admin/stand-up', useRouter: () => ({ push: mocks.push }) }));
-vi.mock('next/link', () => ({ default: (props: ComponentProps<'a'>) => <a {...props} /> }));
+const mocks = vi.hoisted(() => ({ push: vi.fn(), prefetch: vi.fn(), linkPrefetch: [] as unknown[] }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/admin/stand-up', useRouter: () => ({ push: mocks.push, prefetch: mocks.prefetch }) }));
+vi.mock('next/link', () => ({ default: ({ prefetch, ...props }: ComponentProps<'a'> & { prefetch?: unknown }) => { mocks.linkPrefetch.push(prefetch); return <a {...props} />; } }));
 let removeGuard = () => {};
 const originalHref = window.location.href;
 const navigationSettings = (window as unknown as HappyWindow).happyDOM.settings.navigation;
 const originalNavigationSettings = { ...navigationSettings };
 beforeEach(() => {
   mocks.push.mockReset();
+  mocks.prefetch.mockReset();
+  mocks.linkPrefetch.length = 0;
   // Assertions concern event cancellation/router dispatch; never perform real
   // network navigation from the DOM-only test environment.
   Object.assign(navigationSettings, { disableMainFrameNavigation: true, disableChildPageNavigation: true, disableFallbackToSetURL: true });
@@ -70,5 +72,26 @@ describe('shared pending navigation protection', () => {
     expect(standUpHasDocumentEntry()).toBe(false);
     vi.mocked(performance.getEntriesByType).mockReturnValue([{ name: window.location.href } as PerformanceEntry]); expect(standUpHasDocumentEntry()).toBe(true);
     removeGuard = registerRouteLeaveGuard(() => false); expect(navigateWithLeaveGuard('/admin/facilities', mocks.push)).toBe(false); expect(assign).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('HavenNavLink prefetch (COL-674)', () => {
+  it('does not prefetch on sight, and prefetches once on hover or focus', () => {
+    render(<NavigationPendingProvider><HavenNavLink href="/admin/referrals">Pipeline</HavenNavLink></NavigationPendingProvider>);
+    expect(mocks.linkPrefetch.at(-1)).toBe(false);
+    expect(mocks.prefetch).not.toHaveBeenCalled();
+    const link = screen.getByText('Pipeline');
+    fireEvent.mouseEnter(link);
+    fireEvent.focus(link);
+    fireEvent.mouseEnter(link);
+    expect(mocks.prefetch).toHaveBeenCalledTimes(1);
+    expect(mocks.prefetch).toHaveBeenCalledWith('/admin/referrals');
+  });
+
+  it('leaves an explicit prefetch choice to Next', () => {
+    render(<NavigationPendingProvider><HavenNavLink href="/admin/residents" prefetch>Residents</HavenNavLink></NavigationPendingProvider>);
+    expect(mocks.linkPrefetch.at(-1)).toBe(true);
+    fireEvent.mouseEnter(screen.getByText('Residents'));
+    expect(mocks.prefetch).not.toHaveBeenCalled();
   });
 });

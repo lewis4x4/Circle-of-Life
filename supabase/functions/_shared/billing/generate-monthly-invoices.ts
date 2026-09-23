@@ -296,8 +296,14 @@ function selectBillablePrimary(
 ): { payer?: ResidentPayer; noBillableDays?: boolean; error?: string } {
   const admission = canonicalCivilDate(resident.admission_date);
   const discharge = resident.discharge_date === null ? null : canonicalCivilDate(resident.discharge_date);
-  if (!admission || (resident.discharge_date !== null && !discharge) || (discharge && discharge < admission)) {
-    return { error: "A resident admission/discharge interval is missing, invalid, or reversed. Review the billable dates before generating invoices." };
+  if (!admission) {
+    return { error: resident.admission_date ? "Admission date is not a valid date." : "No admission date on file." };
+  }
+  if (resident.discharge_date !== null && !discharge) {
+    return { error: "Discharge date is not a valid date." };
+  }
+  if (discharge && discharge < admission) {
+    return { error: "Discharge date is before the admission date." };
   }
   const start = admission > periodStart ? admission : periodStart;
   const end = discharge && discharge < periodEnd ? discharge : periodEnd;
@@ -324,9 +330,32 @@ function selectBillablePrimary(
   return { payer };
 }
 
+/** A resident whose dates or payer periods stop the whole facility from billing. */
+export type BillingBlocker = {
+  residentId: string;
+  residentName: string;
+  reason: string;
+};
+
+export function billingBlockerName(resident: Pick<Resident, "first_name" | "last_name">): string {
+  const name = [resident.first_name, resident.last_name]
+    .map((part) => part?.trim() ?? "")
+    .filter(Boolean)
+    .join(" ");
+  return name || "Unnamed resident";
+}
+
+export function billingBlockersSummary(count: number): string {
+  return count === 1
+    ? "1 resident's billable dates (admission, discharge or payer period) stop invoices from generating. Fix the record below, then refresh."
+    : `${count} residents' billable dates (admission, discharge or payer period) stop invoices from generating. Fix each record below, then refresh.`;
+}
+
 export type BuildPreviewResult = {
   preview: PreviewLine[];
   error: string | null;
+  /** Every resident behind `error` when the preview is blocked by resident data, so staff can fix each record. */
+  blockers?: BillingBlocker[];
   billingLabel: string;
   days: number;
   periodStart: string;
@@ -493,6 +522,7 @@ export async function buildMonthlyInvoicePreview(
   }
   const payerMap = new Map<string, ResidentPayer>();
   const noBillableDays = new Set<string>();
+  const blockers: BillingBlocker[] = [];
   for (const resident of residents) {
     const selection = selectBillablePrimary(resident, payerRows.get(resident.id) ?? [], periodStart, periodEnd);
     // An invoiced resident only needs its payer to decide a still-missing
@@ -502,10 +532,24 @@ export async function buildMonthlyInvoicePreview(
       continue;
     }
     if (selection.error) {
-      return { preview: [], error: selection.error, billingLabel, days, periodStart, periodEnd, dueDate };
+      // Keep going so the page can name every resident to fix, not just the first.
+      blockers.push({ residentId: resident.id, residentName: billingBlockerName(resident), reason: selection.error });
+      continue;
     }
     if (selection.noBillableDays) noBillableDays.add(resident.id);
     else if (selection.payer) payerMap.set(resident.id, selection.payer);
+  }
+  if (blockers.length > 0) {
+    return {
+      preview: [],
+      error: billingBlockersSummary(blockers.length),
+      blockers,
+      billingLabel,
+      days,
+      periodStart,
+      periodEnd,
+      dueDate,
+    };
   }
   const medicaidById = new Map(medicaidProviders.map((p) => [p.id, p]));
   const agreementMap = new Map<string, ResidentRateAgreement>();

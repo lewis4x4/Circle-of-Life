@@ -183,7 +183,7 @@ export default function AdminReputationReplyNewPage() {
             <div className="space-y-2">
               <Label htmlFor="acc">Listing</Label>
               {accountsLoading ? (
-                <p className="text-sm text-slate-500">Loading listings…</p>
+                <p className="text-sm text-muted-foreground">Loading listings…</p>
               ) : (
                 <select
                   id="acc"

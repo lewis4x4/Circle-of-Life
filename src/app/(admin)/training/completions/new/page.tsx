@@ -282,7 +282,7 @@ export default function AdminNewTrainingCompletionPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <GraduationCap className="h-6 w-6 text-slate-500" />
+        <GraduationCap className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Log training completion</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -291,7 +291,7 @@ export default function AdminNewTrainingCompletionPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted-foreground">
         Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can log
         completions..
       </p>
@@ -446,7 +446,7 @@ export default function AdminNewTrainingCompletionPage() {
                   disabled={!facilityReady || loading}
                   onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
                 />
-                <p className="text-[10px] text-slate-500">Max 15 MB. Stored in the competency-certificates bucket.</p>
+                <p className="text-[10px] text-muted-foreground">Max 15 MB. Stored in the competency-certificates bucket.</p>
               </div>
 
               <div className="flex gap-2 pt-2">

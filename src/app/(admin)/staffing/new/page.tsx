@@ -175,7 +175,7 @@ export default function AdminNewStaffingSnapshotPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <ClipboardList className="h-6 w-6 text-slate-500" />
+        <ClipboardList className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New ratio snapshot</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">

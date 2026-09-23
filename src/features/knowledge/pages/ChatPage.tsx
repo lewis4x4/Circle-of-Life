@@ -119,7 +119,7 @@ export function ChatPage() {
           </div>
         )}
         {messagesLoading && (
-          <div className="shrink-0 border-b border-zinc-800/80 px-4 py-1.5 text-xs text-zinc-500">
+          <div className="shrink-0 border-b border-zinc-800/80 px-4 py-1.5 text-xs text-muted-foreground">
             Loading messages…
           </div>
         )}

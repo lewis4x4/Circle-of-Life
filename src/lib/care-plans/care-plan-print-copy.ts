@@ -15,6 +15,10 @@ export const CARE_PLAN_PRINT_NO_APPROVER_COPY = "No approver posted";
 export const CARE_PLAN_PRINT_UNSIGNED_COPY = "Not signed";
 export const CARE_PLAN_PRINT_NO_ITEMS_COPY = "No active needs or interventions on this plan.";
 
+export const CARE_PLAN_PRINT_NO_PLAN_TITLE = "No care plan to print";
+export const CARE_PLAN_PRINT_NO_PLAN_DESCRIPTION =
+  "This resident has no care plan in effect or under review. Start or finish one on the care plan page, then print it from there.";
+
 export const CARE_PLAN_PRINT_DRAFT_BANNER = "DRAFT — not in effect";
 export const CARE_PLAN_PRINT_ARCHIVED_BANNER = "ARCHIVED — no longer in effect";
 

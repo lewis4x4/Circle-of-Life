@@ -221,7 +221,7 @@ export default function ChartOfAccountsPage() {
               ))}
               {rows.length === 0 && !loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-slate-500">
+                  <TableCell colSpan={4} className="text-muted-foreground">
                     No accounts yet.
                   </TableCell>
                 </TableRow>

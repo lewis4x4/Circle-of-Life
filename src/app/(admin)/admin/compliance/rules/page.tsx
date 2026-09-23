@@ -131,7 +131,7 @@ export default function ComplianceRulesPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <h1 className="sr-only">Compliance Scoring</h1>
-        <p className="text-sm text-slate-500">Loading compliance rules…</p>
+        <p className="text-sm text-muted-foreground">Loading compliance rules…</p>
       </div>
     );
   }
@@ -189,7 +189,7 @@ export default function ComplianceRulesPage() {
         </h2>
         {rules.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-slate-500">
+            <CardContent className="py-8 text-center text-muted-foreground">
               <p className="font-medium">No compliance rules configured</p>
               <p className="text-sm mt-1">Add rules to enable automated compliance scoring.</p>
             </CardContent>
@@ -222,7 +222,7 @@ export default function ComplianceRulesPage() {
                             >
                               {rule.last_result.passed ? "PASS" : "FAIL"}
                             </span>
-                            <span className="text-slate-500">
+                            <span className="text-muted-foreground">
                               Scanned {new Date(rule.last_result.scanned_at).toLocaleDateString()}
                             </span>
                           </div>

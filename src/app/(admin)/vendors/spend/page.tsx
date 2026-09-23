@@ -115,7 +115,7 @@ export default function VendorSpendPage() {
                 ))}
                 {!loading && rows.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="py-6 text-slate-500">
+                    <td colSpan={2} className="py-6 text-muted-foreground">
                       No payment data yet.
                     </td>
                   </tr>

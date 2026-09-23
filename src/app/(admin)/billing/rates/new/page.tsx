@@ -135,7 +135,7 @@ export default function AdminNewRateSchedulePage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Percent className="h-6 w-6 text-slate-500" />
+        <Percent className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New rate schedule</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">

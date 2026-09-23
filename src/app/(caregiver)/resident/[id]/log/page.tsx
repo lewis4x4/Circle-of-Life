@@ -225,7 +225,7 @@ export default function CaregiverResidentLogPage() {
       <div className="space-y-4">
         <Link
           href={homeHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
         >
           <ArrowLeft className="h-4 w-4" />
           Shift home
@@ -245,7 +245,7 @@ export default function CaregiverResidentLogPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading shift log…
       </div>
@@ -270,7 +270,7 @@ export default function CaregiverResidentLogPage() {
     <div className="space-y-4">
       <Link
         href={`/caregiver/resident/${residentId}`}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
       >
         <ArrowLeft className="h-4 w-4" />
         Resident
@@ -288,7 +288,7 @@ export default function CaregiverResidentLogPage() {
             <FileText className="h-5 w-5 text-teal-400" />
             Shift log
           </CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription className="text-muted-foreground">
             {residentLabel ? (
               <>
                 Narrative for <span className="text-zinc-200">{residentLabel}</span>
@@ -305,10 +305,10 @@ export default function CaregiverResidentLogPage() {
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm text-zinc-300">
+        <CardContent className="space-y-4 text-sm text-muted-foreground">
           {ctx && residentLabel ? (
             <div className="space-y-2">
-              <Label htmlFor="log-add-shift-note" className="text-xs text-zinc-400">Add shift note</Label>
+              <Label htmlFor="log-add-shift-note" className="text-xs text-muted-foreground">Add shift note</Label>
               <textarea id="log-add-shift-note"
                 rows={3}
                 placeholder="Objective, brief narrative for this pass…"
@@ -330,10 +330,10 @@ export default function CaregiverResidentLogPage() {
 
           {ctx && residentLabel ? (
             <div className="space-y-2 border-t border-zinc-800 pt-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Vitals (shift row)</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vitals (shift row)</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div>
-                  <Label htmlFor="log-temp-f" className="text-[10px] text-zinc-500">Temp °F</Label>
+                  <Label htmlFor="log-temp-f" className="text-[10px] text-muted-foreground">Temp °F</Label>
                   <input id="log-temp-f"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="decimal"
@@ -343,7 +343,7 @@ export default function CaregiverResidentLogPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="log-bp-sys" className="text-[10px] text-zinc-500">BP sys</Label>
+                  <Label htmlFor="log-bp-sys" className="text-[10px] text-muted-foreground">BP sys</Label>
                   <input id="log-bp-sys"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="numeric"
@@ -353,7 +353,7 @@ export default function CaregiverResidentLogPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="log-bp-dia" className="text-[10px] text-zinc-500">BP dia</Label>
+                  <Label htmlFor="log-bp-dia" className="text-[10px] text-muted-foreground">BP dia</Label>
                   <input id="log-bp-dia"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="numeric"
@@ -363,7 +363,7 @@ export default function CaregiverResidentLogPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="log-pulse" className="text-[10px] text-zinc-500">Pulse</Label>
+                  <Label htmlFor="log-pulse" className="text-[10px] text-muted-foreground">Pulse</Label>
                   <input id="log-pulse"
                     className="mt-0.5 w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
                     inputMode="numeric"
@@ -386,14 +386,14 @@ export default function CaregiverResidentLogPage() {
           ) : null}
 
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Recent daily notes</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recent daily notes</p>
             {dailyHistory.length === 0 ? (
-              <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-400">No daily log rows yet.</p>
+              <p className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-muted-foreground">No daily log rows yet.</p>
             ) : (
               <ul className="space-y-2">
                 {dailyHistory.map((row) => (
                   <li key={row.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                       {row.log_date} · {row.shift}
                     </p>
                     <p className="mt-1 whitespace-pre-wrap text-zinc-200">
@@ -406,18 +406,18 @@ export default function CaregiverResidentLogPage() {
           </div>
 
           <div className="space-y-2 border-t border-zinc-800 pt-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Recent ADL passes</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recent ADL passes</p>
             {adlRecent.length === 0 ? (
-              <p className="text-xs text-zinc-500">No ADL documentation for this resident yet.</p>
+              <p className="text-xs text-muted-foreground">No ADL documentation for this resident yet.</p>
             ) : (
               <ul className="space-y-2">
                 {adlRecent.map((row) => (
                   <li key={row.id} className="rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2 text-xs">
                     <span className="text-zinc-200">{adlTypeLabel(row.adl_type)}</span>
-                    <span className="text-zinc-500"> · </span>
-                    <span className="text-zinc-400">{assistanceLabel(row.assistance_level)}</span>
+                    <span className="text-muted-foreground"> · </span>
+                    <span className="text-muted-foreground">{assistanceLabel(row.assistance_level)}</span>
                     {row.refused ? <span className="text-amber-400"> · refused</span> : null}
-                    <p className="mt-0.5 text-[10px] text-zinc-500">
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
                       {new Date(row.log_time).toLocaleString(undefined, {
                         month: "short",
                         day: "numeric",
@@ -426,7 +426,7 @@ export default function CaregiverResidentLogPage() {
                       })}{" "}
                       · {row.shift}
                     </p>
-                    {row.notes?.trim() ? <p className="mt-1 text-zinc-400">{row.notes}</p> : null}
+                    {row.notes?.trim() ? <p className="mt-1 text-muted-foreground">{row.notes}</p> : null}
                   </li>
                 ))}
               </ul>

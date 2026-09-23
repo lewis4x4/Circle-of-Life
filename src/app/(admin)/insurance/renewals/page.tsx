@@ -114,16 +114,16 @@ export default function InsuranceRenewalsPage() {
              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                Renewal Pipeline
              </h3>
-             <span className="text-xs font-medium text-slate-500">{loading ? "Loading…" : `${rows.length} rows`}</span>
+             <span className="text-xs font-medium text-muted-foreground">{loading ? "Loading…" : `${rows.length} rows`}</span>
            </div>
 
            <MotionList className="space-y-3">
              {loading ? (
-               <p className="text-sm font-mono text-slate-500 pl-2" role="status" aria-live="polite">
+               <p className="text-sm font-mono text-muted-foreground pl-2" role="status" aria-live="polite">
                  {INSURANCE_RENEWALS_LOADING_LIST_COPY}
                </p>
              ) : rows.length === 0 ? (
-               <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
+               <div className="p-12 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Renewals Found</p>
                  <p className="text-sm opacity-80 mt-1">There are currently no insurance renewals in the pipeline.</p>
                </div>
@@ -153,7 +153,7 @@ export default function InsuranceRenewalsPage() {
                          )}>
                            {enumLabel(r.status)}
                          </span>
-                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                            Effective {formattedDate}
                          </span>
                        </div>
@@ -161,15 +161,15 @@ export default function InsuranceRenewalsPage() {
                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                          {insuranceRenewalSubject(r)}
                        </p>
-                       <p className="text-xs text-slate-500 dark:text-slate-400">{insuranceRenewalScope(r)}</p>
+                       <p className="text-xs text-muted-foreground">{insuranceRenewalScope(r)}</p>
                        
                        <div className="flex gap-6 mt-3">
                          <div>
-                            <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">Quoted</p>
+                            <p className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground mb-0.5">Quoted</p>
                             <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{formatUsdFromCents(r.quoted_premium_cents)}</p>
                          </div>
                          <div>
-                            <p className="text-[10px] font-mono tracking-wider uppercase text-slate-400 mb-0.5">Bound</p>
+                            <p className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground mb-0.5">Bound</p>
                             <p className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">{formatUsdFromCents(r.bound_premium_cents)}</p>
                          </div>
                        </div>

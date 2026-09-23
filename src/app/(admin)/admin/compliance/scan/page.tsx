@@ -223,7 +223,7 @@ export default function ComplianceScanPage() {
                         <p className="font-medium text-slate-900 dark:text-slate-100">
                           {new Date(scan.scanned_at).toLocaleDateString()}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-muted-foreground">
                           {scan.rules_passed}/{scan.total_rules_checked} rules passed
                         </p>
                       </div>

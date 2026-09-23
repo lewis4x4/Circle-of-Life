@@ -227,7 +227,7 @@ export default function AdminNewCertificationPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Award className="h-6 w-6 text-slate-500" />
+        <Award className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Add certification</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -236,7 +236,7 @@ export default function AdminNewCertificationPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted-foreground">
         Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can add
         certifications; med-techs can view the register.
       </p>

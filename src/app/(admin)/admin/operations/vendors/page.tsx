@@ -135,7 +135,7 @@ export default function OperationsVendorBookingsPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Vendor Bookings</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Configure which facility vendors are booking-capable and turn them into recurring vendor-management tasks.
@@ -186,7 +186,7 @@ export default function OperationsVendorBookingsPage() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-[180px_auto_auto]">
                   <label className="space-y-1">
-                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Lead time (days)</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Lead time (days)</span>
                     <Input
                       value={leadTimes[vendor.id] || "0"}
                       onChange={(event) => setLeadTimes((current) => ({ ...current, [vendor.id]: event.target.value }))}
