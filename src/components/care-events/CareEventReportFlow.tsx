@@ -228,6 +228,7 @@ export function CareEventReportFlow({
 
       {state.step === "who" ? (
         <ReportWhoStep
+          facilityName={ready.ctx.facilityName}
           myResidents={ready.myResidents}
           everyone={ready.everyone}
           loading={false}
