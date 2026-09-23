@@ -30,6 +30,7 @@ function fixture(overrides: Record<string, Reply> = {}, rejects: Record<string, 
       is: (column: string, value: unknown) => record("is", column, value),
       gte: (column: string, value: unknown) => record("gte", column, value),
       order: (column: string, value: unknown) => record("order", column, value),
+      range: (start: number, end: number) => record("range", start, end),
       then: (resolve: (reply: Reply) => unknown, reject: (reason: unknown) => unknown) => {
         started.push(table);
         return new Promise<Reply>((res, rej) => setTimeout(() => {
@@ -101,7 +102,8 @@ describe("facility trend reads", () => {
     const start = Date.now();
     const result = fetchResidentAssuranceFacilityTrendSeries(client, "org", 2);
     await vi.advanceTimersByTimeAsync(0);
-    expect(started).toEqual(tables);
+    // All five reads are in flight before any resolves; paged reads start first.
+    expect([...started].sort()).toEqual([...tables].sort());
     await vi.runAllTimersAsync();
     await result;
     expect(Date.now() - start).toBe(25);
