@@ -22,6 +22,7 @@ import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { UNSETTLED_INVOICE_STATUSES } from "@/lib/billing/receivables";
 
 import { BillingHubNav } from "../../billing-hub-nav";
 import { billingCurrency } from "../../billing-invoice-ledger";
@@ -179,7 +180,7 @@ export default function AdminNewPaymentPage() {
           )
           .eq("resident_id", rid)
           .is("deleted_at", null)
-          .in("status", ["draft", "sent", "partial", "overdue"])
+          .in("status", [...UNSETTLED_INVOICE_STATUSES])
           .order("invoice_date", { ascending: false })
           .limit(50)) as {
           data: InvoiceOption[] | null;

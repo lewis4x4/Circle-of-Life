@@ -134,7 +134,7 @@ export default function AdminFinanceHubPageClient({
               ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                   Unposted Invoices
+                   Sent invoices not posted
                 </h3>
                 <div>
                   <p className="text-4xl font-mono tracking-tighter text-amber-600 dark:text-amber-400 pb-1">
