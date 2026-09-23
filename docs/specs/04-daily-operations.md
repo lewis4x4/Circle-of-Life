@@ -3,13 +3,15 @@
 **Dependencies:** 00-foundation, 03-resident-profile
 **Build Week:** 5-6
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`, which holds everything both held; `dietary` / `dietary_aide` are now `cook`. Med-Techs use both `/med-tech` and the floor app at `/caregiver` (the route keeps its name). Housekeepers use only the floor app's housekeeper paths and do nothing clinical. Policy names below are kept as written. See the Roles section in `AGENTS.md`.
+
 ---
 
 ## DATABASE SCHEMA
 
 ```sql
 -- ============================================================
--- DAILY LOGS (one entry per resident per shift per caregiver)
+-- DAILY LOGS (one entry per resident per shift per Med-Tech)
 -- ============================================================
 CREATE TABLE daily_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -367,42 +369,42 @@ CREATE POLICY "Staff see daily logs in accessible facilities"
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()));
 CREATE POLICY "Caregivers+ can create daily logs"
   ON daily_logs FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Caregivers can update own logs within shift"
   ON daily_logs FOR UPDATE
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND (logged_by = auth.uid() OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND (logged_by = auth.uid() OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')));
 
 ALTER TABLE adl_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see ADL logs" ON adl_logs FOR SELECT
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()));
 CREATE POLICY "Caregivers+ can create ADL logs" ON adl_logs FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE resident_medications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see medications" ON resident_medications FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('dietary', 'maintenance_role'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('cook', 'maintenance_role'));
 CREATE POLICY "Nurse+ can manage medications" ON resident_medications FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE emar_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see eMAR" ON emar_records FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('dietary', 'maintenance_role', 'family'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('cook', 'maintenance_role', 'family'));
 CREATE POLICY "Caregivers+ can document eMAR" ON emar_records FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Caregivers can update own eMAR entries" ON emar_records FOR UPDATE
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND (administered_by = auth.uid() OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND (administered_by = auth.uid() OR auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')));
 
 ALTER TABLE behavioral_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see behavioral logs" ON behavioral_logs FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('dietary', 'maintenance_role', 'family'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('cook', 'maintenance_role', 'family'));
 CREATE POLICY "Caregivers+ can create behavioral logs" ON behavioral_logs FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE condition_changes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see condition changes" ON condition_changes FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('dietary', 'maintenance_role'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('cook', 'maintenance_role'));
 CREATE POLICY "Caregivers+ can report condition changes" ON condition_changes FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE shift_handoffs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see handoffs" ON shift_handoffs FOR SELECT
@@ -451,28 +453,28 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON shift_handoffs FOR EACH ROW EXECU
 
 ### PRN Effectiveness Check
 - WHEN a PRN emar_record is created with status='given', AND the resident_medication has prn_effectiveness_check_minutes defined:
-  - Generate a timed alert to the administering caregiver for effectiveness check
-  - If not documented within prn_effectiveness_check_minutes + 30 minutes → escalate to nurse
+  - Generate a timed alert to the administering Med-Tech for effectiveness check
+  - If not documented within prn_effectiveness_check_minutes + 30 minutes → escalate to the facility administrator
   - This is a critical survey compliance item
 
 ### Shift Handoff Auto-Generation
 - WHEN an outgoing shift ends (7am, 3pm, 11pm ET), the system auto-generates a shift_handoff record:
   - Queries all daily_logs, adl_logs, emar_records, behavioral_logs, condition_changes for that shift+facility
   - Builds the auto_summary JSON
-  - Assigns to the outgoing caregiver for review/additions
-  - Incoming caregiver must acknowledge receipt (incoming_acknowledged = true) before their shift documentation begins
+  - Assigns to the outgoing Med-Tech for review/additions
+  - Incoming Med-Tech must acknowledge receipt (incoming_acknowledged = true) before their shift documentation begins
 
 ### Condition Change Escalation
 | Severity | Auto-Actions |
 |----------|-------------|
 | mild | Log only. Show on handoff summary. |
-| moderate | Alert nurse. Show on handoff summary. Generate care plan review suggestion if >2 moderate changes in 7 days for same resident. |
-| significant | Alert nurse immediately. Alert administrator. Auto-generate physician notification template. Alert family (per care plan preferences). Trigger care plan review within 48 hours. |
+| moderate | Alert the Med-Tech on shift. Show on handoff summary. Generate care plan review suggestion if >2 moderate changes in 7 days for same resident. |
+| significant | Alert the Med-Tech on shift immediately. Alert administrator. Auto-generate physician notification template. Alert family (per care plan preferences). Trigger care plan review within 48 hours. |
 
 ### Controlled Substance Count
 - WHEN a medication with controlled_schedule != 'non_controlled' has an emar_record created with status='given':
   - The system requires a count verification field: remaining quantity
-  - At shift change, the system generates a count verification task requiring outgoing AND incoming caregiver signatures
+  - At shift change, the system generates a count verification task requiring outgoing AND incoming Med-Tech signatures
   - Any discrepancy (expected count ≠ actual count) generates an immediate Level 3 alert
 
 ---
@@ -482,21 +484,21 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON shift_handoffs FOR EACH ROW EXECU
 | Method | Route | Auth | Roles | Description |
 |--------|-------|------|-------|-------------|
 | GET | `/residents/:id/daily-logs` | Required | Staff | List daily logs. Params: `date_from`, `date_to`, `shift` |
-| POST | `/residents/:id/daily-logs` | Required | caregiver, nurse, facility_admin | Create/update daily log for current shift |
-| PUT | `/daily-logs/:id` | Required | Author or nurse+ | Update daily log |
-| POST | `/residents/:id/adl-logs` | Required | caregiver, nurse | Log ADL event |
+| POST | `/residents/:id/daily-logs` | Required | med_tech, facility_admin | Create/update daily log for current shift |
+| PUT | `/daily-logs/:id` | Required | Author or med_tech+ | Update daily log |
+| POST | `/residents/:id/adl-logs` | Required | med_tech | Log ADL event |
 | GET | `/residents/:id/emar` | Required | Clinical staff | Get eMAR. Params: `date`, `status` |
-| POST | `/residents/:id/emar` | Required | caregiver, nurse | Document medication event |
-| PUT | `/emar-records/:id` | Required | Author or nurse | Update eMAR record (e.g., PRN effectiveness) |
-| GET | `/facilities/:id/emar/pending` | Required | caregiver, nurse | List pending/overdue medications for facility/shift |
-| POST | `/residents/:id/behavioral-logs` | Required | caregiver, nurse | Log behavioral event |
-| POST | `/residents/:id/condition-changes` | Required | caregiver, nurse | Report condition change |
-| PUT | `/condition-changes/:id` | Required | nurse, facility_admin | Update condition change (add notifications, resolution) |
+| POST | `/residents/:id/emar` | Required | med_tech | Document medication event |
+| PUT | `/emar-records/:id` | Required | Author or med_tech | Update eMAR record (e.g., PRN effectiveness) |
+| GET | `/facilities/:id/emar/pending` | Required | med_tech | List pending/overdue medications for facility/shift |
+| POST | `/residents/:id/behavioral-logs` | Required | med_tech | Log behavioral event |
+| POST | `/residents/:id/condition-changes` | Required | med_tech | Report condition change |
+| PUT | `/condition-changes/:id` | Required | med_tech, facility_admin | Update condition change (add notifications, resolution) |
 | GET | `/facilities/:id/shift-handoff` | Required | Staff | Get handoff for current shift transition |
 | PUT | `/shift-handoffs/:id/acknowledge` | Required | Incoming staff | Acknowledge handoff receipt |
 | GET | `/residents/:id/medications` | Required | Clinical staff | List active medications |
-| POST | `/residents/:id/medications` | Required | nurse, facility_admin | Add medication order |
-| PUT | `/resident-medications/:id` | Required | nurse, facility_admin | Update medication (discontinue, modify) |
+| POST | `/residents/:id/medications` | Required | med_tech, facility_admin | Add medication order |
+| PUT | `/resident-medications/:id` | Required | med_tech, facility_admin | Update medication (discontinue, modify) |
 | POST | `/facilities/:id/activities/sessions` | Required | Staff | Create activity session |
 | POST | `/activity-sessions/:id/attendance` | Required | Staff | Log attendance batch |
 
@@ -508,14 +510,14 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON shift_handoffs FOR EACH ROW EXECU
 |----------|---------|-------|
 | `generate-emar-schedule` | Cron (midnight ET daily) | For each active resident_medication with scheduled_times, generate emar_records for the next 7 days. Skip dates that already have records. |
 | `emar-missed-dose-check` | Cron (every 30 min) | Find emar_records where status='scheduled' AND scheduled_time < now() - interval '2 hours'. Generate missed-dose alert. |
-| `prn-effectiveness-check` | Cron (every 15 min) | Find emar_records where is_prn=true AND status='given' AND prn_effectiveness_checked=false AND actual_time < now() - interval from prn_effectiveness_check_minutes. Generate reminder alert to administering caregiver. |
+| `prn-effectiveness-check` | Cron (every 15 min) | Find emar_records where is_prn=true AND status='given' AND prn_effectiveness_checked=false AND actual_time < now() - interval from prn_effectiveness_check_minutes. Generate reminder alert to administering Med-Tech. |
 | `generate-shift-handoff` | Cron (6:45am, 2:45pm, 10:45pm ET) | 15 min before shift change: compile auto_summary from shift documentation, create shift_handoff record. |
 | `condition-change-escalation` | INSERT on condition_changes | Evaluate severity, trigger notification chain per business rules. |
 | `controlled-substance-count` | INSERT on emar_records WHERE controlled | Verify count consistency, generate discrepancy alert if needed. |
 
 ---
 
-## UI SCREENS — MOBILE (Primary Interface for Caregivers)
+## UI SCREENS — MOBILE (floor app at `/caregiver`, primary interface for Med-Techs)
 
 Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
@@ -535,7 +537,7 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Operation | Offline | Sync |
 |-----------|---------|------|
 | View medication schedule | Yes (cached 7 days) | Background refresh |
-| Document eMAR (give/refuse/hold) | Yes (queued with local timestamp) | Submit on reconnect. If timestamp conflict (same med documented twice), alert nurse for resolution. |
+| Document eMAR (give/refuse/hold) | Yes (queued with local timestamp) | Submit on reconnect. If timestamp conflict (same med documented twice), alert the facility administrator for resolution. |
 | Log ADLs | Yes (queued) | Submit on reconnect |
 | Log behavioral event | Yes (queued) | Submit on reconnect |
 | Report condition change | Yes (queued) | Submit on reconnect. Severity-based notifications fire on sync, not on local save. Display "pending sync" badge. |

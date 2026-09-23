@@ -43,14 +43,16 @@ configurable policy.
 
 | Capability | Current roles |
 | --- | --- |
-| Lead and contact read | `owner`, `org_admin`, `facility_admin`, `manager`, `admin_assistant`, `coordinator`, `nurse` |
-| Clinical/free-text read | `owner`, `org_admin`, `facility_admin`, `nurse` |
-| Lead write | `owner`, `org_admin`, `facility_admin`, `nurse` |
+| Lead and contact read | `owner`, `org_admin`, `facility_admin`, `manager`, `admin_assistant`, `coordinator`, `med_tech`, `recruiter` |
+| Clinical/free-text read | `owner`, `org_admin`, `facility_admin`, `med_tech` |
+| Lead write | `owner`, `org_admin`, `facility_admin`, `med_tech`, `recruiter` |
 | Export | Lead/contact read roles, with the same field masking as screen reads |
-| Duplicate review | `owner`, `org_admin`, `facility_admin`, `nurse` |
+| Duplicate review | `owner`, `org_admin`, `facility_admin`, `med_tech` |
 | Triage submit | Lead/contact read roles |
 | Restricted triage read | `owner`, `org_admin` |
 | Source management | `owner`, `org_admin` |
+
+Updated 2026-09-22 (COL-615, migration 468): `nurse` folded into `med_tech`, and the Recruiter role (briefly `marketing` in PR #671) was added wherever the coordinator reads leads and to lead writing.
 
 Unknown capabilities and roles deny. Organization-wide role names do not
 bypass explicit facility access for a facility-scoped referral.

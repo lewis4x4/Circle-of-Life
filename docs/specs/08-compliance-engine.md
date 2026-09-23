@@ -234,7 +234,7 @@ CREATE TABLE survey_visit_log_entries (
   organization_id uuid NOT NULL REFERENCES organizations(id),
 
   -- What was accessed
-  accessed_by uuid NOT NULL REFERENCES auth.users(id),  -- admin or nurse who pulled the record
+  accessed_by uuid NOT NULL REFERENCES auth.users(id),  -- admin or med_tech who pulled the record
   accessed_at timestamptz NOT NULL DEFAULT now(),
   record_type text NOT NULL
     CHECK (record_type IN ('resident_chart', 'staff_record', 'policy_document', 'incident', 'medication', 'assessment', 'care_plan', 'daily_logs', 'other')),
@@ -279,14 +279,14 @@ CREATE POLICY admin_manage_deficiencies ON survey_deficiencies
     AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin')
   );
 
--- Nurse can view deficiencies (read-only for clinical awareness)
+-- Med-Tech can view deficiencies (read-only for clinical awareness)
 CREATE POLICY nurse_see_deficiencies ON survey_deficiencies
   FOR SELECT
   USING (
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() = 'nurse'
+    AND haven.app_role() = 'med_tech'
   );
 
 -- PLANS OF CORRECTION
@@ -371,25 +371,25 @@ CREATE POLICY admin_manage_visit_sessions ON survey_visit_sessions
     AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin')
   );
 
--- Nurse can see sessions (knows when survey mode is active)
+-- Med-Tech can see sessions (knows when survey mode is active)
 CREATE POLICY nurse_see_visit_sessions ON survey_visit_sessions
   FOR SELECT
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() = 'nurse'
+    AND haven.app_role() = 'med_tech'
   );
 
 -- SURVEY VISIT LOG ENTRIES
 ALTER TABLE survey_visit_log_entries ENABLE ROW LEVEL SECURITY;
 
--- Admin + nurse can see and create log entries (nurses assist during surveys)
+-- Admin + med_tech can see and create log entries (Med-Techs assist during surveys)
 CREATE POLICY admin_nurse_see_log_entries ON survey_visit_log_entries
   FOR SELECT
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY admin_nurse_create_log_entries ON survey_visit_log_entries
@@ -397,7 +397,7 @@ CREATE POLICY admin_nurse_create_log_entries ON survey_visit_log_entries
   WITH CHECK (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
     AND accessed_by = auth.uid()
   );
 
@@ -500,7 +500,7 @@ verified → (terminal)          (verified deficiencies are immutable)
 **Who must acknowledge:** All users with an active `user_facility_access` row for the facility where the policy is published AND whose `app_role` is not `family` or `broker`.
 
 **Specifically:**
-- Staff with roles: owner, org_admin, facility_admin, nurse, caregiver, dietary, maintenance_role
+- Staff with roles: owner, org_admin, facility_admin, manager, admin_assistant, coordinator, med_tech, cook, housekeeper, maintenance_role, recruiter
 - NOT family or broker (they are not staff and should not see internal policies)
 
 **Multi-facility staff:** If a policy is published at Facility A, only staff with access to Facility A are required to acknowledge. Staff who also have access to Facility B are not double-counted.
@@ -514,12 +514,12 @@ verified → (terminal)          (verified deficiencies are immutable)
 | Action | Permitted roles | Notes |
 |--------|----------------|-------|
 | Activate session | owner, facility_admin | High-privilege; logged with `activated_by` |
-| Search and retrieve records | owner, facility_admin, nurse | Nurse assists admin during survey |
-| Log entries auto-created | owner, facility_admin, nurse | Each record pull creates a `survey_visit_log_entries` row with `accessed_by = auth.uid()` |
+| Search and retrieve records | owner, facility_admin, med_tech | Med-Tech assists admin during survey |
+| Log entries auto-created | owner, facility_admin, med_tech | Each record pull creates a `survey_visit_log_entries` row with `accessed_by = auth.uid()` |
 | Deactivate session | owner, facility_admin | Same roles as activation |
 | View session history | owner, org_admin, facility_admin | Post-survey audit trail |
 
-**Nurses cannot activate or deactivate** survey visit mode. They can use the search interface while it's active and their access is logged. This keeps activation as an admin-level decision while allowing nurses to assist with the actual chart pulls.
+**Med-Techs cannot activate or deactivate** survey visit mode. They can use the search interface while it's active and their access is logged. This keeps activation as an admin-level decision while allowing Med-Techs to assist with the actual chart pulls.
 
 ### Survey Visit Mode The core UX challenge is fast, cross-table search under pressure.
 
@@ -644,7 +644,7 @@ If compliance dashboard load performance becomes an issue, a materialized view o
 - Each access logged as a `survey_visit_log_entries` row (append-only)
 - Deactivate button in the overlay header
 
-### Caregiver/Staff Shell
+### Floor app (`/caregiver`) / Staff Shell
 
 #### Policy Acknowledgment (`/caregiver/me` or via notification)
 

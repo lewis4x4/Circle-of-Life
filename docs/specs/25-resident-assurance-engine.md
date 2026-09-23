@@ -19,7 +19,7 @@ This module is a **Phase A foundational MVP** of the broader moonshot resident r
 
 - Build a world-class resident observation and rounding system that goes beyond checklist charting.
 - Ensure residents are seen at the correct cadence based on policy, care needs, and temporary watch rules.
-- Give caregivers a fast mobile workflow for routine checks and a structured path for exceptions.
+- Give floor staff (Med-Techs) a fast mobile workflow for routine checks and a structured path for exceptions.
 - Give supervisors live visibility into due, overdue, missed, reassigned, and excused checks.
 - Produce defensible audit evidence for survey readiness, incident review, and staffing feasibility.
 
@@ -33,7 +33,7 @@ This module must align with Haven's mission: improve resident safety and quality
 
 - Resident observation plans and plan rules.
 - Scheduled task generation with due and grace windows.
-- Caregiver mobile rounding workflow for due-now and overdue checks.
+- Floor-app (`/caregiver`) mobile rounding workflow for due-now and overdue checks.
 - Observation logs with structured quick-select fields and exception capture.
 - Supervisor live board and basic completion reports.
 - RLS, auditability, late-entry visibility, and reassignment history.
@@ -112,11 +112,11 @@ Most systems treat rounds as a checkbox task. Haven should treat rounds as a liv
 
 ## Core workflow
 
-1. Administrator, nurse, or supervisor creates a resident observation plan.
+1. Administrator, Med-Tech, or supervisor creates a resident observation plan.
 2. One or more plan rules define interval, daypart, and grace window.
 3. The task generation engine expands plan rules into task instances for the shift window.
-4. Assigned caregivers see due-now and overdue checks in a mobile-first list.
-5. A caregiver completes a check with structured quick-select fields in 2–5 seconds for the routine path.
+4. Assigned Med-Techs see due-now and overdue checks in a mobile-first list.
+5. A Med-Tech completes a check with structured quick-select fields in 2–5 seconds for the routine path.
 6. Exception paths require more detail and create an observation exception row when configured.
 7. Supervisors monitor completion, late entries, reassignment, and missed checks on a live board.
 8. Reports roll up completion, timeliness, and missed-check metrics by facility, shift, staff member, unit, and resident.
@@ -422,7 +422,7 @@ Every top-level metric should support drill-down to resident task and log timeli
 
 - Migrations `098`–`101` apply cleanly.
 - RLS enforces facility and role scope.
-- Caregivers can complete a routine check in under 5 seconds for the standard path.
+- Med-Techs can complete a routine check in under 5 seconds for the standard path.
 - Late entries require a reason and visibly preserve entered-vs-observed timestamps.
 - Supervisors can see due, overdue, missed, reassigned, and completed tasks without losing audit history.
 - Completion reports calculate correctly at facility, shift, staff, and resident levels.

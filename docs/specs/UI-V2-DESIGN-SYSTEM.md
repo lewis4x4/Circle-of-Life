@@ -17,7 +17,7 @@ This spec is the concrete visual + component system that implements the UX Overh
 ## 1. Mission Alignment
 
 **Gate:** `pass`
-- Role-governed: every primitive reads user role from Zustand and renders deterministic variants (Owner / CFO / COO / DON / Admin / Compliance / Caregiver / Family).
+- Role-governed: every primitive reads user role from Zustand and renders deterministic variants (Owner / CFO / COO / DON / Admin / Compliance / Med-Tech / Family).
 - Auditability-first: `<AuditFooter>` appears on every page; Copilot surface is `cite-backed` only (no unsourced suggestions).
 - AI subordinate: `<CopilotButton>` opens a drawer that requires a linked record on every suggestion; acknowledging or acting on a suggestion writes to the audit log.
 - Human judgment primacy: destructive or clinical actions never auto-execute from AI; AI proposes, human confirms, audit records.
@@ -614,16 +614,18 @@ Every per-page migration issue (`[UI-V2-W<N>-<PAGE>]`, label `ui-v2`) must tick 
 
 ## 11. Authorization Matrix
 
-| Capability | owner | org_admin | facility_admin | nurse | caregiver | finance | compliance | family |
-|---|---|---|---|---|---|---|---|---|
-| View V2 admin shell | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| See Priority Alert Stack | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| ACK high-severity incident | ✅ | ✅ | ✅ | ✅ (clinical only) | ❌ | ❌ | ✅ (compliance only) | ❌ |
-| Edit `facility_metric_targets` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Save `user_dashboard_preferences` | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
-| Access Copilot | ✅ | ✅ | ✅ | ✅ (read-only) | ❌ | ✅ | ✅ | ❌ |
-| See Audit Log page | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| Export to PDF/XLSX/CSV | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ |
+`med_tech` holds what the retired `nurse` column held (migration 468, COL-615); the retired `caregiver` column is folded into it.
+
+| Capability | owner | org_admin | facility_admin | med_tech | finance | compliance | family |
+|---|---|---|---|---|---|---|---|
+| View V2 admin shell | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| See Priority Alert Stack | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| ACK high-severity incident | ✅ | ✅ | ✅ | ✅ (clinical only) | ❌ | ✅ (compliance only) | ❌ |
+| Edit `facility_metric_targets` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Save `user_dashboard_preferences` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Access Copilot | ✅ | ✅ | ✅ | ✅ (read-only) | ✅ | ✅ | ❌ |
+| See Audit Log page | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
+| Export to PDF/XLSX/CSV | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
 
 Enforced by Next.js middleware role check + Supabase RLS on every query.
 

@@ -287,7 +287,7 @@ CREATE TABLE staff_illness_records (
 
   -- Return to work
   return_cleared boolean NOT NULL DEFAULT false,
-  cleared_by uuid REFERENCES auth.users(id),     -- nurse or admin who cleared
+  cleared_by uuid REFERENCES auth.users(id),     -- med_tech or admin who cleared
   cleared_at timestamptz,
   clearance_type text
     CHECK (clearance_type IS NULL OR clearance_type IN ('self_certification', 'occupational_health', 'physician_note', 'negative_test')),
@@ -320,7 +320,7 @@ CREATE POLICY admin_nurse_see_infections ON infection_surveillance
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY admin_nurse_manage_infections ON infection_surveillance
@@ -328,7 +328,7 @@ CREATE POLICY admin_nurse_manage_infections ON infection_surveillance
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- INFECTION OUTBREAKS
@@ -340,7 +340,7 @@ CREATE POLICY admin_nurse_see_outbreaks ON infection_outbreaks
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY admin_nurse_manage_outbreaks ON infection_outbreaks
@@ -348,7 +348,7 @@ CREATE POLICY admin_nurse_manage_outbreaks ON infection_outbreaks
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- OUTBREAK ACTIONS
@@ -360,7 +360,7 @@ CREATE POLICY clinical_staff_see_outbreak_actions ON outbreak_actions
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY admin_nurse_manage_outbreak_actions ON outbreak_actions
@@ -368,17 +368,12 @@ CREATE POLICY admin_nurse_manage_outbreak_actions ON outbreak_actions
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
-CREATE POLICY caregiver_complete_outbreak_actions ON outbreak_actions
-  FOR UPDATE
-  USING (
-    organization_id = haven.organization_id()
-    AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() = 'caregiver'
-    AND assigned_to = auth.uid()
-  );
+-- (Retired 2026-09-22, COL-615.) A caregiver-only "complete my assigned outbreak action"
+-- UPDATE policy lived here. The caregiver login role folded into med_tech, which the
+-- policy above already covers; do not re-create a policy for a retired role.
 
 -- VITAL SIGN ALERT THRESHOLDS
 ALTER TABLE vital_sign_alert_thresholds ENABLE ROW LEVEL SECURITY;
@@ -389,7 +384,7 @@ CREATE POLICY admin_nurse_see_thresholds ON vital_sign_alert_thresholds
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY admin_nurse_manage_thresholds ON vital_sign_alert_thresholds
@@ -397,45 +392,32 @@ CREATE POLICY admin_nurse_manage_thresholds ON vital_sign_alert_thresholds
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- VITAL SIGN ALERTS
 ALTER TABLE vital_sign_alerts ENABLE ROW LEVEL SECURITY;
 
--- Admin + nurse see all vital alerts in accessible facilities
+-- Admin + med_tech see all vital alerts in accessible facilities
 CREATE POLICY admin_nurse_see_vital_alerts ON vital_sign_alerts
   FOR SELECT
   USING (
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
--- Caregivers see alerts ONLY for residents they have charted for (daily_logs)
--- in the current shift. This avoids exposing all facility alerts to every caregiver.
-CREATE POLICY caregiver_see_own_resident_vital_alerts ON vital_sign_alerts
-  FOR SELECT
-  USING (
-    organization_id = haven.organization_id()
-    AND deleted_at IS NULL
-    AND haven.app_role() = 'caregiver'
-    AND resident_id IN (
-      SELECT dl.resident_id FROM daily_logs dl
-      WHERE dl.logged_by = auth.uid()
-        AND dl.facility_id IN (SELECT haven.accessible_facility_ids())
-        AND dl.deleted_at IS NULL
-        AND dl.log_date >= CURRENT_DATE - interval '1 day'
-    )
-  );
+-- (Retired 2026-09-22, COL-615.) A caregiver-only policy limited alerts to residents the
+-- caregiver had charted in the last day. The caregiver login role folded into med_tech,
+-- which holds nurse-level access and sees facility alerts through the policy above.
 
 CREATE POLICY admin_nurse_manage_vital_alerts ON vital_sign_alerts
   FOR ALL
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- STAFF ILLNESS RECORDS
@@ -447,7 +429,7 @@ CREATE POLICY admin_nurse_see_illness_records ON staff_illness_records
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY staff_see_own_illness ON staff_illness_records
@@ -463,7 +445,7 @@ CREATE POLICY admin_nurse_manage_illness ON staff_illness_records
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- Staff can self-report illness (matches /caregiver/me UI flow)
@@ -506,8 +488,8 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON staff_illness_records
 
 ### Infection Surveillance Entry
 
-1. **Who creates.** Nurse or admin creates an infection surveillance record when a resident presents symptoms suggestive of infection.
-2. **Caregiver role.** Caregivers do not create surveillance records directly. They flag symptoms via `condition_changes` (Phase 1). A nurse reviews condition changes and creates surveillance records when clinically warranted.
+1. **Who creates.** A Med-Tech or admin creates an infection surveillance record when a resident presents symptoms suggestive of infection.
+2. **Floor staff.** Med-Techs (who absorbed the retired `caregiver` role, COL-615) flag symptoms via `condition_changes` (Phase 1) and create surveillance records when clinically warranted. Housekeepers never create or read surveillance records.
 3. **Workflow.** Suspected → lab ordered (optional) → confirmed/resolved. Status tracks the progression. Treatment details captured when initiated.
 
 ### Outbreak Detection Rules
@@ -530,7 +512,7 @@ This is a **hidden complexity area** per PHASE2-SCOPE.md.
    - If yes: link the new surveillance record to the existing outbreak, increment `total_cases`
    - If no: create new `infection_outbreaks` row, link both triggering cases, generate outbreak action checklist (see below)
 
-**Manual detection:** A nurse or facility_admin can manually declare an outbreak at any time, even if algorithmic thresholds are not met.
+**Manual detection:** A med_tech or facility_admin can manually declare an outbreak at any time, even if algorithmic thresholds are not met.
 
 ### Outbreak Action Checklist Generation
 
@@ -549,7 +531,7 @@ When an outbreak is created, auto-generate these `outbreak_actions` rows:
 | 9 | `ahca_notification` | Report to AHCA if required (≥3 cases or specific organism) | standard |
 | 10 | `treatment_protocol` | Establish treatment protocol with facility physician | when_possible |
 
-The checklist is a starting point. Nurse/admin can add, modify, or mark items as `not_applicable`.
+The checklist is a starting point. Med-Tech/admin can add, modify, or mark items as `not_applicable`.
 
 ### Normalized Infection Grouping for Outbreak Detection
 
@@ -582,13 +564,13 @@ The `infection_outbreaks.infection_type` field stores the **group name** (e.g., 
 | New case matches an existing **active** outbreak (same facility + unit + group) | Link the case to the existing outbreak; increment `total_cases`. Do NOT create a new outbreak. |
 | New case matches an existing **contained** outbreak (same facility + unit + group, within 14 days of containment) | Reopen: set outbreak status back to `active`, link case, increment count. |
 | New case matches a **resolved** outbreak | Create a new outbreak. Resolved outbreaks are terminal. |
-| Suspected case is reclassified to a different type after linking to an outbreak | Unlink from the outbreak (`outbreak_id = NULL`). If this drops the outbreak below 2 cases, the outbreak remains but is flagged for nurse review. |
+| Suspected case is reclassified to a different type after linking to an outbreak | Unlink from the outbreak (`outbreak_id = NULL`). If this drops the outbreak below 2 cases, the outbreak remains but is flagged for Med-Tech / administrator review. |
 | Suspected case resolves as negative (lab result) | Update surveillance record `status = 'resolved'`. If linked to outbreak, unlink. Same below-threshold flagging. |
 
 **State transitions:**
 
 ```
-active → contained       (nurse/facility_admin declares containment — no new cases for 72hr)
+active → contained       (med_tech/facility_admin declares containment — no new cases for 72hr)
 active → resolved        (allowed for single-event outbreaks that resolve quickly)
 contained → active       (new case linked during 14-day monitoring window)
 contained → resolved     (14-day monitoring window passes with no new cases)
@@ -624,13 +606,13 @@ resolved → (terminal)    (resolved outbreaks are immutable — new cases creat
 
 3. **Weight change detection.** Compare current weight to the weight recorded 7 days ago (most recent `daily_logs.weight_lbs` where `log_date` is within 7 days). If absolute difference exceeds `weight_change_lbs`: alert.
 
-4. **Alert latency.** Alerts appear immediately after the daily log is saved. The caregiver who entered the vitals sees the alert. Nurse sees it on the admin infection control dashboard.
+4. **Alert latency.** Alerts appear immediately after the daily log is saved. The Med-Tech who entered the vitals sees the alert. Administrators see it on the admin infection control dashboard.
 
 ### Staff Illness Tracking
 
 1. **Entry.** Two paths:
-   - **Admin/nurse entry:** Admin or nurse records when a staff member calls out sick or presents symptoms.
-   - **Self-report:** Staff member reports via `/caregiver/me` → creates their own `staff_illness_records` row (INSERT policy: `staff_self_report_illness`, scoped to own `staff_id`). Admin/nurse reviews and manages from there.
+   - **Admin/Med-Tech entry:** Admin or Med-Tech records when a staff member calls out sick or presents symptoms.
+   - **Self-report:** Staff member reports via `/caregiver/me` → creates their own `staff_illness_records` row (INSERT policy: `staff_self_report_illness`, scoped to own `staff_id`). Admin/Med-Tech reviews and manages from there.
 2. **Return clearance.** Before returning to work after illness, staff must be cleared:
    - Self-certification (for minor illness, per facility policy)
    - Occupational health clearance
@@ -642,7 +624,7 @@ resolved → (terminal)    (resolved outbreaks are immutable — new cases creat
 
 | Event | Source | Action |
 |-------|--------|--------|
-| Daily log saved with vitals exceeding threshold | 04 Daily Ops → This module | Create `vital_sign_alerts` row; alert to nurse (mobile) |
+| Daily log saved with vitals exceeding threshold | 04 Daily Ops → This module | Create `vital_sign_alerts` row; alert to on-shift Med-Tech (mobile) |
 | 2+ infection records, same unit, same type, within 72hr | This module | Trigger outbreak detection; generate checklist |
 | Outbreak activated | This module | Generate outbreak_actions checklist; notify facility_admin |
 | Active infection count changes | This module | Update compliance dashboard tile (Module 08) |
@@ -688,7 +670,7 @@ Runs after daily log save. Not a cron — real-time is important for vital sign 
 
 - **Desktop-first.** Full record with timeline.
 - Shows: classification, symptoms, lab results, treatment, outcome
-- Edit capabilities for nurse+: update status, add lab results, add treatment, resolve
+- Edit capabilities for med_tech+: update status, add lab results, add treatment, resolve
 
 #### Outbreak Management (`/admin/infection-control/outbreaks/[id]`)
 
@@ -721,18 +703,18 @@ Runs after daily log save. Not a cron — real-time is important for vital sign 
 - Filter: Currently out | Cleared | All
 - Click → detail with clearance workflow
 
-### Caregiver Shell
+### Floor app (`/caregiver`)
 
 #### Vital Sign Alert Banner (`/caregiver/resident/[id]`)
 
 - **Mobile.** Existing resident profile page.
 - Add alert banner at top if any open `vital_sign_alerts` exist for this resident:
-  - Red banner: "[Vital] is [value] — exceeds threshold of [threshold]. Notify nurse."
-  - Tap → acknowledge (nurse must resolve)
+  - Red banner: "[Vital] is [value] — exceeds threshold of [threshold]. Notify the administrator."
+  - Tap → acknowledge (a Med-Tech or administrator must resolve)
 
 #### Outbreak Checklist (`/caregiver` dashboard)
 
-- **Mobile.** If an active outbreak exists for the caregiver's facility:
+- **Mobile.** If an active outbreak exists for the signed-in Med-Tech's facility:
   - Alert card on shift brief: "Active [type] outbreak on [unit]. [X] checklist items assigned to you."
   - Tap → list of assigned `outbreak_actions` with completion buttons
 
@@ -783,7 +765,7 @@ Runs after daily log save. Not a cron — real-time is important for vital sign 
 
 Use **`haven_capture_audit_log()`** and **`haven_set_updated_at()`** (not the illustrative `audit_trigger_function` / `set_updated_at` names in the SQL blocks above). Add **`updated_by`** on tables that use `haven_set_updated_at` (e.g. `outbreak_actions`, `vital_sign_alert_thresholds`).
 
-**Caregiver `vital_sign_alerts` SELECT (normative):** caregivers may see alerts only for residents they have charted in `daily_logs` as `logged_by = auth.uid()`, same org/facility, `log_date >= CURRENT_DATE - interval '1 day'` (least privilege; not facility-wide).
+**Floor `vital_sign_alerts` SELECT (normative, updated 2026-09-22 COL-615):** the former caregiver rule (alerts only for residents charted in `daily_logs` in the last day) no longer has a role to apply to: `caregiver` folded into `med_tech`, which sees facility-wide alerts in accessible facilities. `housekeeper` and `cook` see no vital alerts.
 
 **Outbreak deduplication:** a **contained** outbreak may **reopen to active** when a new case matches within **14 days** of `contained_at` (see §Outbreak Deduplication).
 

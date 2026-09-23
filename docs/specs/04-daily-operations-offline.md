@@ -8,7 +8,7 @@
 
 ## Purpose
 
-Define **service worker cache partitions**, **Background Sync**, and **IndexedDB queue** contracts so caregivers can complete eMAR-adjacent workflows on unreliable networks without double-posting or silent data loss.
+Define **service worker cache partitions**, **Background Sync**, and **IndexedDB queue** contracts so Med-Techs (role `med_tech`, which since COL-615 holds everything the retired `caregiver` and `nurse` roles held) can complete eMAR-adjacent workflows on unreliable networks without double-posting or silent data loss.
 
 ---
 
@@ -21,7 +21,7 @@ Define **service worker cache partitions**, **Background Sync**, and **IndexedDB
 
 ### Service worker
 
-- Cache partitions per **shell** (caregiver vs admin): document asset groups in [`pwa-caching-contract.md`](pwa-caching-contract.md).
+- Cache partitions per **shell** (floor app at `/caregiver` vs admin): document asset groups in [`pwa-caching-contract.md`](pwa-caching-contract.md).
 
 ### IndexedDB queue schema (app layer)
 

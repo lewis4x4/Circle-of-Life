@@ -3,6 +3,8 @@
 **Dependencies:** 00-foundation (organizations, entities, facilities, rooms, beds, RBAC)
 **Build Week:** 3-4 (core), 13-14 (advanced)
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`; `dietary` / `dietary_aide` are now `cook`. "Nurse" below means the clinical profession only where it describes care, not a Haven role. See the Roles section in `AGENTS.md`.
+
 ---
 
 ## DATABASE SCHEMA
@@ -312,7 +314,7 @@ CREATE POLICY "Clinical staff can insert residents"
   WITH CHECK (
     organization_id = auth.organization_id()
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY "Clinical staff can update residents"
@@ -320,7 +322,7 @@ CREATE POLICY "Clinical staff can update residents"
   USING (
     organization_id = auth.organization_id()
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver')
+    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- CARE PLANS
@@ -339,7 +341,7 @@ CREATE POLICY "Nurse+ can manage care plans"
   USING (
     organization_id = auth.organization_id()
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- CARE PLAN ITEMS
@@ -358,7 +360,7 @@ CREATE POLICY "Nurse+ can manage care plan items"
   USING (
     organization_id = auth.organization_id()
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- ASSESSMENTS
@@ -377,7 +379,7 @@ CREATE POLICY "Clinical staff can create assessments"
   WITH CHECK (
     organization_id = auth.organization_id()
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver')
+    AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- RESIDENT PHOTOS
@@ -389,7 +391,7 @@ CREATE POLICY "Clinical staff see photos"
     organization_id = auth.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() NOT IN ('family', 'dietary', 'maintenance_role')
+    AND auth.app_role() NOT IN ('family', 'cook', 'maintenance_role')
   );
 
 -- RESIDENT CONTACTS
@@ -412,7 +414,7 @@ CREATE POLICY "Staff see resident documents"
     organization_id = auth.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT auth.accessible_facility_ids())
-    AND auth.app_role() NOT IN ('dietary', 'maintenance_role')
+    AND auth.app_role() NOT IN ('cook', 'maintenance_role')
   );
 
 -- Apply audit triggers
@@ -518,7 +520,7 @@ Nine questions, each scored 0-3:
 - 15-19: Moderately severe depression
 - 20-27: Severe depression
 
-**Rule:** PHQ-9 score ≥10 → generate alert to nurse and care plan review recommendation.
+**Rule:** PHQ-9 score ≥10 → generate alert to the Med-Tech and care plan review recommendation.
 
 ### Care Plan Review Schedule
 
@@ -532,7 +534,7 @@ Nine questions, each scored 0-3:
 | Fall with injury | Within 24 hours |
 | Family/responsible party request | Within 7 days |
 
-**Rule:** When `care_plans.review_due_date` is within 14 days, generate alert to assigned nurse. When overdue, generate alert to facility_admin.
+**Rule:** When `care_plans.review_due_date` is within 14 days, generate alert to the assigned Med-Tech. When overdue, generate alert to facility_admin.
 
 ---
 
@@ -542,26 +544,26 @@ Nine questions, each scored 0-3:
 |--------|-------|------|-------|-------------|
 | GET | `/residents` | Required | Staff (not family) | List residents in accessible facilities. Query params: `facility_id`, `status`, `acuity_level`, `search` (name) |
 | GET | `/residents/:id` | Required | Staff + linked family | Get resident full profile |
-| POST | `/residents` | Required | owner, org_admin, facility_admin, nurse | Create new resident |
-| PUT | `/residents/:id` | Required | owner, org_admin, facility_admin, nurse, caregiver | Update resident |
+| POST | `/residents` | Required | owner, org_admin, facility_admin, med_tech | Create new resident |
+| PUT | `/residents/:id` | Required | owner, org_admin, facility_admin, med_tech | Update resident |
 | GET | `/residents/:id/care-plan` | Required | Staff + linked family (limited view) | Get active care plan with items |
-| POST | `/residents/:id/care-plan` | Required | owner, org_admin, facility_admin, nurse | Create new care plan version |
-| PUT | `/care-plans/:id` | Required | owner, org_admin, facility_admin, nurse | Update care plan |
-| POST | `/care-plans/:id/items` | Required | owner, org_admin, facility_admin, nurse | Add care plan item |
-| PUT | `/care-plan-items/:id` | Required | owner, org_admin, facility_admin, nurse | Update care plan item |
-| POST | `/care-plans/:id/review` | Required | nurse, facility_admin | Mark care plan as reviewed |
-| POST | `/care-plans/:id/approve` | Required | nurse, facility_admin | Approve care plan |
+| POST | `/residents/:id/care-plan` | Required | owner, org_admin, facility_admin, med_tech | Create new care plan version |
+| PUT | `/care-plans/:id` | Required | owner, org_admin, facility_admin, med_tech | Update care plan |
+| POST | `/care-plans/:id/items` | Required | owner, org_admin, facility_admin, med_tech | Add care plan item |
+| PUT | `/care-plan-items/:id` | Required | owner, org_admin, facility_admin, med_tech | Update care plan item |
+| POST | `/care-plans/:id/review` | Required | med_tech, facility_admin | Mark care plan as reviewed |
+| POST | `/care-plans/:id/approve` | Required | med_tech, facility_admin | Approve care plan |
 | GET | `/residents/:id/assessments` | Required | Staff | List assessments. Query params: `type`, `date_from`, `date_to` |
-| POST | `/residents/:id/assessments` | Required | nurse, caregiver, facility_admin | Create assessment |
+| POST | `/residents/:id/assessments` | Required | med_tech, facility_admin | Create assessment |
 | GET | `/residents/:id/photos` | Required | Clinical staff | List photos |
-| POST | `/residents/:id/photos` | Required | nurse, caregiver | Upload photo |
+| POST | `/residents/:id/photos` | Required | med_tech | Upload photo |
 | GET | `/residents/:id/contacts` | Required | Staff | List contacts |
-| POST | `/residents/:id/contacts` | Required | nurse, facility_admin | Add contact |
-| PUT | `/resident-contacts/:id` | Required | nurse, facility_admin | Update contact |
-| GET | `/residents/:id/documents` | Required | Staff (not dietary/maintenance) | List documents |
-| POST | `/residents/:id/documents` | Required | nurse, facility_admin | Upload document |
-| GET | `/assessments/overdue` | Required | nurse, facility_admin | List overdue assessments across facility |
-| GET | `/care-plans/reviews-due` | Required | nurse, facility_admin | List care plans with reviews due within 14 days |
+| POST | `/residents/:id/contacts` | Required | med_tech, facility_admin | Add contact |
+| PUT | `/resident-contacts/:id` | Required | med_tech, facility_admin | Update contact |
+| GET | `/residents/:id/documents` | Required | Staff (not cook/maintenance) | List documents |
+| POST | `/residents/:id/documents` | Required | med_tech, facility_admin | Upload document |
+| GET | `/assessments/overdue` | Required | med_tech, facility_admin | List overdue assessments across facility |
+| GET | `/care-plans/reviews-due` | Required | med_tech, facility_admin | List care plans with reviews due within 14 days |
 
 ### Resident List Response Shape
 ```json
@@ -638,7 +640,7 @@ Nine questions, each scored 0-3:
 |----------|---------|-------|
 | `assessment-scored` | INSERT on assessments | Evaluates score against thresholds. Updates resident acuity/fall risk if applicable. Generates alerts if needed. Calculates next_due_date. |
 | `care-plan-review-check` | Cron (daily at 6 AM ET) | Scans care_plans where review_due_date is within 14 days or overdue. Generates alerts per the schedule above. |
-| `care-plan-versioned` | UPDATE on care_plans when status changes to 'active' | Archives previous active version. Updates review_due_date. Regenerates caregiver task lists for affected resident. |
+| `care-plan-versioned` | UPDATE on care_plans when status changes to 'active' | Archives previous active version. Updates review_due_date. Regenerates floor-app task lists for affected resident. |
 | `resident-status-changed` | UPDATE on residents when status changes | If status → 'hospital_hold': start bed hold tracking, notify family. If status → 'discharged' or 'deceased': trigger discharge workflow. If status → 'active' from 'hospital_hold': trigger readmission assessment. |
 | `acuity-changed` | UPDATE on residents when acuity_level changes | Generate billing rate review alert. Generate care plan review alert. Update census dashboard cache. |
 
@@ -670,7 +672,7 @@ INSERT INTO assessment_templates (assessment_type, name, description, score_rang
     {"key": "transferring", "label": "Transferring", "options": [{"value": 0, "label": "Independent"}, {"value": 1, "label": "Dependent"}]},
     {"key": "continence", "label": "Continence", "options": [{"value": 0, "label": "Independent"}, {"value": 1, "label": "Dependent"}]},
     {"key": "feeding", "label": "Feeding", "options": [{"value": 0, "label": "Independent"}, {"value": 1, "label": "Dependent"}]}]',
-  90, ARRAY['nurse', 'caregiver', 'facility_admin']::app_role[]),
+  90, ARRAY['med_tech', 'facility_admin']::app_role[]),
 
 ('morse_fall', 'Morse Fall Scale', 'Assesses fall risk based on 6 factors', 0, 125,
   '{"low": [0, 24], "standard": [25, 44], "high": [45, 125]}',
@@ -680,7 +682,7 @@ INSERT INTO assessment_templates (assessment_type, name, description, score_rang
     {"key": "iv_heparin", "label": "IV/Heparin Lock", "options": [{"value": 0, "label": "No"}, {"value": 20, "label": "Yes"}]},
     {"key": "gait", "label": "Gait", "options": [{"value": 0, "label": "Normal/Bed rest/Wheelchair"}, {"value": 10, "label": "Weak"}, {"value": 20, "label": "Impaired"}]},
     {"key": "mental_status", "label": "Mental Status", "options": [{"value": 0, "label": "Oriented to own ability"}, {"value": 15, "label": "Overestimates/Forgets limitations"}]}]',
-  90, ARRAY['nurse', 'caregiver', 'facility_admin']::app_role[]),
+  90, ARRAY['med_tech', 'facility_admin']::app_role[]),
 
 ('braden', 'Braden Scale for Predicting Pressure Sore Risk', 'Assesses risk for pressure injuries across 6 subscales', 6, 23,
   '{"very_high": [6, 9], "high": [10, 12], "moderate": [13, 14], "mild": [15, 18], "none": [19, 23]}',
@@ -690,7 +692,7 @@ INSERT INTO assessment_templates (assessment_type, name, description, score_rang
     {"key": "mobility", "label": "Mobility", "options": [{"value": 1, "label": "Completely Immobile"}, {"value": 2, "label": "Very Limited"}, {"value": 3, "label": "Slightly Limited"}, {"value": 4, "label": "No Limitations"}]},
     {"key": "nutrition", "label": "Nutrition", "options": [{"value": 1, "label": "Very Poor"}, {"value": 2, "label": "Probably Inadequate"}, {"value": 3, "label": "Adequate"}, {"value": 4, "label": "Excellent"}]},
     {"key": "friction_shear", "label": "Friction & Shear", "options": [{"value": 1, "label": "Problem"}, {"value": 2, "label": "Potential Problem"}, {"value": 3, "label": "No Apparent Problem"}]}]',
-  90, ARRAY['nurse', 'facility_admin']::app_role[]),
+  90, ARRAY['med_tech', 'facility_admin']::app_role[]),
 
 ('phq9', 'PHQ-9 Patient Health Questionnaire', 'Depression screening tool', 0, 27,
   '{"minimal": [0, 4], "mild": [5, 9], "moderate": [10, 14], "moderately_severe": [15, 19], "severe": [20, 27]}',
@@ -703,7 +705,7 @@ INSERT INTO assessment_templates (assessment_type, name, description, score_rang
     {"key": "concentration", "label": "Trouble concentrating on things", "options": [{"value": 0, "label": "Not at all"}, {"value": 1, "label": "Several days"}, {"value": 2, "label": "More than half the days"}, {"value": 3, "label": "Nearly every day"}]},
     {"key": "movement", "label": "Moving or speaking slowly, or being fidgety/restless", "options": [{"value": 0, "label": "Not at all"}, {"value": 1, "label": "Several days"}, {"value": 2, "label": "More than half the days"}, {"value": 3, "label": "Nearly every day"}]},
     {"key": "self_harm", "label": "Thoughts that you would be better off dead or of hurting yourself", "options": [{"value": 0, "label": "Not at all"}, {"value": 1, "label": "Several days"}, {"value": 2, "label": "More than half the days"}, {"value": 3, "label": "Nearly every day"}]}]',
-  180, ARRAY['nurse', 'facility_admin']::app_role[]);
+  180, ARRAY['med_tech', 'facility_admin']::app_role[]);
 ```
 
 ---
@@ -712,7 +714,7 @@ INSERT INTO assessment_templates (assessment_type, name, description, score_rang
 
 Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 
-### Web (Admin/Nurse Dashboard)
+### Web (Admin/Med-Tech Dashboard)
 
 | Screen | Route | Components | Data |
 |--------|-------|-----------|------|
@@ -721,10 +723,10 @@ Route and shell conventions follow `docs/specs/FRONTEND-CONTRACT.md`.
 | Care Plan Editor | `/admin/residents/:id/care-plan` | Drag-sortable care plan items, inline editing, version history sidebar, review/approve buttons | GET /residents/:id/care-plan |
 | Assessment Entry | `/admin/residents/:id/assessments/new/:type` | Guided form matching assessment_template, auto-scoring, risk level display, save + alert generation | POST /residents/:id/assessments |
 | Assessment History | `/admin/residents/:id/assessments` | Timeline view, score trending chart, filter by type | GET /residents/:id/assessments |
-| Overdue Assessments | `/admin/assessments/overdue` | Table: resident, assessment type, due date, days overdue, assigned nurse | GET /assessments/overdue |
+| Overdue Assessments | `/admin/assessments/overdue` | Table: resident, assessment type, due date, days overdue, assigned Med-Tech | GET /assessments/overdue |
 | Care Plan Reviews Due | `/admin/care-plans/reviews-due` | Table: resident, care plan version, review due date, days remaining/overdue | GET /care-plans/reviews-due |
 
-### Mobile (Caregiver Interface)
+### Mobile (floor app at `/caregiver`, used by Med-Techs)
 
 | Screen | Route | Components | Data |
 |--------|-------|-----------|------|
