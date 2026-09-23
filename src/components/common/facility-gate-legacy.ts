@@ -138,6 +138,9 @@ export const NOT_A_GATE: Record<string, string> = {
     "The survey-visit tools in the shell menu, which sits beside the header selector itself.",
   "src/lib/v2-forms.ts": "Validation message for a form's own required facility field.",
   // COL-649 MetricState: a KPI tile's "no scope" state, not a page gate. Pages still gate with <FacilityGate>.
+  "src/lib/assessments/overdue-assessments-display-copy.ts":
+    "Empty-queue copy for the Clinical Desk's needs-facility state; the page's gate is the source notice (COL-649).",
+  "src/lib/clinical/clinical-queue-state.ts": "Doc comment on the needs_facility queue state (COL-649).",
   "src/lib/metrics/metric-state.ts": "Defines the KPI tile label for the no-facility-scope metric state (COL-649).",
   "src/components/ui/kpi-card.tsx": "Doc comment listing MetricState phrases the card renders (COL-649).",
   "src/components/ui/stat-card.tsx": "Doc comment listing MetricState phrases the card renders (COL-649).",
