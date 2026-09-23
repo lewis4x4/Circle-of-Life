@@ -37,6 +37,7 @@ import {
   getNextBillingMonth,
   monthLabel,
   persistMonthlyInvoicesFromPreview,
+  type BillingBlocker,
   type PreviewLine,
 } from "@/lib/billing/generate-monthly-invoices";
 
@@ -66,6 +67,7 @@ export default function AdminInvoiceGeneratePage() {
   const [preview, setPreview] = useState<PreviewLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [blockers, setBlockers] = useState<BillingBlocker[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [generatedCount, setGeneratedCount] = useState(0);
@@ -90,6 +92,7 @@ export default function AdminInvoiceGeneratePage() {
 
     setLoading(true);
     setError(null);
+    setBlockers([]);
     setGenerated(false);
 
     try {
@@ -100,6 +103,7 @@ export default function AdminInvoiceGeneratePage() {
       });
       setPreview(result.preview);
       setError(result.error);
+      setBlockers(result.blockers ?? []);
       setMeta({
         periodStart: result.periodStart,
         periodEnd: result.periodEnd,
@@ -279,7 +283,23 @@ export default function AdminInvoiceGeneratePage() {
             </div>
           ) : error && preview.length === 0 ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-              {error}
+              <p>{error}</p>
+              {blockers.length > 0 && (
+                <ul className="mt-3 space-y-1" aria-label="Residents to fix before billing">
+                  {blockers.map((blocker) => (
+                    <li key={blocker.residentId}>
+                      <Link
+                        href={`/admin/residents/${blocker.residentId}`}
+                        className="font-medium underline underline-offset-2"
+                      >
+                        {blocker.residentName}
+                      </Link>
+                      {" — "}
+                      {blocker.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ) : preview.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">
