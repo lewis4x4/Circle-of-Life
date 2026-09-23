@@ -14,7 +14,8 @@ import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display-copy";
-import { postInvoiceToGl } from "@/lib/finance/post-to-gl";
+import { isNotYetSentStatus } from "@/lib/billing/receivables";
+import { glPostUnavailableReason, postInvoiceToGl } from "@/lib/finance/post-to-gl";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
@@ -32,6 +33,7 @@ type SupabaseInvoice = {
   id: string;
   resident_id: string;
   facility_id: string;
+  entity_id: string;
   invoice_number: string;
   invoice_date: string;
   due_date: string;
@@ -96,12 +98,15 @@ export default function AdminInvoiceDetailPage() {
   const [glError, setGlError] = useState<string | null>(null);
   const [canPost, setCanPost] = useState(false);
   const [glBlocked, setGlBlocked] = useState(false);
+  /** Null until checked; 0 means the entity has no chart of accounts, so nothing can post. */
+  const [glAccountCount, setGlAccountCount] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setGlResult(null);
     setGlError(null);
     setGlBlocked(false);
     setCanPost(false);
+    setGlAccountCount(null);
     if (!id) {
       setNotFound(true);
       setIsLoading(false);
@@ -115,7 +120,7 @@ export default function AdminInvoiceDetailPage() {
       const invRes = (await supabase
         .from("invoices" as never)
         .select(
-          "id, resident_id, facility_id, invoice_number, invoice_date, due_date, period_start, period_end, status, subtotal, adjustments, tax, total, amount_paid, balance_due, payer_type, payer_name, notes, deleted_at",
+          "id, resident_id, facility_id, entity_id, invoice_number, invoice_date, due_date, period_start, period_end, status, subtotal, adjustments, tax, total, amount_paid, balance_due, payer_type, payer_name, notes, deleted_at",
         )
         .eq("id", id)
         .is("deleted_at", null)
@@ -157,6 +162,13 @@ export default function AdminInvoiceDetailPage() {
 
       if (canMutateFinance(role)) {
         setCanPost(true);
+        const accounts = await supabase
+          .from("gl_accounts")
+          .select("id", { count: "exact", head: true })
+          .eq("entity_id", inv.entity_id)
+          .is("deleted_at", null);
+        if (accounts.error) throw accounts.error;
+        setGlAccountCount(accounts.count ?? 0);
         const existingJe = await supabase
           .from("journal_entries")
           .select("id, status")
@@ -246,6 +258,11 @@ export default function AdminInvoiceDetailPage() {
   }
 
   const uiStatus = mapDbInvoiceStatusToUi(invoice.status);
+  const glUnavailableReason = glPostUnavailableReason({
+    status: invoice.status,
+    totalCents: invoice.total,
+    glAccountCount,
+  });
   const uiPayer = mapDbPayerTypeToUi(invoice.payer_type);
 
   return (
@@ -401,13 +418,29 @@ export default function AdminInvoiceDetailPage() {
                 </Link>
               </div>
             ) : (
-              <Button
-                type="button"
-                onClick={() => void postToGl()}
-                disabled={glPosting || glBlocked || invoice.total <= 0}
-              >
-                {glPosting ? "Posting…" : "Post to GL"}
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  onClick={() => void postToGl()}
+                  disabled={glPosting || glBlocked || glUnavailableReason != null}
+                  aria-describedby={glUnavailableReason ? "gl-post-unavailable" : undefined}
+                >
+                  {glPosting ? "Posting…" : "Post to GL"}
+                </Button>
+                {glUnavailableReason ? (
+                  <p id="gl-post-unavailable" className="text-sm text-muted-foreground">
+                    {glUnavailableReason}
+                    {glAccountCount === 0 && !isNotYetSentStatus(invoice.status) ? (
+                      <>
+                        {" "}
+                        <Link href="/admin/finance/chart-of-accounts" className="text-primary underline-offset-4 hover:underline">
+                          Open chart of accounts
+                        </Link>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
+              </div>
             )}
           </div>
         </RecordDetailSection>
