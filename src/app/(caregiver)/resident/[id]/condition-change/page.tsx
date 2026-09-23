@@ -8,7 +8,7 @@ import { ArrowLeft, Loader2, Stethoscope } from "lucide-react";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -60,6 +60,7 @@ export default function CaregiverResidentConditionChangePage() {
     facilityId: string;
     organizationId: string;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
   const [residentLabel, setResidentLabel] = useState<string | null>(null);
@@ -173,7 +174,7 @@ export default function CaregiverResidentConditionChangePage() {
     setSubmitting(true);
     setLoadError(null);
     try {
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const nowIso = new Date().toISOString();
       const row: Database["public"]["Tables"]["condition_changes"]["Insert"] = {
         resident_id: residentId,
@@ -286,8 +287,8 @@ export default function CaregiverResidentConditionChangePage() {
             <div className="space-y-3 rounded-lg border border-rose-900/35 bg-black/25 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-rose-200/80">Category</Label>
-                  <select
+                  <Label htmlFor="condition-category" className="text-xs text-rose-200/80">Category</Label>
+                  <select id="condition-category"
                     className="flex h-10 w-full rounded-md border border-rose-900/50 bg-zinc-950 px-2 text-sm text-zinc-100"
                     value={changeType}
                     onChange={(e) => setChangeType(e.target.value)}
@@ -300,8 +301,8 @@ export default function CaregiverResidentConditionChangePage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-rose-200/80">Severity</Label>
-                  <select
+                  <Label htmlFor="condition-severity" className="text-xs text-rose-200/80">Severity</Label>
+                  <select id="condition-severity"
                     className="flex h-10 w-full rounded-md border border-rose-900/50 bg-zinc-950 px-2 text-sm text-zinc-100"
                     value={severity}
                     onChange={(e) => setSeverity(e.target.value)}
@@ -315,8 +316,8 @@ export default function CaregiverResidentConditionChangePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-rose-200/80">Description</Label>
-                <textarea
+                <Label htmlFor="condition-description" className="text-xs text-rose-200/80">Description</Label>
+                <textarea id="condition-description"
                   rows={4}
                   required
                   placeholder="Objective findings, vitals if taken, what changed and when…"

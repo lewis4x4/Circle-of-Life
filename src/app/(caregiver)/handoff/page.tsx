@@ -7,12 +7,13 @@ import { CheckCircle2, ClipboardList, Loader2, MessageSquare } from "lucide-reac
 import { ShiftEventsSummary } from "@/components/care-events/timeline/ShiftEventsSummary";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { loadCaregiverFacilityContext, type CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { currentShiftFor, currentShiftForTimezone, nextShiftFor, type ShiftType } from "@/lib/caregiver/shift";
 import {
   HANDOFF_RECORDED_COPY,
   autoSummaryCareEventLines,
-  currentShiftWindowFor,
   nextShift,
   recordShiftHandoff,
+  type HandoffShift,
 } from "@/lib/caregiver/handoff-summary";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -35,6 +36,14 @@ type HandoffRow = {
   incoming_acknowledged: boolean;
   auto_summary: unknown;
 };
+
+/**
+ * The roster enum also carries "custom", which a handoff row cannot store; such a
+ * shift is filed under the clock-time bucket it falls in.
+ */
+function asHandoffShift(shift: ShiftType, timeZone: string, at: Date): HandoffShift {
+  return shift === "custom" ? (currentShiftForTimezone(timeZone, at) as HandoffShift) : shift;
+}
 
 export default function CaregiverHandoffPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -127,13 +136,17 @@ export default function CaregiverHandoffPage() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Sign in again to record the handoff.");
       const now = new Date();
-      const { shift, date } = currentShiftWindowFor(facilityCtx.timeZone, now);
+      // Outgoing and incoming shifts come from the facility's configured shifts (COL-659).
+      const current = currentShiftFor(facilityCtx, now);
+      const shift = asHandoffShift(current.shiftType, facilityCtx.timeZone, now);
+      const incoming = nextShiftFor(facilityCtx, now);
+      const date = current.serviceDate;
       await recordShiftHandoff(supabase, {
         facilityId: facilityCtx.facilityId,
         organizationId: facilityCtx.organizationId,
         timeZone: facilityCtx.timeZone,
         outgoingShift: shift,
-        incomingShift: nextShift(shift),
+        incomingShift: incoming ? asHandoffShift(incoming.shiftType, facilityCtx.timeZone, incoming.endsAt ?? now) : nextShift(shift),
         handoffDate: zonedYmd(now, facilityCtx.timeZone),
         shiftDate: date,
         outgoingStaffId: user.id,

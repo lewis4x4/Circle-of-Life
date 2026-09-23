@@ -19,6 +19,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 
 import { RoundingHubNav } from "../../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { WatchlistDispositionForm } from "@/components/rounding/WatchlistDispositionForm";
@@ -213,7 +214,9 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
         </div>
       ) : null}
 
-      {!selectedFacilityId ? <p role="status">Choose a building to see this resident’s record.</p> : null}
+      {!selectedFacilityId ? (
+        <FacilityGateNotice reason="A resident's watchlist record is read inside the building that holds it." />
+      ) : null}
       {loading ? <p role="status">{hasData ? "Refreshing resident record…" : "Loading resident record…"}</p> : null}
       {hasData ? <>
       <section aria-label="Open signals" className="space-y-3">

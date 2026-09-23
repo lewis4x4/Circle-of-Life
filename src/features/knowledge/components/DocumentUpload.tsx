@@ -141,7 +141,7 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         {file ? (
           <div className="flex items-center justify-center gap-2">
             <span className="text-sm text-slate-700 dark:text-zinc-300">{file.name}</span>
-            <button type="button" onClick={() => setFile(null)} className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-zinc-700">
+            <button type="button" aria-label="Remove selected file" onClick={() => setFile(null)} className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-zinc-700">
               <X className="w-4 h-4 text-slate-400" />
             </button>
           </div>

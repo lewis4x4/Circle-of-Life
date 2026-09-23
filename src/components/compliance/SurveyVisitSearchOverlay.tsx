@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { enumLabel } from "@/lib/display/enum-label";
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -544,7 +546,7 @@ export function SurveyVisitSearchOverlay({
                   ) : (
                     chart.incidents.map((i) => (
                       <li key={i.id} className="border-b border-slate-100 pb-1 dark:border-slate-800">
-                        #{i.incident_number} · {i.occurred_at} · {i.category} · {i.severity} · {i.status}
+                        #{i.incident_number} · {i.occurred_at} · {enumLabel(i.category)} · {formatLevelWord(i.severity)} · {enumLabel(i.status)}
                       </li>
                     ))
                   )}

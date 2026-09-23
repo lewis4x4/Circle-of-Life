@@ -7,9 +7,10 @@ import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,7 +98,7 @@ export default function NewComplianceRulePage() {
     e.preventDefault();
 
     if (!facilityReady || !selectedFacilityId) {
-      setError("Please select a facility first");
+      setError("No facility is in scope.");
       return;
     }
 
@@ -149,10 +150,12 @@ export default function NewComplianceRulePage() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/admin/compliance/rules">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+        <Link
+          href="/admin/compliance/rules"
+          aria-label="Back to compliance rules"
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
         </Link>
         <div>
           
@@ -162,15 +165,10 @@ export default function NewComplianceRulePage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle>Select a Facility</CardTitle>
-            <CardDescription>Choose a facility to create a compliance rule.</CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
+      {!facilityReady ? (
+        <FacilityGateNotice reason="A rule is created for one building's compliance scans (or shared org-wide from a building's scope)." />
+      ) : (
+      <>
       {success && (
         <Card className="border-emerald-500 bg-emerald-50">
           <CardContent className="py-6 text-center">
@@ -217,7 +215,7 @@ export default function NewComplianceRulePage() {
                   value={String(selectedPreset)}
                   onValueChange={(v) => handlePresetChange(Number(v))}
                 >
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger aria-label="Predefined AHCA tag" className="w-[200px]">
                     <SelectValue placeholder="Select a tag" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +277,7 @@ export default function NewComplianceRulePage() {
                 onValueChange={(v) => v && setSeverity(v as typeof severity)}
                 disabled={usePreset}
               >
-                <SelectTrigger>
+                <SelectTrigger id="severity">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,6 +319,8 @@ export default function NewComplianceRulePage() {
           </form>
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }

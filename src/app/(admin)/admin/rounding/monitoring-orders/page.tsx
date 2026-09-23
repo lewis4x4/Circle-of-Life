@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RefreshCw } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { MonitoringOrdersTable } from "@/components/rounding/MonitoringOrdersTable";
 import { RoundingEmptyNotice, RoundingErrorNotice } from "@/components/rounding/RoundingNotices";
@@ -165,13 +166,7 @@ function ScopedMonitoringOrdersPage() {
       <RoundingHubNav />
 
       {!selectedFacilityId ? (
-        <RoundingEmptyNotice
-          label="Facility scope required"
-          copy={{
-            why: "No building selected.",
-            guidance: "Choose one in the top bar to see the orders in force there.",
-          }}
-        />
+        <FacilityGateNotice reason="Monitoring orders are in force per building." />
       ) : (
         <>
           {errorMessage ? (

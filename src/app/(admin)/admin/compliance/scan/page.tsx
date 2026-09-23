@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import {
@@ -100,12 +101,7 @@ export default function ComplianceScanPage() {
       </div>
 
       {!facilityReady && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle>Select a Facility</CardTitle>
-            <CardDescription>Choose a facility to run a compliance scan.</CardDescription>
-          </CardHeader>
-        </Card>
+        <FacilityGateNotice reason="A compliance scan checks one building's residents, staff and records against the rules." />
       )}
 
       {error && (
@@ -200,8 +196,8 @@ export default function ComplianceScanPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Scan History</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => void loadHistory()}>
-                <RefreshCw className="h-4 w-4" />
+              <Button variant="outline" size="sm" aria-label="Refresh scan history" onClick={() => void loadHistory()}>
+                <RefreshCw className="h-4 w-4" aria-hidden />
               </Button>
             </div>
             <CardDescription>Recent compliance scans for this facility</CardDescription>

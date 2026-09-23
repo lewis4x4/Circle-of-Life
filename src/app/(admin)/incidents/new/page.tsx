@@ -20,6 +20,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
+import { formatSeverityChoice } from "@/lib/incidents/incidents-display-copy";
 
 const CATEGORY_LABELS: Record<(typeof caregiverIncidentCategoryValues)[number], string> = {
   fall_with_injury: "Fall with injury",
@@ -37,10 +38,10 @@ const CATEGORY_LABELS: Record<(typeof caregiverIncidentCategoryValues)[number], 
 };
 
 const SEVERITY_LABELS: Record<(typeof caregiverIncidentSeverityValues)[number], string> = {
-  level_1: "Level 1 — minor / no injury",
-  level_2: "Level 2 — minor injury / repeat event",
-  level_3: "Level 3 — moderate injury / med error",
-  level_4: "Level 4 — major injury / regulatory trigger",
+  level_1: formatSeverityChoice("level_1"),
+  level_2: formatSeverityChoice("level_2"),
+  level_3: formatSeverityChoice("level_3"),
+  level_4: formatSeverityChoice("level_4"),
 };
 
 const SHIFT_LABELS: Record<(typeof caregiverIncidentShiftValues)[number], string> = {

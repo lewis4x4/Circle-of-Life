@@ -127,10 +127,10 @@ export function DiscrepancyResolutionModal({
 
           {/* Resolution Notes */}
           <div className="space-y-2">
-            <Label className="text-xs text-rose-200/80">
+            <Label htmlFor="discrepancy-resolution-notes" className="text-xs text-rose-200/80">
               Resolution Notes <span className="text-rose-400">*</span>
             </Label>
-            <textarea
+            <textarea id="discrepancy-resolution-notes"
               rows={4}
               value={resolutionNotes}
               onChange={(e) => setResolutionNotes(e.target.value)}

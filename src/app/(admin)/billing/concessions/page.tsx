@@ -20,6 +20,19 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
 import { formatConcessionsDateDisplay } from "@/lib/billing/concessions-display-copy";
+import {
+  buildConcessionRows,
+  concessionsResidentCountLabel,
+  summarizeConcessions,
+  type ConcessionAgreementInput,
+  type ConcessionPayerInput,
+  type ConcessionRow,
+} from "@/lib/billing/concessions-model";
+import {
+  resolveBillingRateRule,
+  resolveFacilitySchedule,
+  type BillingRateRuleRow,
+} from "@/lib/billing/rate-schedule-in-force";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BillingHubNav } from "../billing-hub-nav";
@@ -32,16 +45,35 @@ type ResidentRow = {
   last_name: string | null;
   acuity_level: string | null;
   monthly_total_rate: number | null;
-  monthly_base_rate: number | null;
   rate_effective_date: string | null;
+  bed_by_id: BedJoin | BedJoin[] | null;
 };
 
-type RateSchedule = {
+type BedJoin = { rooms: { room_type: string | null } | { room_type: string | null }[] | null };
+
+type RateScheduleRow = {
+  id: string;
+  organization_id: string;
+  status: string | null;
+  effective_date: string;
+  end_date: string | null;
   base_rate_private: number;
   base_rate_semi_private: number | null;
-  care_surcharge_level_1: number;
-  care_surcharge_level_2: number;
-  care_surcharge_level_3: number;
+  care_surcharge_level_1: number | null;
+  care_surcharge_level_2: number | null;
+  care_surcharge_level_3: number | null;
+};
+
+type PayerRow = {
+  resident_id: string;
+  payer_type: string;
+  payer_name: string | null;
+  payer_share_type: string;
+  payer_fixed_amount: number | null;
+  medicaid_rate: number | null;
+  medicaid_patient_responsibility: number | null;
+  effective_date: string;
+  end_date: string | null;
 };
 
 type AgreementRow = {
@@ -58,20 +90,12 @@ type AgreementRow = {
   concession_expires_on: string | null;
 };
 
-type ConcessionRow = {
-  residentId: string;
-  residentName: string;
-  source: "agreement" | "imported";
-  roomClass: string;
-  standardCents: number;
-  actualCents: number;
-  concessionCents: number;
-  reason: string;
-  effectiveDate: string | null;
-  expiresOn: string | null;
-};
-
 type QueryListResult<T> = { data: T[] | null; error: { message: string } | null };
+
+function one<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
 
 function residentName(row: ResidentRow): string {
   return `${(row.last_name ?? "").trim()}, ${(row.first_name ?? "").trim()}`.replace(/^, |, $/, "") || "Resident";
@@ -82,18 +106,9 @@ function reasonLabel(reason: string): string {
   return reason.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
-function careForAcuity(schedule: RateSchedule | null, acuity: string | null): number {
-  if (!schedule) return 0;
-  if (acuity === "level_1") return schedule.care_surcharge_level_1 ?? 0;
-  if (acuity === "level_2") return schedule.care_surcharge_level_2 ?? 0;
-  if (acuity === "level_3") return schedule.care_surcharge_level_3 ?? 0;
-  return 0;
-}
-
-function baseForRoom(schedule: RateSchedule | null, roomClass: string): number {
-  if (!schedule) return 0;
-  if (roomClass === "companion") return schedule.base_rate_semi_private ?? schedule.base_rate_private;
-  return schedule.base_rate_private;
+function roomLabel(row: ConcessionRow): string {
+  if (!row.roomClass) return "Room not known";
+  return row.roomClassFrom === "bed" ? `${enumLabel(row.roomClass)} (from bed)` : enumLabel(row.roomClass);
 }
 
 export default function BillingConcessionsPage() {
@@ -116,10 +131,10 @@ export default function BillingConcessionsPage() {
       }
 
       const targetDate = todayFacilityDateIso();
-      const [residentRes, scheduleRes, agreementRes] = (await Promise.all([
+      const [residentRes, scheduleRes, agreementRes, payerRes, ruleRes] = (await Promise.all([
         supabase
           .from("residents" as never)
-          .select("id, first_name, last_name, acuity_level, monthly_total_rate, monthly_base_rate, rate_effective_date")
+          .select("id, first_name, last_name, acuity_level, monthly_total_rate, rate_effective_date, bed_by_id: beds!residents_bed_id_fkey ( rooms ( room_type ) )")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
           .eq("status", "active")
@@ -127,14 +142,11 @@ export default function BillingConcessionsPage() {
           .limit(500),
         supabase
           .from("rate_schedules" as never)
-          .select("base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3")
+          .select("id, organization_id, status, effective_date, end_date, base_rate_private, base_rate_semi_private, care_surcharge_level_1, care_surcharge_level_2, care_surcharge_level_3")
           .eq("facility_id", selectedFacilityId)
           .is("deleted_at", null)
-          .lte("effective_date", targetDate)
-          .or(`end_date.is.null,end_date.gte.${targetDate}`)
           .order("effective_date", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(1),
+          .limit(100),
         supabase
           .from("resident_rate_agreements" as never)
           .select("id, resident_id, room_class, status, effective_date, end_date, standard_monthly_total_at_signing, negotiated_monthly_total, concession_amount_at_signing, concession_reason, concession_expires_on")
@@ -146,59 +158,101 @@ export default function BillingConcessionsPage() {
           .order("effective_date", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(500),
-      ])) as unknown as [QueryListResult<ResidentRow>, QueryListResult<RateSchedule>, QueryListResult<AgreementRow>];
+        supabase
+          .from("resident_payers" as never)
+          .select("resident_id, payer_type, payer_name, payer_share_type, payer_fixed_amount, medicaid_rate, medicaid_patient_responsibility, effective_date, end_date")
+          .eq("facility_id", selectedFacilityId)
+          .is("deleted_at", null)
+          .limit(2000),
+        supabase
+          .from("billing_rate_rules" as never)
+          .select("id, organization_id, facility_id, effective_from, rate_overlap_rule, payer_split_is_concession, created_at"),
+      ])) as unknown as [
+        QueryListResult<ResidentRow>,
+        QueryListResult<RateScheduleRow>,
+        QueryListResult<AgreementRow>,
+        QueryListResult<PayerRow>,
+        QueryListResult<BillingRateRuleRow>,
+      ];
 
       if (residentRes.error) throw residentRes.error;
       if (scheduleRes.error) throw scheduleRes.error;
       if (agreementRes.error) throw agreementRes.error;
+      if (payerRes.error) throw payerRes.error;
 
-      const residents = residentRes.data ?? [];
-      const schedule = (scheduleRes.data ?? [])[0] ?? null;
-      const agreements = agreementRes.data ?? [];
-      const agreementByResident = new Map<string, AgreementRow>();
-      for (const agreement of agreements) {
-        if (!agreementByResident.has(agreement.resident_id)) agreementByResident.set(agreement.resident_id, agreement);
+      const schedules = scheduleRes.data ?? [];
+      // An unreadable rule falls back to the stricter default, the same one the database applies.
+      const rule = resolveBillingRateRule(
+        ruleRes.error ? [] : ruleRes.data ?? [],
+        schedules[0]?.organization_id ?? "",
+        selectedFacilityId!,
+        targetDate,
+      );
+      const resolution = resolveFacilitySchedule(
+        schedules.map((row) => ({ ...row, effectiveDate: row.effective_date, endDate: row.end_date, status: row.status ?? "published" })),
+        targetDate,
+        rule.rateOverlapRule,
+      );
+      if (resolution.conflicting.length > 0) {
+        throw new Error(
+          `${resolution.conflicting.length} posted rate schedules are in force at once for this facility. End-date the one that no longer applies on the Rates page before comparing rents.`,
+        );
       }
+      const winner = resolution.winner;
+      const schedule = winner
+        ? {
+            basePrivateCents: winner.base_rate_private,
+            baseSemiPrivateCents: winner.base_rate_semi_private,
+            careLevel1Cents: winner.care_surcharge_level_1 ?? 0,
+            careLevel2Cents: winner.care_surcharge_level_2 ?? 0,
+            careLevel3Cents: winner.care_surcharge_level_3 ?? 0,
+          }
+        : null;
 
-      const builtRows: ConcessionRow[] = [];
-      for (const resident of residents) {
-        const agreement = agreementByResident.get(resident.id);
-        if (agreement) {
-          const currentStandard = baseForRoom(schedule, agreement.room_class) + careForAcuity(schedule, resident.acuity_level);
-          const standard = currentStandard > 0 ? currentStandard : agreement.standard_monthly_total_at_signing;
-          builtRows.push({
-            residentId: resident.id,
-            residentName: residentName(resident),
-            source: "agreement",
-            roomClass: agreement.room_class,
-            standardCents: standard,
-            actualCents: agreement.negotiated_monthly_total,
-            concessionCents: standard - agreement.negotiated_monthly_total,
-            reason: agreement.concession_reason,
-            effectiveDate: agreement.effective_date,
-            expiresOn: agreement.concession_expires_on,
-          });
-          continue;
-        }
-
-        if (!resident.monthly_total_rate || resident.monthly_total_rate <= 0) continue;
-        const standard = (schedule?.base_rate_private ?? 0) + careForAcuity(schedule, resident.acuity_level);
-        builtRows.push({
-          residentId: resident.id,
-          residentName: residentName(resident),
-          source: "imported",
-          roomClass: "unconfirmed",
-          standardCents: standard,
-          actualCents: resident.monthly_total_rate,
-          concessionCents: standard - resident.monthly_total_rate,
-          reason: "legacy_rate_lock",
-          effectiveDate: resident.rate_effective_date,
-          expiresOn: null,
+      const agreementsByResident = new Map<string, ConcessionAgreementInput>();
+      for (const agreement of agreementRes.data ?? []) {
+        if (agreementsByResident.has(agreement.resident_id)) continue;
+        agreementsByResident.set(agreement.resident_id, {
+          roomClass: agreement.room_class,
+          effectiveDate: agreement.effective_date,
+          negotiatedMonthlyTotalCents: agreement.negotiated_monthly_total,
+          standardMonthlyTotalAtSigningCents: agreement.standard_monthly_total_at_signing,
+          concessionReason: agreement.concession_reason,
+          concessionExpiresOn: agreement.concession_expires_on,
         });
       }
-      builtRows.sort((a, b) => b.concessionCents - a.concessionCents);
 
-      setRows(builtRows);
+      const payersByResident = new Map<string, ConcessionPayerInput[]>();
+      for (const payer of payerRes.data ?? []) {
+        if (payer.effective_date > targetDate || (payer.end_date != null && payer.end_date < targetDate)) continue;
+        const list = payersByResident.get(payer.resident_id) ?? [];
+        list.push({
+          payerType: payer.payer_type,
+          payerName: payer.payer_name,
+          payerShareType: payer.payer_share_type,
+          payerFixedAmountCents: payer.payer_fixed_amount,
+          medicaidRateCents: payer.medicaid_rate,
+          medicaidPatientResponsibilityCents: payer.medicaid_patient_responsibility,
+        });
+        payersByResident.set(payer.resident_id, list);
+      }
+
+      setRows(
+        buildConcessionRows({
+          residents: (residentRes.data ?? []).map((resident) => ({
+            id: resident.id,
+            name: residentName(resident),
+            acuityLevel: resident.acuity_level,
+            monthlyTotalRateCents: resident.monthly_total_rate,
+            rateEffectiveDate: resident.rate_effective_date,
+            bedRoomType: one(one(resident.bed_by_id)?.rooms)?.room_type ?? null,
+            payers: payersByResident.get(resident.id) ?? [],
+          })),
+          agreementsByResident,
+          schedule,
+          payerSplitIsConcession: rule.payerSplitIsConcession,
+        }),
+      );
     } catch (err) {
       setRows([]);
       setError(err instanceof Error ? err.message : "Could not load concession tracking.");
@@ -211,15 +265,7 @@ export default function BillingConcessionsPage() {
     void load();
   }, [load]);
 
-  const totals = useMemo(() => rows.reduce(
-    (acc, row) => ({
-      standard: acc.standard + row.standardCents,
-      actual: acc.actual + row.actualCents,
-      concessions: acc.concessions + Math.max(0, row.concessionCents),
-      premiums: acc.premiums + Math.max(0, -row.concessionCents),
-    }),
-    { standard: 0, actual: 0, concessions: 0, premiums: 0 },
-  ), [rows]);
+  const totals = useMemo(() => summarizeConcessions(rows), [rows]);
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -236,11 +282,14 @@ export default function BillingConcessionsPage() {
               Rate Concession Register
             </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-3xl">
-              Shows current posted standard rate versus actual resident monthly rent. Imported rows should be confirmed into negotiated billing agreements from each resident billing profile.
+              A concession is a discount against the same payer&apos;s posted rate: a private-pay resident&apos;s rent against the posted rate for their room and care level. Residents whose rent is split with Medicaid, insurance or another payer are listed as payer splits, not concessions.
             </p>
             <p className="text-sm text-muted-foreground">
               Rate schedules and agreements as of {asOfDate} Eastern.
             </p>
+            {!isLoading && rows.length > 0 ? (
+              <p className="text-sm text-muted-foreground">{concessionsResidentCountLabel(rows.length)}.</p>
+            ) : null}
           </div>
         </header>
 
@@ -251,12 +300,23 @@ export default function BillingConcessionsPage() {
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
         {!isLoading && rows.length > 0 ? (
-          <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-            <div className="h-[160px]"><MetricCard label="Posted standard" value={totals.standard} tone="slate" /></div>
-            <div className="h-[160px]"><MetricCard label="Actual rent" value={totals.actual} tone="emerald" /></div>
-            <div className="h-[160px]"><MetricCard label="Concessions" value={totals.concessions} tone="amber" /></div>
-            <div className="h-[160px]"><MetricCard label="Premiums" value={totals.premiums} tone="indigo" /></div>
-          </KineticGrid>
+          <>
+            <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-2" staggerMs={75}>
+              <div className="h-[160px]"><MetricCard label="Posted private-pay rate" value={totals.postedCents} tone="slate" /></div>
+              <div className="h-[160px]"><MetricCard label="Agreed private rent" value={totals.agreedCents} tone="emerald" /></div>
+              <div className="h-[160px]"><MetricCard label="Concessions" value={totals.concessionsCents} tone="amber" /></div>
+              <div className="h-[160px]"><MetricCard label="Premiums" value={totals.premiumsCents} tone="indigo" /></div>
+            </KineticGrid>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Tiles cover {totals.concessionResidents} private-pay resident{totals.concessionResidents === 1 ? "" : "s"}.
+              {totals.payerSplitResidents > 0
+                ? ` ${totals.payerSplitResidents} resident${totals.payerSplitResidents === 1 ? " has" : "s have"} a payer split (${billingCurrency.format(totals.payerSplitTermsCents / 100)} in monthly terms) and ${totals.payerSplitResidents === 1 ? "is" : "are"} not counted as concessions.`
+                : ""}
+              {totals.notComparedResidents > 0
+                ? ` ${totals.notComparedResidents} not compared: no room on file and no posted rate for it.`
+                : ""}
+            </p>
+          </>
         ) : null}
 
         {isLoading ? <AdminTableLoadingState /> : null}
@@ -272,23 +332,51 @@ export default function BillingConcessionsPage() {
             </div>
             <MotionList className="space-y-3">
               {rows.map((row) => (
-                <MotionItem key={`${row.source}-${row.residentId}`}>
+                <MotionItem key={`${row.kind}-${row.residentId}`}>
                   <Link href={`/admin/residents/${row.residentId}/billing`} className="block rounded-2xl focus-visible:outline-none focus:ring-2 focus:ring-amber-500">
                     <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md dark:border-white/10 dark:bg-white/[0.03] lg:grid-cols-[1.5fr_0.8fr_1fr_1fr_1fr_1fr] lg:items-center">
                       <div className="flex items-center gap-3">
                         <div className="rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"><UserCircle className="h-5 w-5" /></div>
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">{row.residentName}</p>
-                          <p className="text-xs text-slate-500">{formatConcessionsDateDisplay(row.effectiveDate)} · {enumLabel(row.roomClass)}</p>
+                          <p className="text-xs text-slate-500">{formatConcessionsDateDisplay(row.effectiveDate)} · {roomLabel(row)}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="w-fit capitalize">{row.source === "agreement" ? "Confirmed" : "Imported"}</Badge>
-                      <MoneyCell label="Standard" value={row.standardCents} />
-                      <MoneyCell label="Actual" value={row.actualCents} />
-                      <MoneyCell label={row.concessionCents >= 0 ? "Concession" : "Premium"} value={Math.abs(row.concessionCents)} />
+                      <Badge variant="outline" className="w-fit">
+                        {row.kind === "payer_split" ? "Payer split" : row.source === "agreement" ? "Confirmed" : "Imported"}
+                      </Badge>
+                      {row.kind === "payer_split" ? (
+                        <>
+                          <MoneyCell label="Monthly terms" value={row.agreedCents} />
+                          <div className="lg:col-span-2">
+                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Paid by</p>
+                            <ul className="text-sm text-foreground">
+                              {row.splits.map((split, index) => (
+                                <li key={`${split.label}-${index}`}>
+                                  {split.label}: {split.cents == null ? "amount not on file" : billingCurrency.format(split.cents / 100)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {row.postedCents == null ? (
+                            <TextCell label="Posted rate" value="Not compared" />
+                          ) : (
+                            <MoneyCell label="Posted rate" value={row.postedCents} />
+                          )}
+                          <MoneyCell label="Agreed rent" value={row.agreedCents} />
+                          {row.concessionCents == null ? (
+                            <TextCell label="Concession" value="—" />
+                          ) : (
+                            <MoneyCell label={row.concessionCents >= 0 ? "Concession" : "Premium"} value={Math.abs(row.concessionCents)} />
+                          )}
+                        </>
+                      )}
                       <div>
                         <p className="text-[10px] uppercase tracking-widest text-slate-500">Reason</p>
-                        <p className="text-sm text-slate-700 dark:text-slate-300">{reasonLabel(row.reason)}</p>
+                        <p className="text-sm text-slate-700 dark:text-slate-300">{row.kind === "payer_split" ? "Not a concession" : reasonLabel(row.reason)}</p>
                         {row.expiresOn ? <p className="text-xs text-amber-600 dark:text-amber-300">Expires {formatConcessionsDateDisplay(row.expiresOn)}</p> : null}
                       </div>
                     </div>
@@ -321,6 +409,15 @@ function MoneyCell({ label, value }: { label: string; value: number }) {
     <div>
       <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
       <p className="font-mono text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">{billingCurrency.format(value / 100)}</p>
+    </div>
+  );
+}
+
+function TextCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-sm text-muted-foreground">{value}</p>
     </div>
   );
 }

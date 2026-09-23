@@ -1,3 +1,4 @@
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import {
   formatSurveyBundlePrintAdministratorName,
   formatSurveyBundlePrintEntityName,
@@ -281,7 +282,7 @@ export function surveyBundleToMarkdown(packet: SurveyBundlePacket) {
   } else {
     for (const incident of packet.incidents) {
       lines.push(
-        `- ${incident.incidentNumber} | ${incident.severity} | status=${incident.status} | AHCA reportable=${incident.ahcaReportable ? "yes" : "no"} | occurred=${incident.occurredAt}`,
+        `- ${incident.incidentNumber} | ${formatLevelWord(incident.severity)} | status=${incident.status} | AHCA reportable=${incident.ahcaReportable ? "yes" : "no"} | occurred=${incident.occurredAt}`,
       );
     }
   }

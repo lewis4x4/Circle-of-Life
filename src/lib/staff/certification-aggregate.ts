@@ -1,11 +1,12 @@
 import { canClaimAllClear } from "@/lib/metrics/metric-state";
 
 /**
- * Header summary for one staff member's certifications.
- * `none_on_file` is not "current": zero certifications on file is a gap to
+ * One rule for a staff member's certifications, shared by the roster
+ * (`load-staff.ts`) and the staff profile header.
+ * `not_verified` is not "current": zero certifications on file is a gap to
  * look at, never a green "Certs OK" (COL-649).
  */
-export type CertificationStatus = "current" | "expiring_soon" | "expired" | "none_on_file";
+export type CertificationStatus = "current" | "expiring_soon" | "expired" | "not_verified";
 
 export const CERT_EXPIRING_SOON_DAYS = 60;
 
@@ -30,12 +31,12 @@ export function aggregateCertStatus(
     }
   }
   if (expiring > 0) return "expiring_soon";
-  return canClaimAllClear({ scopeSize: certs.length, issueCount: expiring }) ? "current" : "none_on_file";
+  return canClaimAllClear({ scopeSize: certs.length, issueCount: expiring }) ? "current" : "not_verified";
 }
 
 export const CERT_STATUS_LABEL: Record<CertificationStatus, string> = {
   current: "Certs OK",
   expiring_soon: "Expiring soon",
   expired: "Cert issue",
-  none_on_file: "No certs on file",
+  not_verified: "No certs on file",
 };

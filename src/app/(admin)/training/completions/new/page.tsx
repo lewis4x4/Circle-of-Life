@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, GraduationCap, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -153,7 +154,6 @@ export default function AdminNewTrainingCompletionPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
       return;
     }
     if (!staffId.trim()) {
@@ -293,185 +293,183 @@ export default function AdminNewTrainingCompletionPage() {
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can log
-        completions. Choose a single facility in the header (not &quot;All facilities&quot;).
+        completions..
       </p>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to load staff and programs.
-        </p>
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Completion</CardTitle>
+            <CardDescription>Required: staff, program, completion date, delivery method.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="max-w-xl space-y-4">
+              {error && (
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+                  {error}
+                </p>
+              )}
+
+              <fieldset disabled={completionSaved || submitting} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="staff">Staff</Label>
+                <select
+                  id="staff"
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                  value={staffId}
+                  onChange={(e) => setStaffId(e.target.value)}
+                  disabled={!facilityReady || loading}
+                >
+                  <option value="">Select…</option>
+                  {staffList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="program">Training program</Label>
+                <select
+                  id="program"
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                  value={programId}
+                  onChange={(e) => setProgramId(e.target.value)}
+                  disabled={!facilityReady || loading}
+                >
+                  <option value="">Select…</option>
+                  {programList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="completed">Completed on (ET)</Label>
+                  <Input
+                    id="completed"
+                    type="date"
+                    value={completedAt}
+                    onChange={(e) => setCompletedAt(e.target.value)}
+                    disabled={!facilityReady || loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expires">Expires on (optional)</Label>
+                  <Input
+                    id="expires"
+                    type="date"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                    disabled={!facilityReady || loading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="hours">Hours completed (optional)</Label>
+                <Input
+                  id="hours"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="e.g. 4.5"
+                  value={hoursCompleted}
+                  onChange={(e) => setHoursCompleted(e.target.value)}
+                  disabled={!facilityReady || loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="delivery">Delivery method</Label>
+                <select
+                  id="delivery"
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm capitalize dark:border-slate-800 dark:bg-slate-950"
+                  value={deliveryMethod}
+                  onChange={(e) =>
+                    setDeliveryMethod(
+                      e.target.value as Database["public"]["Enums"]["training_delivery_method"],
+                    )
+                  }
+                  disabled={!facilityReady || loading}
+                >
+                  {DELIVERY.map((d) => (
+                    <option key={d} value={d}>
+                      {deliveryLabel(d)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="provider">External provider (optional)</Label>
+                <Input
+                  id="provider"
+                  value={externalProvider}
+                  onChange={(e) => setExternalProvider(e.target.value)}
+                  placeholder="e.g. Baya"
+                  disabled={!facilityReady || loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cert">Certificate number (optional)</Label>
+                <Input
+                  id="cert"
+                  value={certificateNumber}
+                  onChange={(e) => setCertificateNumber(e.target.value)}
+                  disabled={!facilityReady || loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <textarea
+                  id="notes"
+                  className="flex min-h-[80px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={!facilityReady || loading}
+                />
+              </div>
+
+              </fieldset>
+              <div className="space-y-2">
+                <Label htmlFor="cert-pdf">Certificate PDF (optional)</Label>
+                <Input
+                  id="cert-pdf"
+                  type="file"
+                  accept="application/pdf"
+                  disabled={!facilityReady || loading}
+                  onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-[10px] text-slate-500">Max 15 MB. Stored in the competency-certificates bucket.</p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={!facilityReady || loading || submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    completionSaved ? "Retry certificate attachment" : "Save completion"
+                  )}
+                </Button>
+                <Link href="/admin/training" className={buttonVariants({ variant: "outline" })}>
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="Completions are logged for staff at one building, so staff, programs and this form load once a facility is chosen." />
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Completion</CardTitle>
-          <CardDescription>Required: staff, program, completion date, delivery method.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="max-w-xl space-y-4">
-            {error && (
-              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-                {error}
-              </p>
-            )}
-
-            <fieldset disabled={completionSaved || submitting} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="staff">Staff</Label>
-              <select
-                id="staff"
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-                value={staffId}
-                onChange={(e) => setStaffId(e.target.value)}
-                disabled={!facilityReady || loading}
-              >
-                <option value="">Select…</option>
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="program">Training program</Label>
-              <select
-                id="program"
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-                value={programId}
-                onChange={(e) => setProgramId(e.target.value)}
-                disabled={!facilityReady || loading}
-              >
-                <option value="">Select…</option>
-                {programList.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="completed">Completed on (ET)</Label>
-                <Input
-                  id="completed"
-                  type="date"
-                  value={completedAt}
-                  onChange={(e) => setCompletedAt(e.target.value)}
-                  disabled={!facilityReady || loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="expires">Expires on (optional)</Label>
-                <Input
-                  id="expires"
-                  type="date"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  disabled={!facilityReady || loading}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="hours">Hours completed (optional)</Label>
-              <Input
-                id="hours"
-                type="text"
-                inputMode="decimal"
-                placeholder="e.g. 4.5"
-                value={hoursCompleted}
-                onChange={(e) => setHoursCompleted(e.target.value)}
-                disabled={!facilityReady || loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="delivery">Delivery method</Label>
-              <select
-                id="delivery"
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm capitalize dark:border-slate-800 dark:bg-slate-950"
-                value={deliveryMethod}
-                onChange={(e) =>
-                  setDeliveryMethod(
-                    e.target.value as Database["public"]["Enums"]["training_delivery_method"],
-                  )
-                }
-                disabled={!facilityReady || loading}
-              >
-                {DELIVERY.map((d) => (
-                  <option key={d} value={d}>
-                    {deliveryLabel(d)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="provider">External provider (optional)</Label>
-              <Input
-                id="provider"
-                value={externalProvider}
-                onChange={(e) => setExternalProvider(e.target.value)}
-                placeholder="e.g. Baya"
-                disabled={!facilityReady || loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cert">Certificate number (optional)</Label>
-              <Input
-                id="cert"
-                value={certificateNumber}
-                onChange={(e) => setCertificateNumber(e.target.value)}
-                disabled={!facilityReady || loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <textarea
-                id="notes"
-                className="flex min-h-[80px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                disabled={!facilityReady || loading}
-              />
-            </div>
-
-            </fieldset>
-            <div className="space-y-2">
-              <Label htmlFor="cert-pdf">Certificate PDF (optional)</Label>
-              <Input
-                id="cert-pdf"
-                type="file"
-                accept="application/pdf"
-                disabled={!facilityReady || loading}
-                onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
-              />
-              <p className="text-[10px] text-slate-500">Max 15 MB. Stored in the competency-certificates bucket.</p>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={!facilityReady || loading || submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  completionSaved ? "Retry certificate attachment" : "Save completion"
-                )}
-              </Button>
-              <Link href="/admin/training" className={buttonVariants({ variant: "outline" })}>
-                Cancel
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
     </div>
   );
 }
