@@ -39,6 +39,7 @@ vi.mock("@/lib/supabase/client", () => ({
         lt: () => builder,
         order: () => builder,
         limit: () => builder,
+        range: (start: number, end: number) => Promise.resolve({ data: rows.slice(start, end + 1), count: rows.length, error: null }),
         maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
         upsert: async (payload: Record<string, unknown>) => {
           tables.upserts.push(payload);

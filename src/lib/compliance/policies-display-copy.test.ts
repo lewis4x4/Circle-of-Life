@@ -57,3 +57,12 @@ describe("compliancePolicyListCountLabel (COL-649)", () => {
     expect(compliancePolicyListCountLabel({ ...base, loading: true })).toBe("Loading…");
   });
 });
+
+describe("COMPLIANCE_POLICY_LIBRARY_EMPTY (COL-710)", () => {
+  it("does not read as 'no policies' and points at the knowledge base", async () => {
+    const { COMPLIANCE_POLICY_LIBRARY_EMPTY } = await import("./policies-display-copy");
+    expect(COMPLIANCE_POLICY_LIBRARY_EMPTY.title).not.toBe("No policies");
+    expect(COMPLIANCE_POLICY_LIBRARY_EMPTY.description).toMatch(/knowledge base/i);
+    expect(COMPLIANCE_POLICY_LIBRARY_EMPTY.knowledgeBaseHref).toBe("/admin/knowledge/admin");
+  });
+});

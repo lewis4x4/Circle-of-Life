@@ -39,6 +39,8 @@ type FacilityRow = {
   entity_id: string | null;
   name: string;
   timezone: string | null;
+  /** Staffing-ratio check switch: on only when a ratio rule set is assigned (COL-675). */
+  facility_ratio_rule_set_id: string | null;
 };
 
 type OrgRow = { id: string };
@@ -143,7 +145,12 @@ function buildFacilityRiskScore(args: {
   );
   const licenseThreateningTasks = overdueTasks.filter((task) => task.license_threatening);
 
-  const nonCompliantStaffing = args.staffing.filter((snapshot) => !snapshot.is_compliant);
+  // COL-675 (Brian, 2026-09-23): the staffing-ratio check is off unless the facility has a
+  // ratio rule set assigned — the same switch the staffing console reads
+  // (src/lib/staffing/ratio-check.ts). While it is off, adequacy non-compliance is not a
+  // risk signal; assigning a rule set brings it back.
+  const staffingRatioCheckOn = Boolean(args.facility.facility_ratio_rule_set_id);
+  const nonCompliantStaffing = staffingRatioCheckOn ? args.staffing.filter((snapshot) => !snapshot.is_compliant) : [];
   const cannotCoverMax = nonCompliantStaffing.reduce(
     (max, snapshot) => Math.max(max, snapshot.cannot_cover_count ?? 0),
     0,
@@ -191,7 +198,9 @@ function buildFacilityRiskScore(args: {
       "Staffing adequacy",
       nonCompliantStaffing.length,
       Math.min(24, nonCompliantStaffing.length * 6 + cannotCoverMax * 2),
-      `${nonCompliantStaffing.length} non-compliant adequacy snapshot(s); lowest score ${lowestAdequacyScore}.`,
+      staffingRatioCheckOn
+        ? `${nonCompliantStaffing.length} non-compliant adequacy snapshot(s); lowest score ${lowestAdequacyScore}.`
+        : "Staffing ratio check is off for this facility; staffing adequacy is not scored.",
     ),
     buildDriver(
       "survey_deficiencies",
@@ -253,6 +262,7 @@ function buildFacilityRiskScore(args: {
           + (drivers.find((driver) => driver.key === "overdue_operations")?.penalty ?? 0),
       },
       staffing: {
+        ratio_check_on: staffingRatioCheckOn,
         non_compliant_snapshots: nonCompliantStaffing.length,
         cannot_cover_max: cannotCoverMax,
         lowest_adequacy_score: Number.isFinite(lowestAdequacyScore) ? lowestAdequacyScore : null,
@@ -432,7 +442,7 @@ Deno.serve(async (req) => {
   for (const org of organizations) {
     let facilityQuery = admin
       .from("facilities")
-      .select("id, organization_id, entity_id, name, timezone")
+      .select("id, organization_id, entity_id, name, timezone, facility_ratio_rule_set_id")
       .eq("organization_id", org.id)
       .eq("status", "active")
       .is("deleted_at", null)
