@@ -54,3 +54,31 @@ export function formatTrainingHubSignerName(name: string | null | undefined): st
   if (!name || !name.trim()) return TRAINING_HUB_NO_SIGNER_COPY;
   return name;
 }
+
+/** Page/card facility scope — never fabricates a facility name or says "selected facility". */
+export type TrainingHubFacilityScope =
+  | { kind: "org_wide" }
+  | { kind: "named"; name: string }
+  | { kind: "missing_name" };
+
+export function resolveTrainingHubFacilityScope(
+  orgWideMode: boolean,
+  facilityName: string | null | undefined,
+): TrainingHubFacilityScope {
+  if (orgWideMode) return { kind: "org_wide" };
+  const trimmed = facilityName?.trim();
+  if (trimmed) return { kind: "named", name: trimmed };
+  return { kind: "missing_name" };
+}
+
+const TRAINING_HUB_ORG_WIDE_DEMO_CARD_SUBTITLE =
+  "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope.";
+
+/** Competency demo action-card subtitle — names the facility when scoped. */
+export function formatTrainingHubDemoCardSubtitle(scope: TrainingHubFacilityScope): string {
+  if (scope.kind === "org_wide") return TRAINING_HUB_ORG_WIDE_DEMO_CARD_SUBTITLE;
+  if (scope.kind === "named") {
+    return `Documented skills demonstrations for ${scope.name}.`;
+  }
+  return "Documented skills demonstrations for this facility.";
+}

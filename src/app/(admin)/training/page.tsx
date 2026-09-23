@@ -18,11 +18,13 @@ import { formatTrainingStaffLabel } from "@/lib/training/training-display-copy";
 import {
   TRAINING_HUB_NO_PDF_COPY,
   formatTrainingHubDate,
+  formatTrainingHubDemoCardSubtitle,
   formatTrainingHubFacilityName,
   formatTrainingHubHours,
   formatTrainingHubProgramName,
   formatTrainingHubSignerName,
   formatTrainingHubStaffName,
+  resolveTrainingHubFacilityScope,
 } from "@/lib/training/training-hub-display-copy";
 import { CompetencyCertificateOpenButton } from "@/components/training/competency-certificate-open-button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -199,7 +201,11 @@ function buildInserviceSessionsCsv(rows: InserviceRow[]): string {
 
 export default function AdminTrainingHubPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const scopedFacilityName = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
+  }, [availableFacilities, selectedFacilityId]);
   const [attestationFormError, setAttestationFormError] = useState<string | null>(null);
   const [attestationFormSuccess, setAttestationFormSuccess] = useState<string | null>(null);
   const [attestationSubmitting, setAttestationSubmitting] = useState(false);
@@ -226,6 +232,9 @@ export default function AdminTrainingHubPage() {
   const singleFacilityMode =
     Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
   const facilityReady = orgWideMode || singleFacilityMode;
+  const demoCardSubtitle = formatTrainingHubDemoCardSubtitle(
+    resolveTrainingHubFacilityScope(orgWideMode, scopedFacilityName),
+  );
 
   // React Query replaces the per-page useEffect+useState read. All five hub
   // datasets load together (as before) under one facility-scoped key; per-section
@@ -630,9 +639,7 @@ export default function AdminTrainingHubPage() {
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                      <p className="hidden max-w-lg text-xs leading-relaxed text-muted-foreground lg:block">
-                   {orgWideMode
-                     ? "Last 50 competency demonstrations across your accessible facilities (ordered by date). RLS enforces scope."
-                     : "Documented skills demonstrations for the selected facility."}
+                   {demoCardSubtitle}
                  </p>
                  <div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
                    <Button
