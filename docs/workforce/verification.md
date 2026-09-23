@@ -27,7 +27,9 @@ Predecessors are held PR #814 (483–484), PR #822 (485) and PR #833 (486). This
 
 ## Separate correction release
 
-PR #835 carries only the independently releasable pagination and explicit missing-end correction fixes. Its release evidence is separate from this larger draft.
+PR #835 merged and published exact revision `4aa2861554737313aed063398c550d8c4320cf52` in Netlify deploy `6ab45712f16dd800089c7902` at 2026-09-23T22:50:07.515Z. Required PR CI and post-merge CI run `35930278514` passed. Its 42 focused tests and ten synthetic browser assertions passed; three fresh live browser contexts reached the expected login page.
+
+The release is qualified: intermittent raw anonymous plain-text 500 responses were observed on the current and prior deployments. Cause remains unconfirmed and the specific raw-route smoke result remains false. [COL-729](https://linear.app/jarvislewis/issue/COL-729) records that finding separately. This publication does not release the broader Workforce draft.
 
 ## Deferred product work
 

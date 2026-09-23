@@ -1,0 +1,16 @@
+Standalone Next build exited 0. The normal production-build gate is still blocked by the migration sequence.
+
+✓ Compiled successfully in 57s
+  Finished TypeScript in 84s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/507) ...
+  Generating static pages using 15 workers (126/507) 
+  Generating static pages using 15 workers (253/507) 
+  Generating static pages using 15 workers (380/507) 
+✓ Generating static pages using 15 workers (507/507) in 3.1s
+  Finalizing page optimization ...
+├ ○ /admin/staffing
+├ ƒ /admin/staffing/alerts
+├ ○ /admin/staffing/new
+├ ○ /admin/timecards
+├ ƒ /api/admin/workforce

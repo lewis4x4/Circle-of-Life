@@ -55,5 +55,17 @@
     "superseded_failure": "native replay now passes in full after RLS initplan and fixture updates"
   },
   "production_changes_by_this_draft": false,
-  "adp_submission_available": false
+  "adp_submission_available": false,
+  "independent_timekeeping_release": {
+    "pr": 835,
+    "sha": "4aa2861554737313aed063398c550d8c4320cf52",
+    "deploy": "6ab45712f16dd800089c7902",
+    "state": "published",
+    "pr_ci": "success",
+    "post_merge_ci": "success",
+    "post_merge_run": 35930278514,
+    "raw_route_smoke_pass": false,
+    "browser_login_checks_passed": 3,
+    "unresolved_finding": "COL-729"
+  }
 }
