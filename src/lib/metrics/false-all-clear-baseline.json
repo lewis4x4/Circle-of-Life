@@ -1,0 +1,181 @@
+{
+  "src/app/(admin)/admin/admissions/[id]/page.tsx": {
+    "count-or-zero": 4
+  },
+  "src/app/(admin)/admin/infection-control/page.tsx": {
+    "count-or-zero": 4
+  },
+  "src/app/(admin)/admin/meetings/page.tsx": {
+    "count-or-zero": 1
+  },
+  "src/app/(admin)/admin/rounding/reports/page.tsx": {
+    "silent-zero": 2
+  },
+  "src/app/(admin)/billing/ar-aging/page.tsx": {
+    "count-or-zero": 2,
+    "silent-zero": 2
+  },
+  "src/app/(admin)/billing/billing-invoice-ledger.tsx": {
+    "silent-zero": 2
+  },
+  "src/app/(admin)/billing/invoices/[id]/page.tsx": {
+    "count-or-zero": 1
+  },
+  "src/app/(admin)/billing/payments/new/page.tsx": {
+    "silent-zero": 2
+  },
+  "src/app/(admin)/executive/alerts/page.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/app/(admin)/insurance/page.tsx": {
+    "silent-zero": 3
+  },
+  "src/app/(admin)/reports/page.tsx": {
+    "count-or-zero": 4
+  },
+  "src/app/(admin)/reputation/page.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/app/(admin)/transportation/page.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/app/(admin)/vendors/[id]/page.tsx": {
+    "count-or-zero": 3
+  },
+  "src/app/(admin)/vendors/page.tsx": {
+    "silent-zero": 2
+  },
+  "src/app/(caregiver)/caregiver/page.tsx": {
+    "count-or-zero": 1
+  },
+  "src/app/(family)/family/billing/page.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/app/api/admin/facilities/[facilityId]/audit-log/route.ts": {
+    "count-or-zero": 3
+  },
+  "src/app/api/admin/facilities/route.ts": {
+    "count-or-zero": 2
+  },
+  "src/app/api/admin/users/[id]/audit/route.ts": {
+    "count-or-zero": 1
+  },
+  "src/app/api/admin/users/route.ts": {
+    "count-or-zero": 1
+  },
+  "src/components/admin-assistant/AssistantDashboardPageClient.tsx": {
+    "silent-zero": 3
+  },
+  "src/components/admin/AdminDashboardPageClient.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/components/admin/facilities/FacilityAuditMetricsStrip.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/admin/facilities/tabs/AuditTab.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/admin/facilities/tabs/OverviewTab.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/assessments/AdminOverdueAssessmentsPageClient.tsx": {
+    "all-clear-copy": 2
+  },
+  "src/components/benefits/BenefitsQueue.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/compliance/AdminCompliancePageClient.tsx": {
+    "all-clear-copy": 1,
+    "silent-zero": 8
+  },
+  "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
+    "silent-zero": 5
+  },
+  "src/components/dietary/AdminDietaryPageClient.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/components/home/PastDueStrip.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/incidents/AdminIncidentDetailPageClient.tsx": {
+    "all-clear-copy": 1
+  },
+  "src/components/resident-intake/types.ts": {
+    "count-or-zero": 1
+  },
+  "src/components/rounding/CadenceCurrentSummary.tsx": {
+    "silent-zero": 6
+  },
+  "src/components/rounding/CadencePreviewPanel.tsx": {
+    "silent-zero": 3
+  },
+  "src/components/rounding/IntegrityCompliancePanel.tsx": {
+    "silent-zero": 2
+  },
+  "src/components/staffing/AdminStaffingConsolePageClient.tsx": {
+    "all-clear-copy": 2
+  },
+  "src/components/stand-up/editor.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/timeclock/UpunchCompare.tsx": {
+    "silent-zero": 1
+  },
+  "src/components/ui/filter-pill.tsx": {
+    "count-or-zero": 1
+  },
+  "src/features/knowledge/hooks/useKBHealth.ts": {
+    "count-or-zero": 9
+  },
+  "src/lib/admin-assistant/dashboard-brief.ts": {
+    "count-or-zero": 3
+  },
+  "src/lib/admissions/admissions-hub-bootstrap.ts": {
+    "count-or-zero": 8
+  },
+  "src/lib/assessments/record-assessment.ts": {
+    "count-or-zero": 1
+  },
+  "src/lib/caregiver/shift-brief.ts": {
+    "count-or-zero": 4
+  },
+  "src/lib/compliance-dashboard-snapshot.ts": {
+    "count-or-zero": 6
+  },
+  "src/lib/coordinator/dashboard-brief.ts": {
+    "count-or-zero": 6
+  },
+  "src/lib/dietary/dashboard-brief.ts": {
+    "count-or-zero": 4
+  },
+  "src/lib/exec-kpi-snapshot.ts": {
+    "count-or-zero": 8
+  },
+  "src/lib/finance/load-finance-overview-data.ts": {
+    "count-or-zero": 1
+  },
+  "src/lib/insurance/assemble-renewal-package-payload.ts": {
+    "count-or-zero": 3
+  },
+  "src/lib/nurse/medication-brief-display-copy.ts": {
+    "all-clear-copy": 1
+  },
+  "src/lib/office/morning-huddle.ts": {
+    "count-or-zero": 2
+  },
+  "src/lib/referrals/referrals-hub-bootstrap.ts": {
+    "count-or-zero": 2
+  },
+  "src/lib/reports/executors/index.ts": {
+    "count-or-zero": 2
+  },
+  "src/lib/resident-assurance/command-center-brief.ts": {
+    "count-or-zero": 8
+  },
+  "src/lib/residents/resident-detail-overview-load.ts": {
+    "count-or-zero": 1
+  },
+  "src/lib/workflows/workflow-events.ts": {
+    "count-or-zero": 1
+  }
+}

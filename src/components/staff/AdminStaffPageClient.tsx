@@ -28,7 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 
@@ -400,7 +400,8 @@ export function AdminStaffPageClient({
             </>
           }
         >
-          <TableRowHeader className="hidden lg:flex">
+          <TableRowList label="Staff roster">
+          <TableRowHeader>
             <div className="flex-[3]">Staff</div>
             <div className="flex-1">Status</div>
             <div className="flex-1">Recorded credentials</div>
@@ -459,6 +460,7 @@ export function AdminStaffPageClient({
               </MotionItem>
             ))}
           </MotionList>
+          </TableRowList>
         </AdminOperationalListPanel>
       ) : null}
     </div>

@@ -28,9 +28,9 @@ export default function AdminNewRateSchedulePage() {
   const [effectiveDate, setEffectiveDate] = useState(() => todayFacilityDateIso());
   const [basePrivate, setBasePrivate] = useState("");
   const [baseSemi, setBaseSemi] = useState("");
-  const [careL1, setCareL1] = useState("0");
-  const [careL2, setCareL2] = useState("0");
-  const [careL3, setCareL3] = useState("0");
+  const [careL1, setCareL1] = useState("");
+  const [careL2, setCareL2] = useState("");
+  const [careL3, setCareL3] = useState("");
   const [communityFee, setCommunityFee] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -201,7 +201,7 @@ export default function AdminNewRateSchedulePage() {
                 inputMode="decimal"
                 value={basePrivate}
                 onChange={(e) => setBasePrivate(e.target.value)}
-                placeholder="4250.00"
+                placeholder="Monthly amount in dollars"
                 required
               />
             </div>
@@ -215,7 +215,7 @@ export default function AdminNewRateSchedulePage() {
                 inputMode="decimal"
                 value={baseSemi}
                 onChange={(e) => setBaseSemi(e.target.value)}
-                placeholder="3750.00"
+                placeholder="Monthly amount in dollars"
               />
             </div>
 
@@ -224,19 +224,19 @@ export default function AdminNewRateSchedulePage() {
                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="l1">
                   Care L1
                 </label>
-                <Input id="l1" inputMode="decimal" value={careL1} onChange={(e) => setCareL1(e.target.value)} />
+                <Input id="l1" inputMode="decimal" value={careL1} onChange={(e) => setCareL1(e.target.value)} placeholder="None" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="l2">
                   Care L2
                 </label>
-                <Input id="l2" inputMode="decimal" value={careL2} onChange={(e) => setCareL2(e.target.value)} />
+                <Input id="l2" inputMode="decimal" value={careL2} onChange={(e) => setCareL2(e.target.value)} placeholder="None" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="l3">
                   Care L3
                 </label>
-                <Input id="l3" inputMode="decimal" value={careL3} onChange={(e) => setCareL3(e.target.value)} />
+                <Input id="l3" inputMode="decimal" value={careL3} onChange={(e) => setCareL3(e.target.value)} placeholder="None" />
               </div>
             </div>
 
@@ -249,7 +249,7 @@ export default function AdminNewRateSchedulePage() {
                 inputMode="decimal"
                 value={communityFee}
                 onChange={(e) => setCommunityFee(e.target.value)}
-                placeholder="2500.00"
+                placeholder="One-time amount in dollars"
               />
             </div>
 

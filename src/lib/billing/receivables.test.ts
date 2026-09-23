@@ -4,8 +4,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   BILLED_INVOICE_STATUSES,
+  CURRENT_AR_INVOICE_STATUSES,
   RECEIVABLE_INVOICE_STATUSES,
   UNSETTLED_INVOICE_STATUSES,
+  currentArNotYetSentNote,
   isOpenReceivable,
   isPastDueReceivable,
   notYetSentCaption,
@@ -67,6 +69,18 @@ describe("receivables definition (COL-650)", () => {
   it("keeps drafts out of every money set and only in the unsettled work set", () => {
     expect(UNSETTLED_INVOICE_STATUSES).toEqual(["draft", "sent", "partial", "overdue"]);
   });
+
+  it("defines Stand Up Current AR as everything owed if every resident pays (COL-665 ruling)", () => {
+    expect(CURRENT_AR_INVOICE_STATUSES).toEqual(["draft", "sent", "partial", "overdue"]);
+    const summary = summarizeReceivables(homewood, "2026-09-22");
+    // Billing's Outstanding AR plus the drafts beside it add up to the Stand Up figure.
+    const currentAr = homewood
+      .filter((invoice) => (CURRENT_AR_INVOICE_STATUSES as readonly string[]).includes(invoice.status))
+      .reduce((total, invoice) => total + invoice.balanceDueCents, 0);
+    expect(currentAr).toBe(summary.receivableCents + summary.notYetSentCents);
+    expect(currentArNotYetSentNote(57, "$117,108")).toBe("Includes $117,108 in 57 drafts not yet sent.");
+    expect(currentArNotYetSentNote(0, "$0")).toBe("Includes no drafts; every invoice in it has been sent.");
+  });
 });
 
 describe("Edge mirror of the receivable definition (COL-667)", () => {
@@ -90,7 +104,6 @@ describe("no second receivable definition", () => {
     "src/lib/billing/receivables.ts": "the definition itself",
     "src/lib/billing/load-invoices.ts": "the InvoiceStatusUi union type, not a filter",
     "src/app/(admin)/billing/billing-invoice-ledger.tsx": "HUB_LEDGER_STATUS_CHIPS lists every status as a filter chip",
-    "src/lib/executive/standup.ts": "Stand Up Current AR waits on the COL-374 definition; tracked in COL-665",
   };
 
   function walk(dir: string): string[] {

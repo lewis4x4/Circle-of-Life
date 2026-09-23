@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll"
 import { cn } from "@/lib/utils"
 
 /**
@@ -30,19 +31,28 @@ import { cn } from "@/lib/utils"
  * not auto-detect column type.
  *
  *   <TableCell className="text-right">{formatCurrency(amount)}</TableCell>
+ *
+ * Wide tables scroll sideways inside their card (COL-657): the container is a
+ * `HorizontalScroll`, so on a phone every column stays reachable by swipe or
+ * keyboard, with an edge shade showing there is more. Name the region with
+ * `scrollLabel` (defaults to the table's `aria-label`).
  */
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  scrollLabel,
+  ...props
+}: React.ComponentProps<"table"> & { scrollLabel?: string }) {
   return (
-    <div
+    <HorizontalScroll
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      label={scrollLabel ?? props["aria-label"] ?? "Table"}
     >
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
-    </div>
+    </HorizontalScroll>
   )
 }
 

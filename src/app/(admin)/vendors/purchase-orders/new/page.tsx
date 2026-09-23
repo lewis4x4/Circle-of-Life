@@ -9,6 +9,7 @@ import { VendorHubNav } from "../../vendor-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { cn } from "@/lib/utils";
+import { dollarsToCents } from "@/lib/money/dollars-to-cents";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,9 +30,11 @@ export default function NewPurchaseOrderPage() {
   const [facilityId, setFacilityId] = useState("");
   const [vendorId, setVendorId] = useState("");
   const [orderDate, setOrderDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [lineDesc, setLineDesc] = useState("Line 1");
-  const [qty, setQty] = useState("1");
-  const [unitCents, setUnitCents] = useState("1000");
+  // Line, quantity and cost start empty, and cost is entered in dollars: a prefilled
+  // "1000" in a cents field invited 100x entry errors (COL-653).
+  const [lineDesc, setLineDesc] = useState("");
+  const [qty, setQty] = useState("");
+  const [unitCostDollars, setUnitCostDollars] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -54,6 +57,13 @@ export default function NewPurchaseOrderPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!organizationId || !canSubmit || !facilityId || !vendorId) return;
+    const q = Number.parseFloat(qty);
+    const uc = dollarsToCents(unitCostDollars);
+    if (!lineDesc.trim() || !Number.isFinite(q) || q <= 0 || uc === null) {
+      setLoadError("Enter what is being ordered, a quantity above zero, and the unit cost in dollars.");
+      return;
+    }
+    const lineTotal = Math.round(q * uc);
     setSaving(true);
     setLoadError(null);
 
@@ -79,9 +89,6 @@ export default function NewPurchaseOrderPage() {
       return;
     }
 
-    const q = Number.parseFloat(qty) || 1;
-    const uc = Number.parseInt(unitCents, 10) || 0;
-    const lineTotal = Math.round(q * uc);
 
     const { data: po, error: poErr } = await supabase
       .from("purchase_orders")
@@ -106,7 +113,7 @@ export default function NewPurchaseOrderPage() {
       organization_id: organizationId,
       purchase_order_id: po.id,
       line_number: 1,
-      description: lineDesc || "Line 1",
+      description: lineDesc.trim(),
       quantity: q,
       unit_cost_cents: uc,
       line_total_cents: lineTotal,
@@ -185,16 +192,23 @@ export default function NewPurchaseOrderPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ld">Line description</Label>
-                <Input id="ld" value={lineDesc} onChange={(ev) => setLineDesc(ev.target.value)} />
+                <Input id="ld" value={lineDesc} onChange={(ev) => setLineDesc(ev.target.value)} placeholder="What is being ordered" required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="qty">Quantity</Label>
-                  <Input id="qty" value={qty} onChange={(ev) => setQty(ev.target.value)} inputMode="decimal" />
+                  <Input id="qty" value={qty} onChange={(ev) => setQty(ev.target.value)} inputMode="decimal" placeholder="How many" required />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="uc">Unit cost (cents)</Label>
-                  <Input id="uc" value={unitCents} onChange={(ev) => setUnitCents(ev.target.value)} inputMode="numeric" />
+                  <Label htmlFor="uc">Unit cost ($)</Label>
+                  <Input
+                    id="uc"
+                    value={unitCostDollars}
+                    onChange={(ev) => setUnitCostDollars(ev.target.value)}
+                    inputMode="decimal"
+                    placeholder="Amount in dollars"
+                    required
+                  />
                 </div>
               </div>
               <button

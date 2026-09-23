@@ -265,6 +265,15 @@ export function formatStandupMetricValue(metric: StandupMetricRow | undefined, f
   return `${metric.valueNumeric}`;
 }
 
+/**
+ * The note a computed standup figure carries about what it includes (e.g. Current
+ * AR's drafts not yet sent, COL-665). Figures with no value already say why.
+ */
+export function standupMetricNote(metric: StandupMetricRow | undefined): string | null {
+  if (!metric || metric.valueNumeric == null) return null;
+  return metric.overrideNote?.trim() || null;
+}
+
 /** Week-over-week standup delta — missing either side names the gap. */
 export function formatStandupMetricDelta(
   metricLeft: StandupMetricRow | undefined,
