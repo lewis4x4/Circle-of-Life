@@ -38,8 +38,14 @@ type MyProfile = { id: string; full_name: string; app_role: string };
 
 export default function MyAcknowledgmentsPage() {
   const supabase = createClient();
-  const { selectedFacilityId } = useFacilityStore();
+  // COL-651: this is the reader's own list, so it is never gated on a
+  // facility. Under "All facilities" it spans every building they can see.
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
+  const facilityName = useCallback(
+    (id: string | undefined) => availableFacilities.find((f) => f.id === id)?.name ?? null,
+    [availableFacilities],
+  );
 
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [requirements, setRequirements] = useState<AckRequirementRow[]>([]);
@@ -55,10 +61,6 @@ export default function MyAcknowledgmentsPage() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    if (!facilityReady) {
-      setIsLoading(false);
-      return;
-    }
     setIsLoading(true);
     setLoadError(null);
     try {
@@ -69,12 +71,13 @@ export default function MyAcknowledgmentsPage() {
         .select("id, full_name, app_role")
         .eq("id", actor.userId)
         .single();
-      const requirementsQ = supabase
+      let requirementsQ = supabase
         .from("document_acknowledgment_requirements" as never)
         .select(
-          "id, document_id, document_title, required_roles, require_signature, due_date, note, is_active, created_at, document_content_snapshot, document_version_hash",
-        )
-        .eq("facility_id", selectedFacilityId as string)
+          "id, facility_id, document_id, document_title, required_roles, require_signature, due_date, note, is_active, created_at, document_content_snapshot, document_version_hash",
+        );
+      if (facilityReady) requirementsQ = requirementsQ.eq("facility_id", selectedFacilityId as string);
+      requirementsQ = requirementsQ
         .eq("is_active", true)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -135,7 +138,7 @@ export default function MyAcknowledgmentsPage() {
         if (!actor) throw new Error("Could not resolve your profile.");
         const { error } = await supabase.from("document_acknowledgments" as never).insert({
           organization_id: actor.organizationId,
-          facility_id: selectedFacilityId as string,
+          facility_id: requirement.facility_id ?? (selectedFacilityId as string),
           requirement_id: requirement.id,
           document_id: requirement.document_id,
           user_id: actor.userId,
@@ -169,21 +172,15 @@ export default function MyAcknowledgmentsPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
             Policy acknowledgments
           </Link>
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <FileCheck2 className="h-8 w-8 text-info shrink-0" aria-hidden />
             My acknowledgments
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground">
             Policies and SOPs assigned to your role. Read the document, then sign by typing your
             full legal name — the signature is permanent.
           </p>
         </header>
-
-        {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first.
-          </p>
-        ) : null}
 
         {notice ? (
           <p className="rounded-[var(--radius)] border border-danger/30 bg-danger/10 px-6 py-3 text-sm text-danger">
@@ -191,12 +188,12 @@ export default function MyAcknowledgmentsPage() {
           </p>
         ) : null}
 
-        {facilityReady && isLoading ? <AdminTableLoadingState /> : null}
-        {facilityReady && !isLoading && loadError ? (
+        {isLoading ? <AdminTableLoadingState /> : null}
+        {!isLoading && loadError ? (
           <AdminLiveDataFallbackNotice message={loadError} onRetry={() => void load()} />
         ) : null}
 
-        {facilityReady && !isLoading && !loadError ? (
+        {!isLoading && !loadError ? (
           <>
             <section aria-labelledby="my-outstanding-heading" className="space-y-3">
               <div className="px-[13px] py-2 rounded-[var(--radius)] border border-border bg-card/60">
@@ -223,6 +220,7 @@ export default function MyAcknowledgmentsPage() {
                               {r.document_title}
                             </span>
                             <span className="text-xs text-muted-foreground">
+                              {!facilityReady && facilityName(r.facility_id) ? `${facilityName(r.facility_id)} · ` : ""}
                               {r.due_date ? `Due ${r.due_date} · ` : ""}
                               {r.require_signature ? "Typed-name e-signature" : "Mark as read"}
                               {r.note ? ` · ${r.note}` : ""}

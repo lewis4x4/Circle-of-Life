@@ -28,6 +28,7 @@ import {
   type FollowupEscalationLevel,
 } from "@/lib/incidents/followup-escalation";
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type FollowupRow = {
   id: string;
@@ -144,7 +145,7 @@ export default function AdminIncidentFollowupsPage() {
             incidentSeverity: incidentById.get(row.incident_id)?.severity ?? "level_1",
             incidentStatus: incidentById.get(row.incident_id)?.status ?? "",
             residentName,
-            taskType: row.task_type.replace(/_/g, " "),
+            taskType: enumLabel(row.task_type),
             description: row.description,
             dueAt: row.due_at,
             assignedToId: row.assigned_to,

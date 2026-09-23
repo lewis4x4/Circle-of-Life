@@ -17,6 +17,7 @@ import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath, isStaffLinkOptionalPath } from "@/lib/auth/caregiver-route-access";
 import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
 import { currentShiftFor, fetchFacilityShiftDefinitions } from "@/lib/caregiver/shift";
+import { routeIsWithin } from "@/lib/navigation/route-match";
 import { createClient } from "@/lib/supabase/client";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
 import { cn } from "@/lib/utils";
@@ -158,7 +159,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         "/caregiver/report",
         "/caregiver/incident-draft",
         "/caregiver/handoff",
-      ].some((route) => pathname.startsWith(route)),
+      ].some((route) => routeIsWithin(pathname, route)),
     [pathname],
   );
 
@@ -176,17 +177,17 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
 
   const caregiverNavItems = [
     { href: "/caregiver", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: pathname === "/caregiver" },
-    { href: "/caregiver/meds", icon: <Pill className="h-5 w-5" aria-hidden />, label: "Meds", isActive: pathname.startsWith("/caregiver/meds") },
-    { href: "/caregiver/rounds", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Rounds", isActive: pathname.startsWith("/caregiver/rounds") },
-    { href: "/caregiver/report", icon: <AlertTriangle className="h-5 w-5" aria-hidden />, label: "Report", isActive: pathname.startsWith("/caregiver/report") },
+    { href: "/caregiver/meds", icon: <Pill className="h-5 w-5" aria-hidden />, label: "Meds", isActive: routeIsWithin(pathname, "/caregiver/meds") },
+    { href: "/caregiver/rounds", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Rounds", isActive: routeIsWithin(pathname, "/caregiver/rounds") },
+    { href: "/caregiver/report", icon: <AlertTriangle className="h-5 w-5" aria-hidden />, label: "Report", isActive: routeIsWithin(pathname, "/caregiver/report") },
   ];
   const housekeeperNavItems = [
-    { href: "/caregiver/housekeeper", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: pathname.startsWith("/caregiver/housekeeper") },
-    { href: "/caregiver/clock", icon: <Clock3 className="h-5 w-5" aria-hidden />, label: "Clock", isActive: pathname.startsWith("/caregiver/clock") },
-    { href: "/caregiver/schedules", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Schedule", isActive: pathname.startsWith("/caregiver/schedules") },
+    { href: "/caregiver/housekeeper", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: routeIsWithin(pathname, "/caregiver/housekeeper") },
+    { href: "/caregiver/clock", icon: <Clock3 className="h-5 w-5" aria-hidden />, label: "Clock", isActive: routeIsWithin(pathname, "/caregiver/clock") },
+    { href: "/caregiver/schedules", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Schedule", isActive: routeIsWithin(pathname, "/caregiver/schedules") },
   ];
   const primaryItems = isHousekeeper ? housekeeperNavItems : caregiverNavItems;
-  const meItem = { href: "/caregiver/me", icon: <User className="h-5 w-5" aria-hidden />, label: "Me", isActive: pathname.startsWith("/caregiver/me") };
+  const meItem = { href: "/caregiver/me", icon: <User className="h-5 w-5" aria-hidden />, label: "Me", isActive: routeIsWithin(pathname, "/caregiver/me") };
 
   return (
     <div className="dark">
@@ -212,10 +213,11 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
               (COL-657). It pins from md up, where there is room. */}
           <header className="haven-chrome-topnav z-40 flex flex-col items-stretch gap-1.5 border-b border-border px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3 md:sticky md:top-0 md:px-8 md:py-4">
             <div className="min-w-0 flex-1">
+              {/* The facility picker sits beside the heading, not inside it (COL-658). */}
               <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
                 {facilityName}
-                {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               </h1>
+              {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               {shiftLabel ? <p className="mt-0.5 text-xs haven-chrome-fg-muted">
                 {shiftLabel}
               </p> : null}

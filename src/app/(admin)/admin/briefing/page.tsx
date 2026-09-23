@@ -33,9 +33,10 @@ import {
 import { buildMorningHuddlePrintHtml } from "@/lib/office/morning-huddle-print";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function humanize(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatEtTime(iso: string): string {
@@ -139,14 +140,14 @@ export default function AdminMorningBriefingPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <Sunrise className="h-8 w-8 text-warning shrink-0" aria-hidden />
               Morning huddle
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Per-facility daily briefing: overnight incidents, census moves, today&apos;s shift
               roster, open operations tasks, and medication flags — printable as a one-pager for
-              the stand-up meeting. Data is live and RLS-scoped; times are America/New_York.
+              the stand-up meeting. Data is live for the facilities you have access to; times are Eastern.
             </p>
           </div>
           {facilityReady ? (

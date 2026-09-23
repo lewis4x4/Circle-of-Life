@@ -8,7 +8,7 @@ import {
   CheckCircle2,
   Sparkles
 } from "lucide-react";
-import { FACILITIES } from "@/lib/data/facilities-data";
+import { FACILITIES, PUBLIC_AVAILABILITY_COPY } from "@/lib/data/facilities-data";
 import { PUBLIC_TOUR_TIMES, type PublicReferral } from "@/lib/referrals/public-referral";
 import { usePublicReferral } from "@/lib/referrals/use-public-referral";
 
@@ -107,7 +107,7 @@ export function TourSchedulerModal({
                         selectedFacility === f.id ? "text-amber-300" : "text-stone-600"
                       }`}
                     >
-                      {f.address.city}, FL • {f.availableBeds} Suites Open
+                      {f.address.city}, FL • {PUBLIC_AVAILABILITY_COPY}
                     </div>
                   </button>
                 ))}

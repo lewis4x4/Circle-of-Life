@@ -32,6 +32,7 @@ import {
   INSURANCE_POLICIES_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import { Constants, type Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 type PolicyRow = Database["public"]["Tables"]["insurance_policies"]["Row"];
 type EntityMini = { id: string; name: string };
 
@@ -171,7 +172,7 @@ export default function InsurancePoliciesPage() {
                 <option value="">All statuses</option>
                 {Constants.public.Enums.insurance_policy_status.map((s) => (
                   <option key={s} value={s}>
-                    {s.replace(/_/g, " ")}
+                    {enumLabel(s)}
                   </option>
                 ))}
               </select>
@@ -228,7 +229,7 @@ export default function InsurancePoliciesPage() {
                       <TableRow>
                         <div className="w-[110px] shrink-0">
                           <StatusPill tone={isActive ? "muted" : "warning"}>
-                            {r.status.replace(/_/g, " ")}
+                            {enumLabel(r.status)}
                           </StatusPill>
                         </div>
                         <span className="flex-[2] min-w-0 text-[13px] font-medium text-foreground">
@@ -240,7 +241,7 @@ export default function InsurancePoliciesPage() {
                           </span>
                         </span>
                         <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground capitalize">
-                          {r.policy_type.replace(/_/g, " ")}
+                          {enumLabel(r.policy_type)}
                         </span>
                         <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground">
                           {entityName(r.entity_id)}

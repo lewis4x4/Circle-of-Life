@@ -39,7 +39,7 @@ export default function AdminBillingSettingsPage() {
 
       <AdminEmptyState
         title="Billing scheduling not configured"
-        description="Automated invoice scheduling is not live in this pilot build. Generate invoices from the overview, import opening balances, or maintain rates in the Rate library until scheduling ships."
+        description="Automated invoice scheduling is not available yet. Generate invoices from the overview, import opening balances, or maintain rates in the Rate library until scheduling ships."
       />
 
       <div className="flex flex-wrap gap-2">

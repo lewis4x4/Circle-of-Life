@@ -12,9 +12,14 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 /** Counts are `null` when the query failed — never render a failed read as 0. */
 export type NurseMedicationBrief = {
   activeMedications: number | null;
+  /** Null when there is nothing to measure: no doses scheduled today, or the read failed. */
   emarCompliancePct: number | null;
+  /** eMAR doses scheduled today; 0 means compliance has no denominator (COL-649). */
+  emarScheduledToday: number | null;
   medErrors7d: number | null;
   controlledDiscrepancies: number | null;
+  /** Controlled substance count records on file; "All verified" needs at least one (COL-649). */
+  controlledCountsOnFile: number | null;
   missedDosesToday: number | null;
   prnGiven24h: number | null;
   residentAssurance: {
@@ -106,6 +111,7 @@ export async function fetchNurseMedicationBrief(
     missedRes,
     prnRes,
     residentAssurance,
+    controlledOnFileRes,
   ] = await Promise.all([
     f(supabase.from("resident_medications" as never).select("id", { count: "exact", head: true }))
       .eq("status", "active")
@@ -131,29 +137,34 @@ export async function fetchNurseMedicationBrief(
       .eq("status", "given")
       .is("deleted_at", null),
     fetchResidentAssuranceCommandBrief(facilityId),
+    f(supabase.from("controlled_substance_counts" as never).select("id", { count: "exact", head: true }))
+      .is("deleted_at", null),
   ]);
 
   const activeMedications = countOrNull(activeMedsRes);
   const emarTotal = countOrNull(emarTodayRes);
   const emarGiven = countOrNull(emarGivenRes);
+  // Zero doses scheduled is no denominator, not 100% compliance (COL-649).
   const emarCompliancePct =
-    emarTotal === null || emarGiven === null
+    emarTotal === null || emarGiven === null || emarTotal === 0
       ? null
-      : emarTotal > 0
-        ? Math.round((emarGiven / emarTotal) * 100)
-        : 100;
+      : Math.round((emarGiven / emarTotal) * 100);
+  const emarScheduledToday = emarGiven === null ? null : emarTotal;
   const medErrors7d = medErrorsRes;
   // Open discrepancy = discrepancy <> 0 and not resolved (NULL counts as open,
   // matching /admin/medications/controlled).
   const controlledDiscrepancies = countOrNull(controlledRes);
+  const controlledCountsOnFile = countOrNull(controlledOnFileRes);
   const missedDosesToday = countOrNull(missedRes);
   const prnGiven24h = countOrNull(prnRes);
 
   return {
     activeMedications,
     emarCompliancePct,
+    emarScheduledToday,
     medErrors7d,
     controlledDiscrepancies,
+    controlledCountsOnFile,
     missedDosesToday,
     prnGiven24h,
     residentAssurance: {

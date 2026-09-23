@@ -58,9 +58,10 @@ describe("the counts", () => {
     expect(duplicates?.meaning).toContain("Suggestions, not findings");
   });
 
-  it("says a stranded occupied bed should be zero after migration 388", () => {
+  it("says a stranded occupied bed should be zero, without naming the migration (COL-652)", () => {
     const stranded = dataHealthCounts(health()).find((e) => e.key === "beds_occupied_with_no_resident");
-    expect(stranded?.meaning).toContain("388");
+    expect(stranded?.meaning).toContain("should be zero");
+    expect(stranded?.meaning).not.toMatch(/migration/i);
   });
 });
 

@@ -257,9 +257,9 @@ export default function NewVerbalOrderPage() {
         <div className="space-y-5">
           {/* Facility (read-only) */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Facility
-            </label>
+            </p>
             <div className="h-14 rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-5 flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
               {getFacilityName()}
             </div>
@@ -267,10 +267,11 @@ export default function NewVerbalOrderPage() {
 
           {/* Resident Selector */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="verbal-order-resident" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Resident <span className="text-rose-500">*</span>
             </label>
             <ResidentSelector
+              id="verbal-order-resident"
               value={residentId}
               onChange={(id) => {
                 setResidentId(id);
@@ -281,7 +282,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Order Type */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="order_type" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Order Type <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -313,7 +314,7 @@ export default function NewVerbalOrderPage() {
         <div className="space-y-5">
           {/* Verbatim Order */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="order_text" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Verbatim Order <span className="text-rose-500">*</span>
             </label>
             <textarea
@@ -331,7 +332,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Indication (optional) */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="indication" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
               Indication <span className="font-normal opacity-60">(optional)</span>
             </label>
             <Input
@@ -346,7 +347,7 @@ export default function NewVerbalOrderPage() {
           {/* Prescriber Info Grid */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+              <label htmlFor="prescriber_name" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
                 Prescriber Name <span className="text-rose-500">*</span>
               </label>
               <Input
@@ -358,7 +359,7 @@ export default function NewVerbalOrderPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+              <label htmlFor="prescriber_phone" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
                 Prescriber Phone <span className="font-normal opacity-60">(optional)</span>
               </label>
               <Input

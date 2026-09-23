@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { FloorWorkflowStrip } from "@/components/caregiver/FloorWorkflowStrip";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type HandoffRow = {
   id: string;
@@ -326,7 +327,7 @@ function autoSummaryLines(summary: unknown): string[] {
 }
 
 function humanizeKey(k: string): string {
-  return k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return enumLabel(k, { case: "title" });
 }
 
 function formatHandoffDate(ymd: string): string {

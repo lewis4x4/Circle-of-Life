@@ -18,13 +18,11 @@ import {
   X,
 } from "lucide-react";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -57,6 +55,7 @@ import {
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Note } from "@/design-system/components/Note";
 import { Pagination } from "@/design-system/components/Pagination";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["referral_hl7_inbound"]["Row"];
 type Hl7Status = Database["public"]["Enums"]["referral_hl7_inbound_status"];
@@ -71,7 +70,7 @@ function previewRaw(s: string) {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function duplicateControlIds(rows: Row[]): Set<string> {
@@ -556,17 +555,15 @@ export default function AdminReferralsHl7InboundPage() {
             .
           </Note>
 
-          <ReferralsHubNav />
-
           <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-card p-5 shadow-sm md:p-6">
             <div className="mb-4 flex flex-col gap-2">
               <h2 className="text-lg font-semibold text-foreground">
                 Incoming referrals
               </h2>
-              <Label className="mt-3 text-xs font-semibold tracking-normal text-muted-foreground md:text-[13px]">
+              <p id="hl7-status-filter-label" className="mt-3 text-xs font-semibold tracking-normal text-muted-foreground md:text-[13px]">
                 Status
-              </Label>
-              <div className="flex flex-wrap gap-2">
+              </p>
+              <div role="group" aria-labelledby="hl7-status-filter-label" className="flex flex-wrap gap-2">
                 {queueChips.map((c) => (
                   <Button
                     key={c.id}
@@ -586,10 +583,10 @@ export default function AdminReferralsHl7InboundPage() {
                   </Button>
                 ))}
               </div>
-              <Label className="mt-3 text-xs font-semibold tracking-normal text-muted-foreground md:text-[13px]">
+              <p id="hl7-range-filter-label" className="mt-3 text-xs font-semibold tracking-normal text-muted-foreground md:text-[13px]">
                 Range
-              </Label>
-              <div className="flex flex-wrap gap-2">
+              </p>
+              <div role="group" aria-labelledby="hl7-range-filter-label" className="flex flex-wrap gap-2">
                 {rangeChips.map((c) => (
                   <Button
                     key={c.id}

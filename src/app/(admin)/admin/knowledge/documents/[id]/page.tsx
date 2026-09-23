@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ChunkRow = {
   chunk_id: string;
@@ -107,7 +108,7 @@ export default function KnowledgeDocumentRoute() {
         <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-zinc-400">
           {headerDoc?.compliance_category ? (
             <span className="rounded border border-slate-200 dark:border-zinc-700 px-2 py-0.5">
-              {headerDoc.compliance_category}
+              {enumLabel(headerDoc.compliance_category)}
             </span>
           ) : null}
           {headerDoc?.regulation_citation ? (
@@ -117,12 +118,12 @@ export default function KnowledgeDocumentRoute() {
           ) : null}
           {headerDoc?.audience ? (
             <span className="rounded border border-slate-200 dark:border-zinc-700 px-2 py-0.5">
-              audience: {headerDoc.audience}
+              Audience: {enumLabel(headerDoc.audience)}
             </span>
           ) : null}
           {headerDoc?.document_status ? (
             <span className="rounded border border-slate-200 dark:border-zinc-700 px-2 py-0.5">
-              status: {headerDoc.document_status}
+              Status: {enumLabel(headerDoc.document_status)}
             </span>
           ) : null}
         </div>

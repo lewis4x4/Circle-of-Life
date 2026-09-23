@@ -8,6 +8,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -152,10 +153,10 @@ export default function AdminDriveCutoverPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 max-w-3xl">
         <header className="mb-2 space-y-1">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <ShieldCheck className="h-8 w-8 text-info shrink-0" aria-hidden />
             Drive cutover
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
             Planned cutoff recorded in the rollout plan: <strong>{DRIVE_CUTOFF_DATE}</strong>. Confirm a current cutover date and verified content before relying on Haven as the sole document store.{" "}
             <Link href="/admin/drive-import" className="text-info hover:underline">
@@ -166,9 +167,9 @@ export default function AdminDriveCutoverPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — cutover is recorded per-facility.
-          </p>
+
+          <FacilityGateNotice reason="Drive cutover is recorded and attested per building." />
+
         ) : null}
 
         {notice ? (

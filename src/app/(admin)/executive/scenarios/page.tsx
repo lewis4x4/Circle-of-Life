@@ -18,6 +18,7 @@ import { TitleH1, Subtitle } from "@/components/ui/typography";
 import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { cn } from "@/lib/utils";
+import { ExecutiveHubNav } from "../executive-hub-nav";
 
 // ── COLORS (chart series — recharts requires hex; these are var(--chart-1…5) equivalents) ──
 const CC = { emerald: "#10b981", rose: "#f43f5e", amber: "#f59e0b", blue: "#3b82f6", indigo: "#6366f1", grid: "rgba(0,0,0,0.06)", axis: "hsl(var(--muted-foreground))" };
@@ -178,6 +179,7 @@ export default function ExecutiveScenariosPage() {
                 </div>
               </div>
             </div>
+            <ExecutiveHubNav />
           </div>
         </header>
 

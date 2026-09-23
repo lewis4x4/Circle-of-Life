@@ -237,8 +237,8 @@ export default function AdminNewCertificationPage() {
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        RLS: only <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can add
-        certification rows (nurses can view the register).
+        Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can add
+        certifications; med-techs can view the register.
       </p>
 
       {!facilityReady && (
@@ -261,8 +261,8 @@ export default function AdminNewCertificationPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Staff member</label>
-              <select
+              <label htmlFor="certification-staff-member" className="text-xs font-medium text-slate-600 dark:text-slate-400">Staff member</label>
+              <select id="certification-staff-member"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={eligibleStaffId}
                 onChange={(e) => setStaffId(e.target.value)}
@@ -292,8 +292,8 @@ export default function AdminNewCertificationPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Category</label>
-                <select
+                <label htmlFor="certification-category" className="text-xs font-medium text-slate-600 dark:text-slate-400">Category</label>
+                <select id="certification-category"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={certType}
                   onChange={(e) => setCertType(e.target.value)}
@@ -306,8 +306,8 @@ export default function AdminNewCertificationPage() {
                 </select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Credential name</label>
-                <Input
+                <label htmlFor="certification-credential-name" className="text-xs font-medium text-slate-600 dark:text-slate-400">Credential name</label>
+                <Input id="certification-credential-name"
                   value={certName}
                   onChange={(e) => setCertName(e.target.value)}
                   placeholder="e.g. American Heart BLS — Healthcare Provider"
@@ -317,10 +317,10 @@ export default function AdminNewCertificationPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              <label htmlFor="certification-issuing-authority-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 Issuing authority (optional)
               </label>
-              <Input
+              <Input id="certification-issuing-authority-optional"
                 value={issuingAuthority}
                 onChange={(e) => setIssuingAuthority(e.target.value)}
                 placeholder="e.g. AHA Training Center, FL BON"

@@ -44,6 +44,7 @@ import {
 } from "@/lib/executive/standup-page-state";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function editable(metric: StandupMetricRow, snapshot: StandupSnapshotDetail["snapshot"]): boolean {
   return snapshot.status === "draft" && metric.sourceMode !== "auto";
@@ -502,7 +503,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                         {section.totalRows} rows · {section.autoRows} auto · {section.manualRows} manual · {section.forecastRows} forecast
                       </div>
                     </div>
-                    <Badge variant="outline" className="shrink-0">{section.status.replace(/_/g, " ")}</Badge>
+                    <Badge variant="outline" className="shrink-0">{enumLabel(section.status)}</Badge>
                   </div>
                   <div className="mt-3 text-sm text-foreground">
                     {section.unresolvedRows > 0 ? `${section.unresolvedRows} unresolved rows.` : "No unresolved rows."}

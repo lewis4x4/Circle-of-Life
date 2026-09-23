@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ shifts: vi.fn(), ready: false, lastError: null as string | null, role: "med_tech" }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/caregiver/rounds", useRouter: () => ({ replace: vi.fn() }) }));
+const mocks = vi.hoisted(() => ({ shifts: vi.fn(), ready: false, lastError: null as string | null, role: "med_tech", path: "/caregiver/rounds" }));
+vi.mock("next/navigation", () => ({ usePathname: () => mocks.path, useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: mocks.role, loading: false, organizationId: "org", user: { id: "user", app_metadata: { app_role: mocks.role } } }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 vi.mock("@/lib/caregiver/facility-context", () => ({ loadCaregiverFacilityContextForUser: async () => ({ ok: true, ctx: { facilityId: "facility", facilityName: "Synthetic facility", timeZone: "America/New_York" } }) }));
@@ -12,7 +12,7 @@ vi.mock("@/components/rounding/RoundingOutbox", () => ({ RoundingOutbox: () => n
 vi.mock("@/components/feedback/PilotFeedbackLauncher", () => ({ PilotFeedbackLauncher: () => null }));
 import { CaregiverShell } from "./CaregiverShell";
 beforeEach(() => {
-  mocks.ready = false; mocks.lastError = null; mocks.role = "med_tech";
+  mocks.ready = false; mocks.lastError = null; mocks.role = "med_tech"; mocks.path = "/caregiver/rounds";
   mocks.shifts.mockResolvedValue(new Map([["facility", [
     { shiftKey: "early", label: "Early crew", startsAtLocal: "04:30", endsAtLocal: "16:30", sortOrder: 0, rosterShiftType: "day" },
     { shiftKey: "late", label: "Late crew", startsAtLocal: "16:30", endsAtLocal: "04:30", sortOrder: 1, rosterShiftType: "night" },
@@ -65,4 +65,11 @@ it("lets the header scroll away on a phone so only the bottom tab bar stays (COL
   const header = screen.getByRole("banner");
   expect(header.className).toContain("md:sticky");
   expect(header.className).not.toMatch(/(^|\s)sticky(\s|$)/);
+});
+
+it("lights only Meds on /caregiver/meds — Me matches its own segment, not a prefix (COL-655)", async () => {
+  mocks.path = "/caregiver/meds";
+  await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
+  const lit = [...new Set(screen.getAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page").map((link) => link.textContent?.trim()))];
+  expect(lit).toEqual(["Meds"]);
 });

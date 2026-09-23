@@ -19,6 +19,7 @@ import {
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
 import { VoiceNoteButton } from "@/components/care-events/admin/VoiceNoteButton";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const STORAGE_PREFIX = "haven-rca-draft-v1:";
 
@@ -36,7 +37,7 @@ type FactorGroup = {
 const FACTOR_GROUPS: FactorGroup[] = [
   {
     title: "Contributing factors",
-    description: "Aligns with incident contributing_factors vocabulary (spec 07).",
+    description: "The same factor list used on the incident report.",
     options: [
       { id: "medication_change", label: "Medication change" },
       { id: "new_footwear", label: "New footwear" },
@@ -603,7 +604,7 @@ export default function AdminIncidentRcaPage() {
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
         title="Root cause workspace"
-        subtitle="Structured RCA per spec 07 — persisted on save; marking complete records operator attestation (not a regulatory sign-off)."
+        subtitle="Root cause analysis for this incident. Saved as you go; marking it complete records your attestation (not a regulatory sign-off)."
         statusChips={
           <>
             <Badge variant="outline" className="tabular-nums text-xs">
@@ -714,7 +715,7 @@ export default function AdminIncidentRcaPage() {
           </p>
           <p>
             <span className="text-muted-foreground">Category:</span>{" "}
-            <span className="text-foreground">{incident.category.replace(/_/g, " ")}</span>
+            <span className="text-foreground">{enumLabel(incident.category)}</span>
           </p>
           <p className="whitespace-pre-wrap">{incident.description}</p>
         </div>
@@ -772,10 +773,10 @@ export default function AdminIncidentRcaPage() {
             </div>
           </div>
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <label htmlFor="rca-corrective-actions-immediate" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Corrective actions (immediate)
             </label>
-            <textarea
+            <textarea id="rca-corrective-actions-immediate"
               className={cn(textareaClass, "mt-1.5")}
               value={correctiveActions}
               disabled={locked}
@@ -784,10 +785,10 @@ export default function AdminIncidentRcaPage() {
             />
           </div>
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <label htmlFor="rca-preventative-actions-systemic" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Preventative actions (systemic)
             </label>
-            <textarea
+            <textarea id="rca-preventative-actions-systemic"
               className={cn(textareaClass, "mt-1.5")}
               value={preventativeActions}
               disabled={locked}

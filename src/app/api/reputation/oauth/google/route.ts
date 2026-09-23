@@ -48,7 +48,7 @@ export async function GET() {
 
   if (!state) {
     return NextResponse.json(
-      { error: "Server missing REPUTATION_OAUTH_STATE_SECRET (min 16 chars)." },
+      { error: "Google review import is not set up for Haven yet. Ask support to finish the setup." },
       { status: 503 },
     );
   }

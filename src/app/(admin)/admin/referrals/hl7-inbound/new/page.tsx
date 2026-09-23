@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { ReferralsHubNav } from "../../referrals-hub-nav";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,8 +97,6 @@ export default function AdminReferralsHl7InboundNewPage() {
           Manually add an electronic referral. Paste the referral data below, or enter key details for tracking.
         </p>
       </div>
-
-      <ReferralsHubNav />
 
       {authLoading ? (
         <p className="text-sm text-muted-foreground" role="status" aria-live="polite">

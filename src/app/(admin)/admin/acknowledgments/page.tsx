@@ -8,6 +8,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -191,10 +192,10 @@ export default function AdminAcknowledgmentsDashboardPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <FileCheck2 className="h-8 w-8 text-info shrink-0" aria-hidden />
               Policy acknowledgments
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Read-and-sign requirements on published policies, SOPs, and handbook documents.
               Typed-name e-signatures are immutable survey evidence.
@@ -213,21 +214,21 @@ export default function AdminAcknowledgmentsDashboardPage() {
             >
               My acknowledgments
             </Link>
-            <Button
-              type="button"
-              className="gap-2 font-medium text-[10px] uppercase tracking-wider"
-              onClick={() => setShowForm((v) => !v)}
-            >
-              <Plus className="h-4 w-4" aria-hidden />
-              {showForm ? "Close" : "New requirement"}
-            </Button>
+            {facilityReady ? (
+              <Button
+                type="button"
+                className="gap-2 font-medium text-[10px] uppercase tracking-wider"
+                onClick={() => setShowForm((v) => !v)}
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                {showForm ? "Close" : "New requirement"}
+              </Button>
+            ) : null}
           </div>
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — requirements are tracked per facility.
-          </p>
+          <FacilityGateNotice reason="Read-and-sign requirements are tracked per building, against that building's staff." />
         ) : null}
 
         {notice ? (

@@ -32,6 +32,7 @@ import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/s
 import { formatDisplayDate } from "@/lib/format/datetime";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type StatTone = "muted" | "danger" | "warning" | "accent";
 
@@ -259,7 +260,7 @@ export default function CaregiverHomePage() {
           <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-5">
             <h3 className="mb-1 flex items-center gap-2 font-semibold text-foreground">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Active Protocol: {activeOutbreak.infection_type.replace(/_/g, " ")}
+              Active Protocol: {enumLabel(activeOutbreak.infection_type)}
             </h3>
             <p className="mb-3 text-sm text-muted-foreground">
               Strict facility protocols are in effect. Check your assigned task list.

@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -29,6 +30,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RawMeeting = Omit<MeetingRow, "agenda" | "attendees"> & {
   agenda: unknown;
@@ -191,34 +193,31 @@ export default function AdminMeetingsHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <NotebookPen className="h-8 w-8 text-info shrink-0" aria-hidden />
               Meeting hub
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Recurring meeting templates, agendas, in-app minutes, and action items that become
-              escalation-chased operations tasks. Replaces the standup call log spreadsheet.
-              Per-facility, RLS-scoped; minutes are audit-logged.
+              escalation-chased operations tasks. Per facility; every change to the minutes is recorded.
             </p>
           </div>
-          <Link
-            href="/admin/meetings/new"
-            className={cn(
-              buttonVariants({ size: "default" }),
-              "shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider",
-              !facilityReady && "pointer-events-none opacity-50",
-            )}
-            aria-disabled={!facilityReady}
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            New meeting
-          </Link>
+          {facilityReady ? (
+            <Link
+              href="/admin/meetings/new"
+              className={cn(
+                buttonVariants({ size: "default" }),
+                "shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider",
+              )}
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              New meeting
+            </Link>
+          ) : null}
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — meetings are per-facility records.
-          </p>
+          <FacilityGateNotice reason="Meetings, their minutes and action items are recorded per building." />
         ) : null}
 
         {notice ? (
@@ -307,7 +306,7 @@ export default function AdminMeetingsHubPage() {
                       >
                         {["daily", "weekly", "biweekly", "monthly", "quarterly", "ad_hoc"].map((c) => (
                           <option key={c} value={c}>
-                            {c.replace(/_/g, " ")}
+                            {enumLabel(c)}
                           </option>
                         ))}
                       </select>
@@ -349,7 +348,7 @@ export default function AdminMeetingsHubPage() {
                     <div key={t.id} className="rounded-[var(--radius)] border border-border bg-card p-4 space-y-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-semibold text-foreground truncate">{t.name}</span>
-                        <StatusPill tone="muted">{t.cadence.replace(/_/g, " ")}</StatusPill>
+                        <StatusPill tone="muted">{enumLabel(t.cadence)}</StatusPill>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {t.default_agenda.length} agenda item{t.default_agenda.length === 1 ? "" : "s"}
@@ -390,7 +389,7 @@ export default function AdminMeetingsHubPage() {
                             {m.minutes ? " · minutes recorded" : ""}
                           </span>
                         </div>
-                        <StatusPill tone={meetingStatusTone(m.status)}>{m.status.replace(/_/g, " ")}</StatusPill>
+                        <StatusPill tone={meetingStatusTone(m.status)}>{enumLabel(m.status)}</StatusPill>
                       </Link>
                     </MotionItem>
                   ))}

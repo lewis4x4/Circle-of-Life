@@ -14,6 +14,6 @@ export function formatCaregiverTasksShiftBucket(
 ): string {
   const trimmed = timeZone?.trim();
   if (!trimmed) return CAREGIVER_TASKS_NO_SHIFT_COPY;
-  // The facility's configured shift, the same one the header names (COL-659).
-  return currentShiftFor({ timeZone: trimmed, shifts }).label.toLowerCase();
+  // The facility's configured shift label ("Day", "Night"), the same one the header names (COL-659).
+  return currentShiftFor({ timeZone: trimmed, shifts }).label;
 }

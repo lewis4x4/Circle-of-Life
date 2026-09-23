@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +32,7 @@ import {
   type ReferralEpisodeModel,
   type ReferralLeadUpdatePatch,
 } from "@/lib/referrals/referral-authority";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LeadDetail = AuthorizedReferralLeadRow;
 
@@ -72,7 +72,7 @@ const STATUS_OPTIONS: Array<{ value: EditableLeadStatus; label: string }> = [
 ];
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function syncTourStatus(
@@ -225,8 +225,6 @@ export default function AdminReferralLeadDetailPage() {
         backLink={{ label: "Referrals", href: "/admin/referrals" }}
         actions={leadActions}
       />
-
-      <ReferralsHubNav />
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -12,6 +12,7 @@ import { formatAuditJsonCell } from "@/lib/admin/facilities/facility-audit-ui";
 import { logError } from "@/lib/observability/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 interface RouteContext {
   params: Promise<{ facilityId: string }>;
@@ -32,7 +33,7 @@ type AuditDbRow = {
 };
 
 function humanizeTable(table: string): string {
-  return table.replace(/_/g, " ");
+  return enumLabel(table);
 }
 
 function summarizeAuditRow(row: AuditDbRow): string {

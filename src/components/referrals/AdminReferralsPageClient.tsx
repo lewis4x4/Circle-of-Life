@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { format, subDays, startOfQuarter } from "date-fns";
 import { ClipboardList, Download, Search, Loader2, Mic } from "lucide-react";
 
-import { ReferralsHubNav } from "@/app/(admin)/admin/referrals/referrals-hub-nav";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +53,7 @@ import {
   type ReferralsOutreachRow,
   type ReferralLeadStatus,
 } from "@/lib/referrals/referrals-hub-bootstrap";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LeadRow = ReferralsHubLeadRow;
 type UpcomingTourRow = ReferralsHubUpcomingTourRow;
@@ -167,7 +167,7 @@ function buildReferralLeadsCsv(rows: LeadExportRow[]): string {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function leadPriority(status: ReferralLeadStatus, handoffPhase: HandoffPhase | null): number {
@@ -500,7 +500,6 @@ export function AdminReferralsPageClient({
             )}
           </div>
         </div>
-        <ReferralsHubNav />
       </header>
 
       {noFacility ? (
@@ -571,7 +570,7 @@ export function AdminReferralsPageClient({
                 Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours from lead records for the standup forecast.
               </p>
             </div>
-            <Badge className="border-none bg-primary/10 text-primary">Standup source</Badge>
+            <Badge className="border-none bg-primary/10 text-primary">Stand Up source</Badge>
           </div>
 
           {upcomingTours.length === 0 ? (
@@ -609,7 +608,7 @@ export function AdminReferralsPageClient({
                 Log outreach so weekly stand-ups reference the same ledger instead of rewriting work in chat.
               </p>
             </div>
-            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand-up source</Badge>
+            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand Up source</Badge>
           </div>
 
           <div className="grid gap-8 p-5 lg:grid-cols-[1fr_1fr]">
@@ -736,10 +735,10 @@ export function AdminReferralsPageClient({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium text-foreground">
-                            {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
+                            {row.external_partner_name ?? enumLabel(row.activity_type)}
                           </p>
                           <p className="mt-0.5 text-[12px] capitalize text-muted-foreground">
-                            {row.activity_type.replace(/_/g, " ")} · {row.status}
+                            {enumLabel(row.activity_type)} · {row.status}
                           </p>
                         </div>
                         <p className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
@@ -876,7 +875,7 @@ export function AdminReferralsPageClient({
               title={
                 (statusFilter === "all"
                   ? "Export up to 500 leads (all statuses), most recently updated first."
-                  : `Export up to 500 ${statusFilter.replace(/_/g, " ")} leads, most recently updated first.`) +
+                  : `Export up to 500 ${enumLabel(statusFilter, { case: "lower" })} leads, most recently updated first.`) +
                 " Search does not narrow the CSV."
               }
               onClick={() => void exportReferralLeadsCsv()}
