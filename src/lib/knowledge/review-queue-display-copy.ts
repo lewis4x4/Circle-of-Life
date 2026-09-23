@@ -1,3 +1,5 @@
+import { formatDisplayDate } from "@/lib/format/datetime";
+
 /**
  * Review-queue labels for /admin/knowledge/admin.
  *
@@ -25,5 +27,5 @@ export function knowledgeReviewDueLabel(
   doc: { status: string; review_due_at: string | null },
 ): string | null {
   if (doc.status !== "pending_review") return null;
-  return doc.review_due_at ? `Due ${new Date(doc.review_due_at).toLocaleDateString()}` : "No due date";
+  return doc.review_due_at ? `Due ${formatDisplayDate(doc.review_due_at)}` : "No due date";
 }
