@@ -134,7 +134,8 @@ CREATE OR REPLACE FUNCTION haven.med_tech_shift_open_from_clock(
   p_at timestamptz,
   p_shift_assignment_id uuid,
   p_source text,
-  p_source_id uuid
+  p_source_id uuid,
+  p_actor uuid
 ) RETURNS uuid
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
@@ -142,6 +143,7 @@ DECLARE
   v_org uuid;
   v_tz text;
   v_rule public.med_tech_shift_rules;
+  v_open public.med_tech_shifts;
   v_def record;
   v_start timestamptz;
   v_end timestamptz;
@@ -155,45 +157,84 @@ BEGIN
     AND p.app_role = 'med_tech' AND p.is_active AND p.deleted_at IS NULL;
   IF v_user IS NULL THEN RETURN NULL; END IF;
 
+  -- A punch someone else keyed for this med-tech opens nothing unless an
+  -- administrator keyed it. The kiosk ledger is written by the server (no actor).
+  IF p_actor IS NOT NULL AND p_actor <> v_user AND NOT EXISTS (
+    SELECT 1 FROM public.user_profiles a
+    WHERE a.id = p_actor AND a.organization_id = v_org AND a.is_active AND a.deleted_at IS NULL
+      AND a.app_role IN ('owner', 'org_admin', 'facility_admin')
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  -- Only a building the med-tech is granted: the shift exposes its residents.
   SELECT f.timezone INTO v_tz FROM public.facilities f
-  WHERE f.id = p_facility_id AND f.organization_id = v_org AND f.deleted_at IS NULL;
+  WHERE f.id = p_facility_id AND f.organization_id = v_org AND f.deleted_at IS NULL
+    AND EXISTS (SELECT 1 FROM public.user_facility_access ufa
+                WHERE ufa.user_id = v_user AND ufa.facility_id = f.id
+                  AND ufa.organization_id = v_org AND ufa.revoked_at IS NULL);
   IF v_tz IS NULL THEN RETURN NULL; END IF;
 
   v_rule := haven.med_tech_shift_rule_at(v_org, p_facility_id, p_at);
   IF v_rule.id IS NULL OR v_rule.open_trigger <> 'clock_in' THEN RETURN NULL; END IF;
 
   PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('med_tech_shift|' || v_user::text, 0));
-  IF EXISTS (SELECT 1 FROM public.med_tech_shifts WHERE user_id = v_user AND status = 'active' AND deleted_at IS NULL) THEN
-    RETURN NULL;
+  SELECT * INTO v_open FROM public.med_tech_shifts
+  WHERE user_id = v_user AND status = 'active' AND deleted_at IS NULL
+  FOR UPDATE;
+  IF v_open.id IS NOT NULL THEN
+    -- A second punch during the shift changes nothing. A shift whose window is
+    -- over, or whose opening punch has since been closed or voided, missed its
+    -- clock-out: close it so the new clock-in is not locked out by it.
+    IF (v_open.shift_end IS NOT NULL AND p_at >= v_open.shift_end)
+       OR (v_open.opened_from = 'time_records' AND EXISTS (
+             SELECT 1 FROM public.time_records tr
+             WHERE tr.id = v_open.opened_from_id AND (tr.clock_out IS NOT NULL OR tr.deleted_at IS NOT NULL))) THEN
+      UPDATE public.med_tech_shifts SET status = 'completed', updated_by = v_user WHERE id = v_open.id;
+      INSERT INTO public.shift_tape_events (organization_id, facility_id, shift_id, event_type, event_ref_table, event_ref_id, occurred_at, summary)
+      VALUES (v_open.organization_id, v_open.facility_id, v_open.id, 'clock_out_missing', p_source, p_source_id, p_at,
+              'Closed at the next clock-in; no clock-out was recorded for this shift.');
+    ELSE
+      RETURN NULL;
+    END IF;
   END IF;
 
-  -- The facility's shift whose start is nearest the clock-in (early or late).
-  SELECT d.roster_shift_type,
-         ((day.d + d.starts_at_local) AT TIME ZONE v_tz) AS starts_at,
-         ((day.d + CASE WHEN d.ends_at_local <= d.starts_at_local THEN 1 ELSE 0 END + d.ends_at_local) AT TIME ZONE v_tz) AS ends_at
+  -- Which of the facility's shifts this clock-in belongs to. A shift the
+  -- med-tech is assigned to wins while the clock-in falls between one shift
+  -- length before its start and its end; otherwise the shift whose start is
+  -- nearest the clock-in.
+  SELECT w.roster_shift_type, w.starts_at, w.ends_at, w.shift_date
     INTO v_def
-  FROM public.facility_shift_definitions d
-  CROSS JOIN LATERAL (
-    SELECT ((p_at AT TIME ZONE v_tz)::date + o) AS d FROM pg_catalog.generate_series(-1, 1) o
-  ) day
-  WHERE d.facility_id = p_facility_id AND d.active AND d.deleted_at IS NULL
-  ORDER BY pg_catalog.abs(EXTRACT(epoch FROM (p_at - ((day.d + d.starts_at_local) AT TIME ZONE v_tz)))),
-           d.sort_order
+  FROM (
+    SELECT d.roster_shift_type, d.sort_order, day.d AS shift_date,
+           ((day.d + d.starts_at_local) AT TIME ZONE v_tz) AS starts_at,
+           ((day.d + CASE WHEN d.ends_at_local <= d.starts_at_local THEN 1 ELSE 0 END + d.ends_at_local) AT TIME ZONE v_tz) AS ends_at
+    FROM public.facility_shift_definitions d
+    CROSS JOIN LATERAL (
+      SELECT ((p_at AT TIME ZONE v_tz)::date + o) AS d FROM pg_catalog.generate_series(-1, 1) o
+    ) day
+    WHERE d.facility_id = p_facility_id AND d.active AND d.deleted_at IS NULL
+  ) w
+  ORDER BY
+    (p_at >= w.starts_at - (w.ends_at - w.starts_at) AND p_at < w.ends_at AND EXISTS (
+       SELECT 1 FROM public.shift_assignments a
+       WHERE a.staff_id = p_staff_id AND a.facility_id = p_facility_id AND a.deleted_at IS NULL
+         AND (a.id = p_shift_assignment_id
+              OR (a.shift_date = w.shift_date AND a.shift_type = w.roster_shift_type
+                  AND a.status NOT IN ('called_out', 'no_show', 'swap_requested'))))) DESC,
+    pg_catalog.abs(EXTRACT(epoch FROM (p_at - w.starts_at))),
+    w.sort_order
   LIMIT 1;
   v_start := coalesce(v_def.starts_at, p_at);
   v_end := v_def.ends_at;
 
-  IF p_shift_assignment_id IS NOT NULL THEN
-    SELECT * INTO v_assignment FROM public.shift_assignments a
-    WHERE a.id = p_shift_assignment_id AND a.staff_id = p_staff_id AND a.deleted_at IS NULL;
-  ELSIF v_def.roster_shift_type IS NOT NULL THEN
-    SELECT * INTO v_assignment FROM public.shift_assignments a
-    WHERE a.staff_id = p_staff_id AND a.facility_id = p_facility_id AND a.deleted_at IS NULL
-      AND a.shift_date = (v_start AT TIME ZONE v_tz)::date
-      AND a.shift_type = v_def.roster_shift_type
-      AND a.status NOT IN ('called_out', 'no_show', 'swap_requested')
-    ORDER BY a.created_at DESC LIMIT 1;
-  END IF;
+  SELECT * INTO v_assignment FROM public.shift_assignments a
+  WHERE a.staff_id = p_staff_id AND a.facility_id = p_facility_id AND a.deleted_at IS NULL
+    AND (a.id = p_shift_assignment_id
+         OR (a.shift_date = v_def.shift_date AND a.shift_type = v_def.roster_shift_type
+             AND a.status NOT IN ('called_out', 'no_show', 'swap_requested')))
+  ORDER BY (a.id = p_shift_assignment_id) DESC NULLS LAST, a.created_at DESC
+  LIMIT 1;
 
   INSERT INTO public.med_tech_shifts (
     organization_id, facility_id, user_id, shift_start, shift_end, clocked_in_at, status,
@@ -220,7 +261,9 @@ BEGIN
     END;
 
   -- Scheduled doses in the window, by the same schedule rules guard_emar_review
-  -- enforces, minus doses already resolved or held by another open shift.
+  -- enforces, minus doses already resolved or held by another open shift. Doses
+  -- from the shift length before the window that a closed shift left unresolved
+  -- are carried over, so a clock-out does not strand them.
   IF v_end IS NOT NULL THEN
     INSERT INTO public.med_passes (
       organization_id, facility_id, shift_id, resident_id, resident_medication_id,
@@ -234,12 +277,20 @@ BEGIN
      AND m.status = 'active' AND m.deleted_at IS NULL AND m.frequency <> 'prn'
     CROSS JOIN LATERAL (
       SELECT ((day.d + t) AT TIME ZONE v_tz) AS at, day.d
-      FROM pg_catalog.generate_series((v_start AT TIME ZONE v_tz)::date::timestamp, (v_end AT TIME ZONE v_tz)::date::timestamp, interval '1 day') g(g)
+      FROM pg_catalog.generate_series(((v_start - (v_end - v_start)) AT TIME ZONE v_tz)::date::timestamp,
+                                      (v_end AT TIME ZONE v_tz)::date::timestamp, interval '1 day') g(g)
       CROSS JOIN LATERAL (SELECT g.g::date AS d) day
       CROSS JOIN LATERAL pg_catalog.unnest(m.scheduled_times) t
     ) dose
     WHERE sr.shift_id = v_shift
-      AND dose.at >= v_start AND dose.at < v_end
+      AND dose.at < v_end
+      AND (dose.at >= v_start OR (
+            dose.at >= v_start - (v_end - v_start)
+            AND EXISTS (SELECT 1 FROM public.med_passes old
+                        JOIN public.med_tech_shifts os ON os.id = old.shift_id
+                        WHERE old.resident_medication_id = m.id AND old.scheduled_time = dose.at
+                          AND old.deleted_at IS NULL AND old.status IN ('pending', 'overdue')
+                          AND os.status <> 'active' AND os.deleted_at IS NULL)))
       AND dose.d >= m.start_date AND (m.end_date IS NULL OR dose.d <= m.end_date)
       AND NOT (m.frequency = 'weekly' AND (dose.d - m.start_date) % 7 <> 0)
       AND NOT (m.frequency = 'biweekly' AND (dose.d - m.start_date) % 14 <> 0)
@@ -262,9 +313,9 @@ BEGIN
 
   RETURN v_shift;
 END $$;
-COMMENT ON FUNCTION haven.med_tech_shift_open_from_clock(uuid, uuid, timestamptz, uuid, text, uuid) IS
-  'COL-668. Opens a med-tech''s cockpit shift from a clock-in when the facility rule says clock_in: shift window from facility_shift_definitions, residents from the shift assignment (or unit, or building), med passes from active scheduled orders. Idempotent per person. COL-37 ruling: definer required; it writes the cockpit tables for the punching med-tech from a clock trigger, which the punching role cannot write directly. Execute is revoked from every request role.';
-REVOKE ALL ON FUNCTION haven.med_tech_shift_open_from_clock(uuid, uuid, timestamptz, uuid, text, uuid) FROM PUBLIC, anon, authenticated, service_role;
+COMMENT ON FUNCTION haven.med_tech_shift_open_from_clock(uuid, uuid, timestamptz, uuid, text, uuid, uuid) IS
+  'COL-668. Opens a med-tech''s cockpit shift from a clock-in when the facility rule says clock_in: only at a facility they are granted, only for their own punch or one an administrator keyed; shift window from facility_shift_definitions (assigned shift first), residents from the shift assignment (or unit, or building), med passes from active scheduled orders plus unresolved carry-over. Idempotent per person; a shift that missed its clock-out is closed by the next clock-in. COL-37 ruling: definer required; it writes the cockpit tables for the punching med-tech from a clock trigger, which the punching role cannot write directly. Execute is revoked from every request role.';
+REVOKE ALL ON FUNCTION haven.med_tech_shift_open_from_clock(uuid, uuid, timestamptz, uuid, text, uuid, uuid) FROM PUBLIC, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- Close
@@ -290,10 +341,15 @@ BEGIN
   v_rule := haven.med_tech_shift_rule_at(v_org, p_facility_id, p_at);
   IF v_rule.id IS NULL OR v_rule.close_trigger <> 'clock_out' THEN RETURN NULL; END IF;
 
+  -- Only the shift this clock-out belongs to: one opened at or before it, and,
+  -- for a floor-app punch, the shift that punch opened. A late-synced kiosk
+  -- 'out' or a corrected old time record cannot close today's shift.
   UPDATE public.med_tech_shifts
      SET status = 'completed', clocked_out_at = p_at, updated_by = v_user
    WHERE user_id = v_user AND facility_id = p_facility_id
      AND status = 'active' AND deleted_at IS NULL
+     AND clocked_in_at <= p_at
+     AND (p_source <> 'time_records' OR opened_from IS DISTINCT FROM 'time_records' OR opened_from_id = p_source_id)
   RETURNING id INTO v_shift;
   IF v_shift IS NULL THEN RETURN NULL; END IF;
 
@@ -302,7 +358,7 @@ BEGIN
   RETURN v_shift;
 END $$;
 COMMENT ON FUNCTION haven.med_tech_shift_close_from_clock(uuid, uuid, timestamptz, text, uuid) IS
-  'COL-668. Closes a med-tech''s open cockpit shift at a facility from a clock-out when the facility rule says clock_out. Unresolved passes stay on the closed shift as the record of unfinished work; the next open shift re-schedules them. COL-37 ruling: definer required for the same reason as the opener; execute is revoked from every request role.';
+  'COL-668. Closes a med-tech''s open cockpit shift at a facility from a clock-out when the facility rule says clock_out, only the shift that clock-out belongs to. Unresolved passes stay on the closed shift as the record of unfinished work; the next shift opened within one shift length carries them over. COL-37 ruling: definer required for the same reason as the opener; execute is revoked from every request role.';
 REVOKE ALL ON FUNCTION haven.med_tech_shift_close_from_clock(uuid, uuid, timestamptz, text, uuid) FROM PUBLIC, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
@@ -314,7 +370,7 @@ BEGIN
   BEGIN
     IF TG_OP = 'INSERT' THEN
       IF NEW.clock_out IS NULL AND NEW.deleted_at IS NULL THEN
-        PERFORM haven.med_tech_shift_open_from_clock(NEW.staff_id, NEW.facility_id, NEW.clock_in, NEW.shift_assignment_id, 'time_records', NEW.id);
+        PERFORM haven.med_tech_shift_open_from_clock(NEW.staff_id, NEW.facility_id, NEW.clock_in, NEW.shift_assignment_id, 'time_records', NEW.id, auth.uid());
       END IF;
     ELSIF OLD.clock_out IS NULL AND OLD.deleted_at IS NULL THEN
       IF NEW.clock_out IS NOT NULL THEN
@@ -346,7 +402,7 @@ BEGIN
       IF NOT EXISTS (SELECT 1 FROM public.time_punches p
                      WHERE p.staff_id = NEW.staff_id AND p.facility_id = NEW.facility_id
                        AND p.punch_type = 'out' AND p.punched_at > NEW.punched_at) THEN
-        PERFORM haven.med_tech_shift_open_from_clock(NEW.staff_id, NEW.facility_id, NEW.punched_at, NULL, 'time_punches', NEW.id);
+        PERFORM haven.med_tech_shift_open_from_clock(NEW.staff_id, NEW.facility_id, NEW.punched_at, NULL, 'time_punches', NEW.id, NULL);
       END IF;
     ELSIF NEW.punch_type = 'out' THEN
       PERFORM haven.med_tech_shift_close_from_clock(NEW.staff_id, NEW.facility_id, NEW.punched_at, 'time_punches', NEW.id);

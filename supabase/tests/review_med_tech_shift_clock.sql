@@ -15,7 +15,7 @@ GRANT USAGE ON SCHEMA auth TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 -- Hosted Supabase grants these by default; the replay has no default privileges.
-GRANT INSERT, UPDATE ON public.time_records TO authenticated;
+GRANT INSERT, UPDATE ON public.time_records, public.emar_records, public.med_passes, public.shift_tape_events TO authenticated;
 
 CREATE TEMP TABLE mt AS
 SELECT gen_random_uuid() tech, gen_random_uuid() tech_session, gen_random_uuid() tech_staff,
@@ -126,12 +126,28 @@ DO $$ DECLARE f mt; s record; n int; BEGIN
 END $$;
 RESET ROLE;
 
--- 3. A second open punch (another device) does not open a second shift.
-SELECT haven.med_tech_shift_open_from_clock(tech_staff, facility, (today + time '07:10') AT TIME ZONE 'America/New_York', NULL, 'time_records', gen_random_uuid()) FROM mt;
-DO $$ BEGIN
-  IF (SELECT count(*) FROM public.med_tech_shifts WHERE user_id = (SELECT tech FROM mt)) <> 1 THEN
+-- 3. A second open punch (another device) does not open a second shift, and
+--    punches keyed by a non-admin colleague or at an ungranted building open nothing.
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.mt_as(tech, tech_session) FROM mt;
+INSERT INTO public.time_records(staff_id,facility_id,organization_id,clock_in,clock_in_method,approved,created_by)
+  SELECT tech_staff, facility, org, (today + time '07:10') AT TIME ZONE 'America/New_York', 'mobile', false, tech FROM mt;
+RESET ROLE;
+DO $$ DECLARE f mt; BEGIN
+  SELECT * INTO f FROM mt;
+  IF (SELECT count(*) FROM public.med_tech_shifts WHERE user_id = f.tech) <> 1 THEN
     RAISE EXCEPTION 'COL-668: a second clock-in opened a second cockpit shift';
   END IF;
+  UPDATE public.med_tech_shifts SET status = 'completed' WHERE user_id = f.tech;  -- set aside for the next two checks
+  IF haven.med_tech_shift_open_from_clock(f.tech_staff, f.facility, now(), NULL, 'time_records', gen_random_uuid(), f.keeper) IS NOT NULL THEN
+    RAISE EXCEPTION 'COL-668: a punch a housekeeper keyed for a med-tech opened their shift';
+  END IF;
+  UPDATE public.user_facility_access SET revoked_at = now() WHERE user_id = f.tech AND facility_id = f.facility;
+  IF haven.med_tech_shift_open_from_clock(f.tech_staff, f.facility, now(), NULL, 'time_records', gen_random_uuid(), f.tech) IS NOT NULL THEN
+    RAISE EXCEPTION 'COL-668: a clock-in at a building the med-tech is not granted opened a shift there';
+  END IF;
+  UPDATE public.user_facility_access SET revoked_at = NULL WHERE user_id = f.tech AND facility_id = f.facility;
+  UPDATE public.med_tech_shifts SET status = 'active' WHERE user_id = f.tech;
 END $$;
 
 -- 4. Clock-out on the floor app closes it; the cockpit query comes back empty.
@@ -159,7 +175,9 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 
--- 6. The kiosk ledger opens and closes it the same way.
+-- 6. The kiosk ledger opens the night shift; the 14:00 dose the day shift left
+--    unresolved is carried over and the med-tech can complete it; a late-synced
+--    'out' from before the clock-in does not close it; the kiosk 'out' does.
 INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id)
   SELECT org, facility, tech_staff, 'in', (today + time '18:55') AT TIME ZONE 'America/New_York', gen_random_uuid() FROM mt;
 DO $$ DECLARE f mt; s record; BEGIN
@@ -170,10 +188,31 @@ DO $$ DECLARE f mt; s record; BEGIN
      OR s.shift_end <> (f.today + 1 + time '07:00') AT TIME ZONE 'America/New_York' THEN
     RAISE EXCEPTION 'COL-668: a kiosk clock-in did not open the night shift: %', row_to_json(s);
   END IF;
-  -- The 21:00 dose is the night shift's.
   IF NOT EXISTS (SELECT 1 FROM public.med_passes WHERE shift_id = s.id AND resident_medication_id = f.med_daily
                  AND scheduled_time = (f.today + time '21:00') AT TIME ZONE 'America/New_York') THEN
     RAISE EXCEPTION 'COL-668: the night shift did not get the 21:00 dose';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.med_passes WHERE shift_id = s.id AND resident_medication_id = f.med_daily
+                 AND scheduled_time = (f.today + time '14:00') AT TIME ZONE 'America/New_York' AND status = 'pending') THEN
+    RAISE EXCEPTION 'COL-668: the unresolved 14:00 dose was stranded on the closed day shift';
+  END IF;
+END $$;
+SET LOCAL ROLE authenticated;
+SELECT pg_temp.mt_as(tech, tech_session) FROM mt;
+SELECT public.complete_med_pass_review(p.id, 'given', 'Given late after clock-out handover', true)
+  FROM mt, public.med_passes p JOIN public.med_tech_shifts s ON s.id = p.shift_id
+  WHERE s.user_id = mt.tech AND s.status = 'active' AND p.resident_medication_id = mt.med_daily
+    AND p.scheduled_time = (mt.today + time '14:00') AT TIME ZONE 'America/New_York';
+RESET ROLE;
+INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id,captured_offline)
+  SELECT org, facility, tech_staff, 'out', (today + time '06:30') AT TIME ZONE 'America/New_York', gen_random_uuid(), true FROM mt;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.med_tech_shifts WHERE user_id = (SELECT tech FROM mt) AND status = 'active') THEN
+    RAISE EXCEPTION 'COL-668: a late-synced clock-out from before the clock-in closed the current shift';
+  END IF;
+  IF (SELECT status::text FROM public.emar_records WHERE resident_medication_id = (SELECT med_daily FROM mt)
+        AND scheduled_time = ((SELECT today FROM mt) + time '14:00') AT TIME ZONE 'America/New_York') <> 'given' THEN
+    RAISE EXCEPTION 'COL-668: a generated pass could not be completed through complete_med_pass_review';
   END IF;
 END $$;
 INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id)
@@ -184,7 +223,35 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- 7. The trigger is configuration: a facility rule of 'none' stops the clock
+-- 7. A shift that never got its clock-out does not lock the med-tech out: the
+--    next clock-in after its window closes it and opens the new one. An assigned
+--    shift wins over the nearest start: a 13:05 clock-in for an assigned day
+--    shift is the day shift, not tonight's.
+INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id)
+  SELECT org, facility, tech_staff, 'in', (today + 1 + time '18:58') AT TIME ZONE 'America/New_York', gen_random_uuid() FROM mt;
+INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date,status)
+  SELECT gen_random_uuid(), facility, org, date_trunc('week', today + 2)::date, 'published'::public.schedule_status FROM mt;
+INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,status)
+  SELECT (SELECT id FROM public.schedules WHERE facility_id = mt.facility LIMIT 1), tech_staff, facility, org, today + 2, 'day'::public.shift_type, 'assigned'::public.shift_assignment_status FROM mt;
+INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id)
+  SELECT org, facility, tech_staff, 'in', (today + 2 + time '13:05') AT TIME ZONE 'America/New_York', gen_random_uuid() FROM mt;
+DO $$ DECLARE f mt; s record; BEGIN
+  SELECT * INTO f FROM mt;
+  IF (SELECT count(*) FROM public.med_tech_shifts WHERE user_id = f.tech AND status = 'active') <> 1 THEN
+    RAISE EXCEPTION 'COL-668: expected exactly one open shift after a missed clock-out';
+  END IF;
+  SELECT * INTO s FROM public.med_tech_shifts WHERE user_id = f.tech AND status = 'active';
+  IF s.shift_start <> (f.today + 2 + time '07:00') AT TIME ZONE 'America/New_York' OR s.shift_assignment_id IS NULL THEN
+    RAISE EXCEPTION 'COL-668: a late clock-in for an assigned day shift did not take that shift: %', row_to_json(s);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.shift_tape_events e JOIN public.med_tech_shifts o ON o.id = e.shift_id
+                 WHERE o.user_id = f.tech AND e.event_type = 'clock_out_missing') THEN
+    RAISE EXCEPTION 'COL-668: the shift closed for a missing clock-out is not marked on its tape';
+  END IF;
+  UPDATE public.med_tech_shifts SET status = 'completed' WHERE id = s.id;
+END $$;
+
+-- 8. The trigger is configuration: a facility rule of 'none' stops the clock
 --    opening cockpit shifts from its effective time on.
 INSERT INTO public.med_tech_shift_rules(organization_id,facility_id,open_trigger,close_trigger,effective_from,change_reason)
   SELECT org, facility, 'none', 'clock_out', now() - interval '1 day', 'probe: switched off' FROM mt;
@@ -196,9 +263,9 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- 8. The writer is not callable by any request role.
+-- 9. The writer is not callable by any request role.
 DO $$ BEGIN
-  IF has_function_privilege('authenticated', 'haven.med_tech_shift_open_from_clock(uuid,uuid,timestamptz,uuid,text,uuid)', 'EXECUTE')
+  IF has_function_privilege('authenticated', 'haven.med_tech_shift_open_from_clock(uuid,uuid,timestamptz,uuid,text,uuid,uuid)', 'EXECUTE')
      OR has_function_privilege('authenticated', 'haven.med_tech_shift_close_from_clock(uuid,uuid,timestamptz,text,uuid)', 'EXECUTE')
      OR has_function_privilege('anon', 'haven.med_tech_shift_rule_at(uuid,uuid,timestamptz)', 'EXECUTE') THEN
     RAISE EXCEPTION 'COL-668: a request role can call the cockpit shift writer directly';
