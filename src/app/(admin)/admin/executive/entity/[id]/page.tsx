@@ -199,7 +199,7 @@ export default function ExecutiveEntityDetailPage() {
       ) : null}
 
       {!loading && !fetchErrorBannerMessage && !organizationGapMessage && facilities.length === 0 && entityName && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">{EXECUTIVE_ENTITY_DETAIL_EMPTY_FACILITIES_MESSAGE}</p>
+        <p className="text-sm text-muted-foreground">{EXECUTIVE_ENTITY_DETAIL_EMPTY_FACILITIES_MESSAGE}</p>
       )}
 
       {!loading &&
@@ -236,7 +236,7 @@ export default function ExecutiveEntityDetailPage() {
                 {kpi ? (
                   <FacilityKpiStrip kpi={kpi} />
                 ) : (
-                  <p className="text-sm text-slate-500">KPIs unavailable for this facility.</p>
+                  <p className="text-sm text-muted-foreground">KPIs unavailable for this facility.</p>
                 )}
               </CardContent>
             </Card>

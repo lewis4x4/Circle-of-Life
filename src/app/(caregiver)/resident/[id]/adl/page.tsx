@@ -193,7 +193,7 @@ export default function CaregiverResidentAdlPage() {
       <div className="space-y-4">
         <Link
           href={homeHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
         >
           <ArrowLeft className="h-4 w-4" />
           Shift home
@@ -213,7 +213,7 @@ export default function CaregiverResidentAdlPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading ADL…
       </div>
@@ -238,7 +238,7 @@ export default function CaregiverResidentAdlPage() {
     <div className="space-y-4">
       <Link
         href={`/caregiver/resident/${residentId}`}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
       >
         <ArrowLeft className="h-4 w-4" />
         Resident
@@ -254,7 +254,7 @@ export default function CaregiverResidentAdlPage() {
             <Bath className="h-5 w-5 text-sky-400" />
             ADL
           </CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription className="text-muted-foreground">
             {residentLabel ? (
               <>
                 Log ADL passes for <span className="text-zinc-200">{residentLabel}</span>
@@ -276,7 +276,7 @@ export default function CaregiverResidentAdlPage() {
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="adl-adl" className="text-xs text-zinc-400">ADL</Label>
+                  <Label htmlFor="adl-adl" className="text-xs text-muted-foreground">ADL</Label>
                   <select id="adl-adl"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={adlType}
@@ -290,7 +290,7 @@ export default function CaregiverResidentAdlPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="adl-assistance" className="text-xs text-zinc-400">Assistance</Label>
+                  <Label htmlFor="adl-assistance" className="text-xs text-muted-foreground">Assistance</Label>
                   <select id="adl-assistance"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={assistance}
@@ -304,7 +304,7 @@ export default function CaregiverResidentAdlPage() {
                   </select>
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-xs text-zinc-300">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
@@ -333,20 +333,20 @@ export default function CaregiverResidentAdlPage() {
           ) : null}
 
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Recent entries</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recent entries</p>
             {rows.length === 0 ? (
-              <p className="text-sm text-zinc-400">No ADL rows yet for this resident.</p>
+              <p className="text-sm text-muted-foreground">No ADL rows yet for this resident.</p>
             ) : (
               <ul className="space-y-2">
                 {rows.map((row) => (
                   <li key={row.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-sm">
                     <p className="font-medium text-zinc-100">
                       {adlTypeLabel(row.adl_type)}
-                      <span className="font-normal text-zinc-500"> · </span>
-                      <span className="text-zinc-300">{assistanceLabel(row.assistance_level)}</span>
+                      <span className="font-normal text-muted-foreground"> · </span>
+                      <span className="text-muted-foreground">{assistanceLabel(row.assistance_level)}</span>
                       {row.refused ? <span className="text-amber-400"> · refused</span> : null}
                     </p>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {new Date(row.log_time).toLocaleString(undefined, {
                         month: "short",
                         day: "numeric",
@@ -355,7 +355,7 @@ export default function CaregiverResidentAdlPage() {
                       })}{" "}
                       · {row.shift} · {row.log_date}
                     </p>
-                    {row.notes?.trim() ? <p className="mt-2 text-xs text-zinc-400">{row.notes}</p> : null}
+                    {row.notes?.trim() ? <p className="mt-2 text-xs text-muted-foreground">{row.notes}</p> : null}
                   </li>
                 ))}
               </ul>

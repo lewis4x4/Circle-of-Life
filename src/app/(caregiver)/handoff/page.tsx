@@ -170,7 +170,7 @@ export default function CaregiverHandoffPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading handoffs…
       </div>
@@ -238,7 +238,7 @@ export default function CaregiverHandoffPage() {
       <ShiftHandoffBoard />
       {rows.length === 0 ? (
         <div className="p-8 rounded-2xl border border-white/5 bg-slate-900/40 text-center">
-          <p className="text-sm font-mono text-zinc-400">No shift handoffs on file yet.</p>
+          <p className="text-sm font-mono text-muted-foreground">No shift handoffs on file yet.</p>
         </div>
       ) : (
         <MotionList className="space-y-4">
@@ -252,17 +252,17 @@ export default function CaregiverHandoffPage() {
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-white/5 pb-4 mb-4">
                     <div className="flex flex-col gap-1.5">
                       <div className="flex flex-wrap items-center gap-3">
-                        <ClipboardList className="h-5 w-5 text-zinc-400" />
+                        <ClipboardList className="h-5 w-5 text-muted-foreground" />
                         <span className="text-lg font-medium tracking-wide text-white">
                            {formatHandoffDate(h.handoff_date)}
                         </span>
-                        <span className="text-zinc-500 font-mono tracking-wider text-[10px] uppercase font-bold">
+                        <span className="text-muted-foreground font-mono tracking-wider text-[10px] uppercase font-bold">
                            {h.outgoing_shift} → {h.incoming_shift}
                         </span>
                       </div>
-                      <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-medium pl-8">
-                        Out: <span className="text-zinc-300">{outName}</span>
-                        {h.incoming_staff_id ? <><span className="mx-2">·</span>In: <span className="text-zinc-300">{inName}</span></> : null}
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground font-medium pl-8">
+                        Out: <span className="text-muted-foreground">{outName}</span>
+                        {h.incoming_staff_id ? <><span className="mx-2">·</span>In: <span className="text-muted-foreground">{inName}</span></> : null}
                       </p>
                     </div>
                     <div className="shrink-0 flex items-center pr-2">
@@ -279,17 +279,17 @@ export default function CaregiverHandoffPage() {
                   <div className="space-y-4">
                     {h.outgoing_notes?.trim() ? (
                       <div className="rounded-xl border border-white/5 bg-black/40 p-4 shadow-inner">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono mb-2">Outgoing notes</p>
-                        <p className="whitespace-pre-wrap text-sm text-zinc-300 leading-relaxed font-mono">{h.outgoing_notes}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono mb-2">Outgoing notes</p>
+                        <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed font-mono">{h.outgoing_notes}</p>
                       </div>
                     ) : null}
                     {summaryLines.length > 0 ? (
                       <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono pl-1">Summary Items</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono pl-1">Summary Items</p>
                         {summaryLines.map((line, idx) => (
                           <div
                             key={`${h.id}-s-${idx}`}
-                            className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/40 p-3 text-sm text-zinc-300 shadow-inner group-hover:border-white/10 transition-colors"
+                            className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/40 p-3 text-sm text-muted-foreground shadow-inner group-hover:border-white/10 transition-colors"
                           >
                             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500/80" aria-hidden />
                             <span className="font-mono leading-relaxed">{line}</span>
@@ -299,8 +299,8 @@ export default function CaregiverHandoffPage() {
                     ) : null}
                     {h.incoming_notes?.trim() ? (
                       <div className="rounded-xl border border-white/5 bg-black/40 p-4 shadow-inner">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono mb-2">Incoming notes</p>
-                        <p className="whitespace-pre-wrap text-sm text-zinc-300 leading-relaxed font-mono">{h.incoming_notes}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono mb-2">Incoming notes</p>
+                        <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed font-mono">{h.incoming_notes}</p>
                       </div>
                     ) : null}
                   </div>

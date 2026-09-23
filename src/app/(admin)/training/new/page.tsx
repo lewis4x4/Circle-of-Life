@@ -254,7 +254,7 @@ export default function AdminTrainingNewDemonstrationPage() {
               <div className="space-y-2">
                 <Label htmlFor="staff">Staff member</Label>
                 {loadingStaff || authLoading ? (
-                  <p className="text-sm text-slate-500">{TRAINING_NEW_LOADING_STAFF_COPY}</p>
+                  <p className="text-sm text-muted-foreground">{TRAINING_NEW_LOADING_STAFF_COPY}</p>
                 ) : showEmptyStaffGap ? (
                   <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                     {TRAINING_NEW_NO_STAFF_AT_FACILITY_COPY}
@@ -296,7 +296,7 @@ export default function AdminTrainingNewDemonstrationPage() {
                   className="text-sm file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-2 file:py-1 dark:file:bg-slate-800"
                   onChange={(e) => setCertificatePdf(e.target.files?.[0] ?? null)}
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Baya or other competency certificate. Stored privately for your organization (PDF only, max 15 MB).
                 </p>
               </div>

@@ -19,16 +19,16 @@ export function FamilySectionIntro({
     <div className="w-full space-y-4">
       <div className="text-center">
         {residentSummary ? (
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-400">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
             For {residentSummary}
           </p>
         ) : (
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-400">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
             Family updates
           </p>
         )}
         <h1 className="mt-3 text-4xl md:text-5xl font-serif text-stone-800 tracking-tight">{title}</h1>
-        <p className="mt-3 max-w-2xl mx-auto text-base text-stone-500">{description}</p>
+        <p className="mt-3 max-w-2xl mx-auto text-base text-muted-foreground">{description}</p>
       </div>
 
       {/* Same sections as the bottom tab bar (FAMILY_SECTIONS). On a phone the
@@ -43,7 +43,7 @@ export function FamilySectionIntro({
               "rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors",
               item.key === active
                 ? "border-stone-300 bg-white text-stone-900 shadow-sm"
-                : "border-stone-200 bg-white/60 text-stone-500 hover:bg-white hover:text-stone-800",
+                : "border-stone-200 bg-white/60 text-muted-foreground hover:bg-white hover:text-stone-800",
             )}
           >
             {item.label}

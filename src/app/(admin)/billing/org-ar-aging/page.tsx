@@ -146,7 +146,7 @@ export default function AdminOrgArAgingPage() {
           <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">By entity and facility</h3>
-              <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
+              <p className="text-[10px] font-mono tracking-wider text-muted-foreground mt-1 uppercase">
                  Sum of sent invoices with a balance
               </p>
             </div>
@@ -161,19 +161,19 @@ export default function AdminOrgArAgingPage() {
                       >
                          <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-muted transition-colors">
-                               <Building2 className="w-5 h-5 text-slate-400 group-hover:text-foreground transition-colors" />
+                               <Building2 className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                             </div>
                             <div className="flex-1 mt-1">
                                <span className="font-semibold text-slate-900 dark:text-slate-100 tracking-tight text-lg line-clamp-2 leading-tight">
                                   {r.entityName}
                                </span>
-                               <span className="mt-1 block text-sm font-medium text-slate-500 dark:text-slate-400">
+                               <span className="mt-1 block text-sm font-medium text-muted-foreground">
                                   {r.facilityName}
                                </span>
                             </div>
                          </div>
                          <div className="flex flex-col items-start mt-6 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Open AR</span>
+                            <span className="font-bold uppercase tracking-wider text-[10px] text-muted-foreground mb-1">Open AR</span>
                             <span className="text-2xl font-medium text-foreground tabular-nums">
                                {billingCurrency.format(r.totalCents / 100)}
                             </span>

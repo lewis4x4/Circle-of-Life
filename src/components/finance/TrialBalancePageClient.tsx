@@ -225,7 +225,7 @@ export default function TrialBalancePageClient({
       )}
 
       {ready && emptyCopy ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">{emptyCopy}</p>
+        <p className="text-sm text-muted-foreground">{emptyCopy}</p>
       ) : null}
     </div>
   );
