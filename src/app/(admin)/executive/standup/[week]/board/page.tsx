@@ -98,6 +98,11 @@ export default function ExecutiveStandupBoardPage() {
 
   const packet = useMemo(() => (detail ? buildStandupPacketDocument(detail, previousDetail) : null), [detail, previousDetail]);
 
+  // Export actions need a packet: with no snapshot for the week they would print
+  // or save an empty board, so they stay off and say why (COL-662).
+  const noPacketReason = loading ? null : !detail ? "No standup packet for this week yet." : null;
+  const exportDisabled = loading || !detail;
+
   function onExportBoardPacket() {
     if (!detail) return;
     const html = buildStandupBoardPrintHtml(detail, previousDetail);
@@ -159,19 +164,20 @@ export default function ExecutiveStandupBoardPage() {
                   <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                   Refresh
                 </Button>
-                <Button type="button" onClick={() => window.print()}>
+                <Button type="button" onClick={() => window.print()} disabled={exportDisabled} title={noPacketReason ?? undefined}>
                   <Printer className="mr-2 h-4 w-4" />
                   Print / Save PDF
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
+                <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={exportDisabled || downloadingPdf} title={noPacketReason ?? undefined}>
                   {downloadingPdf ? "Generating PDF…" : "Download PDF"}
                 </Button>
-                <Button type="button" variant="outline" onClick={onExportBoardPacket}>
+                <Button type="button" variant="outline" onClick={onExportBoardPacket} disabled={exportDisabled} title={noPacketReason ?? undefined}>
                   Export HTML packet
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
+                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={exportDisabled || savingBoardReport} title={noPacketReason ?? undefined}>
                   {savingBoardReport ? "Saving…" : "Save in executive reports"}
                 </Button>
+                {noPacketReason ? <p className="w-full text-xs text-muted-foreground">{noPacketReason}</p> : null}
               </div>
             }
           />
