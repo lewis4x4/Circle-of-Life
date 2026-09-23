@@ -16,6 +16,7 @@ export function FloorStatePanel({
   detail,
   onRetry,
   retryLabel = "Try again",
+  pageTitle,
   className,
 }: {
   state: "loading" | "error" | "empty";
@@ -23,6 +24,8 @@ export function FloorStatePanel({
   detail?: string | null;
   onRetry?: () => void;
   retryLabel?: string;
+  /** When the panel is the whole screen: the screen's name, as its (visually hidden) h1. */
+  pageTitle?: string;
   className?: string;
 }) {
   return (
@@ -31,6 +34,7 @@ export function FloorStatePanel({
       aria-live="polite"
       className={cn("flex flex-col items-center justify-center gap-2 px-6 py-10 text-center", className)}
     >
+      {pageTitle ? <h1 className="sr-only">{pageTitle}</h1> : null}
       {state === "loading" ? (
         <Loader2 className="mb-1 size-6 animate-spin text-muted-foreground motion-reduce:animate-none" aria-hidden />
       ) : null}

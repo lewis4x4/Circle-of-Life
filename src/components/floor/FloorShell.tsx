@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -8,7 +8,7 @@ import { loadCaregiverFacilityContext, type CaregiverFacilityContext } from "@/l
 import { currentShiftFor } from "@/lib/caregiver/shift";
 import type { FloorInactiveReason, FloorLockReason } from "@/lib/floor/contract";
 import { resolveFloorDeviceStore, type FloorDevice } from "@/lib/floor/device-store";
-import { floorLockHref, forgetFloorPerson, sendFloorLock } from "@/lib/floor/lock-client";
+import { clearBrowserSessionCookies, floorLockHref, forgetFloorPerson, sendFloorLock } from "@/lib/floor/lock-client";
 import { currentRetryOwner } from "@/lib/floor/check-submit";
 import { replayFloorQueues } from "@/lib/floor/replay";
 import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 import { FloorSessionContext, type FloorSession } from "./FloorContext";
+import { FloorLockScreen } from "./FloorLockScreen";
 import { FloorStatePanel } from "./FloorStatePanel";
 import { FloorTabBar } from "./FloorTabBar";
 import { FloorTopBar } from "./FloorTopBar";
@@ -30,7 +31,8 @@ type ShellState =
   | { status: "checking" }
   | { status: "not-a-tablet" }
   | { status: "facility-error"; message: string; device: FloorDevice; profile: FloorUnlockProfile }
-  | { status: "ready"; device: FloorDevice; profile: FloorUnlockProfile; facility: CaregiverFacilityContext };
+  | { status: "ready"; device: FloorDevice; profile: FloorUnlockProfile; facility: CaregiverFacilityContext }
+  | { status: "locked"; reason: FloorInactiveReason | null };
 
 /** "Med tech · Day shift · on since 6:58 AM", from the unlock and the facility's shift definitions. */
 export function topBarDetailLine(profile: FloorUnlockProfile, facility: CaregiverFacilityContext, now: Date = new Date()): string {
@@ -69,11 +71,41 @@ export function FloorShell({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ShellState>({ status: "checking" });
   const locking = useRef(false);
 
+  // Waiting to leave for /floor/lock until the network is back (offline lock).
+  const pendingNavigation = useRef<(() => void) | null>(null);
+  useEffect(
+    () => () => {
+      if (pendingNavigation.current) window.removeEventListener("online", pendingNavigation.current);
+    },
+    [],
+  );
+
+  /**
+   * Lock the page itself, with or without a network: the unlocked screens
+   * unmount at once (the shell renders the lock screen from the client
+   * bundle), everything the page held for the person is forgotten, and the
+   * session cookies are expired here. Then the tablet moves to /floor/lock,
+   * straight away online, or when the network comes back: an offline
+   * navigation would fail to load and leave the error page, not a lock.
+   */
   const endLocally = useCallback(
     (reason: FloorInactiveReason | null) => {
       forgetFloorPerson();
+      clearBrowserSessionCookies();
       void supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
-      router.replace(floorLockHref(reason));
+      setState({ status: "locked", reason });
+      const href = floorLockHref(reason);
+      if (typeof navigator === "undefined" || navigator.onLine !== false) {
+        router.replace(href);
+        return;
+      }
+      const go = () => {
+        window.removeEventListener("online", go);
+        pendingNavigation.current = null;
+        router.replace(href);
+      };
+      pendingNavigation.current = go;
+      window.addEventListener("online", go);
     },
     [router, supabase],
   );
@@ -84,10 +116,29 @@ export function FloorShell({ children }: { children: ReactNode }) {
     (reason: FloorLockReason) => {
       if (locking.current) return;
       locking.current = true;
-      void sendFloorLock(reason, fetch, deviceToken.current).finally(() => endLocally(reason === "switch" ? null : reason));
+      const next = reason === "switch" ? null : reason;
+      // The request carries this session's cookies so the route can revoke it;
+      // offline it is retried when the network returns (sendFloorLock).
+      const sent = sendFloorLock(reason, fetch, deviceToken.current);
+      // The request already holds the unlock id; the page forgets the person now.
+      forgetFloorPerson();
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        endLocally(next);
+        return;
+      }
+      // Online: the content goes now; the page leaves once the route has
+      // ended the unlock and cleared the cookies (unchanged online path).
+      setState({ status: "locked", reason: next });
+      void sent.finally(() => endLocally(next));
     },
     [endLocally],
   );
+
+  // The mount check below runs once per shell; it reads the latest lock through a ref.
+  const endLocallyRef = useRef(endLocally);
+  useEffect(() => {
+    endLocallyRef.current = endLocally;
+  }, [endLocally]);
 
   const ended = useCallback(
     (reason: FloorInactiveReason) => {
@@ -111,7 +162,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
         // not someone's unlock: end it and go to the lock screen.
         locking.current = true;
         await sendFloorLock("switch");
-        if (active) endLocally(null);
+        if (active) endLocallyRef.current(null);
         return;
       }
       const resolved = await loadCaregiverFacilityContext(supabase);
@@ -140,7 +191,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [supabase, endLocally]);
+  }, [supabase]);
 
   const ready = state.status === "ready" ? state : null;
   // Someone is unlocked once the shell knows the device and the unlock, even
@@ -173,6 +224,13 @@ export function FloorShell({ children }: { children: ReactNode }) {
   );
 
   if (state.status === "not-a-tablet") return <NotATabletNotice />;
+  if (state.status === "locked") {
+    return (
+      <Suspense fallback={null}>
+        <FloorLockScreen reason={state.reason} />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
@@ -192,9 +250,9 @@ export function FloorShell({ children }: { children: ReactNode }) {
       )}
       <main className="flex min-h-0 flex-1 flex-col">
         {state.status === "checking" ? (
-          <FloorStatePanel state="loading" title="Opening the floor tablet" className="flex-1" />
+          <FloorStatePanel state="loading" title="Opening the floor tablet" pageTitle="Floor tablet" className="flex-1" />
         ) : state.status === "facility-error" ? (
-          <FloorStatePanel state="error" title={state.message} onRetry={() => lock("switch")} retryLabel="Lock this tablet" className="flex-1" />
+          <FloorStatePanel state="error" title={state.message} onRetry={() => lock("switch")} retryLabel="Lock this tablet" pageTitle="Floor tablet" className="flex-1" />
         ) : (
           <FloorSessionContext.Provider value={session}>{children}</FloorSessionContext.Provider>
         )}

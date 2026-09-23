@@ -81,9 +81,9 @@ export function FloorReportScreen({ prefillResidentId, prefillKind, onStartOver 
     });
   }, [ready, facility, startedAt, taskRows, everyone, withFloorRoom]);
 
-  if (data.status === "loading") return <FloorStatePanel state="loading" title="Loading your residents" className="flex-1" />;
+  if (data.status === "loading") return <FloorStatePanel state="loading" title="Loading your residents" pageTitle="Something happened" className="flex-1" />;
   if (data.status === "error" || !ready) {
-    return <FloorStatePanel state="error" title={data.status === "error" ? data.message : "Something happened could not open."} onRetry={retry} className="flex-1" />;
+    return <FloorStatePanel state="error" title={data.status === "error" ? data.message : "Something happened could not open."} onRetry={retry} pageTitle="Something happened" className="flex-1" />;
   }
 
   const view = floorReportView(state, questionIndex);

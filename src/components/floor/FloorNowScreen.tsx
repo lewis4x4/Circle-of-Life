@@ -93,7 +93,7 @@ export function FloorNowScreen() {
     });
   }, [activity.state, staffIds.state, taskRows, now, windowStart, profile.clockedInAt, roomByResident]);
 
-  if (!now || !windowStart) return <FloorStatePanel state="loading" title="Loading Now" className="flex-1" />;
+  if (!now || !windowStart) return <FloorStatePanel state="loading" title="Loading Now" pageTitle="Now" className="flex-1" />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

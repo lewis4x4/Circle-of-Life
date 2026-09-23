@@ -45,10 +45,10 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
   const detailData = detail.state.status === "success" ? detail.state.data : null;
   const taskRows = useMemo(() => (tasks.state.status === "success" ? tasks.state.data : []), [tasks.state]);
 
-  if (census.state.status === "error") return <FloorStatePanel state="error" title="This resident could not load." onRetry={census.reload} className="flex-1" />;
-  if (census.state.status !== "success" || !now || !dayStart) return <FloorStatePanel state="loading" title="Opening the resident" className="flex-1" />;
+  if (census.state.status === "error") return <FloorStatePanel state="error" title="This resident could not load." onRetry={census.reload} pageTitle="Resident" className="flex-1" />;
+  if (census.state.status !== "success" || !now || !dayStart) return <FloorStatePanel state="loading" title="Opening the resident" pageTitle="Resident" className="flex-1" />;
   if (!resident || (detail.state.status === "success" && detailData === null)) {
-    return <FloorStatePanel state="empty" title="This resident is not listed in this building." detail="Go back to Residents and pick again." className="flex-1" />;
+    return <FloorStatePanel state="empty" title="This resident is not listed in this building." detail="Go back to Residents and pick again." pageTitle="Resident" className="flex-1" />;
   }
 
   const flag = signalData || resident.status !== "active" ? flagFor(resident, signalData) : null;

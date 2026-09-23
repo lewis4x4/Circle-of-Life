@@ -43,7 +43,7 @@ export function lockRulesLine(idleMinutes: number): string {
  * `/floor/lock` (DESIGN.md 01, 02, 02b): who is on shift, then their PIN. The
  * page needs no session; the device token in IndexedDB is what lets it ask.
  */
-export function FloorLockScreen() {
+export function FloorLockScreen({ reason }: { reason?: FloorInactiveReason | null } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { device, roster, unsent, retry } = useFloorRoster();
@@ -54,7 +54,7 @@ export function FloorLockScreen() {
   const [attempt, setAttempt] = useState(0);
   const employeeInputId = useId();
 
-  const reasonParam = searchParams.get("reason");
+  const reasonParam = reason !== undefined ? reason : searchParams.get("reason");
   const lockedLine = reasonParam && INACTIVE_REASONS.has(reasonParam) ? FLOOR_LOCKED_COPY[reasonParam as FloorInactiveReason] : null;
 
   // Arriving here with an unlock still on the page (Back, a reload after an

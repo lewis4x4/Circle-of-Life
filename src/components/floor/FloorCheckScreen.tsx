@@ -41,11 +41,11 @@ import { useFloorCheckData, type FloorCheckData } from "./useFloorCheckData";
  */
 export function FloorCheckScreen({ taskId }: { taskId: string }) {
   const { state, reload } = useFloorCheckData(taskId);
-  if (state.status === "idle" || state.status === "loading") return <FloorStatePanel state="loading" title="Opening the check" className="flex-1" />;
-  if (state.status === "error") return <FloorStatePanel state="error" title="This check could not open." detail="Check the Wi-Fi, then try again." onRetry={reload} className="flex-1" />;
+  if (state.status === "idle" || state.status === "loading") return <FloorStatePanel state="loading" title="Opening the check" pageTitle="Safety check" className="flex-1" />;
+  if (state.status === "error") return <FloorStatePanel state="error" title="This check could not open." detail="Check the Wi-Fi, then try again." onRetry={reload} pageTitle="Safety check" className="flex-1" />;
   if (!state.data) {
     return (
-      <FloorStatePanel state="empty" title="This check is not on the list any more." detail="It may be charted already. Go back to Now." className="flex-1" />
+      <FloorStatePanel state="empty" title="This check is not on the list any more." detail="It may be charted already. Go back to Now." pageTitle="Safety check" className="flex-1" />
     );
   }
   return <CheckForm key={taskId} data={state.data} />;
