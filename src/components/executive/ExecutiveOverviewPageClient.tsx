@@ -68,6 +68,7 @@ import {
   coverageHeadline,
   coverageSummaryLine,
   noAlertsCopy,
+  openRoundingSignals,
   type CoverageRow,
 } from "@/lib/executive/evidence-coverage";
 import {
@@ -928,11 +929,13 @@ function ReportingFollowUpPanel({ coverage }: { coverage: CoverageRow[] }) {
 function RecordedAlertsPanel({
   alerts,
   coverage,
+  heatMap,
 }: {
   alerts: AlertWithFacility[];
   coverage: CoverageRow[];
+  heatMap: ResidentAssuranceFacilityRollup[];
 }) {
-  const emptyCopy = noAlertsCopy(coverage);
+  const emptyCopy = noAlertsCopy(coverage, openRoundingSignals(heatMap));
 
   return (
     <section className="flex flex-col gap-2" aria-labelledby="attention-heading">
@@ -1717,7 +1720,7 @@ function ExecutiveDashboardBody({
           <ReportingFollowUpPanel coverage={coverage} />
         </div>
         <div className="col-span-12 lg:col-span-5">
-          <RecordedAlertsPanel alerts={alerts} coverage={coverage} />
+          <RecordedAlertsPanel alerts={alerts} coverage={coverage} heatMap={assuranceHeatMap} />
         </div>
       </div>
 
