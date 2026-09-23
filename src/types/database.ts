@@ -1462,6 +1462,7 @@ export type Database = {
           floor_roster_roles: string[]
           id: string
           organization_id: string
+          rounding_owner_roles: string[]
           timeclock_enabled: boolean
           updated_at: string
           updated_by: string | null
@@ -1472,6 +1473,7 @@ export type Database = {
           floor_roster_roles?: string[]
           id?: string
           organization_id: string
+          rounding_owner_roles?: string[]
           timeclock_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -1482,6 +1484,7 @@ export type Database = {
           floor_roster_roles?: string[]
           id?: string
           organization_id?: string
+          rounding_owner_roles?: string[]
           timeclock_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -21518,6 +21521,10 @@ export type Database = {
           p_shift_key: string
         }
         Returns: boolean
+      }
+      assign_unowned_observation_tasks: {
+        Args: { p_at?: string; p_facility_id: string }
+        Returns: number
       }
       submit_observation: {
         Args: {
