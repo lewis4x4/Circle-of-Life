@@ -209,7 +209,7 @@ export const AUXILIARY_ROUTES: PillarItem[] = [
   { key: "users", href: "/admin/settings/users", label: "User management", icon: Users },
   { key: "settings-system-alerts", href: "/admin/settings/system-alerts", label: "System alerts", icon: Settings },
   { key: "settings-notifications", href: "/admin/settings/notifications", label: "Notification settings", icon: Settings },
-  { key: "pilot-feedback", href: "/admin/feedback", label: "Pilot feedback", icon: MessageSquare },
+  { key: "pilot-feedback", href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
 ];
 
 /** Spec 07A: every "Report incident" door opens the three-tap caregiver flow. */

@@ -77,7 +77,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       setAuditEvents((data ?? []) as DocumentAuditEventRow[]);
     } catch (loadError) {
       setAuditEvents([]);
-      setError(loadError instanceof Error ? loadError.message : "Could not load doctrine review queue.");
+      setError(loadError instanceof Error ? loadError.message : "Could not load the document review queue.");
     } finally {
       setLoading(false);
     }
@@ -237,9 +237,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       const message =
         payload && typeof payload.message === "string"
           ? payload.message
-          : payload && typeof payload.notePath === "string"
-            ? `Obsidian draft created at ${payload.notePath}`
-            : "Obsidian draft created.";
+          : "Draft created.";
       setActionMessage(message);
       await onRefresh();
       await loadAudit();
@@ -268,7 +266,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
       setActionMessage(
         skipped > 0
           ? `Draft pass finished: ${created} created, ${skipped} skipped because the vault was unavailable in this runtime.`
-          : `Created ${created} Obsidian draft${created === 1 ? "" : "s"}.`,
+          : `Created ${created} draft${created === 1 ? "" : "s"}.`,
       );
       await onRefresh();
       await loadAudit();
@@ -328,7 +326,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
   }> = [
     {
       key: "missing_draft",
-      title: "No Obsidian draft yet",
+      title: "No draft yet",
       icon: NotebookPen,
       tone: "text-info",
       items: buckets.missingDraft,
@@ -443,7 +441,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
           <div>
             <h3 className="text-sm font-semibold text-foreground">Stuck Uploads</h3>
             <p className="text-xs text-muted-foreground">
-              Uploaded documents that entered review but still need doctrine workflow actions.
+              Uploaded documents that entered review but still need review steps.
             </p>
           </div>
         </div>
@@ -542,7 +540,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             <div>
               <h3 className="text-sm font-semibold text-success">Ready to Publish</h3>
               <p className="text-xs text-success">
-                Pending-review documents that already have an owner, a due date, an Obsidian draft, and a recorded review completion.
+                Pending-review documents that already have an owner, a due date, a draft, and a recorded review completion.
               </p>
             </div>
           </div>
@@ -638,7 +636,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
         {reviewSlaRows.length === 0 ? (
           <div className="text-xs text-info">No pending-review documents are near or past their due date right now.</div>
         ) : visibleSlaRows.length === 0 ? (
-          <div className="text-xs text-info">No doctrine reviews match this SLA filter.</div>
+          <div className="text-xs text-info">No document reviews match this filter.</div>
         ) : (
           <div className="space-y-2">
             {visibleSlaRows.slice(0, 6).map((item) => (
@@ -673,7 +671,7 @@ export function DoctrineReviewQueue({ documents, onRefresh }: DoctrineReviewQueu
             ))}
             {visibleSlaRows.length > 6 ? (
               <div className="text-[11px] text-info">
-                {visibleSlaRows.length - 6} more doctrine review{visibleSlaRows.length - 6 === 1 ? "" : "s"} in this SLA view.
+                {visibleSlaRows.length - 6} more document review{visibleSlaRows.length - 6 === 1 ? "" : "s"} in this SLA view.
               </div>
             ) : null}
           </div>

@@ -4,6 +4,7 @@ import {
   EXECUTIVE_LIVE_MISSED_RATE_NOT_COMPUTED_COPY,
   formatExecutiveLiveMissedRate,
   getExecutiveKpiDateWindow,
+  summarizeExecutiveFinancial,
 } from "@/lib/exec-kpi-snapshot";
 
 describe("getExecutiveKpiDateWindow (Eastern wall clock)", () => {
@@ -47,5 +48,30 @@ describe("formatExecutiveLiveMissedRate", () => {
     expect(formatExecutiveLiveMissedRate(null)).toBe(EXECUTIVE_LIVE_MISSED_RATE_NOT_COMPUTED_COPY);
     expect(formatExecutiveLiveMissedRate(0)).toBe("0%");
     expect(formatExecutiveLiveMissedRate(0.125)).toBe("13%");
+  });
+});
+
+describe("summarizeExecutiveFinancial (COL-667)", () => {
+  const row = (status: string, balance: number, due = "2026-05-15") => ({ facility_id: "hw", status, balance_due: balance, due_date: due });
+
+  it("reproduces Homewood: AR is the $16,968.00 Billing shows, drafts counted apart", () => {
+    const rows = [
+      ...Array.from({ length: 10 }, () => row("overdue", 169_680)),
+      ...Array.from({ length: 28 }, () => row("draft", 201_979, "2026-08-05")),
+      ...Array.from({ length: 29 }, () => row("draft", 208_807, "2026-09-05")),
+    ];
+    expect(summarizeExecutiveFinancial(rows, "2026-09-22")).toEqual({
+      openInvoicesCount: 10,
+      totalBalanceDueCents: 1_696_800,
+      notYetSentCount: 57,
+      notYetSentCents: 28 * 201_979 + 29 * 208_807,
+    });
+  });
+
+  it("never counts a draft, a paid or a void invoice as AR", () => {
+    const financial = summarizeExecutiveFinancial([row("draft", 100), row("paid", 100), row("void", 100)], "2026-09-22");
+    expect(financial.openInvoicesCount).toBe(0);
+    expect(financial.totalBalanceDueCents).toBe(0);
+    expect(financial.notYetSentCount).toBe(1);
   });
 });

@@ -66,7 +66,7 @@ export function FilterPill({
     >
       <span>{label}</span>
       {typeof count === "number" ? (
-        <span className={cn("tabular-nums opacity-80", active && "opacity-100")}>({count})</span>
+        <span className="tabular-nums">({count})</span>
       ) : null}
     </button>
   );

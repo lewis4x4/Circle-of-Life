@@ -154,6 +154,31 @@ describe("AdminDietaryNewPage auth hydration", () => {
     expect(screen.queryByText(DIETARY_NEW_LOADING_RESIDENTS_COPY)).not.toBeInTheDocument();
   });
 
+  it("opens with no IDDSI level chosen and refuses to save until both are picked (COL-653)", async () => {
+    authMock.loading = false;
+    authMock.organizationId = "00000000-0000-4000-8000-00000000org1";
+    authMock.user = { id: "00000000-0000-4000-8000-00000000usr1" };
+    supabaseMock.residents = [{ id: "00000000-0000-4000-8000-00000000res1", first_name: "A", last_name: "B" }];
+
+    render(<AdminDietaryNewPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Resident")).toBeEnabled();
+    });
+    expect(screen.getByLabelText("IDDSI food")).toHaveValue("");
+    expect(screen.getByLabelText("IDDSI fluid")).toHaveValue("");
+
+    fireEvent.change(screen.getByLabelText("Resident"), {
+      target: { value: "00000000-0000-4000-8000-00000000res1" },
+    });
+    fireEvent.submit(screen.getByRole("button", { name: "Save draft" }).closest("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByText("Choose the IDDSI food and fluid levels (or Not assessed).")).toBeInTheDocument();
+    });
+    expect(supabaseMock.insertPayload).toBeNull();
+  });
+
   it("inserts a draft when org, facility, and resident are present", async () => {
     authMock.loading = false;
     authMock.organizationId = "00000000-0000-4000-8000-00000000org1";
@@ -169,6 +194,8 @@ describe("AdminDietaryNewPage auth hydration", () => {
     fireEvent.change(screen.getByLabelText("Resident"), {
       target: { value: "00000000-0000-4000-8000-00000000res1" },
     });
+    fireEvent.change(screen.getByLabelText("IDDSI food"), { target: { value: "not_assessed" } });
+    fireEvent.change(screen.getByLabelText("IDDSI fluid"), { target: { value: "level_0_thin" } });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => {

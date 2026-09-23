@@ -25,10 +25,10 @@ export const caregiverIncidentFormSchema = z.object({
   residentId: z
     .string()
     .refine((s) => s === "" || UUID_STRING_RE.test(s), "Choose a resident or leave blank"),
-  category: z.enum(caregiverIncidentCategoryValues),
-  severity: z.enum(caregiverIncidentSeverityValues),
+  category: z.enum(caregiverIncidentCategoryValues, { error: "Choose a category" }),
+  severity: z.enum(caregiverIncidentSeverityValues, { error: "Choose a severity" }),
   occurredAtLocal: z.string().min(1, "Date and time are required"),
-  shift: z.enum(caregiverIncidentShiftValues),
+  shift: z.enum(caregiverIncidentShiftValues, { error: "Choose the shift" }),
   locationDescription: z.string().min(3, "Location is required").max(2000),
   description: z.string().min(10, "Describe what happened").max(8000),
   immediateActions: z.string().min(3, "Document immediate actions").max(8000),

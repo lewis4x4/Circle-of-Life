@@ -18,7 +18,7 @@ const DOT: Record<string, string> = {
 export function GlanceStrip({ counts, rightNote, rentLive }: GlanceStripProps) {
   const items: Array<{ key: string; label: string; value: string }> = [
     { key: "regulatory", label: "Regulatory / safety", value: String(counts.regulatory) },
-    { key: "rent", label: "Rent past due", value: rentLive ? String(counts.rent) : "Week 2" },
+    { key: "rent", label: "Rent past due", value: rentLive ? String(counts.rent) : "Coming soon" },
     { key: "assigned", label: "Assigned", value: String(counts.assigned) },
     { key: "fyi", label: "FYI", value: String(counts.fyi) },
     { key: "cleared", label: "Cleared today", value: String(counts.clearedToday) },

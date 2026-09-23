@@ -67,7 +67,7 @@ describe("StaffTimesheet", () => {
     render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
     expect(await screen.findByRole("heading", { name: "Test Staff A" })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Mon, Nov 2" })).toHaveTextContent("Missing clock out");
-    expect(screen.getByRole("article", { name: "Tue, Nov 3" })).toHaveTextContent("8 h 0 min worked");
+    expect(screen.getByRole("article", { name: "Tue, Nov 3" })).toHaveTextContent("8:00 worked");
     expect(screen.getByRole("article", { name: "Tue, Nov 3" })).toHaveTextContent("Captured offline");
     expect(screen.getByText("Full history")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Add a correction" })).toBeInTheDocument();
