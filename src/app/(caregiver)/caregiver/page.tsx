@@ -67,21 +67,24 @@ export default function CaregiverHomePage() {
       const { ctx } = resolved;
       setFacilityName(ctx.facilityName);
       setTimeZone(ctx.timeZone);
-      const b = await fetchCaregiverShiftBrief(supabase, ctx);
+      // The brief, the outbreak read and the caller's id are independent (COL-674).
+      const [b, ob, claims] = await Promise.all([
+        fetchCaregiverShiftBrief(supabase, ctx),
+        supabase
+          .from("infection_outbreaks")
+          .select("id, infection_type")
+          .eq("facility_id", ctx.facilityId)
+          .eq("status", "active")
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle(),
+        supabase.auth.getClaims(),
+      ]);
       setBrief(b);
-      const ob = await supabase
-        .from("infection_outbreaks")
-        .select("id, infection_type")
-        .eq("facility_id", ctx.facilityId)
-        .eq("status", "active")
-        .is("deleted_at", null)
-        .limit(1)
-        .maybeSingle();
       const first = ob.data as { id: string; infection_type: string } | null;
       setActiveOutbreak(first);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const sub = claims.data?.claims?.sub;
+      const user = typeof sub === "string" ? { id: sub } : null;
       if (user && first) {
         const cnt = await supabase
           .from("outbreak_actions")
