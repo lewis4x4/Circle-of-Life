@@ -49,3 +49,23 @@ export function formatOperationsMissedAt(iso: string | null | undefined): string
   if (Number.isNaN(date.getTime())) return OPERATIONS_NO_MISSED_AT_COPY;
   return date.toLocaleString();
 }
+
+/** Assets register card description — names the facility when posted. */
+export function formatOperationsAssetsCardDescription(
+  assetCount: number,
+  facilityName: string | null | undefined,
+): string {
+  const where = facilityName?.trim() ? facilityName.trim() : "this facility";
+  const noun = assetCount === 1 ? "asset" : "assets";
+  return `${assetCount} ${noun} in ${where}`;
+}
+
+/** Vendor links card description — names the facility when posted. */
+export function formatOperationsVendorsCardDescription(
+  vendorCount: number,
+  facilityName: string | null | undefined,
+): string {
+  const where = facilityName?.trim() ? facilityName.trim() : "this facility";
+  const noun = vendorCount === 1 ? "vendor link" : "vendor links";
+  return `${vendorCount} ${noun} for ${where}`;
+}
