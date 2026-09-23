@@ -60,7 +60,7 @@ describe("login credential safety before hydration", () => {
     fireEvent.change(password, { target: { value: "SyntheticTestOnly123!" } });
     expect(fireEvent.submit(container.querySelector("form")!)).toBe(false);
     await waitFor(() => expect(mocks.auth.signInWithPassword).toHaveBeenCalledWith({ email: "synthetic@example.test", password: "SyntheticTestOnly123!" }));
-    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/med-tech"));
+    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/floor"));
   });
   it("preserves the hydrated password-reset flow without submitting credentials", async () => {
     prerender(); await hydrate();

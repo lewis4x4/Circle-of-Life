@@ -3,6 +3,7 @@ import { adminShellAccessRedirect, isAdminShellPath, mergeSetCookieHeaders } fro
 import { caregiverShellAccessRedirect, isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
 import { dietaryShellAccessRedirect, isDietaryShellPath } from "@/lib/auth/dietary-shell";
 import { familyShellAccessRedirect, isFamilyShellPath } from "@/lib/auth/family-shell";
+import { floorShellAccessRedirect, isFloorSessionlessPath, isFloorShellPath } from "@/lib/auth/floor-shell";
 import { isMedTechShellPath, medTechShellAccessRedirect } from "@/lib/auth/med-tech-shell";
 import { isOnboardingShellPath, onboardingShellAccessRedirect } from "@/lib/auth/onboarding-shell";
 import {
@@ -24,8 +25,15 @@ function needsShell(pathname: string): boolean {
     isDietaryShellPath(pathname) ||
     isMedTechShellPath(pathname) ||
     isFamilyShellPath(pathname) ||
-    isOnboardingShellPath(pathname)
+    isOnboardingShellPath(pathname) ||
+    isFloorShellPath(pathname)
   );
+}
+
+/** Shared floor tablet pages are never cached, by the browser or anything between (spec 40 §5). */
+function noStore<T extends NextResponse>(response: T): T {
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 export async function proxy(request: NextRequest) {
@@ -36,6 +44,14 @@ export async function proxy(request: NextRequest) {
   // requests Next.js routes here; this keeps the guarantee enforced in code.
   if (!needsShell(pathname)) {
     return NextResponse.next();
+  }
+
+  // The floor lock and setup screens run without a session (the tablet's
+  // device token is in IndexedDB), so they skip the session refresh, the role
+  // gate and the forced password change: a Supabase outage or a pending
+  // password must never keep a shared tablet from reaching its lock screen.
+  if (isFloorSessionlessPath(pathname)) {
+    return noStore(NextResponse.next());
   }
 
   const { response, user, unavailable } = await updateSession(request);
@@ -113,6 +129,15 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  if (isFloorShellPath(pathname)) {
+    const redirect = floorShellAccessRedirect(request, user);
+    if (redirect) {
+      mergeSetCookieHeaders(response, redirect);
+      return noStore(redirect);
+    }
+    return noStore(response);
+  }
+
   if (isOnboardingShellPath(pathname)) {
     const redirect = onboardingShellAccessRedirect(request, user);
     if (redirect) {
@@ -142,6 +167,6 @@ export async function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    "/((?!.*\\.(?:css|js|mjs|json|txt|map|ico|png|jpg|jpeg|svg|woff2?|ttf)$)(?:admin|clinical|billing|finance|pipeline|risk|insurance|vendors|residents|resident|staffing|staff|incidents|incident-draft|schedules|time-records|payroll|certifications|training|transportation|reputation|assessments|care-plans|family-messages|family|executive|search|reports|caregiver|clock|followups|handoff|me|meds|print|facility-launch|prn-followup|tasks|dietary|med-tech|onboarding)(?:$|/).*)",
+    "/((?!.*\\.(?:css|js|mjs|json|txt|map|ico|png|jpg|jpeg|svg|woff2?|ttf)$)(?:admin|clinical|billing|finance|pipeline|risk|insurance|vendors|residents|resident|staffing|staff|incidents|incident-draft|schedules|time-records|payroll|certifications|training|transportation|reputation|assessments|care-plans|family-messages|family|executive|search|reports|caregiver|clock|followups|handoff|me|meds|print|facility-launch|prn-followup|tasks|dietary|med-tech|onboarding|floor)(?:$|/).*)",
   ],
 };

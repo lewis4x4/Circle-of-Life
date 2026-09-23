@@ -50,6 +50,22 @@ export const ALL_APP_ROLES = [
 
 export type AppRole = (typeof ALL_APP_ROLES)[number];
 
+// ── Floor tablet roster roles (COL-690) ───────────────────────────
+// Login roles a floor tablet's roster may list: every staff login role, never
+// family or broker. Mirrors migration 481's haven.floor_roster_roles_valid
+// (retired roles are already absent from ALL_APP_ROLES). Which of these a
+// given tablet lists is runtime configuration (device roster_roles, else the
+// facility's floor_roster_roles); this is only the outer bound, used by the
+// /floor proxy gate and the Timeclock tab's role picker.
+
+const NON_STAFF_LOGIN_ROLES: ReadonlySet<string> = new Set(["family", "broker"]);
+
+export const FLOOR_ROSTER_ELIGIBLE_ROLES: readonly AppRole[] = ALL_APP_ROLES.filter((role) => !NON_STAFF_LOGIN_ROLES.has(role));
+
+export function isFloorRosterEligibleRole(role: string): boolean {
+  return (FLOOR_ROSTER_ELIGIBLE_ROLES as readonly string[]).includes(role);
+}
+
 // ── Admin-shell eligible roles ────────────────────────────────────
 // All roles that may access the admin shell. Excludes family, housekeeper.
 // Retired roles are not listed: migration 468 folded nurse/caregiver into med_tech and

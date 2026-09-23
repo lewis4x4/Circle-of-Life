@@ -4,6 +4,7 @@ import { adminShellAccessRedirect, isAdminShellPath } from "@/lib/auth/admin-she
 import { caregiverShellAccessRedirect, isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
 import { dietaryShellAccessRedirect, isDietaryShellPath } from "@/lib/auth/dietary-shell";
 import { familyShellAccessRedirect, isFamilyShellPath } from "@/lib/auth/family-shell";
+import { floorShellAccessRedirect, isFloorShellPath } from "@/lib/auth/floor-shell";
 import { isMedTechShellPath, medTechShellAccessRedirect } from "@/lib/auth/med-tech-shell";
 
 /**
@@ -38,6 +39,8 @@ export const RBAC_MATRIX_ROUTES = [
   "/caregiver/tasks",
   "/caregiver/housekeeper",
   "/med-tech",
+  "/floor",
+  "/floor/lock",
   "/dietary",
   "/family",
 ] as const;
@@ -61,6 +64,7 @@ export function shellOutcome(role: string, route: string): RbacCell {
   else if (isDietaryShellPath(route)) response = dietaryShellAccessRedirect(request, user);
   else if (isMedTechShellPath(route)) response = medTechShellAccessRedirect(request, user);
   else if (isFamilyShellPath(route)) response = familyShellAccessRedirect(request, user);
+  else if (isFloorShellPath(route)) response = floorShellAccessRedirect(request, user);
   if (!response) return { outcome: "allow" };
   const location = response.headers.get("location") ?? "";
   const pathname = location ? new URL(location).pathname : "";

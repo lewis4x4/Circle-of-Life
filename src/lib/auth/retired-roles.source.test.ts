@@ -34,7 +34,7 @@ const BASELINE: Record<string, number> = {
   "src/components/staff/AdminStaffPageClient.tsx": 2,
   "src/lib/admin/facilities/facility-required-staff-roles.ts": 3,
   "src/lib/auth/app-role.ts": 2,
-  "src/lib/auth/dashboard-routing.ts": 7,
+  "src/lib/auth/dashboard-routing.ts": 5,
   "src/lib/care-events/admin-copy.ts": 1,
   "src/lib/care-events/receipt-copy.ts": 1,
   "src/lib/care-events/timeline.ts": 1,

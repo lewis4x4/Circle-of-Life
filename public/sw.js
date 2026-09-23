@@ -99,7 +99,7 @@ self.addEventListener("message", (event) => {
   if (data.type === "HAVEN_FLUSH_ROUNDING_QUEUE") {
     event.waitUntil((async () => {
       try {
-        await flushQueue();
+        await flushQueue(data.ownerUserId || null);
         const state = await buildSyncState({}, data.ownerUserId);
         if (port) port.postMessage({ ok: true, state });
       } catch (error) {
@@ -248,7 +248,14 @@ async function readError(response) {
 
 let flushPromise = null;
 
-async function flushQueue() {
+/**
+ * Replay the rounding queue with the page's session. `ownerUserId` is the
+ * signed-in operator for a page-driven flush. An item captured on a shared
+ * floor tablet carries `unlockId` (COL-690); when it belongs to someone else
+ * it is skipped here and goes out through the device replay
+ * (src/lib/floor/replay.ts, POST /api/floor/replay) as its owner instead.
+ */
+async function flushQueue(ownerUserId = null) {
   if (flushPromise) return flushPromise;
 
   flushPromise = (async () => {
@@ -258,6 +265,7 @@ async function flushQueue() {
     let lastError = null;
     let sent = false;
     for (const item of items) {
+      if (ownerUserId && item.unlockId && item.ownerUserId !== ownerUserId) continue;
       try {
         if (!item.ownerUserId) {
           item.lastError = "Original operator is unknown. Retained for manual reconciliation.";
@@ -378,6 +386,8 @@ async function flushCareEventQueue(ownerUserId = null) {
     let lastError = null;
     for (const item of items) {
       if (item.terminal) continue;
+      // Also covers floor items (unlockId): another person's go out through
+      // the device replay (src/lib/floor/replay.ts).
       if (ownerUserId && item.ownerUserId !== ownerUserId) continue;
       try {
         if (!item.ownerUserId) {

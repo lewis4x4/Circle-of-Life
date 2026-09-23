@@ -7,7 +7,7 @@ export interface DashboardConfig {
   /** Landing route for this role */
   route: string;
   /** Which shell to use */
-  shell: "admin" | "caregiver" | "family" | "med-tech" | "dietary";
+  shell: "admin" | "caregiver" | "family" | "med-tech" | "dietary" | "floor";
   /** Human-facing role label for dashboards and shell framing */
   roleLabel: string;
   /** Primary task lanes this role should see first */
@@ -212,8 +212,8 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     },
   },
   med_tech: {
-    route: "/med-tech",
-    shell: "med-tech" as DashboardConfig["shell"],
+    route: "/floor",
+    shell: "floor",
     roleLabel: "Med-Tech",
     primaryTaskLanes: ["med_pass", "resident_med_context", "controlled_count", "incident_capture", "shift_tape"],
     firstScreenPriority: ["medications_due_now", "resident_context", "controlled_substance_follow_through", "exceptions", "handoff"],
@@ -221,9 +221,11 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     mobileTabletExpectation: "phone-and-tablet",
     // Owner rulings 2026-09-22: the legacy nurse and caregiver roles are folded into
     // med_tech, so a med-tech's admin-shell nav is the one nurse had and they also use
-    // the caregiver floor app (/caregiver). The home stays /med-tech.
+    // the caregiver floor app (/caregiver). COL-677 (spec 40 §1): the home is the shared
+    // floor tablet app (/floor), and /med-tech leaves their navigation; the route
+    // itself stays until a later retirement.
     visibleGroups: ["Command", "Clinical Ops", "Quality & Risk"],
-    visibleItemKeys: ["residents", "med-tech", "medication-errors", "incidents-new", "incidents"],
+    visibleItemKeys: ["residents", "medication-errors", "incidents-new", "incidents"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: true,
       compliance: true, financials: false, watchlist: true,
@@ -363,6 +365,6 @@ export function resolveHavenBrandAriaLabel(roleLabel: string | null): string {
 }
 
 /** Returns which shell a role should use. */
-export function getShellForRole(role: string): "admin" | "caregiver" | "family" | "med-tech" | "dietary" {
+export function getShellForRole(role: string): DashboardConfig["shell"] {
   return DASHBOARD_CONFIGS[role]?.shell ?? "admin";
 }

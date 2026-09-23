@@ -223,9 +223,7 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
               </p> : null}
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:shrink-0 sm:justify-end sm:gap-3 sm:text-sm">
-              {isMedTech ? (
-                <Link href="/med-tech" className="underline sm:mr-3">Med-Tech app</Link>
-              ) : null}
+              {/* COL-677: /med-tech left the med-tech navigation; their home is the floor tablet app. */}
               <Link href="/employee-file" className="underline sm:mr-3">My employee file</Link>
               <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
               <PilotFeedbackLauncher shellKind="caregiver" compact />

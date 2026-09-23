@@ -27,7 +27,7 @@ describe("POST /api/kiosk/timeclock/enroll", () => {
     const response = await POST(request({ code: "abcd2345", label: "Front desk" }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ device_id: "d1", token: "tok", facility_id: "f1", facility_name: "Synthetic facility" });
-    expect(mock.rpc).toHaveBeenCalledWith("timeclock_enroll_device", { p_code: "ABCD2345", p_label: "Front desk" });
+    expect(mock.rpc).toHaveBeenCalledWith("timeclock_enroll_device", { p_code: "ABCD2345", p_label: "Front desk", p_device_kind: "kiosk" });
   });
 
   it("returns 401 code_invalid for a used or expired code", async () => {

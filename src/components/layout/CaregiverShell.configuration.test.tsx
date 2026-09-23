@@ -51,9 +51,9 @@ it("does not claim Synced after a failed Outbox snapshot", async () => {
  await screen.findByRole("heading", { level: 1 });
 });
 
-it("gives a med-tech a link back to the Med-Tech app, and a housekeeper none", async () => {
+it("keeps /med-tech out of the floor app navigation for a med-tech and a housekeeper (COL-677)", async () => {
   await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
-  expect(screen.getByRole("link", { name: "Med-Tech app" })).toHaveAttribute("href", "/med-tech");
+  expect(screen.queryByRole("link", { name: "Med-Tech app" })).toBeNull();
   cleanup();
   mocks.role = "housekeeper";
   await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
