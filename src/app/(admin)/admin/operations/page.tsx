@@ -477,9 +477,10 @@ export default function OperationsTodayPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        aria-label={`Task details: ${task.template_name}`}
                         onClick={() => setSelectedTaskId(task.id)}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" aria-hidden />
                       </Button>
                     </div>
                   </div>
@@ -554,9 +555,10 @@ export default function OperationsTodayPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        aria-label={`Task details: ${task.template_name}`}
                         onClick={() => setSelectedTaskId(task.id)}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" aria-hidden />
                       </Button>
                     </div>
                   </div>
@@ -626,9 +628,10 @@ export default function OperationsTodayPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        aria-label={`Task details: ${task.template_name}`}
                         onClick={() => setSelectedTaskId(task.id)}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" aria-hidden />
                       </Button>
                     </div>
                   </div>

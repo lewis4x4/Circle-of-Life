@@ -128,10 +128,9 @@ export function PilotFeedbackLauncher({
       {!hideTrigger && <Button
         type="button"
         variant={compact ? "ghost" : "outline"}
-        size={compact ? "icon-sm" : "sm"}
+        {...(compact ? { size: "icon-sm" as const, "aria-label": "Send feedback" } : { size: "sm" as const })}
         className={compact ? "" : "rounded-xl"}
         onClick={() => setOpen(true)}
-        aria-label={compact ? "Send feedback" : undefined}
         title={compact ? "Send feedback" : undefined}
       >
         {compact ? <Flag className="h-4 w-4" aria-hidden /> : <><MessageSquareWarning className="mr-2 h-4 w-4" aria-hidden />Feedback</>}

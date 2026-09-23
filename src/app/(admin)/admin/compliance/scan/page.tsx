@@ -200,8 +200,8 @@ export default function ComplianceScanPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Scan History</CardTitle>
-              <Button variant="outline" size="sm" onClick={() => void loadHistory()}>
-                <RefreshCw className="h-4 w-4" />
+              <Button variant="outline" size="sm" aria-label="Refresh scan history" onClick={() => void loadHistory()}>
+                <RefreshCw className="h-4 w-4" aria-hidden />
               </Button>
             </div>
             <CardDescription>Recent compliance scans for this facility</CardDescription>
