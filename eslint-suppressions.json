@@ -4,11 +4,6 @@
       "count": 1
     }
   },
-  "src/app/(admin)/admin/admissions/[id]/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 7
-    }
-  },
   "src/app/(admin)/admin/approvals/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
@@ -62,9 +57,6 @@
   "src/app/(admin)/admin/medications/verbal-orders/new/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 7
     }
   },
   "src/app/(admin)/admin/operations/missed/page.tsx": {
@@ -87,24 +79,9 @@
       "count": 1
     }
   },
-  "src/app/(admin)/admin/profile/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
-    }
-  },
   "src/app/(admin)/admin/quality/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    }
-  },
-  "src/app/(admin)/admin/referrals/hl7-inbound/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
-    }
-  },
-  "src/app/(admin)/admin/residents/[id]/assessments/new/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
     }
   },
   "src/app/(admin)/admin/residents/[id]/vitals/page.tsx": {
@@ -125,9 +102,6 @@
   "src/app/(admin)/billing/collections/new/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 6
     }
   },
   "src/app/(admin)/billing/invoices/[id]/page.tsx": {
@@ -138,9 +112,6 @@
   "src/app/(admin)/billing/payments/new/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    },
-    "jsx-a11y/label-has-associated-control": {
-      "count": 6
     }
   },
   "src/app/(admin)/billing/payments/page.tsx": {
@@ -156,11 +127,6 @@
   "src/app/(admin)/billing/revenue/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    }
-  },
-  "src/app/(admin)/certifications/new/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 4
     }
   },
   "src/app/(admin)/certifications/page.tsx": {
@@ -188,32 +154,14 @@
       "count": 5
     }
   },
-  "src/app/(admin)/finance/journal-entries/[id]/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 4
-    }
-  },
-  "src/app/(admin)/finance/journal-entries/new/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 3
-    }
-  },
   "src/app/(admin)/incidents/[id]/rca/page.tsx": {
     "haven-time/require-time-zone": {
-      "count": 2
-    },
-    "jsx-a11y/label-has-associated-control": {
       "count": 2
     }
   },
   "src/app/(admin)/incidents/followups/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    }
-  },
-  "src/app/(admin)/incidents/new/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 8
     }
   },
   "src/app/(admin)/incidents/overdue-followups/page.tsx": {
@@ -256,18 +204,8 @@
       "count": 1
     }
   },
-  "src/app/(admin)/residents/[id]/care-plan/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 1
-    }
-  },
   "src/app/(admin)/schedules/[id]/page.tsx": {
     "haven-time/require-time-zone": {
-      "count": 2
-    }
-  },
-  "src/app/(admin)/schedules/new/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
       "count": 2
     }
   },
@@ -276,19 +214,9 @@
       "count": 1
     }
   },
-  "src/app/(admin)/staff/new/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 6
-    }
-  },
   "src/app/(admin)/time-records/page.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    }
-  },
-  "src/app/(admin)/transportation/requests/[id]/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 13
     }
   },
   "src/app/(caregiver)/caregiver/rounds/[residentId]/page.tsx": {

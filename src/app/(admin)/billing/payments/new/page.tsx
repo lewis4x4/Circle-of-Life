@@ -411,7 +411,7 @@ export default function AdminNewPaymentPage() {
           >
             {/* Resident selector */}
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-resident" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Resident <span className="text-red-500">*</span>
               </label>
               {residentsLoading ? (
@@ -420,7 +420,7 @@ export default function AdminNewPaymentPage() {
                   Loading residents…
                 </div>
               ) : (
-                <select
+                <select id="payment-resident"
                   value={residentId}
                   onChange={(e) => setResidentId(e.target.value)}
                   className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -438,7 +438,7 @@ export default function AdminNewPaymentPage() {
             {/* Invoice selector */}
             {residentId && (
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="payment-apply-to-invoice-optional" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Apply to invoice{" "}
                   <span className="text-xs font-normal text-slate-500">
                     (optional)
@@ -455,7 +455,7 @@ export default function AdminNewPaymentPage() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    <select
+                    <select id="payment-apply-to-invoice-optional"
                       value={invoiceId}
                       onChange={(e) => setInvoiceId(e.target.value)}
                       className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -493,10 +493,10 @@ export default function AdminNewPaymentPage() {
 
             {/* Amount */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-amount" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Amount ($) <span className="text-red-500">*</span>
               </label>
-              <Input
+              <Input id="payment-amount"
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -515,10 +515,10 @@ export default function AdminNewPaymentPage() {
 
             {/* Payment method */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-payment-method" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Payment method <span className="text-red-500">*</span>
               </label>
-              <select
+              <select id="payment-payment-method"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -533,10 +533,10 @@ export default function AdminNewPaymentPage() {
 
             {/* Payment date */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-payment-date-et" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Payment date (ET) <span className="text-red-500">*</span>
               </label>
-              <Input
+              <Input id="payment-payment-date-et"
                 type="date"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
@@ -546,13 +546,13 @@ export default function AdminNewPaymentPage() {
 
             {/* Reference number */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-reference-check-txn-id" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Reference #{" "}
                 <span className="text-xs font-normal text-slate-500">
                   (check #, txn ID)
                 </span>
               </label>
-              <Input
+              <Input id="payment-reference-check-txn-id"
                 type="text"
                 placeholder="e.g. 10482"
                 value={referenceNumber}
@@ -562,10 +562,10 @@ export default function AdminNewPaymentPage() {
 
             {/* Payer name */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-payer-name" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Payer name
               </label>
-              <Input
+              <Input id="payment-payer-name"
                 type="text"
                 placeholder="Who made the payment"
                 value={payerName}
@@ -575,10 +575,10 @@ export default function AdminNewPaymentPage() {
 
             {/* Notes */}
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="payment-notes" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Notes
               </label>
-              <textarea
+              <textarea id="payment-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}

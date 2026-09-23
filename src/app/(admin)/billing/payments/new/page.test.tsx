@@ -131,6 +131,15 @@ describe("HFA-007 HFA-008 payment command and prefill reconciliation", () => {
     expect(screen.getByRole("link", { name: "Resident billing" })).toHaveAttribute("href", "/admin/residents/r-a/billing");
   });
 
+  it("names every field by its visible label (COL-658)", async () => {
+    render(<AdminNewPaymentPage />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Record payment" })).toBeEnabled());
+    expect(screen.getByRole("combobox", { name: /Resident/ })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /Payment method/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Amount/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Notes/)).toBeInTheDocument();
+  });
+
   it("clears a rejected request only after an authoritative cancellation tombstone", async () => {
     sessionStorage.setItem("haven:finance:payment:actor-1", JSON.stringify({ actorId: "actor-1", originatingSessionId: "expired-session", payload: {
       p_id: "rejected-command", p_resident_id: "r-a", p_invoice_id: "inv-closed", p_payment_date: "2026-09-08", p_amount_cents: 2500,
