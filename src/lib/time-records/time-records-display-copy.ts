@@ -2,20 +2,15 @@
  * Quiet Operator copy for the admin time records hub (`/admin/time-records`).
  * Missing clock-out and hours name real gaps — never fabricate punch facts.
  */
+import { formatShortDateTime } from "@/lib/format/datetime";
+
 
 export const TIME_RECORDS_NO_CLOCK_OUT_COPY = "No clock-out posted";
 export const TIME_RECORDS_NO_HOURS_COPY = "No hours posted";
 export const TIME_RECORDS_NO_STAFF_COPY = "No staff posted";
 
 function formatTimeRecordsDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatShortDateTime(iso, { fallback: iso });
 }
 
 /** Clock-out column — posted ISO datetime or explicit missing copy. */

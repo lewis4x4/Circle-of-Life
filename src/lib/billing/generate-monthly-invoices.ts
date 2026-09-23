@@ -7,6 +7,7 @@
  * admission + discharge proration; due date = 5th of billing month.
  * Private-pay holds bill full monthly rent (not reduced daily bed_hold).
  */
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type QueryError = { message: string; code?: string };
@@ -171,10 +172,7 @@ export function daysInMonth(year: number, month: number): number {
 }
 
 export function monthLabel(year: number, month: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(year, month - 1, 1));
+  return formatDateTimeWith(`${year}-${String(month).padStart(2, "0")}-01`, { month: "long", year: "numeric" });
 }
 
 export function getNextBillingMonth(): { year: number; month: number } {

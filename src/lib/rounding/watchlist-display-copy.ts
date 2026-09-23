@@ -16,7 +16,7 @@
  */
 
 import type { StatusPillTone } from "@/components/ui/status-pill";
-import { formatPersonName } from "@/lib/format/datetime";
+import { formatDisplayDate, formatPersonName } from "@/lib/format/datetime";
 import { metricNoData, metricValue, type MetricState } from "@/lib/metrics/metric-state";
 
 export const SIGNAL_STATUSES = ["new", "acknowledged", "plan_in_place", "cleared"] as const;
@@ -275,8 +275,8 @@ function asCount(value: unknown): number | null {
 
 function asDate(value: unknown): string | null {
   if (typeof value !== "string" || value.length === 0) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toLocaleDateString();
+  const label = formatDisplayDate(value, { fallback: "" });
+  return label || null;
 }
 
 function plural(count: number, one: string, many: string): string {
