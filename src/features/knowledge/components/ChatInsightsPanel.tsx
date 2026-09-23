@@ -11,7 +11,7 @@ interface ChatInsightsPanelProps {
 
 export function ChatInsightsPanel({ insights, loading }: ChatInsightsPanelProps) {
   if (loading || !insights) {
-    return <div className="text-sm text-slate-400 py-8 text-center">Loading chat insights…</div>;
+    return <div className="text-sm text-muted-foreground py-8 text-center">Loading chat insights…</div>;
   }
 
   const cards = [
@@ -29,7 +29,7 @@ export function ChatInsightsPanel({ insights, loading }: ChatInsightsPanelProps)
           <div key={card.label} className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <Icon className={`w-4 h-4 ${card.color} mb-2`} />
             <div className="text-2xl font-semibold text-slate-800 dark:text-zinc-100">{card.value}</div>
-            <div className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">{card.label}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{card.label}</div>
           </div>
         );
       })}

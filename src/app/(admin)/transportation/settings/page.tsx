@@ -254,11 +254,11 @@ export default function TransportationOrgSettingsPage() {
             ) : organizationGapMessage ? null : (
               <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="space-y-2">
-                  <Label htmlFor="dollarsPerMile" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">
+                  <Label htmlFor="dollarsPerMile" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Rate (USD per mile)
                   </Label>
                   <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-semibold text-slate-400 dark:text-zinc-500">
+                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground">
                       $
                     </span>
                     <Input
@@ -276,7 +276,7 @@ export default function TransportationOrgSettingsPage() {
                   {form.formState.errors.dollarsPerMile && (
                     <p className="text-sm text-rose-600 dark:text-rose-400">{form.formState.errors.dollarsPerMile.message}</p>
                   )}
-                  <p className="flex items-start gap-2 text-xs leading-relaxed text-slate-500 dark:text-zinc-500">
+                  <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                     Many operators align with the IRS optional standard mileage rate for business use; confirm with your CPA. Haven does not provide tax advice.
                   </p>
@@ -297,7 +297,7 @@ export default function TransportationOrgSettingsPage() {
                 )}
 
                 {updatedAt && (
-                  <p className="text-xs text-slate-500 dark:text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     Record last touched{" "}
                     {formatInTimeZone(new Date(updatedAt), FACILITY_OPERATOR_TZ, "MMM d, yyyy · h:mm a")} ET
                   </p>

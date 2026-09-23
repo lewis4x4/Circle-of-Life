@@ -307,7 +307,7 @@ export default function AdminNewCollectionActivityPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Phone className="h-6 w-6 text-slate-500" />
+        <Phone className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Log collection activity</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -353,12 +353,12 @@ export default function AdminNewCollectionActivityPage() {
                   Invoice (optional)
                 </label>
                 {invoicesLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading invoices…
                   </div>
                 ) : invoices.length === 0 ? (
-                  <p className="text-sm text-slate-500">No open invoices for this resident.</p>
+                  <p className="text-sm text-muted-foreground">No open invoices for this resident.</p>
                 ) : (
                   <select id="collection-invoice-optional"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"

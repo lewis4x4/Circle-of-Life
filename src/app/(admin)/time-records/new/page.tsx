@@ -216,7 +216,7 @@ export default function AdminNewTimeRecordPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Clock className="h-6 w-6 text-slate-500" />
+        <Clock className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Add time record</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">

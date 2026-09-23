@@ -137,7 +137,7 @@ export default function AdminTransportationInspectionNewPage() {
             <div className="space-y-2">
               <Label htmlFor="veh">Vehicle</Label>
               {loading ? (
-                <p className="text-sm text-slate-500">Loading vehicles…</p>
+                <p className="text-sm text-muted-foreground">Loading vehicles…</p>
               ) : (
                 <select
                   id="veh"

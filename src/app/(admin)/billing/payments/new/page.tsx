@@ -394,7 +394,7 @@ export default function AdminNewPaymentPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Banknote className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+            <Banknote className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-xl">Record payment</CardTitle>
           </div>
           <CardDescription>
@@ -415,7 +415,7 @@ export default function AdminNewPaymentPage() {
                 Resident <span className="text-red-500">*</span>
               </label>
               {residentsLoading ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading residents…
                 </div>
@@ -440,17 +440,17 @@ export default function AdminNewPaymentPage() {
               <div className="sm:col-span-2">
                 <label htmlFor="payment-apply-to-invoice-optional" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Apply to invoice{" "}
-                  <span className="text-xs font-normal text-slate-500">
+                  <span className="text-xs font-normal text-muted-foreground">
                     (optional)
                   </span>
                 </label>
                 {invoicesLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading invoices…
                   </div>
                 ) : invoices.length === 0 ? (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     No open invoices for this resident.
                   </p>
                 ) : (
@@ -548,7 +548,7 @@ export default function AdminNewPaymentPage() {
             <div>
               <label htmlFor="payment-reference-check-txn-id" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Reference #{" "}
-                <span className="text-xs font-normal text-slate-500">
+                <span className="text-xs font-normal text-muted-foreground">
                   (check #, txn ID)
                 </span>
               </label>

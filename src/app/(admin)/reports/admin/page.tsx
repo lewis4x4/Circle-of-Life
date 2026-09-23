@@ -82,25 +82,25 @@ export default function ReportsGovernancePage() {
       <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible z-10 w-full transition-all">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Template Registry</h3>
-            <p className="text-sm font-mono tracking-wide mt-1 text-slate-500 dark:text-slate-400">Official/locked metadata and lifecycle status.</p>
+            <p className="text-sm font-mono tracking-wide mt-1 text-muted-foreground">Official/locked metadata and lifecycle status.</p>
           </div>
           {loading ? (
-            <div className="p-16 text-center text-slate-500">
+            <div className="p-16 text-center text-muted-foreground">
                <p className="text-sm font-mono tracking-wider uppercase">Loading Registry…</p>
             </div>
           ) : rows.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
+            <div className="p-16 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Templates Found</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Contact support to provision your organization&apos;s templates.</p>
              </div>
           ) : (
             <>
               <div className="hidden xl:grid grid-cols-[300px_1fr] gap-6 px-6 pb-4 border-b border-slate-200 dark:border-white/5 relative z-10 text-left mt-6">
-                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Template</div>
+                 <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Template</div>
                  <div className="grid grid-cols-4 gap-6 w-full items-center">
-                    <div className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Directives</div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Status</div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 text-right">Last Updated</div>
+                    <div className="col-span-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Directives</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">Last Updated</div>
                  </div>
               </div>
               
@@ -112,14 +112,14 @@ export default function ReportsGovernancePage() {
                              <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
                                 {row.name}
                              </span>
-                             <span className="text-[10px] font-mono tracking-wider text-slate-500 dark:text-slate-400">
+                             <span className="text-[10px] font-mono tracking-wider text-muted-foreground">
                                 Slug: <span className="font-semibold text-primary">{row.slug}</span>
                              </span>
                           </div>
   
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full items-center">
                              <div className="flex flex-col gap-2 md:col-span-2">
-                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-slate-400 mb-0.5">Directives</span>
+                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-muted-foreground mb-0.5">Directives</span>
                                 <div className="flex flex-wrap gap-2">
                                   {row.official_template ? (
                                     <Badge className="bg-primary/5 text-primary border border-primary/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full">Official</Badge>
@@ -132,11 +132,11 @@ export default function ReportsGovernancePage() {
                                 </div>
                              </div>
                              <div className="flex flex-col gap-2 align-left md:text-left">
-                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-slate-400 mb-0.5">Status</span>
+                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-muted-foreground mb-0.5">Status</span>
                                 <span className="font-mono text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">{row.status}</span>
                              </div>
                              <div className="flex flex-col gap-2 align-right text-left md:text-right">
-                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-slate-400 mb-0.5">Last Updated</span>
+                                <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-muted-foreground mb-0.5">Last Updated</span>
                                 <span className="font-mono text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-wide">{new Date(row.updated_at).toLocaleString()}</span>
                              </div>
                           </div>

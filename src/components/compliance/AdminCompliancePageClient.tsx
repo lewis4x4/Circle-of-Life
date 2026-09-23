@@ -559,7 +559,7 @@ export function AdminCompliancePageClient({
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <Shield className="h-5 w-5 text-slate-500" />
+                        <Shield className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <p className="font-medium text-foreground">{item.title}</p>
                           <p className={`text-xs ${
@@ -567,7 +567,7 @@ export function AdminCompliancePageClient({
                               ? "text-rose-600 font-semibold"
                               : isDueSoon
                                 ? "text-amber-600"
-                                : "text-slate-500"
+                                : "text-muted-foreground"
                           }`}>
                             {isOverdue
                               ? `Overdue by ${Math.abs(daysUntil)} days`
@@ -644,7 +644,7 @@ export function AdminCompliancePageClient({
                           className="p-2 rounded-lg hover:bg-muted transition-colors duration-[var(--motion-duration-micro)]"
                           title="Dismiss reminder"
                         >
-                          <X className="h-4 w-4 text-slate-400" />
+                          <X className="h-4 w-4 text-muted-foreground" />
                         </button>
                       </div>
                     </div>
@@ -744,7 +744,7 @@ function Tile({
         {value !== null ? <MonolithicWatermark value={value} className={cn("opacity-50", isDanger ? "text-destructive/10" : "text-muted-foreground/10")} /> : null}
         <div className="relative z-10 flex flex-col h-full justify-between">
           <div className="flex items-center justify-between">
-             <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", isDanger ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400")}>
+             <h3 className={cn("text-[10px] font-mono tracking-wider uppercase", isDanger ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
                {title}
              </h3>
              <div className="flex items-center gap-2">
