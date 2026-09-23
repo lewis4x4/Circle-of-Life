@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { Compass } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
-
 /**
  * Branded 404 (COL-654). Replaces Next's unstyled default for every unmatched URL and
  * every `notFound()`. "/" forwards a signed-in user to their role home via /login, and
@@ -19,7 +17,7 @@ export default function NotFound() {
             The link may be out of date, or the page may have moved. Nothing was changed.
           </p>
         </div>
-        <Link href="/" className={buttonVariants({ variant: "default" })}>
+        <Link href="/" className="inline-flex h-9 items-center justify-center rounded-[var(--radius)] bg-primary px-4 text-sm font-semibold text-primary-foreground outline-none hover:bg-[var(--accent-hover)] focus-visible:ring-3 focus-visible:ring-ring/50">
           Go to my home page
         </Link>
       </div>
