@@ -4,6 +4,10 @@ name: Route load budget
 # against a local `next start` (never the production web host) backed by the
 # CI project, signed in as the CI screenshot account, and fails when any route
 # takes longer than its budget in perf-route-budget.json to become usable.
+#
+# The Supabase URL and anon key are repo variables, not secrets: both are public
+# (the anon key ships in the browser bundle). SUPABASE_URL_TEST is not a valid
+# URL, which is why the dormant UI gates that read it cannot build.
 
 on:
   schedule:
@@ -30,8 +34,8 @@ jobs:
         run: npx next build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.HAVEN_PERF_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.HAVEN_PERF_SUPABASE_ANON_KEY }}
       - name: Start server
         run: |
           npm run start -- --hostname 127.0.0.1 --port 4310 > /tmp/haven.log 2>&1 &
@@ -41,14 +45,14 @@ jobs:
           done
           curl -sSf http://127.0.0.1:4310/login >/dev/null
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.HAVEN_PERF_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.HAVEN_PERF_SUPABASE_ANON_KEY }}
       - name: Route load budget
         run: npm run perf:routes
         env:
           BASE_URL: "http://127.0.0.1:4310"
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.HAVEN_PERF_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.HAVEN_PERF_SUPABASE_ANON_KEY }}
           SCREENSHOT_USER_EMAIL: ${{ secrets.AUTH_SCREENSHOT_USER_EMAIL }}
           PHASE1_DEMO_PASSWORD: ${{ secrets.PHASE1_DEMO_PASSWORD }}
           PERF_REPORT_FILE: route-load-budget.json
