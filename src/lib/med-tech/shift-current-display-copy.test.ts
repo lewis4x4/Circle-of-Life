@@ -9,6 +9,7 @@ import {
   formatShiftCurrentResidentCompactName,
   formatShiftCurrentResidentName,
   formatShiftCurrentRoomLabel,
+  formatShiftCurrentWindowLabel,
 } from "./shift-current-display-copy";
 
 const EM_DASH = "—";
@@ -130,5 +131,17 @@ describe("formatShiftCurrentRoomLabel", () => {
   it("returns trimmed room when posted", () => {
     expect(formatShiftCurrentRoomLabel("Room 12")).toBe("Room 12");
     expect(formatShiftCurrentRoomLabel("  Room 12  ")).toBe("Room 12");
+  });
+});
+
+describe("formatShiftCurrentWindowLabel (COL-668)", () => {
+  const hhmm = (iso: string) => iso.slice(11, 16);
+
+  it("shows the shift window from the facility's shift times", () => {
+    expect(formatShiftCurrentWindowLabel("2026-09-23T07:00:00", "2026-09-23T19:00:00", hhmm)).toBe("AM · 07:00 - 19:00");
+  });
+
+  it("says the shift is open rather than inventing an end when the facility has no shift times", () => {
+    expect(formatShiftCurrentWindowLabel("2026-09-23T19:00:00", null, hhmm)).toBe("PM · 19:00 - open");
   });
 });
