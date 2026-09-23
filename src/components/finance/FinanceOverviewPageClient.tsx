@@ -7,6 +7,7 @@ import { FinanceHubNav } from "@/app/(admin)/finance/finance-hub-nav";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
 import {
+  financeLedgerQueueState,
   financeOverviewKpiTileValue,
   type FinanceOverviewKpiContext,
 } from "@/lib/finance/finance-overview-display-copy";
@@ -21,6 +22,10 @@ type FinanceOverviewPageClientProps = {
   postedCount: number | null;
   postedLookbackStart: string | null;
   unpostedInvoices: number | null;
+  /** Sent invoices in scope; null when not loaded or the count failed. */
+  sentInvoices: number | null;
+  /** True once the overview loader returned (a null count after that is a failed read). */
+  countsLoaded: boolean;
   initialError: string | null;
 };
 
@@ -29,9 +34,16 @@ export default function AdminFinanceHubPageClient({
   postedCount,
   postedLookbackStart,
   unpostedInvoices,
+  sentInvoices,
+  countsLoaded,
   initialError,
 }: FinanceOverviewPageClientProps) {
-  const kpiCtx: FinanceOverviewKpiContext = { loadFailed: Boolean(initialError) };
+  const kpiCtx: FinanceOverviewKpiContext = { loadFailed: Boolean(initialError), countsLoaded };
+  const ledgerQueue = financeLedgerQueueState({
+    unpostedInvoices,
+    sentInvoices,
+    loadFailed: Boolean(initialError),
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -42,7 +54,7 @@ export default function AdminFinanceHubPageClient({
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Finance</h1>
             <p className="text-sm text-muted-foreground">
-              Entity and facility general ledger (Module 17) — chart of accounts, journal entries, ledger.
+              Entity and facility general ledger — chart of accounts, journal entries, ledger.
             </p>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               {roleLabel} drill-in: use finance to confirm whether portfolio pressure is operational, billing-timing, or period-close related.
@@ -162,31 +174,39 @@ export default function AdminFinanceHubPageClient({
             </div>
             
             <MotionList className="space-y-3">
-              {unpostedInvoices === 0 ? (
+              {ledgerQueue.kind === "reconciled" ? (
                 <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border shadow-sm">
                    <p className="font-medium text-foreground">Ledger Reconciled</p>
                    <p className="text-sm opacity-80 font-mono tracking-wide mt-1">All invoices and journal entries are currently posted.</p>
                 </div>
+              ) : ledgerQueue.kind === "no_sent_invoices" ? (
+                <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border shadow-sm">
+                  <p className="font-medium text-foreground">No sent invoices to post</p>
+                  <p className="text-sm opacity-80 mt-1">Nothing has been billed yet, so there is nothing to reconcile.</p>
+                </div>
+              ) : ledgerQueue.kind === "unavailable" ? (
+                <div className="p-8 text-center text-muted-foreground bg-card rounded-lg border border-border shadow-sm">
+                  <p className="font-medium text-foreground">Posting status unavailable</p>
+                  <p className="text-sm opacity-80 mt-1">The invoice or journal counts did not load, so this is not an all-clear.</p>
+                </div>
               ) : (
-                unpostedInvoices != null && unpostedInvoices > 0 ? (
-                  <MotionItem className="p-5 rounded-lg border border-warning/20 bg-warning/10">
-                    <p className="text-sm font-medium text-foreground">
-                      {unpostedInvoices} unposted invoice{unpostedInvoices === 1 ? "" : "s"} pending GL posting.
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Review invoices in Billing to post journal entries from live billing records.
-                    </p>
-                    <Link
-                      href="/admin/billing/invoices"
-                      className={cn(
-                        buttonVariants({ variant: "default", size: "sm" }),
-                        "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono text-[9px] shadow-sm",
-                      )}
-                    >
-                      Open invoices
-                    </Link>
-                  </MotionItem>
-                ) : null
+                <MotionItem className="p-5 rounded-lg border border-warning/20 bg-warning/10">
+                  <p className="text-sm font-medium text-foreground">
+                    {ledgerQueue.count} unposted invoice{ledgerQueue.count === 1 ? "" : "s"} pending GL posting.
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Review invoices in Billing to post journal entries from live billing records.
+                  </p>
+                  <Link
+                    href="/admin/billing/invoices"
+                    className={cn(
+                      buttonVariants({ variant: "default", size: "sm" }),
+                      "mt-4 bg-amber-600 hover:bg-amber-700 text-black font-mono text-[9px] shadow-sm",
+                    )}
+                  >
+                    Open invoices
+                  </Link>
+                </MotionItem>
               )}
             </MotionList>
           </div>

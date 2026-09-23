@@ -22,6 +22,7 @@ import {
 } from "@/lib/transportation/vehicle-new-page-state";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Status = Database["public"]["Enums"]["fleet_vehicle_status"];
 
@@ -207,7 +208,7 @@ export default function AdminTransportationVehicleNewPage() {
                 <select id="st" className={selectClass} value={status} onChange={(e) => setStatus(e.target.value as Status)}>
                   {STATUS_OPTIONS.map((o) => (
                     <option key={o} value={o}>
-                      {o.replace(/_/g, " ")}
+                      {enumLabel(o)}
                     </option>
                   ))}
                 </select>

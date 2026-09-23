@@ -396,7 +396,7 @@ export default function AdminWorkspacePageDetail() {
             {isOwner && showPublish ? (
               <div className="space-y-2 rounded-[var(--radius)] border border-border bg-card p-4">
                 <p className="text-sm text-muted-foreground">
-                  Submit this page for facility_admin / DON review. On approval it publishes into
+                  Submit this page for administrator or DON review. On approval it publishes into
                   the Knowledge Base for the selected audience.
                 </p>
                 <select

@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { fetchRegister } from "@/lib/registers/load-register";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import {
   REGISTER_EMPTY_COPY,
   registerCountsLine,
@@ -22,6 +23,7 @@ import {
   formatRegisterEventTime,
   isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Props = {
@@ -111,11 +113,7 @@ export function RegisterClient({
   }
 
   if (!facilityId) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Choose a facility to read its admission and discharge register.
-      </p>
-    );
+    return <FacilityGateNotice reason="The admission and discharge register is kept per building." />;
   }
 
   return (
@@ -205,7 +203,7 @@ export function RegisterClient({
                           {row.admissionSource ? <p>Admission source: {row.admissionSource}</p> : null}
                           {row.dischargeReason ? (
                             <p>
-                              Discharge reason: {row.dischargeReason.replace(/_/g, " ")}
+                              Discharge reason: {enumLabel(row.dischargeReason)}
                               {row.dischargeDestination ? ` to ${row.dischargeDestination}` : ""}
                             </p>
                           ) : null}

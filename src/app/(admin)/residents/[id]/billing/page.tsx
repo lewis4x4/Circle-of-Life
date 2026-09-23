@@ -21,6 +21,7 @@ import {
   residentBillingMedicaidSplitLine,
 } from "@/lib/billing/resident-billing-display-copy";
 import { BillingInvoiceLedger, PayerTypeBadge, billingCurrency, mapDbPayerTypeToUi } from "../../../billing/billing-invoice-ledger";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type SupabaseResident = {
   id: string;
@@ -141,7 +142,7 @@ function careForAcuity(schedule: RateSchedule | null, acuity: string | null): nu
 }
 
 function reasonLabel(reason: string): string {
-  return CONCESSION_REASONS.find(([value]) => value === reason)?.[1] ?? reason.replace(/_/g, " ");
+  return CONCESSION_REASONS.find(([value]) => value === reason)?.[1] ?? enumLabel(reason);
 }
 
 export default function ResidentBillingPage() {
@@ -613,7 +614,7 @@ export default function ResidentBillingPage() {
                             Current: {formatResidentBillingMedicaidProviderCurrent(p.facility_medicaid_provider_id, providers, p.payer_name)} · {formatResidentBillingMedicaidRateUnitLabel(p.medicaid_rate_unit)}
                           </p>
                           {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility) ? (
-                            <p className="text-xs text-slate-500 sm:col-span-2">
+                            <p className="text-xs text-muted-foreground sm:col-span-2">
                               {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility)}
                             </p>
                           ) : null}

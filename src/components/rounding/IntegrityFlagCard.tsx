@@ -31,6 +31,7 @@ import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { Textarea } from "@/components/ui/textarea";
 import type { IncidentFollowupAssigneeOption } from "@/lib/incidents/followup-assignees";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -201,7 +202,7 @@ export function IntegrityCard({
             <StatusPill tone={toStatusPillTone(statusTone(row.status))}>{statusLabel(row.status)}</StatusPill>
             <StatusPill tone={toStatusPillTone(severityTone(row.severity))}>{row.severity}</StatusPill>
             <Chip className="border-border bg-muted text-muted-foreground">
-              {row.flag_type.replace(/_/g, " ")}
+              {enumLabel(row.flag_type)}
             </Chip>
           </div>
 
@@ -367,7 +368,7 @@ export function IntegrityCard({
                   {history.slice(0, 4).map((item) => (
                     <li key={item.id}>
                       <span className="font-medium capitalize">
-                        {item.action.replace(/_/g, " ")}
+                        {enumLabel(item.action)}
                       </span>
                       {item.changedFields.length > 0
                         ? ` · ${item.changedFields.join(", ")}`

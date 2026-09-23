@@ -163,7 +163,7 @@ describe("grouping by a field nobody carries", () => {
     const rows = [row({ id: "a" }), row({ id: "b" })];
     expect(effectiveRosterGroupBy("unit", rows)).toEqual({
       groupBy: "none",
-      notice: "No unit assignments on file for this facility — showing the room-sorted list.",
+      notice: "No unit assignments on file for these residents — showing the room-sorted list.",
     });
   });
 

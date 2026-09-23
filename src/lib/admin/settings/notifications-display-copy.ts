@@ -1,3 +1,5 @@
+import { enumLabel } from "@/lib/display/enum-label";
+
 /**
  * Quiet Operator copy for notification route settings.
  * Missing channels or role targets name real gaps — never silent em dashes.
@@ -23,5 +25,5 @@ export function formatNotificationsRoleTargetsDisplay(
   if (staffRoleTargets == null || staffRoleTargets.length === 0) {
     return NOTIFICATIONS_NO_ROLE_TARGETS_COPY;
   }
-  return staffRoleTargets.join(", ");
+  return staffRoleTargets.map((role) => enumLabel(role)).join(", ");
 }

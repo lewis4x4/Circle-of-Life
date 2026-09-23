@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  complianceRateMetric,
+  formatCompliancePercent,
   COMPLIANCE_NO_HALL_LABEL,
   COMPLIANCE_NO_SHIFT_LABEL,
   COMPLIANCE_NO_STAFF_LABEL,
@@ -164,4 +166,15 @@ it.each(["no_cadence", "orphaned_shift"])("keeps %s gaps out of compliance and m
   expect(mixed.totals.expected - mixed.totals.satisfied).toBe(0);
   expect(mixed.totals.unconfigured).toBe(1);
   expect(complianceRate(summarize([gap]).totals)).toBeNull();
+});
+
+describe("complianceRateMetric (COL-649)", () => {
+  it("has no value (and so no red threshold) without a denominator", () => {
+    expect(complianceRateMetric(null)).toEqual({ status: "no_data", reason: "No data posted" });
+  });
+
+  it("is a percentage when there is a rate", () => {
+    expect(complianceRateMetric(0.84)).toEqual({ status: "value", value: 84 });
+    expect(formatCompliancePercent(84.4)).toBe("84%");
+  });
 });

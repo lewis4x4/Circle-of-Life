@@ -467,8 +467,8 @@ export function SearchToolDashboard() {
                                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                                   {tool.label}
                                 </p>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                                  {tool.name}
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                                  {tool.description}
                                 </p>
                               </div>
                             </td>

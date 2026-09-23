@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
+import { FacilityGateNotice, useFacilityGateScope } from "@/components/common/FacilityGate";
 import {
   fetchIncidentReportsLog,
   fetchPrintFacility,
@@ -37,7 +38,11 @@ export function IncidentReportsLogPageClient() {
   const supabase = useMemo(() => createClient(), []);
   const searchParams = useSearchParams();
 
-  const facilityId = searchParams.get("facility") ?? "";
+  // A `?facility=` link from the board wins; otherwise print for the header's
+  // facility (COL-651: the page used to refuse unless opened from the board).
+  const { facilityId: scopeFacilityId } = useFacilityGateScope();
+  const queryFacilityId = searchParams.get("facility") ?? "";
+  const facilityId = UUID_STRING_RE.test(queryFacilityId) ? queryFacilityId : (scopeFacilityId ?? "");
   const fallback = useMemo(() => defaultRange(new Date()), []);
   const from = DATE_RE.test(searchParams.get("from") ?? "") ? (searchParams.get("from") as string) : fallback.from;
   const to = DATE_RE.test(searchParams.get("to") ?? "") ? (searchParams.get("to") as string) : fallback.to;
@@ -49,9 +54,7 @@ export function IncidentReportsLogPageClient() {
   // Whether the query named a building is known at render. Only the load
   // failure is state.
   const validFacility = UUID_STRING_RE.test(facilityId);
-  const error = validFacility
-    ? loadError
-    : "Open this page from the incidents board so it knows which building to print.";
+  const error = validFacility ? loadError : null;
 
   useEffect(() => {
     if (!validFacility) return;
@@ -69,6 +72,17 @@ export function IncidentReportsLogPageClient() {
       cancelled = true;
     };
   }, [supabase, facilityId, from, to, validFacility]);
+
+  if (!validFacility) {
+    return (
+      <div className="p-6">
+        <FacilityGateNotice
+          title="Incident reports log"
+          reason="The paper log prints one building's incidents for the month."
+        />
+      </div>
+    );
+  }
 
   if (error) {
     return (

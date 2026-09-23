@@ -8,7 +8,7 @@ import { UUID_STRING_RE } from "@/lib/supabase/env";
 // ── Shared ────────────────────────────────────────────────────────
 
 const uuidStringSchema = z.string().refine((value) => UUID_STRING_RE.test(value), {
-  message: "Invalid UUID",
+  message: "That record could not be found. Choose it again from the list.",
 });
 
 // Owner rulings 2026-09-22 (migration 468): nurse and caregiver are retired and folded

@@ -142,7 +142,7 @@ export default function VendorPaymentsPage() {
       )}
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Vendor payments</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">Record disbursements (GL posting is application-layer).</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">Record payments to vendors.</p>
       </div>
 
       {canPay && (

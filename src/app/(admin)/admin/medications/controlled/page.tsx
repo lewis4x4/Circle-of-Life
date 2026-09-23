@@ -25,6 +25,7 @@ import { CountInitiationModal } from "@/components/medication/CountInitiationMod
 import { DiscrepancyResolutionModal, type DiscrepancyRecord } from "@/components/medication/DiscrepancyResolutionModal";
 import { formatMedicationName } from "@/lib/clinical/medications-display-copy";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = {
   id: string;
@@ -292,7 +293,7 @@ export default function AdminControlledSubstancesPage() {
         <div className="rounded-[var(--radius)] border border-border bg-muted/40 p-16 text-center shadow-sm">
           <Shield className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
           <p className="text-lg font-semibold text-foreground tracking-tight">
-            {filter === "all" ? "No Count Records" : `No ${filter.replace(/_/g, " ")} counts`}
+            {filter === "all" ? "No Count Records" : `No ${enumLabel(filter, { case: "lower" })} counts`}
           </p>
           <p className="text-sm font-medium text-muted-foreground mt-1">
             {filter === "all"

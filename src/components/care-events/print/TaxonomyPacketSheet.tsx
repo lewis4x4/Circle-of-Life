@@ -10,6 +10,7 @@ import {
 import type { PrintFacility } from "@/lib/care-events/print-data";
 
 import { PrintSheet } from "./PrintSheet";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type TaxonomyPacketSheetProps = {
   facility: PrintFacility;
@@ -78,8 +79,8 @@ export function TaxonomyPacketSheet({ facility, effects }: TaxonomyPacketSheetPr
                       {row.followups.map((task) => (
                         <li key={`${task.kind}-${task.taskType}-${task.dueOffsetMinutes}`}>
                           {task.description} {offsetWords(task.dueOffsetMinutes)}
-                          {task.kind === "any" ? "" : ` (${task.kind.replace(/_/g, " ")})`}
-                          {task.requiresFlag ? ` when ${task.requiresFlag.replace(/_/g, " ")}` : ""}
+                          {task.kind === "any" ? "" : ` (${enumLabel(task.kind)})`}
+                          {task.requiresFlag ? ` when ${enumLabel(task.requiresFlag, { case: "lower" })}` : ""}
                         </li>
                       ))}
                     </ul>

@@ -13,25 +13,7 @@
  */
 
 export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
-  "b1-executive": [
-    "src/app/(admin)/admin/admissions/new/page.tsx",
-    "src/app/(admin)/admin/briefing/page.tsx",
-    "src/app/(admin)/admin/discharge/new/page.tsx",
-    "src/app/(admin)/admin/referrals/hl7-inbound/new/page.tsx",
-    "src/app/(admin)/admin/referrals/hl7-inbound/page.tsx",
-    "src/app/(admin)/admin/referrals/sources/page.tsx",
-    "src/app/(admin)/incidents/reports-log/page.tsx",
-    "src/components/admin/discharge/discharge-med-rec-hub-client.tsx",
-    "src/components/admissions/AdminAdmissionsPageClient.tsx",
-    "src/components/benefits/BenefitsAccess.tsx",
-    "src/components/referrals/AdminReferralsPageClient.tsx",
-    "src/components/registers/RegisterClient.tsx",
-    "src/components/registers/VisitorLogClient.tsx",
-    "src/components/residents/OverrideAdmissionForm.tsx",
-    "src/lib/admissions/admissions-hub-display-copy.ts",
-    "src/lib/incidents/incidents-board-copy.ts",
-    "src/lib/residents/resident-roster-kpi-copy.ts",
-  ],
+  "b1-executive": [],
 
   "b2-money": [
     "src/app/(admin)/admin/cash/page.tsx",

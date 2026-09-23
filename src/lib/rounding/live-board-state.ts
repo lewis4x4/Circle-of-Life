@@ -14,6 +14,7 @@ import type {
   LiveBoardTaskRow,
 } from "@/lib/rounding/live-board-fetch";
 import { liveBoardStatusCopy, type LiveBoardFilter } from "@/lib/rounding/live-board-display-copy";
+import { metricLoading, metricUnavailable, metricValue, type MetricState } from "@/lib/metrics/metric-state";
 
 export type LiveBoardLoadState = "idle" | "loading" | "ready" | "error";
 
@@ -153,4 +154,29 @@ export function deriveLiveBoardState(args: {
   if (args.totalTasks === 0) return "empty";
   if (args.filterApplied && args.filteredTasks === 0) return "empty_filtered";
   return "populated";
+}
+
+/**
+ * A Live board count as a MetricState (COL-649). Counts are derived from the
+ * loaded tasks, so before the read finishes they are "Loading…" and after a
+ * failed read they are "Unavailable" — never a 0 beside the error banner.
+ */
+export function liveBoardCountMetric(loadState: LiveBoardLoadState, value: number): MetricState<number> {
+  if (loadState === "idle" || loadState === "loading") return metricLoading();
+  if (loadState === "error") return metricUnavailable();
+  return metricValue(value);
+}
+
+export const LIVE_BOARD_OVERDUE_HINT = "Past the window and its grace";
+
+/**
+ * Overdue and Critical are consecutive bands: a check leaves Overdue when it
+ * becomes critical or missed. "Overdue 0" beside a critical count is therefore
+ * not "nothing is late"; the hint says where the late checks went.
+ */
+export function liveBoardOverdueHint(counts: Pick<LiveBoardCounts, "overdue" | "critical">): string {
+  if (counts.overdue === 0 && counts.critical > 0) {
+    return `None still in the overdue band; ${counts.critical} went past it and are counted under Critical`;
+  }
+  return LIVE_BOARD_OVERDUE_HINT;
 }

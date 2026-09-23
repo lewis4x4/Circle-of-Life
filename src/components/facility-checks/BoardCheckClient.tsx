@@ -202,9 +202,9 @@ export function BoardCheckClient({
   if (loadError) {
     return (
       <section aria-labelledby="board-check-heading" className="space-y-3">
-        <h2 id="board-check-heading" className="text-base font-medium text-foreground">
+        <h1 id="board-check-heading" className="text-base font-medium text-foreground">
           Board check
-        </h2>
+        </h1>
         <p className="text-sm text-muted-foreground">
           The bed list is not available right now. Try again in a moment.
         </p>
@@ -215,9 +215,9 @@ export function BoardCheckClient({
   if (!session || (closed && rows.length === 0)) {
     return (
       <section aria-labelledby="board-check-heading" className="space-y-3">
-        <h2 id="board-check-heading" className="text-base font-medium text-foreground">
+        <h1 id="board-check-heading" className="text-base font-medium text-foreground">
           Board check
-        </h2>
+        </h1>
         <p className="max-w-prose text-sm text-muted-foreground">
           Walk the building with the census board and mark each bed. The check closes only when every bed
           is marked and every disagreement has been corrected in Haven. It does not replace the physical
@@ -240,9 +240,9 @@ export function BoardCheckClient({
   return (
     <section aria-labelledby="board-check-heading" className="space-y-6">
       <header className="space-y-1">
-        <h2 id="board-check-heading" className="text-base font-medium text-foreground">
+        <h1 id="board-check-heading" className="text-base font-medium text-foreground">
           Board check
-        </h2>
+        </h1>
         <p className="text-sm text-muted-foreground" data-testid="board-check-progress">
           {closed && session.closedAt
             ? boardCheckClosedSummary({

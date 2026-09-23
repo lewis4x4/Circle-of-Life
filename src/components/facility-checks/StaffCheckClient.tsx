@@ -180,9 +180,9 @@ export function StaffCheckClient({
   if (loadError) {
     return (
       <section aria-labelledby="staff-check-heading" className="space-y-3">
-        <h2 id="staff-check-heading" className="text-base font-medium text-foreground">
+        <h1 id="staff-check-heading" className="text-base font-medium text-foreground">
           Staff check
-        </h2>
+        </h1>
         <p className="text-sm text-muted-foreground">
           The identity list is not available right now. Try again in a moment.
         </p>
@@ -193,9 +193,9 @@ export function StaffCheckClient({
   if (!session) {
     return (
       <section aria-labelledby="staff-check-heading" className="space-y-3">
-        <h2 id="staff-check-heading" className="text-base font-medium text-foreground">
+        <h1 id="staff-check-heading" className="text-base font-medium text-foreground">
           Staff check
-        </h2>
+        </h1>
         <p className="max-w-prose text-sm text-muted-foreground">
           Go through everyone with access to this facility and decide: keep, deactivate, or duplicate of
           someone already on the list. The check closes only when every identity is resolved and every
@@ -220,9 +220,9 @@ export function StaffCheckClient({
   return (
     <section aria-labelledby="staff-check-heading" className="space-y-6">
       <header className="space-y-1">
-        <h2 id="staff-check-heading" className="text-base font-medium text-foreground">
+        <h1 id="staff-check-heading" className="text-base font-medium text-foreground">
           Staff check
-        </h2>
+        </h1>
         <p className="text-sm text-muted-foreground" data-testid="staff-check-progress">
           {closed && session.closedAt
             ? staffCheckClosedSummary({

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 // Types
 type TaskStatus = "pending" | "in_progress" | "completed" | "missed" | "deferred";
@@ -728,7 +729,7 @@ export default function OperationsTodayPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
-                  <p className="capitalize text-foreground">{selectedTask.status.replace(/_/g, " ")}</p>
+                  <p className="capitalize text-foreground">{enumLabel(selectedTask.status)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Priority</p>

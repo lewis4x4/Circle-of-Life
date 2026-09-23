@@ -58,7 +58,7 @@ export default async function StaffCheckPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-      <h1 className="text-lg font-medium text-foreground">Staff check</h1>
+      {/* The client renders the page's one h1 (COL-658: this duplicated it). */}
       <StaffCheckClient
         session={bootstrap.session}
         initialRows={bootstrap.rows}

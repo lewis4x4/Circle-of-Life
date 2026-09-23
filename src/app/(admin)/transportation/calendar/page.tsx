@@ -32,6 +32,7 @@ import {
 } from "@/lib/transportation/transportation-display-copy";
 import { cn } from "@/lib/utils";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /** US-style week strip (Sunday start) — aligns with operator expectations in Florida. */
 const WEEK_STARTS_ON = 0 as const;
@@ -45,7 +46,7 @@ type TransportRequestRow = Database["public"]["Tables"]["resident_transport_requ
 };
 
 function formatEnum(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 export default function TransportationWeekCalendarPage() {

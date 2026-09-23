@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ import {
 import { PageHeader } from "@/design-system/components/PageHeader";
 import { Note } from "@/design-system/components/Note";
 import { Pagination } from "@/design-system/components/Pagination";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["referral_hl7_inbound"]["Row"];
 type Hl7Status = Database["public"]["Enums"]["referral_hl7_inbound_status"];
@@ -70,7 +72,7 @@ function previewRaw(s: string) {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function duplicateControlIds(rows: Row[]): Set<string> {
@@ -638,9 +640,7 @@ export default function AdminReferralsHl7InboundPage() {
                 Loading inbound referrals…
               </div>
             ) : noFacility ? (
-              <div className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 p-4 text-sm font-medium text-warning">
-                Select a facility in the header to load inbound referrals.
-              </div>
+              <FacilityGateNotice reason="Inbound electronic referrals are received per building." />
             ) : error ? (
               <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
                 {error}

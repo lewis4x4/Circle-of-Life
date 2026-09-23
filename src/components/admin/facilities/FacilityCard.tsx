@@ -15,6 +15,7 @@ import {
   portfolioFacilityCardFieldEmptyCopy,
 } from "@/lib/admin/facilities/portfolio-hub-kpi-copy";
 import { portfolioLaborCostTextClass } from "@/lib/admin/facilities/portfolio-metrics";
+import { enumLabel } from "@/lib/display/enum-label";
 
 interface FacilityCardProps {
   facility: FacilityRow;
@@ -35,7 +36,7 @@ function facilityOperationalStatusTone(
       return { label: "Archived", tone: "muted" };
     default:
       return {
-        label: normalized.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        label: enumLabel(normalized, { case: "title" }),
         tone: "warning",
       };
   }
