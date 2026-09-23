@@ -8,6 +8,8 @@ const HOUSEKEEPER_ALLOWED_PREFIXES = [
   "/caregiver/shift-swaps",
   "/clock",
   "/me",
+  // Self-service employee file, mounted in the floor shell for housekeepers (COL-654).
+  "/employee-file",
 ] as const;
 
 export function isHousekeeperAllowedPath(pathname: string): boolean {

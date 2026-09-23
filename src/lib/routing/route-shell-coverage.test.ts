@@ -88,8 +88,7 @@ const TOP_LEVEL_ROUTES: Record<string, string> = {
   "facility-launch": "static launch app with its own global styles (see admin-shell.ts)",
   // Legacy aliases: every page must redirect (checked below).
   pipeline: "aliases into /admin",
-  // Known shell-less self-service page, tracked with the duplicate-URL child of COL-631.
-  "employee-file": "COL-654",
+  "employee-file": "self-service; employee-file/layout.tsx mounts the signed-in role's own shell (COL-654)",
 };
 
 describe("route shell coverage (COL-644)", () => {
