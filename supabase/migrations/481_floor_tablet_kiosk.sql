@@ -1662,6 +1662,51 @@ GRANT EXECUTE ON FUNCTION public.visitor_match_resident(uuid, uuid) TO authentic
 COMMENT ON FUNCTION public.visitor_match_resident(uuid, uuid) IS
   'Matches a kiosk entry''s typed visit to a resident of the same facility, once. COL-37 ruling: definer required -- authenticated has no UPDATE on public.visitor_log_entries and no UPDATE policy exists, deliberately; the body asserts the caller''s facility grant with haven.has_facility_access, refuses the family role, takes FOR UPDATE, and writes an audit row. Keep it definer.';
 
+-- ---------------------------------------------------------------------------
+-- 9. One clock (spec 40 section 1): where the kiosk is live, staff do not
+--    clock themselves in through time_records
+-- ---------------------------------------------------------------------------
+-- /caregiver/clock already refuses where timeclock_enabled is on; this makes
+-- the database refuse a client that skips the page. Restrictive policies, so
+-- the existing permissive ones (staff_clock_in_out, admin_insert_time_records,
+-- staff_update_own_open_time_records) and every manager path stay as they
+-- are. Owners, org admins and administrators are unaffected; everyone else may
+-- not insert a time_records row at a facility whose flag is on, and may not
+-- leave a row there open through an UPDATE (closing one that was opened before
+-- the flag went on still works). Definer paths are not request roles and are
+-- untouched.
+CREATE FUNCTION haven.timeclock_enabled_for(p_facility_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT COALESCE((
+    SELECT s.timeclock_enabled FROM public.timeclock_facility_settings AS s
+    WHERE s.facility_id = p_facility_id
+  ), false)
+$$;
+REVOKE ALL ON FUNCTION haven.timeclock_enabled_for(uuid) FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION haven.timeclock_enabled_for(uuid) TO authenticated;
+COMMENT ON FUNCTION haven.timeclock_enabled_for(uuid) IS
+  'COL-690: is the kiosk timeclock live at this facility. COL-37 ruling: definer required -- the time_records policies evaluate it for staff, who cannot read timeclock_facility_settings (manager-only RLS); it returns one boolean for a facility id and nothing else.';
+
+CREATE POLICY "Staff do not self clock in where the kiosk timeclock is on" ON public.time_records
+  AS RESTRICTIVE FOR INSERT TO authenticated
+  WITH CHECK (
+    (SELECT haven.app_role()) IN ('owner', 'org_admin', 'facility_admin')
+    OR NOT haven.timeclock_enabled_for(facility_id)
+  );
+CREATE POLICY "Staff do not open a time record where the kiosk timeclock is on" ON public.time_records
+  AS RESTRICTIVE FOR UPDATE TO authenticated
+  USING (true)
+  WITH CHECK (
+    (SELECT haven.app_role()) IN ('owner', 'org_admin', 'facility_admin')
+    OR NOT haven.timeclock_enabled_for(facility_id)
+    OR clock_out IS NOT NULL
+  );
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;
 
@@ -1672,5 +1717,6 @@ COMMIT;
 -- timeclock_list_devices, timeclock_revoke_device and
 -- timeclock_create_enrollment_code(uuid), 468's assert_rounding_service_actor
 -- and 327's current_authorized_actor; restore 412's sign_out_method check and
--- INSERT policy; drop the new columns. floor_unlocks and kiosk visitor rows are
+-- INSERT policy; drop the two restrictive time_records policies and
+-- haven.timeclock_enabled_for; drop the new columns. floor_unlocks and kiosk visitor rows are
 -- attribution evidence: keep them.

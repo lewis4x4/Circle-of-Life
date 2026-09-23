@@ -668,4 +668,56 @@ DO $$ DECLARE e public.visitor_log_entries; f record; BEGIN
 END $$;
 RESET ROLE;
 
+-- ---------------------------------------------------------------------------
+-- 14. One clock: where the kiosk timeclock is on, staff cannot clock themselves
+--     in through time_records; managers can still add a record.
+-- ---------------------------------------------------------------------------
+GRANT SELECT, INSERT, UPDATE ON public.time_records TO authenticated;
+SELECT pg_temp.fk_staff(b_user, b_session) FROM fk;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; BEGIN
+  SELECT * INTO f FROM fk;
+  BEGIN
+    INSERT INTO public.time_records(staff_id, facility_id, organization_id, clock_in, clock_in_method, created_by)
+      VALUES (f.b_staff, f.facility, f.org, clock_timestamp(), 'mobile', f.b_user);
+    RAISE EXCEPTION 'Staff clocked in through time_records where the kiosk timeclock is on';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+RESET ROLE;
+UPDATE public.timeclock_facility_settings SET timeclock_enabled = false WHERE facility_id = (SELECT facility FROM fk);
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; rec uuid; BEGIN
+  SELECT * INTO f FROM fk;
+  INSERT INTO public.time_records(staff_id, facility_id, organization_id, clock_in, clock_in_method, created_by)
+    VALUES (f.b_staff, f.facility, f.org, clock_timestamp() - interval '1 hour', 'mobile', f.b_user) RETURNING id INTO rec;
+  INSERT INTO fk_results VALUES ('self_clock_in', to_jsonb(rec));
+END $$;
+RESET ROLE;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM fk_results WHERE name = 'self_clock_in') THEN RAISE EXCEPTION 'Staff self clock in refused with the kiosk timeclock off'; END IF;
+END $$;
+-- Flag back on: the open record can be closed, not kept open or reopened.
+UPDATE public.timeclock_facility_settings SET timeclock_enabled = true WHERE facility_id = (SELECT facility FROM fk);
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE rec uuid := (SELECT (value #>> '{}')::uuid FROM fk_results WHERE name = 'self_clock_in'); n integer; BEGIN
+  BEGIN
+    UPDATE public.time_records SET clock_in = clock_in - interval '5 minutes' WHERE id = rec;
+    RAISE EXCEPTION 'Staff kept a time record open where the kiosk timeclock is on';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  UPDATE public.time_records SET clock_out = clock_timestamp(), clock_out_method = 'mobile' WHERE id = rec;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n <> 1 THEN RAISE EXCEPTION 'Staff could not close an open time record (% rows)', n; END IF;
+  BEGIN
+    UPDATE public.time_records SET clock_out = NULL WHERE id = rec;
+    RAISE EXCEPTION 'Staff reopened a time record where the kiosk timeclock is on';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+RESET ROLE;
+-- Manager path unchanged: the owner adds a record for a staff member with the flag on.
+SELECT pg_temp.fk_owner();
+SET LOCAL ROLE authenticated;
+INSERT INTO public.time_records(staff_id, facility_id, organization_id, clock_in, clock_out, clock_in_method, created_by)
+  SELECT b_staff, facility, org, clock_timestamp() - interval '3 hours', clock_timestamp() - interval '2 hours', 'manual', owner_user FROM fk;
+RESET ROLE;
+
 ROLLBACK;
