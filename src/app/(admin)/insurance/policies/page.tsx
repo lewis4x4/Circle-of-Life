@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { CoverageLapseBanner } from "@/components/insurance/coverage-lapse-banner";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -101,6 +102,7 @@ export default function InsurancePoliciesPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 w-full">
         <InsuranceHubNav />
+        <CoverageLapseBanner />
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
@@ -206,7 +208,7 @@ export default function InsurancePoliciesPage() {
               <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or adding a new policy.</p>
             </div>
           ) : (
-            <>
+            <TableRowList label="Insurance policies">
               <TableRowHeader>
                 <span className="w-[110px] shrink-0">Status</span>
                 <span className="flex-[2] min-w-0">Carrier / policy no.</span>
@@ -262,7 +264,7 @@ export default function InsurancePoliciesPage() {
                   );
                 })}
               </MotionList>
-            </>
+            </TableRowList>
           )}
         </div>
       </div>

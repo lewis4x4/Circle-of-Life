@@ -14,7 +14,7 @@ const RULE_LABELS: Record<BenefitsRuleKey, { title: string; help: string }> = {
   "checklist.smmc_ltc": { title: "Checklist: Medicaid long-term care", help: "Requirements seeded on every new long-term care case. One per line: Title | stage | signature (pending or not_required)." },
   "checklist.oss": { title: "Checklist: Optional State Supplementation", help: "Requirements seeded on every new OSS case. One per line: Title | stage | signature." },
   "checklist.other": { title: "Checklist: other benefits", help: "Requirements seeded on every new case for other programs. One per line: Title | stage | signature." },
-  "screening.standard_individual": { title: "Financial screening standard (individual)", help: "Review-aid limits only; never an eligibility decision. Enter dollars; stored in cents." },
+  "screening.standard_individual": { title: "Financial screening standard (individual)", help: "Review-aid limits only; never an eligibility decision. Enter dollars." },
   "family_collection.max_days": { title: "Family upload window (days)", help: "How long a family document request stays open before it expires." },
   "renewal.warning_days": { title: "Renewal warning (days)", help: "The queue flags a case this many days before its recorded renewal date." },
 };

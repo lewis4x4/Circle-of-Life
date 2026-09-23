@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { canAuthorOperationsTemplates } from "@/lib/operations/constants";
 import { cn } from "@/lib/utils";
@@ -37,13 +38,17 @@ export function OperationsViewNav() {
   const { appRole } = useHavenAuth();
 
   return (
-    <div className="flex flex-wrap gap-2">
+    // One swipeable row on a phone — 16 wrapped chips filled the first screen
+    // (COL-657); they wrap from sm up.
+    <HorizontalScroll label="Operations views">
+      <nav aria-label="Operations views" className="flex gap-2 pb-1 sm:flex-wrap sm:pb-0 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
       {LINKS.filter((link) => !link.authorOnly || canAuthorOperationsTemplates(appRole)).map((link) => {
         const active = pathname === link.href;
         return (
           <Link
             key={link.href}
             href={link.href}
+            aria-current={active ? "page" : undefined}
             className={cn(
               "rounded-full border px-3 py-1.5 text-sm transition-colors",
               active
@@ -55,6 +60,7 @@ export function OperationsViewNav() {
           </Link>
         );
       })}
-    </div>
+      </nav>
+    </HorizontalScroll>
   );
 }

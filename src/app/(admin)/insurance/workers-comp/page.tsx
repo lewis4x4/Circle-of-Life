@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { CoverageLapseBanner } from "@/components/insurance/coverage-lapse-banner";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -61,6 +62,7 @@ export default function InsuranceWorkersCompPage() {
   return (
     <div className="space-y-6">
       <InsuranceHubNav />
+      <CoverageLapseBanner policyType="workers_comp" />
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Workers’ compensation</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">

@@ -67,7 +67,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full shadow-md bg-[#FAF7F2]/95 backdrop-blur-md border-b border-stone-300/70">
+    <header className="z-50 w-full shadow-md lg:sticky lg:top-0 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-stone-300/70">
       {/* Top Heritage & Crisis Utility Strip */}
       <div className="bg-[#1C2822] text-[#F3EFE6] text-xs py-2 px-4 sm:px-6 lg:px-8 border-b border-[#2C3E34]">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
@@ -165,7 +165,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
 
       {/* Main Luxury Navigation Bar */}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-22">
+        <div className="flex items-center justify-between h-16 lg:h-22">
           {/* Brand Logo & Seal */}
           <Link href="/" className="flex items-center gap-3.5 group">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C85A32] to-[#1C2822] p-0.5 shadow-lg shadow-[#C85A32]/20 group-hover:scale-105 transition-transform duration-300">
@@ -184,7 +184,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden lg:flex items-center gap-7 xl:gap-9">
+          <div className="hidden lg:flex items-center gap-5 whitespace-nowrap xl:gap-9">
             {/* 5-Campus Dropdown */}
             <div className="relative">
               <button

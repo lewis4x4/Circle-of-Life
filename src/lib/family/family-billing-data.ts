@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isBilledStatus, isReceivableStatus } from "@/lib/billing/receivables";
 import { formatFamilyPaymentReference } from "@/lib/family/family-billing-copy";
 import { formatCents } from "@/lib/finance/format-cents";
 import type { Database } from "@/types/database";
@@ -20,8 +21,17 @@ export type FamilyInvoiceRow = {
 
 export type FamilyBillingContext = {
   invoices: FamilyInvoiceRow[];
-  /** Sum of balance due on invoices that are not fully settled (excludes paid / void / written_off). */
+  /**
+   * Sum of balance due on sent, unsettled invoices (sent / partial / overdue).
+   * Drafts are not billed yet, so they are not owed (COL-650 ruling).
+   */
   totalBalanceDue: number;
+  /** Sent invoices (including paid) visible to this family member. */
+  billedInvoiceCount: number;
+  /** Sent invoices that still carry a balance. */
+  openInvoiceCount: number;
+  /** Active links to residents whose billing this family member may see. */
+  financialLinkCount: number;
   lastPaymentAmount: number | null;
   lastPaymentDateLabel: string | null;
   hasOverdue: boolean;
@@ -64,8 +74,24 @@ function statusLabel(s: Database["public"]["Enums"]["invoice_status"]): string {
   return s.replace(/_/g, " ");
 }
 
-function isOpenBalance(st: Database["public"]["Enums"]["invoice_status"]): boolean {
-  return st !== "paid" && st !== "void" && st !== "written_off";
+/** Balance totals over the invoices a family member can see. Drafts are not owed. */
+export function summarizeFamilyBalances(
+  invoices: ReadonlyArray<{ status: string; balance_due: number }>,
+): Pick<FamilyBillingContext, "totalBalanceDue" | "billedInvoiceCount" | "openInvoiceCount" | "hasOverdue"> {
+  let totalBalanceDue = 0;
+  let billedInvoiceCount = 0;
+  let openInvoiceCount = 0;
+  let hasOverdue = false;
+  for (const i of invoices) {
+    if (isBilledStatus(i.status)) billedInvoiceCount += 1;
+    if (isReceivableStatus(i.status)) {
+      const due = Number(i.balance_due) || 0;
+      totalBalanceDue += due;
+      if (due > 0) openInvoiceCount += 1;
+    }
+    if (i.status === "overdue") hasOverdue = true;
+  }
+  return { totalBalanceDue, billedInvoiceCount, openInvoiceCount, hasOverdue };
 }
 
 /**
@@ -100,7 +126,7 @@ export async function fetchFamilyBillingContext(
       afterId = page[page.length - 1].id;
     }
   };
-  const [invQ, payQ] = await Promise.all([
+  const [invQ, payQ, linkQ] = await Promise.all([
     fetchInvoices(),
     supabase
       .from("payments")
@@ -108,10 +134,17 @@ export async function fetchFamilyBillingContext(
       .is("deleted_at", null)
       .order("payment_date", { ascending: false })
       .limit(1),
+    supabase
+      .from("family_resident_links")
+      .select("resident_id")
+      .eq("user_id", user.id)
+      .eq("can_view_financial", true)
+      .is("revoked_at", null),
   ]);
 
   if (invQ.error) return { ok: false, error: invQ.error.message };
   if (payQ.error) return { ok: false, error: payQ.error.message };
+  if (linkQ.error) return { ok: false, error: linkQ.error.message };
 
   const rawInv = (invQ.data ?? []) as Array<{
     id: string;
@@ -160,14 +193,7 @@ export async function fetchFamilyBillingContext(
     statusLabel: statusLabel(i.status),
   }));
 
-  let totalBalanceDue = 0;
-  let hasOverdue = false;
-  for (const i of rawInv) {
-    if (isOpenBalance(i.status)) {
-      totalBalanceDue += Number(i.balance_due) || 0;
-    }
-    if (i.status === "overdue") hasOverdue = true;
-  }
+  const totals = summarizeFamilyBalances(rawInv);
 
   const lastPay = payQ.data?.[0] as { amount: number; payment_date: string } | undefined;
   const lastPaymentAmount = lastPay != null ? lastPay.amount : null;
@@ -178,10 +204,10 @@ export async function fetchFamilyBillingContext(
     ok: true,
     data: {
       invoices,
-      totalBalanceDue,
+      ...totals,
+      financialLinkCount: new Set((linkQ.data ?? []).map((row) => row.resident_id)).size,
       lastPaymentAmount,
       lastPaymentDateLabel,
-      hasOverdue,
     },
   };
 }

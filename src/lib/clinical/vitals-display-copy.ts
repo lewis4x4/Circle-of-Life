@@ -64,3 +64,29 @@ export function formatVitalsWeight(weightLbs: number | null | undefined): string
   if (!isPostedVitalNumeric(weightLbs)) return VITALS_NO_WEIGHT_COPY;
   return `${weightLbs} lbs`;
 }
+
+/**
+ * The vital alerts panel (COL-649): red chrome only when there are alerts, and
+ * "No alerts" only when vitals were actually logged — with nothing logged no
+ * alert could fire, so an empty list is not reassurance.
+ */
+export type VitalAlertsPanel = {
+  tone: "alert" | "neutral";
+  /** Empty-list line; null when alerts are listed or the read is pending/failed. */
+  emptyCopy: string | null;
+};
+
+export function describeVitalAlertsPanel(input: {
+  loading: boolean;
+  alertsError: string | null;
+  logsError: string | null;
+  alertCount: number;
+  logCount: number;
+}): VitalAlertsPanel {
+  if (input.alertCount > 0) return { tone: "alert", emptyCopy: null };
+  if (input.loading || input.alertsError) return { tone: "neutral", emptyCopy: null };
+  if (!input.logsError && input.logCount === 0) {
+    return { tone: "neutral", emptyCopy: "No vitals logged yet, so no alerts can fire." };
+  }
+  return { tone: "neutral", emptyCopy: "No alerts." };
+}

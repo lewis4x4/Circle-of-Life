@@ -308,6 +308,18 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).queryByText("Med-Tech cockpit")).not.toBeInTheDocument();
   });
 
+  it("defaults any user with exactly one facility to it instead of All facilities (COL-651)", async () => {
+    authMock.appRole = "owner";
+    const { useFacilityStore } = await import("@/hooks/useFacilityStore");
+    const setSelectedFacility = useFacilityStore.getState().setSelectedFacility as ReturnType<typeof vi.fn>;
+    setSelectedFacility.mockClear();
+    renderAppShell();
+
+    await waitFor(() => expect(setSelectedFacility).toHaveBeenCalledWith("fac-1"));
+    expect(screen.queryByTestId("admin-facility-filter-trigger")).not.toBeInTheDocument();
+    expect(screen.getByTestId("admin-facility-static-chip")).toHaveTextContent("Oakridge ALF");
+  });
+
   it("hides executive command nav for roles that cannot open standup or overview", async () => {
     authMock.appRole = "med_tech";
     const user = userEvent.setup();

@@ -58,3 +58,34 @@ export function formatDietaryHubRelativeUpdatedAt(iso: string | null | undefined
   if (hrs < 48) return `${hrs}h ago`;
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
+
+export type DietaryBatchStats = {
+  thickenedPct: number | null;
+  swallowPct: number | null;
+  allergyPct: number | null;
+  medTexturePct: number | null;
+};
+
+/**
+ * Therapeutic-context shares over the loaded orders. With zero orders there is
+ * nothing to take a share of, so every share is null ("No … share posted"),
+ * never a 0% bar that reads as "nobody needs thickened fluids" (COL-649).
+ */
+export function computeDietaryBatchStats<
+  T extends {
+    iddsi_fluid_level: string;
+    requires_swallow_eval: boolean | null;
+    allergy_constraints: readonly unknown[];
+    medication_texture_review_notes: string | null;
+  },
+>(rows: readonly T[], isThickened: (fluidLevel: string) => boolean): DietaryBatchStats {
+  const n = rows.length;
+  if (n === 0) return { thickenedPct: null, swallowPct: null, allergyPct: null, medTexturePct: null };
+  const share = (count: number) => Math.round((count / n) * 100);
+  return {
+    thickenedPct: share(rows.filter((r) => isThickened(r.iddsi_fluid_level)).length),
+    swallowPct: share(rows.filter((r) => r.requires_swallow_eval).length),
+    allergyPct: share(rows.filter((r) => r.allergy_constraints.length > 0).length),
+    medTexturePct: share(rows.filter((r) => r.medication_texture_review_notes?.trim()).length),
+  };
+}
