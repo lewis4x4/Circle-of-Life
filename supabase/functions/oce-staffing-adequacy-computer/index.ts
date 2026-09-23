@@ -15,6 +15,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import { jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import { SITE_AUTHORITY_CLASSES } from "../_shared/operation-authority.ts";
 
 type FacilityRow = {
   id: string;
@@ -100,7 +101,7 @@ Deno.serve(async (req) => {
       admin
         .from("operation_automation_tasks" as never)
         .select("status, priority, estimated_minutes")
-        .eq("authority_class", "facility")
+        .in("authority_class", SITE_AUTHORITY_CLASSES)
         .not("subject_id", "is", null)
         .or("completion_evidence_paths.is.null,completion_evidence_paths.eq.{}")
         .eq("organization_id", facility.organization_id)

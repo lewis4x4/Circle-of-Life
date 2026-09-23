@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 
+import { SITE_AUTHORITY_CLASSES } from "../../../supabase/functions/_shared/operation-authority";
 import { judgeDue } from "./schedule-evaluator";
 
 const ts = createRequire(`${process.cwd()}/package.json`)("typescript") as typeof import("typescript");
@@ -50,7 +51,7 @@ function harness(surface: Surface, options: { tables?: Record<string, Row[]>; fa
       // reads the projection and still reconciles it against the full population.
       const sourceRows = table === "operation_automation_tasks"
         ? (tables.operation_automation_tasks ?? tables.operation_task_instances.filter((row) =>
-          row.authority_class === "facility" && row.subject_id != null &&
+          SITE_AUTHORITY_CLASSES.includes(String(row.authority_class)) && row.subject_id != null &&
           (row.completion_evidence_paths == null || (Array.isArray(row.completion_evidence_paths) && row.completion_evidence_paths.length === 0)) &&
           !options.automationExcludedIds?.includes(String(row.id))))
         : (tables[table] ?? []);
@@ -86,7 +87,7 @@ function harness(surface: Surface, options: { tables?: Record<string, Row[]>; fa
     createClient, getCorsHeaders: () => ({}), jsonResponse: (body: unknown, status = 200) => new Response(JSON.stringify(body), { status }),
     withTiming: () => ({ log: vi.fn() }), Response, fetch: provider, URLSearchParams, btoa,
     // COL-137: the surfaces judge due dates through the shared evaluator, not their own arithmetic.
-    judgeDue, Intl, Date,
+    judgeDue, Intl, Date, SITE_AUTHORITY_CLASSES,
   });
   return {
     from, createClient, provider, writes,
@@ -156,6 +157,28 @@ describe("automation current authority", () => {
     await assertCoverageFailure(h, { organization_id: ORG, facility_id: SITE, date: DATE, shift: "day", notify: false });
     expect(h.from).toHaveBeenCalledWith("operation_automation_tasks");
     expect(h.from).toHaveBeenCalledWith("operation_task_instances");
+  });
+  // COL-671: COL-593 schedules asset work (generator runs) under an asset subject.
+  // It is site-level like facility work, so it must count rather than refuse.
+  const assetTask = { id: "asset-task", authority_class: "asset", subject_id: "generator-subject" };
+  it("counts a current asset-subject task toward staffing demand", async () => {
+    const h = harness("oce-staffing-adequacy-computer", { tables: { operation_task_instances: [task(), task(assetTask)] } });
+    const response = await h.run({ facility_id: SITE, date: DATE, shift: "day" });
+    expect(response.status).toBe(200);
+    expect(h.writes).toEqual([{ table: "staffing_adequacy_snapshots", action: "upsert", payload: expect.objectContaining({ facility_id: SITE, pending_task_count: 2 }) }]);
+  });
+  it("scores risk when the only open task is a current asset-subject task", async () => {
+    const h = harness("risk-nightly-scorer", { tables: { operation_task_instances: [task(assetTask)] } });
+    const response = await h.run({ organization_id: ORG, facility_id: SITE, notify: false });
+    expect(response.status).toBe(200);
+    expect(h.writes).toEqual([{ table: "risk_score_snapshots", action: "upsert", payload: expect.objectContaining({ operation_authority_version: 1 }) }]);
+  });
+  it.each(["oce-staffing-adequacy-computer", "risk-nightly-scorer"] as const)("%s still refuses an asset task the live projection excludes", async (surface) => {
+    const h = harness(surface, {
+      tables: { operation_task_instances: [task(), task({ ...assetTask, id: "hidden-task" })] },
+      automationExcludedIds: ["hidden-task"],
+    });
+    await assertCoverageFailure(h, { organization_id: ORG, facility_id: SITE, date: DATE, shift: "day", notify: false });
   });
   it("refuses staffing scoring when query results truncate an otherwise classified population", async () => {
     const h = harness("oce-staffing-adequacy-computer", { tables: { operation_task_instances: [task(), task({ id: "second" })] }, truncateTasks: true });
