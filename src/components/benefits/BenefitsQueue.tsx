@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
   type BenefitsOptions,
   type BenefitsRulesList,
 } from "@/lib/benefits/contracts";
+import { formatBenefitsQueueScopeSubtitle } from "@/lib/benefits/benefits-queue-display-copy";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import {
   ActionForm,
@@ -76,6 +77,13 @@ export function BenefitsQueue({
   const selectedFacilityId = useFacilityStore(
     (state) => state.selectedFacilityId,
   );
+  const availableFacilities = useFacilityStore(
+    (state) => state.availableFacilities,
+  );
+  const scopedFacilityName = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
+  }, [availableFacilities, selectedFacilityId]);
   const [status, setStatus] = useState("");
   const [mine, setMine] = useState(false);
   const [search, setSearch] = useState("");
@@ -206,9 +214,7 @@ export function BenefitsQueue({
           <h1 className="text-2xl font-semibold">Medicaid &amp; Benefits</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Private case work across admissions, residency, and renewal.{" "}
-            {selectedFacilityId
-              ? "Showing the selected facility."
-              : "Showing facilities you are authorized to access."}
+            {formatBenefitsQueueScopeSubtitle(selectedFacilityId, scopedFacilityName)}
           </p>
         </div>
         {options?.can_manage_access && (

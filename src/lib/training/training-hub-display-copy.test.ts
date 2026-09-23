@@ -9,11 +9,13 @@ import {
   TRAINING_HUB_NO_SIGNER_COPY,
   TRAINING_HUB_NO_STAFF_COPY,
   formatTrainingHubDate,
+  formatTrainingHubDemoCardSubtitle,
   formatTrainingHubFacilityName,
   formatTrainingHubHours,
   formatTrainingHubProgramName,
   formatTrainingHubSignerName,
   formatTrainingHubStaffName,
+  resolveTrainingHubFacilityScope,
 } from "./training-hub-display-copy";
 
 const EM_DASH = "—";
@@ -119,5 +121,44 @@ describe("training hub PDF copy constant", () => {
   it("names a missing PDF instead of an em dash", () => {
     expect(TRAINING_HUB_NO_PDF_COPY).not.toBe(EM_DASH);
     expect(TRAINING_HUB_NO_PDF_COPY).toMatch(/PDF/i);
+  });
+});
+
+describe("resolveTrainingHubFacilityScope", () => {
+  it("marks org-wide mode even when a name is passed", () => {
+    expect(resolveTrainingHubFacilityScope(true, "Anon Facility A")).toEqual({ kind: "org_wide" });
+    expect(resolveTrainingHubFacilityScope(true, null)).toEqual({ kind: "org_wide" });
+  });
+
+  it("names a posted facility when single-facility mode", () => {
+    expect(resolveTrainingHubFacilityScope(false, "Anon Facility A")).toEqual({
+      kind: "named",
+      name: "Anon Facility A",
+    });
+  });
+
+  it("marks missing name when scoped without a posted name", () => {
+    expect(resolveTrainingHubFacilityScope(false, null)).toEqual({ kind: "missing_name" });
+    expect(resolveTrainingHubFacilityScope(false, "   ")).toEqual({ kind: "missing_name" });
+  });
+});
+
+describe("formatTrainingHubDemoCardSubtitle", () => {
+  it("keeps org-wide copy and never says selected facility", () => {
+    const subtitle = formatTrainingHubDemoCardSubtitle({ kind: "org_wide" });
+    expect(subtitle).toMatch(/accessible facilities/i);
+    expect(subtitle).not.toContain("selected facility");
+  });
+
+  it("names the facility when scoped", () => {
+    expect(
+      formatTrainingHubDemoCardSubtitle({ kind: "named", name: "Anon Facility A" }),
+    ).toBe("Documented skills demonstrations for Anon Facility A.");
+  });
+
+  it("names the gap without selected-facility copy when the name is missing", () => {
+    const subtitle = formatTrainingHubDemoCardSubtitle({ kind: "missing_name" });
+    expect(subtitle).toBe("Documented skills demonstrations for this facility.");
+    expect(subtitle).not.toContain("selected facility");
   });
 });
