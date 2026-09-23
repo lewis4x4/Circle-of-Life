@@ -372,7 +372,7 @@ export default function AdminCashLedgersPage() {
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Petty cash drawer and per-resident trust accounts (Representative Payee / SSA-787).
-            All amounts are stored in cents; posted ledger entries are immutable.
+            Posted entries cannot be edited; correct them with a new entry.
           </p>
         </header>
 

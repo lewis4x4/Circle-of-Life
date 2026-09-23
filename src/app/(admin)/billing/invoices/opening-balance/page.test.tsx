@@ -82,8 +82,28 @@ describe("AdminOpeningBalancePage", () => {
     fireEvent.change(container.querySelector("select")!, { target: { value: "a0000000-0000-4000-8000-0000000000a1" } });
     fireEvent.change(screen.getByLabelText(/due date/i), { target: { value: "2026-09-30" } });
     fireEvent.change(container.querySelector('input[type="number"]')!, { target: { value: "123.45" } });
+    fireEvent.change(screen.getByLabelText(/^payer type$/i), { target: { value: "private_pay" } });
+    fireEvent.change(screen.getByLabelText(/^payer name$/i), { target: { value: "Pat Alpha" } });
     fireEvent.submit(container.querySelector("form")!);
-    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith("create_finance_opening_balance", expect.objectContaining({ p_amount_cents: 12345 })));
+    await waitFor(() =>
+      expect(mocks.rpc).toHaveBeenCalledWith(
+        "create_finance_opening_balance",
+        expect.objectContaining({ p_amount_cents: 12345, p_payer_type: "private_pay", p_payer_name: "Pat Alpha" }),
+      ),
+    );
+  });
+
+  it("does not assume who pays: payer type and name start empty and are required (COL-653)", async () => {
+    const { container } = render(<AdminOpeningBalancePage />);
+    await screen.findByRole("option", { name: "Alpha, Alex" });
+    expect(screen.getByLabelText(/^payer type$/i)).toHaveValue("");
+    expect(screen.getByLabelText(/^payer name$/i)).toHaveValue("");
+    fireEvent.change(container.querySelector("select")!, { target: { value: "a0000000-0000-4000-8000-0000000000a1" } });
+    fireEvent.change(screen.getByLabelText(/due date/i), { target: { value: "2026-09-30" } });
+    fireEvent.change(container.querySelector('input[type="number"]')!, { target: { value: "123.45" } });
+    fireEvent.submit(container.querySelector("form")!);
+    expect(await screen.findByText("Choose the payer type and enter who pays.")).toBeInTheDocument();
+    expect(mocks.rpc).not.toHaveBeenCalledWith("create_finance_opening_balance", expect.anything());
   });
 
   it("does not ship July 2026 launch copy or AR-report wording", () => {

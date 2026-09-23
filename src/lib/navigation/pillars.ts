@@ -22,6 +22,7 @@ import {
   Biohazard,
   BookOpen,
   BrainCircuit,
+  Bus,
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
@@ -36,14 +37,17 @@ import {
   Hotel,
   Landmark,
   LineChart,
+  Mail,
   Megaphone,
   MessageSquare,
   Pill,
   Radar,
   Scale,
+  Search,
   Settings,
   ShieldAlert,
   ShieldCheck,
+  Star,
   Stethoscope,
   Truck,
   Umbrella,
@@ -51,12 +55,14 @@ import {
   UserPlus,
   Users,
   Utensils,
+  Wrench,
   Zap,
   type LucideIcon,
   Timer,
 } from "lucide-react";
 import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import type { DashboardConfig } from "@/lib/auth/dashboard-routing";
+import { routeIsWithin } from "@/lib/navigation/route-match";
 import { filterStaffLaunchHiddenItems } from "@/lib/navigation/staff-launch-hidden";
 
 export type PillarId =
@@ -77,7 +83,23 @@ export type PillarItem = {
   label: string;
   /** Icon glyph */
   icon: LucideIcon;
+  /**
+   * Extra route trees this item owns beyond its own `href` (COL-655). Used
+   * when the item's landing page is a child of the tree it stands for, e.g.
+   * "Care plan reviews" (`/admin/care-plans/reviews-due`) owns
+   * `/admin/care-plans`.
+   */
+  owns?: readonly string[];
 };
+
+/**
+ * A route outside the pillar rails (⌘K palette, profile menu, parent-page
+ * links). Every one names the pillar it belongs to, so the shell can light
+ * that pillar and show the route in its rail while the operator is on it
+ * (COL-655). `null` = an account-level route (profile, settings, search)
+ * that belongs to no pillar and shows no rail.
+ */
+export type AuxiliaryRoute = PillarItem & { pillar: PillarId | null };
 
 export type Pillar = {
   id: PillarId;
@@ -97,10 +119,12 @@ export const PILLARS: Pillar[] = [
     items: [
       { key: "owner-home", href: "/admin", label: "Home", icon: Home },
       { key: "executive", href: "/admin/executive", label: "Executive", icon: LineChart },
-      { key: "stand-up", href: "/admin/stand-up", label: "Weekly Stand Up", icon: CalendarDays },
+      { key: "stand-up", href: "/admin/stand-up", label: "Weekly Stand Up", icon: CalendarDays, owns: ["/admin/executive/standup"] },
       { key: "reports", href: "/admin/reports", label: "Reports hub", icon: FileText },
       { key: "facilities", href: "/admin/facilities", label: "Facilities", icon: Hotel },
       { key: "billing", href: "/admin/billing", label: "Billing & AR", icon: CreditCard },
+      // Resident trips are a facility-operations desk, not a clinical one (COL-655).
+      { key: "transportation", href: "/admin/transportation", label: "Transportation", icon: Bus },
     ],
   },
   {
@@ -121,15 +145,14 @@ export const PILLARS: Pillar[] = [
     icon: Stethoscope,
     items: [
       { key: "residents", href: "/admin/residents", label: "Resident roster", icon: Users },
-      { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", icon: ClipboardList },
+      { key: "care-plans", href: "/admin/care-plans/reviews-due", label: "Care plan reviews", icon: ClipboardList, owns: ["/admin/care-plans"] },
       { key: "form-1823-alignment", href: "/admin/care-plans/form-1823-alignment", label: "Form 1823 alignment", icon: ClipboardCheck },
-      { key: "clinical-desk", href: "/admin/assessments/overdue", label: "Clinical Desk", icon: ClipboardCheck },
+      { key: "clinical-desk", href: "/admin/assessments/overdue", label: "Clinical Desk", icon: ClipboardCheck, owns: ["/admin/assessments"] },
       { key: "rounding", href: "/admin/rounding", label: "Smart Rounding", icon: Clock },
       { key: "med-tech", href: "/med-tech", label: "Med-Tech cockpit", icon: Pill },
       { key: "medications", href: "/admin/medications", label: "Medications", icon: Pill },
       { key: "medication-errors", href: "/admin/medications/errors", label: "Medication errors", icon: ShieldAlert },
-      { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", icon: Utensils },
-      { key: "transportation", href: "/admin/transportation", label: "Transportation", icon: Truck },
+      { key: "dietary", href: "/admin/dietary", label: "Dietary & Nutrition", icon: Utensils, owns: ["/admin/dietary-dashboard"] },
     ],
   },
   {
@@ -138,7 +161,7 @@ export const PILLARS: Pillar[] = [
     icon: ShieldCheck,
     items: [
       { key: "risk", href: "/admin/risk", label: "Risk command", icon: Radar },
-      { key: "incidents", href: "/admin/incidents", label: "Incident queue", icon: ShieldAlert },
+      { key: "incidents", href: "/admin/incidents", label: "Incident queue", icon: ShieldAlert, owns: ["/admin/care-events"] },
       { key: "infection", href: "/admin/infection-control", label: "Infection Control", icon: Biohazard },
       { key: "compliance", href: "/admin/compliance", label: "Compliance & Safety", icon: Scale },
       { key: "quality", href: "/admin/quality", label: "Quality metrics", icon: LineChart },
@@ -168,6 +191,8 @@ export const PILLARS: Pillar[] = [
       { key: "finance", href: "/admin/finance", label: "Finance", icon: Landmark },
       { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
       { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
+      { key: "cash", href: "/admin/cash", label: "Cash & trust accounts", icon: Banknote },
+      { key: "letters", href: "/admin/letters", label: "Letters", icon: Mail },
     ],
   },
   {
@@ -176,7 +201,13 @@ export const PILLARS: Pillar[] = [
     icon: BrainCircuit,
     items: [
       { key: "kb-chat", href: "/admin/knowledge", label: "Ask knowledge base", icon: MessageSquare },
-      { key: "kb-admin", href: "/admin/knowledge/admin", label: "KB admin", icon: BookOpen },
+      {
+        key: "kb-admin",
+        href: "/admin/knowledge/admin",
+        label: "KB admin",
+        icon: BookOpen,
+        owns: ["/admin/knowledge/documents", "/admin/knowledge/coverage", "/admin/knowledge/seed-targets"],
+      },
     ],
   },
 ];
@@ -186,54 +217,117 @@ export const PILLARS: Pillar[] = [
  * (power-user navigation), profile menu, or parent-page links. Curated —
  * keep this list short and only add routes that genuinely don't fit a
  * pillar.
+ *
+ * Every entry names its pillar (COL-655): while the operator is on the
+ * route, the shell lights that pillar and shows the entry in its rail, so
+ * no page falls through to an unrelated pillar with nothing highlighted.
+ * `navigation-anchoring.test.ts` fails when an `/admin` page is neither
+ * inside a pillar item's tree nor listed here.
  */
-export const AUXILIARY_ROUTES: PillarItem[] = [
-  { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye },
-  { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie },
-  { key: "meetings", href: "/admin/meetings", label: "Meetings", icon: Users },
-  { key: "policies", href: "/admin/compliance/policies", label: "Policies", icon: BookOpen },
-  { key: "teams", href: "/admin/teams", label: "Teams", icon: Users },
-  { key: "calendar", href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
-  { key: "files", href: "/admin/files", label: "Files", icon: FileText },
-  { key: "workspace", href: "/admin/workspace", label: "Workspace", icon: BookOpen },
-  { key: "front-desk", href: "/admin/front-desk", label: "Front desk", icon: Home },
-  { key: "letters", href: "/admin/letters", label: "Letters", icon: FileText },
-  { key: "contacts", href: "/admin/contacts", label: "Contacts", icon: Users },
-  { key: "acknowledgments", href: "/admin/acknowledgments", label: "Required reading administration", icon: BookOpen },
-  { key: "kanban", href: "/admin/kanban", label: "Team tasks", icon: ClipboardList },
-  { key: "cash", href: "/admin/cash", label: "Cash & trust accounts", icon: Banknote },
-  { key: "forms", href: "/admin/forms", label: "Forms", icon: FileText },
-  { key: "drive-import", href: "/admin/drive-import", label: "Drive inventory & bookmarks", icon: FileText },
-  { key: "drive-cutover", href: "/admin/drive-cutover", label: "Drive transition readiness", icon: ClipboardCheck },
-  { key: "briefing", href: "/admin/briefing", label: "Daily briefing", icon: FileText },
-  { key: "users", href: "/admin/settings/users", label: "User management", icon: Users },
-  { key: "settings-system-alerts", href: "/admin/settings/system-alerts", label: "System alerts", icon: Settings },
-  { key: "settings-notifications", href: "/admin/settings/notifications", label: "Notification settings", icon: Settings },
-  { key: "pilot-feedback", href: "/admin/feedback", label: "Pilot feedback", icon: MessageSquare },
+export const AUXILIARY_ROUTES: AuxiliaryRoute[] = [
+  { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye, pillar: "clinical" },
+  { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie, pillar: "clinical" },
+  { key: "policies", href: "/admin/compliance/policies", label: "Policies", icon: BookOpen, pillar: "quality" },
+  { key: "acknowledgments", href: "/admin/acknowledgments", label: "Policy acknowledgments", icon: BookOpen, pillar: "workforce" },
+  { key: "meetings", href: "/admin/meetings", label: "Meetings", icon: Users, pillar: "workforce" },
+  { key: "teams", href: "/admin/teams", label: "Teams", icon: Users, pillar: "workforce" },
+  { key: "forms", href: "/admin/forms", label: "Forms", icon: FileText, pillar: "workforce" },
+  { key: "briefing", href: "/admin/briefing", label: "Daily briefing", icon: FileText, pillar: "command" },
+  { key: "calendar", href: "/admin/calendar", label: "Calendar", icon: CalendarDays, pillar: "command" },
+  { key: "kanban", href: "/admin/kanban", label: "Team tasks", icon: ClipboardList, pillar: "command" },
+  { key: "front-desk", href: "/admin/front-desk", label: "Front desk", icon: Home, pillar: "command" },
+  { key: "contacts", href: "/admin/contacts", label: "Contacts", icon: Users, pillar: "command" },
+  { key: "pilot-feedback", href: "/admin/feedback", label: "Feedback", icon: MessageSquare, pillar: "command" },
+  { key: "files", href: "/admin/files", label: "Files", icon: FileText, pillar: "knowledge" },
+  { key: "workspace", href: "/admin/workspace", label: "Workspace", icon: BookOpen, pillar: "knowledge" },
+  { key: "drive-import", href: "/admin/drive-import", label: "Drive inventory & bookmarks", icon: FileText, pillar: "knowledge" },
+  { key: "drive-cutover", href: "/admin/drive-cutover", label: "Drive transition readiness", icon: ClipboardCheck, pillar: "knowledge" },
+  { key: "users", href: "/admin/settings/users", label: "User management", icon: Users, pillar: null },
+  { key: "settings-system-alerts", href: "/admin/settings/system-alerts", label: "System alerts", icon: Settings, pillar: null },
+  { key: "settings-notifications", href: "/admin/settings/notifications", label: "Notification settings", icon: Settings, pillar: null },
+];
+
+/**
+ * Routes that belong to a pillar but are deliberately NOT in the ⌘K palette
+ * or any menu: role homes, record-only pages, account pages, and routes an
+ * owner ruling keeps off the menus (Reputation: "reached from its own URL").
+ * They only anchor the shell — pillar lit, entry shown in the rail while the
+ * operator is on it (COL-655).
+ */
+export const ANCHOR_ONLY_ROUTES: AuxiliaryRoute[] = [
+  { key: "nurse-dashboard", href: "/admin/nurse-dashboard", label: "Nurse dashboard", icon: Stethoscope, pillar: "clinical" },
+  { key: "handoff", href: "/admin/handoff", label: "Shift handoff", icon: ArrowLeftRight, pillar: "clinical" },
+  { key: "activities", href: "/admin/activities", label: "Activities", icon: CalendarDays, pillar: "clinical" },
+  { key: "family-portal", href: "/admin/family-portal", label: "Family connections", icon: Users, pillar: "pipeline" },
+  { key: "survey-binder", href: "/admin/survey-binder", label: "Survey binder", icon: ClipboardCheck, pillar: "quality" },
+  { key: "operations", href: "/admin/operations", label: "Facility operations", icon: Wrench, pillar: "command" },
+  { key: "reputation", href: "/admin/reputation", label: "Reputation", icon: Star, pillar: "pipeline" },
+  { key: "approvals", href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck, pillar: "command" },
+  { key: "mentions", href: "/admin/mentions", label: "Mentions", icon: MessageSquare, pillar: "command" },
+  { key: "assistant-dashboard", href: "/admin/assistant-dashboard", label: "Assistant home", icon: Home, pillar: "command" },
+  { key: "coordinator-dashboard", href: "/admin/coordinator-dashboard", label: "Coordinator home", icon: Home, pillar: "command" },
+  { key: "data-cleanup", href: "/admin/data-cleanup", label: "Data cleanup", icon: ClipboardCheck, pillar: "command" },
+  { key: "settings", href: "/admin/settings", label: "Settings", icon: Settings, pillar: null },
+  { key: "profile", href: "/admin/profile", label: "Profile", icon: UserCog, pillar: null },
+  { key: "search", href: "/admin/search", label: "Search", icon: Search, pillar: null },
+  // Served at /admin/v2/design-preview; the resolver strips the v2 prefix.
+  { key: "design-preview", href: "/admin/design-preview", label: "Design preview", icon: Eye, pillar: null },
 ];
 
 /** Spec 07A: every "Report incident" door opens the three-tap caregiver flow. */
 export const REPORT_INCIDENT_HREF = "/caregiver/report";
 
-/**
- * Returns the pillar that owns the current path, or `null` for routes
- * outside the pillar tree (auxiliary routes, profile pages). The first
- * pillar (Command) is treated as fallback for the bare `/admin` root.
- */
-export function findActivePillar(pathname: string): Pillar | null {
-  if (!pathname) return null;
-  if (pathname === "/admin") return PILLARS[0];
+export type NavAnchor = {
+  /** Owning pillar; `null` for account-level routes (profile, settings, search). */
+  pillarId: PillarId | null;
+  /** The single catalog entry that owns the route — the one rail item to light. */
+  item: PillarItem;
+};
 
-  let best: { pillar: Pillar; length: number } | null = null;
+/**
+ * The one catalog entry that owns `pathname` (COL-655). Pillar items (their
+ * `href` plus any `owns` trees) win; the longest match wins inside that
+ * tier, so `/admin/medications/errors` belongs to "Medication errors", not
+ * "Medications". Auxiliary / anchor-only routes are consulted only when no
+ * pillar item owns the path. `/admin` itself matches only exactly — it is
+ * the Home item, not a catch-all for every admin page.
+ */
+export function resolveNavAnchor(pathname: string): NavAnchor | null {
+  if (!pathname) return null;
+  const path = pathname.replace(/^\/admin\/v2(?=\/|$)/, "/admin");
+  if (path === "/admin") return { pillarId: PILLARS[0].id, item: PILLARS[0].items[0] };
+
+  let best: { anchor: NavAnchor; length: number } | null = null;
   for (const pillar of PILLARS) {
     for (const item of pillar.items) {
-      const matches = pathname === item.href || pathname.startsWith(`${item.href}/`);
-      if (matches && (best === null || item.href.length > best.length)) {
-        best = { pillar, length: item.href.length };
+      if (item.href === "/admin") continue;
+      for (const route of [item.href, ...(item.owns ?? [])]) {
+        const length = route.split("#")[0].length;
+        if (routeIsWithin(path, route) && (best === null || length > best.length)) {
+          best = { anchor: { pillarId: pillar.id, item }, length };
+        }
       }
     }
   }
-  return best?.pillar ?? null;
+  if (best) return best.anchor;
+
+  for (const route of [...AUXILIARY_ROUTES, ...ANCHOR_ONLY_ROUTES]) {
+    const length = route.href.split("#")[0].length;
+    if (routeIsWithin(path, route.href) && (best === null || length > best.length)) {
+      best = { anchor: { pillarId: route.pillar, item: route }, length };
+    }
+  }
+  return best?.anchor ?? null;
+}
+
+/**
+ * Returns the pillar that owns the current path, or `null` for account-level
+ * routes and paths outside the catalog.
+ */
+export function findActivePillar(pathname: string): Pillar | null {
+  const anchor = resolveNavAnchor(pathname);
+  if (!anchor?.pillarId) return null;
+  return PILLARS.find((pillar) => pillar.id === anchor.pillarId) ?? null;
 }
 
 /** Flat list of every pillar item — used to seed the ⌘K palette. */

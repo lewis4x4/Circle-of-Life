@@ -21,6 +21,7 @@ type VendorHubSnapshot = {
   vendorCount: number;
   openAlerts: number;
   mtdSpend: number;
+  mtdPaymentCount: number;
 };
 
 export default function AdminVendorsHubPage() {
@@ -67,6 +68,7 @@ export default function AdminVendorsHubPage() {
         vendorCount: vCount ?? 0,
         openAlerts: aCount ?? 0,
         mtdSpend: rows.reduce((s, r) => s + (r.amount_cents ?? 0), 0),
+        mtdPaymentCount: rows.length,
       };
     },
   });
@@ -81,6 +83,7 @@ export default function AdminVendorsHubPage() {
   const vendorCount = data?.vendorCount ?? null;
   const openAlerts = data?.openAlerts ?? null;
   const mtdSpend = data?.mtdSpend ?? null;
+  const mtdPaymentCount = data?.mtdPaymentCount ?? null;
   const kpiCtx = {
     organizationId: organizationId ?? null,
     loadFailed: !!error,
@@ -94,7 +97,7 @@ export default function AdminVendorsHubPage() {
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4 relative z-10 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/20">
           <div className="space-y-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-              Vendors & Contracts
+              Vendors & AP
             </h1>
             <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
               Manage the vendor master, execute contracts, handle POs, and analyze real-time spend records.
@@ -111,7 +114,9 @@ export default function AdminVendorsHubPage() {
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="slate">
-              <MonolithicWatermark value={vendorCount ?? 0} className="text-muted-foreground/10 opacity-50" />
+              {vendorCount !== null ? (
+                <MonolithicWatermark value={vendorCount} className="text-muted-foreground/10 opacity-50" />
+              ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground flex items-center gap-2">
                   Active Vendors
@@ -124,7 +129,9 @@ export default function AdminVendorsHubPage() {
           </div>
           <div className="h-[160px]">
             <V2Card hoverColor="amber" className={openAlerts ? "border-warning/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]" : ""}>
-              <MonolithicWatermark value={openAlerts ?? 0} className="text-warning/10 opacity-50" />
+              {openAlerts !== null ? (
+                <MonolithicWatermark value={openAlerts} className="text-warning/10 opacity-50" />
+              ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-mono tracking-wider uppercase text-amber-600 dark:text-amber-400 flex items-center gap-2">
                    Open Contract Alerts
@@ -143,7 +150,7 @@ export default function AdminVendorsHubPage() {
                    MTD Vendor Spend
                 </h3>
                 <p className="text-4xl font-mono tracking-tighter text-emerald-600 dark:text-emerald-400 pb-1 tabular-nums">
-                  {loading ? "…" : vendorsHubMtdSpendTileValue(mtdSpend, kpiCtx)}
+                  {loading ? "…" : vendorsHubMtdSpendTileValue(mtdSpend, kpiCtx, mtdPaymentCount)}
                 </p>
               </div>
             </V2Card>

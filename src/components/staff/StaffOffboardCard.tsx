@@ -18,6 +18,7 @@ import { RecordDetailSection } from "@/design-system/components/record-detail";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { isInactiveEmploymentStatus } from "@/lib/staff/staff-offboard";
 import type { StaffProfileRow } from "@/lib/staff/staff-profile-edit";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type StaffOffboardCardProps = {
   staff: StaffProfileRow;
@@ -127,7 +128,7 @@ export function StaffOffboardCard({ staff, canEdit, onStaffUpdated }: StaffOffbo
         {inactive ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Status is {staff.employment_status.replace(/_/g, " ")}
+              Status is {enumLabel(staff.employment_status)}
               {staff.termination_date ? ` as of ${staff.termination_date}` : ""}.
               Physical access-control sync is flagged for the facility vendor follow-up.
             </p>

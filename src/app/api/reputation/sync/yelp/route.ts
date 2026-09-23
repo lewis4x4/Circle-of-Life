@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   if (result.status === "no_api_key") {
     return NextResponse.json(
-      { error: "Yelp Fusion is not configured (set YELP_FUSION_API_KEY on the server)." },
+      { error: "Yelp review import is not set up for Haven yet. Ask support to finish the setup." },
       { status: 503 },
     );
   }

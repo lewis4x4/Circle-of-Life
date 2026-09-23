@@ -1,0 +1,16 @@
+{
+  "$comment": "Per-route load budgets for scripts/perf/route-load-budget.mjs (COL-660). contentReadyMs is goto -> main rendered with no route-loading marker, skeleton or aria-busy region. Edit budgets here, not in the script.",
+  "defaultContentReadyMs": 5000,
+  "warmRuns": 1,
+  "routes": [
+    { "path": "/admin/rounding/reports" },
+    { "path": "/admin/operations/vendors" },
+    { "path": "/admin/admissions" },
+    { "path": "/admin/referrals/sources" },
+    { "path": "/admin/nurse-dashboard" },
+    { "path": "/admin/residents/board-check" },
+    { "path": "/admin/infection-control/staff-illness" },
+    { "path": "/admin/incidents" },
+    { "path": "/admin/residents" }
+  ]
+}

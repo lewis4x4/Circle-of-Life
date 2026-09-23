@@ -63,7 +63,7 @@ export default function InsuranceLossRunsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Loss runs</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Generated loss summaries by entity and period (export in a later iteration).
+          Generated loss summaries by entity and period.
         </p>
       </div>
       {authLoading ? (

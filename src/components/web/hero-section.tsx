@@ -12,6 +12,11 @@ import {
   Star,
 } from "lucide-react";
 import Image from "next/image";
+import {
+  PUBLIC_AVAILABILITY_COPY,
+  TOTAL_COMMUNITIES,
+  TOTAL_NETWORK_BEDS,
+} from "@/lib/data/facilities-data";
 
 interface HeroSectionProps {
   onOpenTourModal?: () => void;
@@ -39,7 +44,7 @@ export function HeroSection({ onOpenTourModal }: HeroSectionProps) {
           </div>
           <div className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#3D5A4C] text-xs font-bold border border-stone-300 shadow-xs">
             <Heart className="w-3.5 h-3.5 text-[#A94724] fill-[#C85A32]/20" />
-            <span>5 North Florida Sanctuaries • 258 Beds</span>
+            <span>{TOTAL_COMMUNITIES} North Florida Sanctuaries • {TOTAL_NETWORK_BEDS} Beds</span>
           </div>
         </div>
 
@@ -130,7 +135,7 @@ export function HeroSection({ onOpenTourModal }: HeroSectionProps) {
                     Featured Flagship Community
                   </span>
                   <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
-                    2 Suites Available
+                    {PUBLIC_AVAILABILITY_COPY}
                   </span>
                 </div>
                 <div className="font-serif font-bold text-sm text-[#1C2822] mt-1">

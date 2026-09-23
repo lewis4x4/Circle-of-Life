@@ -26,20 +26,39 @@ describe("ExecutiveHubNav", () => {
   it("keeps primary links focusable and marks Overview only on its exact route", () => {
     render(<ExecutiveHubNav />);
     const overview = screen.getByRole("link", { name: "Overview" });
-    const standup = screen.getByRole("link", { name: "Standup" });
+    const standup = screen.getByRole("link", { name: "Weekly Stand Up" });
     expect(overview).toHaveAttribute("aria-current", "page");
     expect(standup.tabIndex).toBe(0);
     standup.focus();
     expect(standup).toHaveFocus();
-    expect(standup).toHaveAttribute("href", "/admin/executive/standup");
+    expect(standup).toHaveAttribute("href", "/admin/stand-up");
+  });
+
+  it("has one Stand Up entry in the primary strip (COL-655)", () => {
+    render(<ExecutiveHubNav />);
+    const nav = screen.getAllByRole("navigation", { name: "Executive intelligence sections" })[0];
+    expect(within(nav).getAllByRole("link").filter((link) => /stand ?up/i.test(link.textContent ?? ""))).toHaveLength(1);
+  });
+
+  it.each([
+    ["/admin/executive/cfo", "CFO"],
+    ["/admin/v2/executive/cfo", "CFO"],
+    ["/admin/executive/scenarios", "Scenarios"],
+    ["/admin/executive/entity/entity-1", "Entities"],
+    ["/admin/executive/settings", "Executive settings"],
+  ])("lights the More menu, not Overview, on %s", (pathname, label) => {
+    mocks.pathname = pathname;
+    render(<ExecutiveHubNav />);
+    expect(screen.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: `More views — currently ${label}` })).toBeVisible();
   });
 
   it.each([
     ["/admin/executive", "Overview"],
     ["/admin/executive/alerts", "Alerts"],
-    ["/admin/executive/standup/history", "Standup history"],
-    ["/admin/executive/standup/history/older", "Standup history"],
-    ["/admin/executive/standup/compare", "Standup compare"],
+    ["/admin/executive/standup/history", "Stand Up history"],
+    ["/admin/executive/standup/history/older", "Stand Up history"],
+    ["/admin/executive/standup/compare", "Stand Up compare"],
   ])("opens the real mobile drawer on %s with exactly one current destination", async (pathname, currentLabel) => {
     mocks.pathname = pathname;
     render(<ExecutiveHubNav />);
@@ -59,11 +78,12 @@ describe("ExecutiveHubNav", () => {
     expect(drawer.queryAllByRole("link", { current: "page" })).toHaveLength(0);
   });
 
-  it("does not mark the desktop Standup parent current when history is selected", () => {
+  it("does not mark the Stand Up pack parent current when history is selected", async () => {
     mocks.pathname = "/admin/executive/standup/history";
     render(<ExecutiveHubNav />);
-    expect(screen.getByRole("link", { name: "Standup" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("button", { name: "More views — currently Standup history" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "More views — currently Stand Up history" })).toBeVisible();
+    const drawer = await openSections();
+    expect(drawer.getByRole("link", { name: "Stand Up pack" })).not.toHaveAttribute("aria-current");
   });
 
   it("restricts desktop and mobile links to the facility admin's permitted destinations", async () => {
@@ -73,10 +93,10 @@ describe("ExecutiveHubNav", () => {
     expect(screen.queryByRole("link", { name: "Overview" })).not.toBeInTheDocument();
     const drawer = await openSections();
     expect(drawer.getAllByRole("link").map((link) => link.textContent)).toEqual([
-      "Weekly Stand Up", "Standup", "Standup history", "Standup compare",
+      "Weekly Stand Up", "Stand Up pack", "Stand Up history", "Stand Up compare",
     ]);
     expect(drawer.getAllByRole("link", { current: "page" })).toHaveLength(1);
-    expect(drawer.getByRole("link", { current: "page" })).toHaveAccessibleName("Standup history");
+    expect(drawer.getByRole("link", { current: "page" })).toHaveAccessibleName("Stand Up history");
   });
 
   it("offers no executive destinations to a role without executive access", async () => {

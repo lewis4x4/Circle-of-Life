@@ -5,7 +5,8 @@ import {
   type ResidentRow,
 } from "@/lib/residents/load-residents";
 import {
-  fetchResidentRosterMetrics,
+  composeResidentRosterMetrics,
+  fetchResidentRosterMetricInputs,
   type ResidentRosterMetrics,
 } from "@/lib/residents/resident-roster-metrics";
 import {
@@ -30,6 +31,13 @@ export async function loadResidentsRosterBootstrap(): Promise<ResidentsRosterBoo
   );
 
   const supabase = await createClient();
+  // The metric reads (licensed beds, care plans) do not depend on the roster,
+  // so they run alongside it instead of after it (COL-674).
+  const metricInputsPromise = fetchResidentRosterMetricInputs(initialFacilityId, supabase).catch((error: unknown) => {
+    console.error("[Haven] resident roster metrics failed:", queryErrorMessage(error), error);
+    return undefined;
+  });
+
   let initialRows: ResidentRow[] = [];
   let initialError: string | null = null;
 
@@ -40,20 +48,11 @@ export async function loadResidentsRosterBootstrap(): Promise<ResidentsRosterBoo
     initialRows = [];
   }
 
-  let initialMetrics: ResidentRosterMetrics | null = null;
-
-  try {
-    if (initialError == null) {
-      initialMetrics = await fetchResidentRosterMetrics(
-        initialFacilityId,
-        initialRows.map((row) => row.id),
-        supabase,
-      );
-    }
-  } catch (error) {
-    console.error("[Haven] resident roster metrics failed:", queryErrorMessage(error), error);
-    initialMetrics = null;
-  }
+  const metricInputs = await metricInputsPromise;
+  const initialMetrics: ResidentRosterMetrics | null =
+    initialError == null && metricInputs !== undefined
+      ? composeResidentRosterMetrics(metricInputs, initialRows.map((row) => row.id))
+      : null;
 
   return { initialRows, initialError, initialFacilityId, initialMetrics };
 }

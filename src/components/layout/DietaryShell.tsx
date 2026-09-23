@@ -86,12 +86,16 @@ export function DietaryShell({ children }: { children: React.ReactNode }) {
   // dark variant of every token regardless of system preference.
   return (
     <div className="dark min-h-screen bg-background font-sans text-foreground antialiased">
-      <header className="flex items-center justify-between gap-4 border-b border-border p-3">
+      {/* Facility on the left, the three account links grouped on the right,
+          so a phone shows two tidy rows rather than four loose ones (COL-657). */}
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border p-3 text-sm">
         {userId && <WorkingFacilitySelector userId={userId} onResolved={setWorkingId} />}
-        <Link href="/employee-file" className="mr-3 text-sm underline">My employee file</Link>
-              <Link href="/dietary/acknowledgments" className="underline">Required reading</Link>
-        <button type="button" onClick={() => { void createClient().auth.signOut({ scope: "local" }).then(({ error }) => { if (error) setExitError(error.message); else router.replace("/login"); }); }}>Sign out</button>
-        {exitError && <p role="alert">{exitError}</p>}
+        <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Link href="/employee-file" className="underline">My employee file</Link>
+          <Link href="/dietary/acknowledgments" className="underline">Required reading</Link>
+          <button type="button" onClick={() => { void createClient().auth.signOut({ scope: "local" }).then(({ error }) => { if (error) setExitError(error.message); else router.replace("/login"); }); }}>Sign out</button>
+        </div>
+        {exitError && <p role="alert" className="basis-full">{exitError}</p>}
       </header>
       {workingId ? <div key={workingId}>{children}</div> : <p className="p-4">Choose your working facility to open kitchen service.</p>}
     </div>

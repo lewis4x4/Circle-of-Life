@@ -257,7 +257,7 @@ export function RatesTab({
 
         {roomTypesPresent.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            No room &amp; board rates yet. Add a private or semi-private monthly rate to publish the posted
+            No room &amp; board rates yet. Add a private or companion monthly rate to publish the posted
             schedule.
           </p>
         ) : (

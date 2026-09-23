@@ -14,6 +14,8 @@
  * cadence is configuration and it is in force at every building.
  */
 
+import { metricNotConfigured, metricUnavailable, metricValue, type MetricState } from "@/lib/metrics/metric-state";
+
 export type CaregiverRoundsQueueState =
   | "no_facility"
   | "no_tasks_assigned"
@@ -80,3 +82,20 @@ export function describeCaregiverResidentRoundEmptyState(args: {
       "Nothing is due for them right now. Go back to the queue, or refresh if a check should be open.",
   };
 }
+
+/**
+ * A queue count on the caregiver rounds header (COL-649). After a failed read
+ * (a 403 "No caregiver staff profile found", a 500) the counts are unknown, not
+ * "Critical 0 / Due now 0"; without a facility there is no queue to count.
+ */
+export function caregiverRoundsCount(
+  input: { loadError: string | null; noFacility: boolean },
+  count: number,
+): MetricState<number> {
+  if (input.noFacility) return metricNotConfigured("No facility");
+  if (input.loadError) return metricUnavailable();
+  return metricValue(count);
+}
+
+export const CAREGIVER_ROUNDS_LOAD_FAILED_COPY =
+  "Your queue could not be loaded, so the counts below are unknown. Use Refresh to try again.";

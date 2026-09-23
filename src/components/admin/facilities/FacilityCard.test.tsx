@@ -51,7 +51,7 @@ describe("FacilityCard occupancy copy", () => {
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
   });
 
-  it("shows posted-zero occupancy as 0% when bed grid exists with zero occupied", () => {
+  it("names the census gap instead of 0% when the bed grid has nobody in it (COL-649)", () => {
     render(
       <FacilityCard
         facility={facility({
@@ -64,8 +64,7 @@ describe("FacilityCard occupancy copy", () => {
       />,
     );
 
-    expect(screen.getByText("0%")).toBeInTheDocument();
-    expect(screen.getByText("0/48 beds")).toBeInTheDocument();
-    expect(screen.queryByText("Census not loaded yet")).not.toBeInTheDocument();
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+    expect(screen.getByText("Census not loaded yet")).toBeInTheDocument();
   });
 });

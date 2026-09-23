@@ -47,6 +47,7 @@ import {
   formatGeneratePreviewBillingPeriodRange,
   formatGeneratePreviewConcessionCents,
 } from "@/lib/billing/invoice-generate-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export default function AdminInvoiceGeneratePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -321,12 +322,12 @@ export default function AdminInvoiceGeneratePage() {
                       </TableCell>
                       <TableCell className="text-sm text-slate-600 dark:text-slate-400">
                         <span className="capitalize">
-                          {line.payerType.replace(/_/g, " ")}
+                          {enumLabel(line.payerType)}
                         </span>
                       </TableCell>
                       <TableCell className="hidden text-xs text-slate-600 dark:text-slate-400 lg:table-cell">
                         <Badge variant="outline" className="text-[10px] capitalize">
-                          {line.billingSource.replace(/_/g, " ")}
+                          {enumLabel(line.billingSource)}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden text-sm text-slate-600 dark:text-slate-400 sm:table-cell">

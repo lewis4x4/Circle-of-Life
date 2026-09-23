@@ -159,7 +159,7 @@ describe("AdminBillingRentRollPage", () => {
     expect(screen.getByText("Total contracted").nextElementSibling).toHaveTextContent("$3,009.00");
     expect(screen.getByText("Total outstanding").nextElementSibling).toHaveTextContent("$3,009.00");
     expect(screen.getByText("Collection rate").nextElementSibling).toHaveTextContent("0%");
-    expect(screen.getByText(/2 residents · 1 without a rate on file/)).toBeInTheDocument();
+    expect(screen.getByText(/2 residents on the .* roll \(in the building at any point in the month\) · 1 without a rate on file/)).toBeInTheDocument();
     expect(screen.getByText(/Medicaid plan rates on file/).parentElement).toHaveTextContent("United Healthcare $1,600.00");
   });
 

@@ -29,7 +29,7 @@ export default function AdminPayrollNewBatchPage() {
   const { selectedFacilityId } = useFacilityStore();
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
-  const [provider, setProvider] = useState("generic");
+  const [provider, setProvider] = useState("");
   const [saving, setSaving] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -115,7 +115,7 @@ export default function AdminPayrollNewBatchPage() {
         <CardHeader>
           <CardTitle className="text-lg">Draft export batch</CardTitle>
           <CardDescription>
-            Owner, org admin, or facility admin only. Add mileage lines from approved trips on the batch detail page; time-record lines remain Enhanced.
+            Owner, org admin, or facility admin only. Add mileage lines from approved trips on the batch detail page; time-record lines cannot be added here yet.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,12 +147,12 @@ export default function AdminPayrollNewBatchPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="prov">Provider key</Label>
+              <Label htmlFor="prov">Payroll provider</Label>
               <Input
                 id="prov"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
-                placeholder="generic"
+                placeholder="e.g. ADP"
                 disabled={Boolean(organizationGapMessage) || authLoading}
               />
             </div>

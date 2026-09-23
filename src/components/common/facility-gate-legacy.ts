@@ -13,25 +13,7 @@
  */
 
 export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
-  "b1-executive": [
-    "src/app/(admin)/admin/admissions/new/page.tsx",
-    "src/app/(admin)/admin/briefing/page.tsx",
-    "src/app/(admin)/admin/discharge/new/page.tsx",
-    "src/app/(admin)/admin/referrals/hl7-inbound/new/page.tsx",
-    "src/app/(admin)/admin/referrals/hl7-inbound/page.tsx",
-    "src/app/(admin)/admin/referrals/sources/page.tsx",
-    "src/app/(admin)/incidents/reports-log/page.tsx",
-    "src/components/admin/discharge/discharge-med-rec-hub-client.tsx",
-    "src/components/admissions/AdminAdmissionsPageClient.tsx",
-    "src/components/benefits/BenefitsAccess.tsx",
-    "src/components/referrals/AdminReferralsPageClient.tsx",
-    "src/components/registers/RegisterClient.tsx",
-    "src/components/registers/VisitorLogClient.tsx",
-    "src/components/residents/OverrideAdmissionForm.tsx",
-    "src/lib/admissions/admissions-hub-display-copy.ts",
-    "src/lib/incidents/incidents-board-copy.ts",
-    "src/lib/residents/resident-roster-kpi-copy.ts",
-  ],
+  "b1-executive": [],
 
   "b2-money": [],
 
@@ -141,4 +123,9 @@ export const NOT_A_GATE: Record<string, string> = {
   "src/components/layout/AppShell.tsx":
     "The survey-visit tools in the shell menu, which sits beside the header selector itself.",
   "src/lib/v2-forms.ts": "Validation message for a form's own required facility field.",
+  // COL-649 MetricState: a KPI tile's "no scope" state, not a page gate. Pages still gate with <FacilityGate>.
+  "src/lib/metrics/metric-state.ts": "Defines the KPI tile label for the no-facility-scope metric state (COL-649).",
+  "src/components/ui/kpi-card.tsx": "Doc comment listing MetricState phrases the card renders (COL-649).",
+  "src/components/ui/stat-card.tsx": "Doc comment listing MetricState phrases the card renders (COL-649).",
+  "src/design-system/components/KPITile/KPITile.tsx": "Doc comment listing MetricState phrases the tile renders (COL-649).",
 };

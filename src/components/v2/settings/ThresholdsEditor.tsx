@@ -126,7 +126,7 @@ export function ThresholdsEditor({ load }: { load: V2ThresholdLoad }) {
   if (load.facilities.length === 0) {
     return (
       <p className="text-xs text-text-muted">
-        No facilities are visible to your account under RLS — nothing to threshold.
+        Your account has no facilities to set thresholds for.
       </p>
     );
   }

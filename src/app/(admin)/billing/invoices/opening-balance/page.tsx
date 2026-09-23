@@ -40,8 +40,9 @@ export default function AdminOpeningBalancePage() {
   const [amountDollars, setAmountDollars] = useState("");
   const [periodStart, setPeriodStart] = useState(() => todayFacilityDateIso());
   const [dueDate, setDueDate] = useState("");
-  const [payerType, setPayerType] = useState("private_pay");
-  const [payerName, setPayerName] = useState("Responsible party");
+  // Who owes the balance is chosen, never assumed (COL-653).
+  const [payerType, setPayerType] = useState("");
+  const [payerName, setPayerName] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -100,6 +101,10 @@ export default function AdminOpeningBalancePage() {
       setError("Enter a positive balance amount.");
       return;
     }
+    if (!payerType || !payerName.trim()) {
+      setError("Choose the payer type and enter who pays.");
+      return;
+    }
     if (!periodStart || !dueDate) {
       setError("Period start and due date are required.");
       return;
@@ -123,7 +128,7 @@ export default function AdminOpeningBalancePage() {
         p_period_end: periodEnd,
         p_amount_cents: cents,
         p_payer_type: payerType,
-        p_payer_name: payerName,
+        p_payer_name: payerName.trim(),
         p_notes: notes.trim() || "Opening balance",
       } as never)) as unknown as {
         data: { invoice_id: string | null; inserted: boolean }[] | null;
@@ -228,7 +233,7 @@ export default function AdminOpeningBalancePage() {
                   step="0.01"
                   value={amountDollars}
                   onChange={(e) => setAmountDollars(e.target.value)}
-                  placeholder="1650.00"
+                  placeholder="Amount in dollars"
                   required
                 />
               </label>
@@ -261,7 +266,11 @@ export default function AdminOpeningBalancePage() {
                     className="w-full rounded-md border border-input bg-card px-3 py-2"
                     value={payerType}
                     onChange={(e) => setPayerType(e.target.value)}
+                    required
                   >
+                    <option value="" disabled>
+                      Select payer type…
+                    </option>
                     <option value="private_pay">Private pay</option>
                     <option value="medicaid_oss">Medicaid OSS</option>
                     <option value="ltc_insurance">LTC insurance</option>
@@ -271,7 +280,12 @@ export default function AdminOpeningBalancePage() {
                 </label>
                 <label className="block space-y-1.5 text-sm">
                   <span className="font-medium">Payer name</span>
-                  <Input value={payerName} onChange={(e) => setPayerName(e.target.value)} />
+                  <Input
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    placeholder="e.g. the responsible party's name"
+                    required
+                  />
                 </label>
               </div>
 

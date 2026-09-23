@@ -58,6 +58,18 @@ export function countOverdueAssessments(
   return n;
 }
 
+/**
+ * A head count PostgREST did not return is a failed read, not "none". The
+ * snapshot already throws on query errors; a missing count takes the same path
+ * instead of becoming a 0 on the hub (COL-649).
+ */
+export function requireHeadCount(count: number | null | undefined, label: string): number {
+  if (typeof count !== "number" || !Number.isFinite(count)) {
+    throw new Error(`${label} count unavailable`);
+  }
+  return count;
+}
+
 export async function fetchComplianceDashboardSnapshot(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -164,12 +176,12 @@ export async function fetchComplianceDashboardSnapshot(
 
   return {
     overdueAssessments,
-    overdueCarePlanReviews: carePlansRes.count ?? 0,
-    openIncidentFollowupsPastDue: followupsRes.count ?? 0,
-    activeInfections: surveillanceRes.count ?? 0,
-    activeOutbreaks: outbreaksRes.count ?? 0,
-    expiringCertifications30d: certsRes.count ?? 0,
-    openDeficiencies: deficienciesRes.count ?? 0,
+    overdueCarePlanReviews: requireHeadCount(carePlansRes.count, "Care plan review"),
+    openIncidentFollowupsPastDue: requireHeadCount(followupsRes.count, "Incident follow-up"),
+    activeInfections: requireHeadCount(surveillanceRes.count, "Infection"),
+    activeOutbreaks: requireHeadCount(outbreaksRes.count, "Outbreak"),
+    expiringCertifications30d: requireHeadCount(certsRes.count, "Certification"),
+    openDeficiencies: requireHeadCount(deficienciesRes.count, "Deficiency"),
     surveyVisitActive: facilityFilter ? !!sessionRes.data : null,
   };
 }

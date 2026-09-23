@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  describeVitalAlertsPanel,
   VITALS_NO_BLOOD_PRESSURE_COPY,
   VITALS_NO_DIASTOLIC_COPY,
   VITALS_NO_OXYGEN_COPY,
@@ -128,5 +129,31 @@ describe("formatVitalsWeight", () => {
 
   it("formats a posted weight", () => {
     expect(formatVitalsWeight(150)).toBe("150 lbs");
+  });
+});
+
+describe("describeVitalAlertsPanel (COL-649)", () => {
+  const base = { loading: false, alertsError: null, logsError: null };
+
+  it("is not styled as an alarm when there are no alerts", () => {
+    expect(describeVitalAlertsPanel({ ...base, alertCount: 0, logCount: 5 })).toEqual({
+      tone: "neutral",
+      emptyCopy: "No alerts.",
+    });
+  });
+
+  it("does not reassure when no vitals were ever logged", () => {
+    expect(describeVitalAlertsPanel({ ...base, alertCount: 0, logCount: 0 }).emptyCopy).toBe(
+      "No vitals logged yet, so no alerts can fire.",
+    );
+  });
+
+  it("says nothing while loading or after a failed alerts read", () => {
+    expect(describeVitalAlertsPanel({ ...base, loading: true, alertCount: 0, logCount: 0 }).emptyCopy).toBeNull();
+    expect(describeVitalAlertsPanel({ ...base, alertsError: "x", alertCount: 0, logCount: 3 }).emptyCopy).toBeNull();
+  });
+
+  it("uses alarm chrome only with alerts", () => {
+    expect(describeVitalAlertsPanel({ ...base, alertCount: 2, logCount: 3 }).tone).toBe("alert");
   });
 });

@@ -21,6 +21,8 @@ import {
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Row = Database["public"]["Tables"]["certificates_of_insurance"]["Row"] & {
   entities: { name: string } | null;
@@ -101,8 +103,9 @@ export default function InsuranceCoiPage() {
           <CardTitle className="text-base">Certificates</CardTitle>
           <CardDescription>{loading ? INSURANCE_COI_LOADING_PROFILE_COPY : `${rows.length} row(s)`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <CardContent>
+          <HorizontalScroll label="Certificates of insurance">
+          <table className="w-full min-w-[44rem] text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800">
                 <th className="py-2 pr-4 font-medium">Covers</th>
@@ -120,7 +123,7 @@ export default function InsuranceCoiPage() {
                   <td className="py-2 pr-4 font-medium">{r.entities?.name ?? "Entity not recorded"}</td>
                   <td className="py-2 pr-4 font-mono text-xs">{r.policy_number ?? "Not recorded"}</td>
                   <td className="py-2 pr-4">{r.holder_name}</td>
-                  <td className="py-2 pr-4">{r.holder_type.replace(/_/g, " ")}</td>
+                  <td className="py-2 pr-4">{enumLabel(r.holder_type)}</td>
                   <td className="py-2 pr-4">{r.carrier_name}</td>
                   <td className="py-2 pr-4">{formatInsuranceCoiExpirationDate(r.expiration_date)}</td>
                   <td className="py-2 tabular-nums">{formatUsdFromCents(r.aggregate_limit_cents)}</td>
@@ -131,6 +134,7 @@ export default function InsuranceCoiPage() {
           {!loading && rows.length === 0 && organizationId ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">No certificates on file.</p>
           ) : null}
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>

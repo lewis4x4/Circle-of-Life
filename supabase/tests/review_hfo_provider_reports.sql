@@ -94,7 +94,9 @@ SELECT pg_temp.pp_login('manager');SET LOCAL ROLE authenticated;
 SELECT pg_temp.pp_assert((SELECT public.provider_report_snapshot(task2)->>'can_manage'='false' FROM pp),'manager gained native write');
 SELECT pg_temp.pp_error($q$SELECT public.create_provider_contact(task2,'col158-denied-contact','Not allowed','provider') FROM pp$q$,'Current native and HFO');
 RESET ROLE;SELECT pg_temp.pp_login('housekeeper');SET LOCAL ROLE authenticated;
-SELECT pg_temp.pp_assert((SELECT public.provider_report_snapshot(task2)->>'availability'='available' FROM pp),'native housekeeper read was unnecessarily narrowed');
+-- COL-627 (Brian, 2026-09-23): housekeepers see resident name, room and logs only, so the
+-- resident-scoped provider report is refused like any other resident record.
+SELECT pg_temp.pp_error($q$SELECT public.provider_report_snapshot(task2) FROM pp$q$,'Current native and HFO');
 RESET ROLE;SELECT pg_temp.pp_login('cook');SET LOCAL ROLE authenticated;
 SELECT pg_temp.pp_error($q$SELECT public.provider_report_snapshot(task2) FROM pp$q$,'Current native and HFO');
 RESET ROLE;SELECT pg_temp.pp_login('maintenance_role');SET LOCAL ROLE authenticated;

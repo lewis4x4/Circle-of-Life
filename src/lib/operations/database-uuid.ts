@@ -6,5 +6,5 @@ import { z } from "zod";
  */
 export const databaseUuidSchema = z.string().regex(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-  "Invalid UUID",
+  "That record could not be found. Choose it again from the list.",
 );

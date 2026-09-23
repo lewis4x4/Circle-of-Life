@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { createClient } from "@/lib/supabase/client";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type BenchmarkRow = {
   id: string;
@@ -82,7 +83,7 @@ export default function ReportsBenchmarksPage() {
                         <div className="flex flex-col min-w-[300px] gap-1 shrink-0">
                            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Metric Key</span>
                            <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
-                              {row.metric_key.replace(/_/g, ' ')}
+                              {enumLabel(row.metric_key)}
                            </span>
                         </div>
 

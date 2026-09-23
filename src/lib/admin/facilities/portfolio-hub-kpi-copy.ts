@@ -39,18 +39,18 @@ export function facilityLicensedBedsOnFile(facility: FacilityRow): number | null
 }
 
 /**
- * Bed census is loaded when the bed grid has rows (including posted-empty zero occupancy)
- * or occupied count is non-zero. Overview may pass a live bed-grid count when row totals
- * are stale — portfolio list API should keep `total_beds` in sync with the same query.
+ * Census is posted when at least one resident is counted in the facility's
+ * beds. A bed grid with nobody in it is set-up, not a census: at an operating
+ * ALF "0 of 64 occupied" means the residents were never loaded, and averaging
+ * it in as 0% dragged the portfolio figure from 94% to 34% (COL-649). Such a
+ * site is reported as "not reporting", never as a loaded 0%.
+ *
+ * `occupiedCount` lets the facility overview pass its live bed-grid count when
+ * row totals are stale.
  */
-export function facilityPortfolioCensusLoaded(
-  facility: FacilityRow,
-  bedGridCount?: number,
-): boolean {
-  const grid =
-    bedGridCount != null && bedGridCount > 0 ? bedGridCount : (facility.total_beds ?? 0);
-  const occ = facilityOccupiedCount(facility);
-  return grid > 0 || occ > 0;
+export function facilityPortfolioCensusLoaded(facility: FacilityRow, occupiedCount?: number): boolean {
+  const occ = occupiedCount != null ? occupiedCount : facilityOccupiedCount(facility);
+  return occ > 0;
 }
 
 /** Portfolio hub + executive bed-census loaded signal (no live bed-grid override). */
@@ -281,7 +281,7 @@ export function portfolioComparisonHelperLine(entries: PortfolioComparisonEntry[
     return "Occupancy bars appear when bed census is posted per site.";
   }
   if (loadedCount < entries.length) {
-    return `${loadedCount} of ${entries.length} facilities have census posted — a site at 0% is loaded, not missing. Others name the gap inline.`;
+    return `${loadedCount} of ${entries.length} facilities have census posted. Sites with no residents recorded are left out and name the gap inline.`;
   }
   return null;
 }

@@ -6,7 +6,10 @@ import {
   compliancePocDueLine,
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
+  complianceDeficienciesAllClear,
+  complianceOverdueEmergencyAlert,
   complianceSnapshotTileDisplay,
+  complianceTileState,
   complianceSnapshotTileLoadingCopy,
   complianceSurveyVisitInactiveCopy,
   complianceSurveyVisitLoadingCopy,
@@ -88,5 +91,50 @@ describe("complianceScoreEmptyCopy", () => {
 describe("complianceScoreLoadingCopy", () => {
   it("explains the score check is in flight", () => {
     expect(complianceScoreLoadingCopy()).toBe("Loading compliance score…");
+  });
+});
+
+describe("complianceTileState (COL-649)", () => {
+  const base = { facilityReady: true, loading: false, error: null, value: 0 };
+
+  it("names the missing facility instead of a hard 0", () => {
+    expect(complianceTileState({ ...base, facilityReady: false })).toEqual({
+      status: "not_configured",
+      reason: "Select a facility",
+    });
+  });
+
+  it("is unavailable when the snapshot failed or has no figure", () => {
+    expect(complianceTileState({ ...base, error: "boom" }).status).toBe("unavailable");
+    expect(complianceTileState({ ...base, value: undefined }).status).toBe("unavailable");
+  });
+
+  it("keeps a real zero for a loaded facility", () => {
+    expect(complianceTileState(base)).toEqual({ status: "value", value: 0 });
+  });
+});
+
+describe("complianceDeficienciesAllClear (COL-649)", () => {
+  const base = { facilityReady: true, loading: false, error: null, openCount: 0 };
+
+  it("never claims All Clear after a failed read or without a facility", () => {
+    expect(complianceDeficienciesAllClear({ ...base, error: "403" })).toBe(false);
+    expect(complianceDeficienciesAllClear({ ...base, facilityReady: false })).toBe(false);
+    expect(complianceDeficienciesAllClear({ ...base, loading: true })).toBe(false);
+  });
+
+  it("claims it for a loaded facility with no open deficiencies", () => {
+    expect(complianceDeficienciesAllClear(base)).toBe(true);
+    expect(complianceDeficienciesAllClear({ ...base, openCount: 2 })).toBe(false);
+  });
+});
+
+describe("complianceOverdueEmergencyAlert (COL-649)", () => {
+  it("raises the alert the header used to stub out", () => {
+    expect(
+      complianceOverdueEmergencyAlert([{ overdue: true }, { overdue: true }, { overdue: true }, { overdue: false }]),
+    ).toBe("3 emergency drills or checks are overdue.");
+    expect(complianceOverdueEmergencyAlert([{ overdue: true }])).toBe("1 emergency drill or check is overdue.");
+    expect(complianceOverdueEmergencyAlert([{ overdue: false }])).toBeNull();
   });
 });
