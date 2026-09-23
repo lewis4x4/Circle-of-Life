@@ -31,8 +31,19 @@ ALTER POLICY admin_insert_time_records ON public.time_records
       SELECT 1 FROM public.staff s
       WHERE s.id = time_records.staff_id
         AND s.organization_id = time_records.organization_id
-        AND s.facility_id = time_records.facility_id
         AND s.deleted_at IS NULL
+        -- Home building, or a building the person also works at (float staff),
+        -- the same membership the kiosk corrections guard uses.
+        AND (
+          s.facility_id = time_records.facility_id
+          OR EXISTS (
+            SELECT 1 FROM public.staff_facility_assignments a
+            WHERE a.staff_id = s.id
+              AND a.facility_id = time_records.facility_id
+              AND a.organization_id = time_records.organization_id
+              AND a.deleted_at IS NULL
+          )
+        )
     )
   );
 
