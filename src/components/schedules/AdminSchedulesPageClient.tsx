@@ -211,10 +211,10 @@ export function AdminSchedulesPageClient({
               </div>
             </V2Card>
           </div>
-          <div className="col-span-1 md:col-span-3 h-[180px]">
+          <div className="col-span-1 md:col-span-3 lg:h-[180px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Weekly schedule containers; shift assignments roll up under each published week.</p>
+                 <p className="max-w-md text-xs font-mono leading-relaxed text-slate-500">Weekly schedule containers; shift assignments roll up under each published week.</p>
                  <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive whitespace-nowrap")} >
                    + Initialize Week
                  </Link>

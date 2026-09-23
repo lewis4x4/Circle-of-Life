@@ -41,7 +41,18 @@ export function QuickActions({ facilityId, released = [], onAction }: {
   onAction?: (key: HomeModuleKey) => void;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap gap-2" aria-label="Quick actions">
+    // One swipeable row on a phone, its trailing edge faded — the wrapped pills
+    // filled the first screen (COL-687); they wrap from sm up. CSS-only: Home is
+    // on the /admin first-load budget.
+    <div
+      role="group"
+      aria-label="Quick actions"
+      className={cn(
+        "mb-4 flex gap-2 overflow-x-auto pb-1 pr-8 [&>*]:shrink-0 [&>*]:whitespace-nowrap",
+        "[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "sm:flex-wrap sm:overflow-visible sm:pb-0 sm:pr-0 sm:[mask-image:none]",
+      )}
+    >
       {liveQuickActions(facilityId).map((action) => (
         <Link key={action.label} href={action.href} className={cn(BASE, "hover:bg-secondary")}>
           <action.icon className="size-[15px]" aria-hidden /> {action.label}

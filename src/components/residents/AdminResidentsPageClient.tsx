@@ -829,7 +829,7 @@ export function AdminResidentsPageClient({
         onSearchChange={setSearch}
         trailingSlot={
           <div className="flex items-center gap-1.5">
-            <span className="hidden text-[12px] text-muted-foreground sm:inline">Group by</span>
+            <span className="shrink-0 text-[12px] text-muted-foreground">Group by</span>
             <Select
               value={groupBy}
               onValueChange={(v) =>
