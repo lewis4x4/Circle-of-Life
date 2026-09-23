@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   countOverdueAssessments,
   getComplianceDashboardDateWindow,
+  requireHeadCount,
 } from "@/lib/compliance-dashboard-snapshot";
 
 describe("getComplianceDashboardDateWindow (Eastern wall clock)", () => {
@@ -64,5 +65,16 @@ describe("countOverdueAssessments (Eastern date-only cutoff)", () => {
       },
     ];
     expect(countOverdueAssessments(currentOnly, easternToday)).toBe(0);
+  });
+});
+
+describe("requireHeadCount (COL-649)", () => {
+  it("fails a missing count instead of reading it as 0", () => {
+    expect(() => requireHeadCount(null, "Deficiency")).toThrow(/Deficiency count unavailable/);
+    expect(() => requireHeadCount(undefined, "Outbreak")).toThrow();
+  });
+
+  it("keeps a real zero", () => {
+    expect(requireHeadCount(0, "Deficiency")).toBe(0);
   });
 });

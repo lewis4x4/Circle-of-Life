@@ -32,7 +32,7 @@ export default function DynamicCampusPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAF7F2] p-4 text-center">
         <h1 className="text-2xl font-bold font-serif mb-2 text-[#1C2822]">Campus Not Found</h1>
         <p className="text-sm text-stone-600 mb-4">The requested community could not be found.</p>
-        <Link href="/campuses" className="px-6 py-3 bg-[#C85A32] text-white font-bold rounded-xl text-xs">
+        <Link href="/campuses" className="px-6 py-3 bg-[#B04F2C] text-white font-bold rounded-xl text-xs">
           View All Campuses
         </Link>
       </div>
@@ -133,7 +133,7 @@ export default function DynamicCampusPage() {
                 <div className="space-y-3 pt-2">
                   {facility.highlights.map((hl, i) => (
                     <div key={i} className="flex items-start gap-3 text-xs sm:text-sm text-stone-800 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-[#C85A32] shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-[#B04F2C] shrink-0 mt-0.5" />
                       <span>{hl}</span>
                     </div>
                   ))}
@@ -156,7 +156,7 @@ export default function DynamicCampusPage() {
                     <div className="font-bold text-lg text-[#1C2822]">
                       {facility.administrator.name}
                     </div>
-                    <div className="text-xs text-[#C85A32] font-bold">
+                    <div className="text-xs text-[#B04F2C] font-bold">
                       {facility.administrator.title}
                     </div>
                   </div>
@@ -169,7 +169,7 @@ export default function DynamicCampusPage() {
                 <div className="pt-3 border-t border-stone-200 text-xs space-y-2.5">
                   <div className="flex items-center justify-between text-stone-600">
                     <span>Direct Campus Phone:</span>
-                    <a href={`tel:${facility.phone}`} className="font-bold text-[#C85A32] text-sm">
+                    <a href={`tel:${facility.phone}`} className="font-bold text-[#B04F2C] text-sm">
                       {facility.phone}
                     </a>
                   </div>

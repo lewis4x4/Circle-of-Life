@@ -19,6 +19,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type IncidentSeverity = Database["public"]["Enums"]["incident_severity"];
 type StaffRole = Database["public"]["Enums"]["staff_role"];
@@ -534,7 +535,7 @@ export default function AdminNotificationsSettingsPage() {
           ) : routes.length === 0 ? (
             <p className="text-sm text-slate-500">No routes found for your organization yet.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <HorizontalScroll label="Notification routes" className="rounded-lg border">
               <table className="w-full min-w-[900px] text-left text-xs">
                 <thead>
                   <tr className="border-b bg-slate-50 dark:bg-slate-900/40">
@@ -567,7 +568,7 @@ export default function AdminNotificationsSettingsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </HorizontalScroll>
           )}
         </CardContent>
       </Card>

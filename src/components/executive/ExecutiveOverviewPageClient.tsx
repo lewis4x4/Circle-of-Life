@@ -1465,7 +1465,12 @@ function RoundingAssuranceTable({
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="overflow-auto">
+          <div
+            className="overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            tabIndex={0}
+            role="region"
+            aria-label="Rounding findings by facility"
+          >
             <table className="w-full text-[13px]">
               <caption className="sr-only">
                 Recorded rounding findings by facility, with the days that carry no record shown as gaps.

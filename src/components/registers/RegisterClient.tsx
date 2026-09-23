@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { fetchRegister } from "@/lib/registers/load-register";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import {
   REGISTER_EMPTY_COPY,
   registerCountsLine,
@@ -22,6 +23,7 @@ import {
   formatRegisterEventTime,
   isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Props = {
   organizationId: string;
@@ -110,11 +112,7 @@ export function RegisterClient({
   }
 
   if (!facilityId) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Choose a facility to read its admission and discharge register.
-      </p>
-    );
+    return <FacilityGateNotice reason="The admission and discharge register is kept per building." />;
   }
 
   return (
@@ -165,8 +163,8 @@ export function RegisterClient({
       {rows.length === 0 && !error ? (
         <p className="text-sm text-muted-foreground">{REGISTER_EMPTY_COPY}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+        <HorizontalScroll label="Register">
+          <table className="w-full min-w-[44rem] border-collapse text-sm">
             <caption className="sr-only">
               Admissions, discharges and bed holds recorded in Haven for this range
             </caption>
@@ -239,7 +237,7 @@ export function RegisterClient({
               })}
             </tbody>
           </table>
-        </div>
+        </HorizontalScroll>
       )}
 
       <p className="text-xs text-muted-foreground">

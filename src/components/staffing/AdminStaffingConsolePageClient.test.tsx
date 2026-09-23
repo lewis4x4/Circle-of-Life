@@ -166,6 +166,54 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.getByText(/once the active staff directory syncs/i)).toBeInTheDocument();
   });
 
+  it("does not say coverage is sufficient when no shifts are scheduled (COL-649)", () => {
+    render(
+      <AdminStaffingConsolePageClient
+        {...loadedProps}
+        initialShiftGaps={[]}
+        initialCertWarnings={[]}
+        initialCoverageScope={{
+          shiftsInWindow: 0,
+          certificationsOnFile: 0,
+          expiredCertifications: 0,
+          staffWithoutCertifications: 56,
+        }}
+      />,
+    );
+
+    expect(screen.queryByText(/coverage is currently sufficient/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Clear")).not.toBeInTheDocument();
+    expect(screen.queryByText("No credential blockers")).not.toBeInTheDocument();
+    expect(screen.getByText("No shifts scheduled in the next 48 hours")).toBeInTheDocument();
+    expect(screen.getByText("No certifications on file")).toBeInTheDocument();
+    expect(screen.getByText("No certs on file")).toBeInTheDocument();
+  });
+
+  it("says coverage could not be checked when the scope read failed (COL-649)", () => {
+    render(<AdminStaffingConsolePageClient {...loadedProps} initialShiftGaps={[]} initialCoverageScope={null} />);
+
+    expect(screen.queryByText(/coverage is currently sufficient/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Coverage could not be checked")).toBeInTheDocument();
+  });
+
+  it("keeps Clear for scheduled shifts with no gaps (COL-649)", () => {
+    render(
+      <AdminStaffingConsolePageClient
+        {...loadedProps}
+        initialShiftGaps={[]}
+        initialCoverageScope={{
+          shiftsInWindow: 9,
+          certificationsOnFile: 12,
+          expiredCertifications: 1,
+          staffWithoutCertifications: 0,
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Clear")).toBeInTheDocument();
+    expect(screen.getByText(/coverage is currently sufficient/i)).toBeInTheDocument();
+  });
+
   it("names the current ratio gap instead of a dash glyph when no snapshot is in scope", () => {
     render(
       <AdminStaffingConsolePageClient
@@ -230,6 +278,7 @@ describe("<AdminStaffingConsolePageClient />", () => {
     vi.spyOn(staffingLoader, "fetchShiftAssignmentGaps").mockResolvedValue(loadedProps.initialShiftGaps);
     vi.spyOn(staffingLoader, "fetchStaffOptions").mockResolvedValue(loadedProps.initialStaffOptions);
     vi.spyOn(staffingLoader, "fetchStaffRequisitions").mockResolvedValue(loadedProps.initialRequisitions);
+    vi.spyOn(staffingLoader, "fetchCoverageScopeOrNull").mockResolvedValue(null);
     const reload = vi.spyOn(staffingLoader, "fetchAttendanceEvents").mockResolvedValue([
       ...loadedProps.initialAttendance,
       { id: "new-event", event_type: "callout", occurred_at: "2026-08-20T20:06:00.000Z", reason: "Reviewed command test", staff: { first_name: "Ava", last_name: "Lopez" } },

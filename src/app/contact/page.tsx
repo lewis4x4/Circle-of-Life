@@ -42,7 +42,7 @@ export default function ContactPage() {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
-              <Phone className="w-3.5 h-3.5 text-[#C85A32]" />
+              <Phone className="w-3.5 h-3.5 text-[#B04F2C]" />
               <span>We Are Here For You Day or Night</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
@@ -93,7 +93,7 @@ export default function ContactPage() {
                         <div className="font-bold text-sm text-[#1C2822]">{f.name}</div>
                         <div className="text-stone-500 text-[11px]">{f.address.city}, FL • {f.administrator.name}</div>
                       </div>
-                      <a href={`tel:${f.phone}`} className="font-bold text-[#C85A32] hover:underline text-xs">
+                      <a href={`tel:${f.phone}`} className="font-bold text-[#B04F2C] hover:underline text-xs">
                         {f.phone}
                       </a>
                     </div>

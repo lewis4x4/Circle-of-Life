@@ -21,7 +21,7 @@ import {
   VENDOR_HUB_LIST_LIMIT,
 } from "@/lib/admin/hub-list-limits";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import type { Database } from "@/types/database";
 
 type ContractRow = Database["public"]["Tables"]["contracts"]["Row"];
@@ -87,6 +87,7 @@ export default function VendorContractsListPage() {
           <AdminEmptyState title="No contracts" description="Vendor contracts will appear here once entered." />
         ) : (
           <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+            <TableRowList label="Vendor contracts">
             <TableRowHeader>
               <span className="flex-1 min-w-0">Title</span>
               <span className="w-[140px] shrink-0">Vendor</span>
@@ -117,6 +118,7 @@ export default function VendorContractsListPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>

@@ -31,6 +31,8 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { metricLoading, metricUnavailable, metricValue } from "@/lib/metrics/metric-state";
+import { summarizeRosterCerts } from "@/lib/staff/roster-cert-summary";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -270,7 +272,9 @@ export function AdminStaffPageClient({
   );
 
   const activeCount = rows.filter((row) => row.status === "active").length;
-  const certRiskCount = rows.filter((row) => row.certifications !== "current").length;
+  const certSummary = summarizeRosterCerts(rows);
+  // While loading or after a failed read the tiles say so instead of counting an empty list.
+  const rosterRead = isLoading ? metricLoading() : error ? metricUnavailable() : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -313,12 +317,13 @@ export function AdminStaffPageClient({
       <div className="grid max-w-2xl grid-cols-2 gap-3">
         <StatCard
           label="Active roster"
-          value={activeCount}
+          state={rosterRead ?? metricValue(activeCount)}
           icon={<UserRoundCheck aria-hidden />}
         />
         <StatCard
           label="Cert attention"
-          value={certRiskCount}
+          state={rosterRead ?? certSummary.attention}
+          description={rosterRead ? undefined : certSummary.description}
           icon={<ShieldAlert aria-hidden />}
           attentionTone="warning"
         />

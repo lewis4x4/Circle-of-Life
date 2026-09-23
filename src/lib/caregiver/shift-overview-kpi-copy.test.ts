@@ -44,10 +44,25 @@ describe("caregiverShiftOverviewEmptyNotice", () => {
   });
 });
 
+describe("caregiverShiftOverviewEmptyNotice for an empty roster (COL-670)", () => {
+  it("says nobody is on the facility's roster instead of asking about an assignment", () => {
+    const notice = caregiverShiftOverviewEmptyNotice(metrics({}), "Oakridge ALF");
+    expect(notice.title).toBe("No residents are on the roster for Oakridge ALF yet.");
+    expect(notice.helper).toContain("An administrator adds residents to the roster.");
+    expect(notice.helper).not.toContain("Ask a nurse");
+  });
+
+  it("keeps the assignment copy when the facility has residents", () => {
+    expect(caregiverShiftOverviewEmptyNotice(metrics({ census: 12 }), "Oakridge ALF").title).toBe(
+      "No assigned work on this shift yet",
+    );
+  });
+});
+
 describe("caregiverShiftOverviewKpiStripHelperLine", () => {
   it("reuses the empty-shift helper when the whole board is empty", () => {
-    expect(caregiverShiftOverviewKpiStripHelperLine(metrics({}))).toBe(
-      caregiverShiftOverviewEmptyNotice().helper,
+    expect(caregiverShiftOverviewKpiStripHelperLine(metrics({}), "Oakridge ALF")).toBe(
+      caregiverShiftOverviewEmptyNotice(metrics({}), "Oakridge ALF").helper,
     );
   });
 

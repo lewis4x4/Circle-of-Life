@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import type {
   BenefitsAccessGrant,
   BenefitsOptions,
@@ -103,12 +104,7 @@ export function BenefitsAccess() {
       {data?.can_manage && options && (
         <>
           {!selectedFacilityId ? (
-            <Panel title="Choose a facility">
-              <p>
-                Select the facility in Haven’s facility switcher to grant or
-                revoke access for its current staff.
-              </p>
-            </Panel>
+            <FacilityGateNotice reason="Access is granted to one building's current staff at a time." />
           ) : (
             <ActionForm
               key={selectedFacilityId}

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   FACILITY_OPERATOR_TZ,
   addFacilityCalendarDays,
+  formatTimeZoneLabel,
   facilityDateIsoDaysFromToday,
   facilityDatetimeLocalToUtcIso,
   formatFacilityTimestampEt,
@@ -52,5 +53,13 @@ describe("facility wall clock (America/New_York)", () => {
     expect(facilityDateIsoDaysFromToday(1, eightOhFivePmEt)).toBe("2026-08-21");
     expect(facilityDateIsoDaysFromToday(2, eightOhFivePmEt)).toBe("2026-08-22");
     expect(addFacilityCalendarDays(todayFacilityDateIso(eightOhFivePmEt), 30)).toBe("2026-09-19");
+  });
+});
+
+describe("formatTimeZoneLabel (COL-652)", () => {
+  it("names the zone the way staff say it", () => {
+    expect(formatTimeZoneLabel("America/New_York")).toBe("Eastern Time");
+    expect(formatTimeZoneLabel("America/Chicago")).toBe("Central Time");
+    expect(formatTimeZoneLabel(null)).toBe("Eastern Time");
   });
 });

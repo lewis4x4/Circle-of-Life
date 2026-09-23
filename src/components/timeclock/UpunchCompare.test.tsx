@@ -68,8 +68,8 @@ describe("UpunchCompare", () => {
     const table = await screen.findByRole("table");
     const row = table.querySelector("tbody tr")!;
     expect(row).toHaveTextContent("Test Staff A");
-    expect(row).toHaveTextContent("8 h 0 min");
-    expect(row).toHaveTextContent("8 h 3 min");
+    expect(row).toHaveTextContent("8:00");
+    expect(row).toHaveTextContent("8:03");
     expect(row).toHaveTextContent("-3 min");
     expect(row).toHaveTextContent("Match");
     expect(screen.getByRole("heading", { name: /1 of 1 staff weeks match within 5 minutes, 1 uploaded employee not found in Haven/ })).toBeInTheDocument();

@@ -26,7 +26,7 @@ export default function AboutPage() {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
-              <Award className="w-3.5 h-3.5 text-[#C85A32]" />
+              <Award className="w-3.5 h-3.5 text-[#B04F2C]" />
               <span>50 Years of North Florida Craftsmanship</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
@@ -42,7 +42,7 @@ export default function AboutPage() {
         {/* The Non-Institutional Doctrine */}
         <section className="py-20 bg-white border-b border-stone-200/90">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#C85A32]">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#B04F2C]">
               The Circle of Life Mission
             </span>
             <blockquote className="text-2xl sm:text-3xl font-serif text-[#1C2822] leading-relaxed italic border-y-2 border-[#C85A32]/30 py-8 px-4">
@@ -86,7 +86,7 @@ export default function AboutPage() {
                       </div>
                       <div>
                         <div className="font-bold text-base text-[#1C2822]">{f.administrator.name}</div>
-                        <div className="text-xs text-[#C85A32] font-bold mt-0.5">{f.name}</div>
+                        <div className="text-xs text-[#B04F2C] font-bold mt-0.5">{f.name}</div>
                       </div>
                     </div>
 
@@ -97,7 +97,7 @@ export default function AboutPage() {
 
                   <div className="pt-3 border-t border-stone-200 text-xs flex items-center justify-between">
                     <span className="text-stone-500">Direct Campus Phone:</span>
-                    <a href={`tel:${f.phone}`} className="font-bold text-[#1C2822] hover:text-[#C85A32]">
+                    <a href={`tel:${f.phone}`} className="font-bold text-[#1C2822] hover:text-[#B04F2C]">
                       {f.phone}
                     </a>
                   </div>

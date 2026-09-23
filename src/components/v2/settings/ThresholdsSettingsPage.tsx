@@ -20,13 +20,13 @@ export async function ThresholdsSettingsPage() {
       <SettingsShell
         activeId="thresholds"
         title="Threshold targets"
-        subtitle="Per-facility metric thresholds. Drives red/amber/green callouts across W1 dashboards and W2 lists."
+        subtitle="Per-facility metric thresholds. They set the red, amber and green callouts on dashboards and lists."
         sections={[
           {
             id: "thresholds-editor",
             label: "Targets by facility",
             description:
-              "Editing requires the owner or org_admin role; updates take effect on the next dashboard load.",
+              "Only an owner or org admin can edit these; changes show the next time a dashboard loads.",
             body: <ThresholdsEditor load={load} />,
           },
         ]}

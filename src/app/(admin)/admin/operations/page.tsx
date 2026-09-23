@@ -635,11 +635,13 @@ export default function OperationsTodayPage() {
         </div>
       )}
 
-      {/* Stats bar */}
+      {/* Stats bar. In the page flow on a phone so it never sits over
+          "Clear Filters"; on desktop it sticks to the bottom of the workspace
+          (not the window), so it stays clear of the sidebar (COL-657). */}
       {stats && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
+        <div className="border-t bg-background p-4 lg:sticky lg:bottom-0 lg:z-10 lg:shadow-lg">
+          <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Pending:</span>
                 <span className="font-semibold text-lg">{stats.pending}</span>
