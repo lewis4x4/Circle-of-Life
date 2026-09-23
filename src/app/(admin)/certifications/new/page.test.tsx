@@ -45,8 +45,8 @@ vi.mock("@/lib/supabase/client", () => ({
 function enterCredential() {
   const fields = {
     category: screen.getAllByRole("combobox")[1] as HTMLSelectElement,
-    name: screen.getByPlaceholderText("e.g. American Heart BLS — Healthcare Provider"),
-    authority: screen.getByPlaceholderText("e.g. AHA Training Center, FL BON"),
+    name: screen.getByPlaceholderText("e.g. AHA BLS Provider"),
+    authority: screen.getByPlaceholderText("e.g. AHA Training Center"),
     issue: screen.getByLabelText("Issue date (ET)"),
     expiration: screen.getByLabelText("Expiration (optional, ET)"),
   };
