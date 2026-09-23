@@ -18,7 +18,6 @@ import {
   X,
 } from "lucide-react";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -556,8 +555,6 @@ export default function AdminReferralsHl7InboundPage() {
             </Link>
             .
           </Note>
-
-          <ReferralsHubNav />
 
           <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-card p-5 shadow-sm md:p-6">
             <div className="mb-4 flex flex-col gap-2">

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -281,10 +280,6 @@ export default function AdminReferralSourcesPage() {
         <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           Master list of attribution sources used across the org.
         </p>
-
-        <div className="mt-4">
-          <ReferralsHubNav />
-        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
