@@ -57,6 +57,10 @@
   --color-chrome-foreground-muted: hsl(var(--chrome-foreground-muted));
   --color-chrome-active: hsl(var(--chrome-active));
 
+  /* Floor tablet event color, defined in the `.floor-shell` scope only */
+  --color-floor-event: hsl(var(--floor-event));
+  --color-floor-event-foreground: hsl(var(--floor-event-foreground));
+
   /* Haven domain status tokens (unchanged — preserved) */
   --color-acuity-1: var(--acuity-1);
   --color-acuity-2: var(--acuity-2);
@@ -505,6 +509,15 @@
   --background: 30 9% 4%;
   --border: 36 6% 14%;
   background-attachment: fixed;
+}
+
+/* Shared floor tablet (COL-691, docs/designs/floor-tablet-kiosk/DESIGN.md §3).
+   Sits inside `.dark .caregiver-shell`; adds only the one role the house dark
+   tokens have no value for: the "Something happened" event color, with dark
+   text on the fill the way the dark primary button carries it. */
+.floor-shell {
+  --floor-event: 27 64% 48%;
+  --floor-event-foreground: 23 53% 7%;
 }
 
 .family-shell {

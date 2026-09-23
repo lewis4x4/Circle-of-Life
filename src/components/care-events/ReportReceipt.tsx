@@ -42,6 +42,9 @@ export type ReportReceiptProps = {
   receipt: CareEventReceipt | null;
   offline: boolean;
   onCallPhone: string | null;
+  /** Where the closing button goes; the floor tablet keeps people inside its shell. */
+  doneHref?: string;
+  doneLabel?: string;
 };
 
 /**
@@ -169,10 +172,10 @@ export function ReportReceipt(props: ReportReceiptProps) {
       ) : null}
 
       <Link
-        href="/caregiver"
+        href={props.doneHref ?? "/caregiver"}
         className="flex min-h-14 w-full items-center justify-center rounded-lg bg-primary px-4 text-base font-semibold text-primary-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
       >
-        Back to my residents
+        {props.doneLabel ?? "Back to my residents"}
       </Link>
     </section>
   );

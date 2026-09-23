@@ -61,6 +61,7 @@ describe("every authenticated route group is gated", () => {
       "(caregiver)",
       "(dietary)",
       "(family)",
+      "(floor)",
       "(med-tech)",
       "(onboarding)",
       "(print)",

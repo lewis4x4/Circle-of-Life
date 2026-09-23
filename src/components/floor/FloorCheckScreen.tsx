@@ -1,0 +1,216 @@
+"use client";
+
+import { useId, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
+
+import { StatusPill } from "@/components/ui/status-pill";
+import {
+  FLOOR_ANYTHING_WRONG_OPTIONS,
+  FLOOR_HELPED_WITH_OPTIONS,
+  FLOOR_QUICK_STATUS_OPTIONS,
+  buildFloorCompletionPayload,
+  checkQuestion,
+  emptyFloorCheckDraft,
+  floorCheckGaps,
+  residentPronoun,
+  toggleValue,
+  type FloorCheckDraft,
+} from "@/lib/floor/check-form";
+import { claimFloorCheck, currentRetryOwner, saveFloorCheck } from "@/lib/floor/check-submit";
+import { dropFloorCache } from "@/lib/floor/memory-cache";
+import { FLOOR_CHECK_NAME, checkTiming } from "@/lib/floor/now-rows";
+import { formatDisplayTime } from "@/lib/format/datetime";
+import { cn } from "@/lib/utils";
+
+import { ChoiceChip, ChoiceGroup } from "./ChoiceChip";
+import { useFloorSession } from "./FloorContext";
+import { useFloorNow } from "./FloorClock";
+import { FloorScreenHeader } from "./FloorScreenHeader";
+import { FloorStatePanel } from "./FloorStatePanel";
+import { FLOOR_FOCUS_RING, FLOOR_OUTLINE_BUTTON, FLOOR_PRIMARY_BUTTON } from "./floor-styles";
+import { useFloorCheckData, type FloorCheckData } from "./useFloorCheckData";
+
+/**
+ * `/floor/check/[taskId]` (spec 40 §6 screen 5, DESIGN.md 05): chart one check
+ * with chips. How they are is the one required pick; why late is required once
+ * the check is over. Saves through the caregiver completion path, or the
+ * offline queue.
+ */
+export function FloorCheckScreen({ taskId }: { taskId: string }) {
+  const { state, reload } = useFloorCheckData(taskId);
+  if (state.status === "idle" || state.status === "loading") return <FloorStatePanel state="loading" title="Opening the check" className="flex-1" />;
+  if (state.status === "error") return <FloorStatePanel state="error" title="This check could not open." detail="Check the Wi-Fi, then try again." onRetry={reload} className="flex-1" />;
+  if (!state.data) {
+    return (
+      <FloorStatePanel state="empty" title="This check is not on the list any more." detail="It may be charted already. Go back to Now." className="flex-1" />
+    );
+  }
+  return <CheckForm key={taskId} data={state.data} />;
+}
+
+function CheckForm({ data }: { data: FloorCheckData }) {
+  const router = useRouter();
+  const { profile, facility, timeZone } = useFloorSession();
+  const now = useFloorNow();
+  const ids = { how: useId(), where: useId(), help: useId(), wrong: useId(), late: useId() };
+  const [draft, setDraft] = useState<FloorCheckDraft>(emptyFloorCheckDraft);
+  const [needsClaim, setNeedsClaim] = useState(Boolean(data.task.requires_claim));
+  const [serverWantsReason, setServerWantsReason] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [attempt] = useState(() => ({ requestId: crypto.randomUUID(), observedAt: new Date().toISOString() }));
+
+  const timing = useMemo(() => checkTiming(data.task.derived_status, data.task.due_at, now ?? new Date()), [data.task, now]);
+  const lateReasonRequired = timing.kind === "over" || serverWantsReason;
+  const pronoun = residentPronoun(data.gender);
+  const dueLabel = formatDisplayTime(data.task.due_at, { timeZone });
+  const chartedAt = now ? formatDisplayTime(now, { timeZone }) : "";
+  const set = (patch: Partial<FloorCheckDraft>) => setDraft((current) => ({ ...current, ...patch }));
+
+  async function takeCheck() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await claimFloorCheck(data.task.id, await currentRetryOwner(facility.organizationId, facility.facilityId));
+      setNeedsClaim(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The check could not be taken. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function save() {
+    const gaps = floorCheckGaps(draft, { lateReasonRequired });
+    if (gaps.length > 0) return setMessage(gaps.join(" "));
+    setBusy(true);
+    setMessage(null);
+    let owner;
+    try {
+      owner = await currentRetryOwner(facility.organizationId, facility.facilityId);
+    } catch (error) {
+      setBusy(false);
+      return setMessage(error instanceof Error ? error.message : "Your sign-in could not be confirmed.");
+    }
+    const result = await saveFloorCheck({
+      taskId: data.task.id,
+      residentId: data.residentId,
+      draft: buildFloorCompletionPayload(draft),
+      owner,
+      requestId: attempt.requestId,
+      observedAt: attempt.observedAt,
+    });
+    if (result.status === "saved" || result.status === "queued") {
+      dropFloorCache("tasks:");
+      dropFloorCache("activity:");
+      dropFloorCache(`check:${data.task.id}`);
+      router.push("/floor");
+      return;
+    }
+    setBusy(false);
+    if (result.status === "reason_required") setServerWantsReason(true);
+    setMessage(result.message);
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <FloorScreenHeader
+        back={{ href: "/floor", label: "Back to Now" }}
+        title={`${FLOOR_CHECK_NAME} · ${data.residentName}`}
+        subtitle={
+          <>
+            <span className="tabular-nums">{data.room ? `Rm ${data.room}` : "No room posted"}</span> · due <span className="tabular-nums">{dueLabel}</span>
+          </>
+        }
+        right={
+          <StatusPill tone={timing.tone} className="h-6 rounded-[5px] px-2.5 text-xs tabular-nums">
+            {timing.label}
+          </StatusPill>
+        }
+      />
+      {needsClaim ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-chrome-secondary px-6 py-3">
+          <p className="text-sm text-foreground">This check is assigned to someone else. Take it to chart it; they stay on its history.</p>
+          <button type="button" onClick={() => void takeCheck()} disabled={busy} className={cn(FLOOR_PRIMARY_BUTTON, "h-11 px-4 text-sm")}>
+            Take this check
+          </button>
+        </div>
+      ) : null}
+      <div className="grid min-h-0 flex-1 content-start gap-x-10 gap-y-5.5 overflow-y-auto px-6 py-5 lg:grid-cols-2">
+        <div className="flex flex-col gap-5.5">
+          <ChoiceGroup id={ids.how} title={checkQuestion("how", pronoun)} hint="pick one">
+            {FLOOR_QUICK_STATUS_OPTIONS.map((option) => (
+              <ChoiceChip key={option.value} pressed={draft.quickStatus === option.value} disabled={needsClaim} onPress={() => set({ quickStatus: draft.quickStatus === option.value ? null : option.value })}>
+                {option.label}
+              </ChoiceChip>
+            ))}
+          </ChoiceGroup>
+          <ChoiceGroup id={ids.where} title={checkQuestion("where", pronoun)} hint="pick one">
+            {data.locations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No places are set up for this building yet.</p>
+            ) : (
+              data.locations.map((option) => (
+                <ChoiceChip key={option.code} pressed={draft.location === option.code} disabled={needsClaim} onPress={() => set({ location: draft.location === option.code ? null : option.code })}>
+                  {option.label}
+                </ChoiceChip>
+              ))
+            )}
+          </ChoiceGroup>
+        </div>
+        <div className="flex flex-col gap-5.5">
+          <ChoiceGroup id={ids.help} title="Did you help with" hint="any">
+            {FLOOR_HELPED_WITH_OPTIONS.map((option) => (
+              <ChoiceChip key={option.value} pressed={draft.helpedWith.includes(option.value)} disabled={needsClaim} onPress={() => set({ helpedWith: toggleValue(draft.helpedWith, option.value) })}>
+                {option.label}
+              </ChoiceChip>
+            ))}
+          </ChoiceGroup>
+          <ChoiceGroup id={ids.wrong} title="Anything wrong?" hint="any">
+            {FLOOR_ANYTHING_WRONG_OPTIONS.map((option) => (
+              <ChoiceChip key={option.value} pressed={draft.anythingWrong.includes(option.value)} disabled={needsClaim} onPress={() => set({ anythingWrong: toggleValue(draft.anythingWrong, option.value) })}>
+                {option.label}
+              </ChoiceChip>
+            ))}
+          </ChoiceGroup>
+          <div className="flex flex-col gap-2">
+            <label htmlFor={ids.late} className="text-[15px] font-semibold text-foreground">
+              Why late? <span className="font-normal text-muted-foreground">needed when a check is over</span>
+            </label>
+            <input
+              id={ids.late}
+              value={draft.lateReason}
+              onChange={(event) => set({ lateReason: event.target.value.slice(0, 500) })}
+              disabled={needsClaim}
+              required={lateReasonRequired}
+              aria-required={lateReasonRequired}
+              placeholder="With another resident, for example"
+              autoComplete="off"
+              className={cn("h-13 rounded-[8px] border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground", FLOOR_FOCUS_RING)}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="flex min-h-19 shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border bg-chrome-secondary px-6 py-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-[13px] text-muted-foreground">
+            Charted by {profile.displayName} at <span className="tabular-nums">{chartedAt}</span> · saves offline if Wi-Fi drops
+          </span>
+          <p role="status" aria-live="polite" className={cn("text-[13px] font-medium text-destructive", !message && "sr-only")}>
+            {message ?? ""}
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Link href="/floor" className={cn(FLOOR_OUTLINE_BUTTON, "h-13 rounded-[10px] px-5.5 text-base font-medium")}>
+            Cancel
+          </Link>
+          <button type="button" onClick={() => void save()} disabled={busy || needsClaim} className={cn(FLOOR_PRIMARY_BUTTON, "h-13 rounded-[10px] px-7 text-base")}>
+            <Check className="size-4.5" aria-hidden />
+            {busy ? "Saving" : "Save check"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

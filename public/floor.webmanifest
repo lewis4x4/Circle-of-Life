@@ -1,0 +1,16 @@
+{
+  "name": "Haven Floor",
+  "short_name": "Haven Floor",
+  "description": "Shared floor tablet for rounds, Something happened, tasks and handoff.",
+  "id": "/floor",
+  "start_url": "/floor",
+  "scope": "/floor",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0B09",
+  "theme_color": "#0B0B09",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-icon.svg", "sizes": "180x180", "type": "image/svg+xml" }
+  ]
+}
