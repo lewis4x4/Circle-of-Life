@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusPill } from "@/components/ui/status-pill";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchActorContext } from "@/lib/office/meetings";
 import {
@@ -176,9 +177,7 @@ export default function AdminSurveyBinderPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — the binder is per-facility.
-          </p>
+          <FacilityGateNotice reason="The survey-readiness binder tracks one building's evidence for its surveyors." />
         ) : null}
 
         {notice ? (

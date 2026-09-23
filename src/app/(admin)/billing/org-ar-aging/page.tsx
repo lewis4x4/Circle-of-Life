@@ -13,6 +13,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { RECEIVABLE_DEFINITION_COPY, RECEIVABLE_INVOICE_STATUSES } from "@/lib/billing/receivables";
 
 import { BillingHubNav } from "../billing-hub-nav";
@@ -125,17 +126,11 @@ export default function AdminOrgArAgingPage() {
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <BillingHubNav />
         
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-emerald-50/20 p-8 rounded-lg border border-emerald-200/50 dark:border-white/5 shadow-sm mt-4">
-          <div className="space-y-3">
-             
-             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
-               Org AR aging
-             </h1>
-            <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-               Open invoice balances rolled up to legal entity. {RECEIVABLE_DEFINITION_COPY}
-            </p>
-          </div>
-        </header>
+        <PageHeader
+          className="mt-4"
+          title="Org AR aging"
+          subtitle={<>Open invoice balances rolled up to legal entity. {RECEIVABLE_DEFINITION_COPY}</>}
+        />
 
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
@@ -162,11 +157,11 @@ export default function AdminOrgArAgingPage() {
                     <MotionItem key={`${r.entityId}:${r.facilityId}`}>
                       <Link
                         href={`/admin/billing/ar-aging?facilityId=${r.facilityId}`}
-                        className="group flex min-h-[150px] flex-col justify-between rounded-lg border border-slate-200/90 bg-white p-6 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/5 dark:hover:border-emerald-500/40"
+                        className="group flex min-h-[150px] flex-col justify-between rounded-lg border border-slate-200/90 bg-white p-6 shadow-sm transition-all hover:border-border-strong hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-white/5"
                       >
                          <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/20 transition-colors">
-                               <Building2 className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 group-hover:bg-muted transition-colors">
+                               <Building2 className="w-5 h-5 text-slate-400 group-hover:text-foreground transition-colors" />
                             </div>
                             <div className="flex-1 mt-1">
                                <span className="font-semibold text-slate-900 dark:text-slate-100 tracking-tight text-lg line-clamp-2 leading-tight">

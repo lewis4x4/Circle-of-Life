@@ -8,6 +8,7 @@ import { ClipboardList, LineChart } from "lucide-react";
 import { QualityHubNav } from "./quality-hub-nav";
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { buttonVariants } from "@/components/ui/button";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
@@ -102,7 +103,7 @@ export default function AdminQualityHubPage() {
   const noOrganization = hubState === "no_organization";
   const showHubContent = !noFacility && !organizationGapMessage && !hubLoading && !fetchErrorBannerMessage;
 
-  const metricCtx = { noFacility, noOrganization, loading: hubLoading };
+  const metricCtx = { noOrganization, loading: hubLoading };
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
@@ -117,12 +118,7 @@ export default function AdminQualityHubPage() {
       <QualityHubNav />
 
       {noFacility ? (
-        <div className="rounded-lg bg-amber-50/40 dark:bg-amber-950/20 p-8 border border-amber-200/50 dark:border-amber-900/50 ">
-          <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-300 mb-2">Facility Required</h3>
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
-            Select a facility in the header to load results and PBJ batches. Measures are listed for the facility&apos;s organization.
-          </p>
-        </div>
+        <FacilityGateNotice reason="Measure results and PBJ batches are reported per building; the catalog is listed for that building's organization." />
       ) : null}
 
       {organizationGapMessage ? (
@@ -147,6 +143,7 @@ export default function AdminQualityHubPage() {
         </p>
       ) : null}
 
+      {noFacility ? null : (
       <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-5" staggerMs={60}>
         <div className="h-[140px]">
           <V2Card className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]" hoverColor="indigo">
@@ -182,6 +179,7 @@ export default function AdminQualityHubPage() {
           </V2Card>
         </div>
       </KineticGrid>
+      )}
 
       {showHubContent ? (
         <>

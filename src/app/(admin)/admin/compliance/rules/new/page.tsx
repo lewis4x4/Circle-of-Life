@@ -7,6 +7,7 @@ import { Save } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { BackLink } from "@/design-system/components/BackLink";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,7 @@ export default function NewComplianceRulePage() {
     e.preventDefault();
 
     if (!facilityReady || !selectedFacilityId) {
-      setError("Please select a facility first");
+      setError("No facility is in scope.");
       return;
     }
 
@@ -157,15 +158,10 @@ export default function NewComplianceRulePage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle>Select a Facility</CardTitle>
-            <CardDescription>Choose a facility to create a compliance rule.</CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
+      {!facilityReady ? (
+        <FacilityGateNotice reason="A rule is created for one building's compliance scans (or shared org-wide from a building's scope)." />
+      ) : (
+      <>
       {success && (
         <Card className="border-emerald-500 bg-emerald-50">
           <CardContent className="py-6 text-center">
@@ -316,6 +312,8 @@ export default function NewComplianceRulePage() {
           </form>
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }

@@ -11,16 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
-import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 export default function AdminQualityMeasureNewPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { user } = useHavenAuth();
-  const { selectedFacilityId } = useFacilityStore();
+  // The measure catalog is organization-wide (COL-651): it never needed a
+  // facility, only the organization the header's facility used to resolve.
+  const { user, organizationId, loading: authLoading } = useHavenAuth();
 
   const [measureKey, setMeasureKey] = useState("");
   const [name, setName] = useState("");
@@ -34,8 +33,8 @@ export default function AdminQualityMeasureNewPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header.");
+    if (!organizationId) {
+      setError("Your profile has no organization, so a catalog measure cannot be saved.");
       return;
     }
     const mk = measureKey.trim();
@@ -47,17 +46,6 @@ export default function AdminQualityMeasureNewPage() {
 
     setSubmitting(true);
     try {
-      const { data: fac, error: facErr } = await supabase
-        .from("facilities")
-        .select("organization_id")
-        .eq("id", selectedFacilityId)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (facErr || !fac?.organization_id) {
-        setError("Could not resolve organization for this facility.");
-        return;
-      }
-
       if (!user?.id) {
         setError("You must be signed in.");
         return;
@@ -66,7 +54,7 @@ export default function AdminQualityMeasureNewPage() {
       const { data: inserted, error: insErr } = await supabase
         .from("quality_measures")
         .insert({
-          organization_id: fac.organization_id,
+          organization_id: organizationId,
           measure_key: mk,
           name: nm,
           description: description.trim() || null,
@@ -92,7 +80,7 @@ export default function AdminQualityMeasureNewPage() {
     }
   }
 
-  const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
+  const noOrganization = !authLoading && !organizationId;
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -117,8 +105,8 @@ export default function AdminQualityMeasureNewPage() {
           <CardTitle className="text-lg">Measure</CardTitle>
         </CardHeader>
         <CardContent>
-          {noFacility ? (
-            <p className="text-sm text-amber-800 dark:text-amber-200">Select a facility in the header to resolve organization.</p>
+          {noOrganization ? (
+            <p className="text-sm text-muted-foreground">Your profile has no organization, so catalog measures cannot be defined here.</p>
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
               <div className="space-y-2">

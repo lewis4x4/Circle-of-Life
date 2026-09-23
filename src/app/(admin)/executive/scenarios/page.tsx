@@ -15,8 +15,9 @@ import {
   ComposedChart, Line, Legend, BarChart, Bar,
 } from "recharts";
 import { TitleH1, Subtitle } from "@/components/ui/typography";
-import { MetricCardMoonshot } from "@/components/executive/metric-card-moonshot";
+import { KPITile } from "@/design-system/components/KPITile";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { formatUsdCompact, usdTone } from "@/lib/format/usd-compact";
 import { cn } from "@/lib/utils";
 import { ExecutiveHubNav } from "../executive-hub-nav";
 
@@ -51,8 +52,6 @@ const PRESETS = [
 ];
 
 // ── HELPERS ──
-const fmtM = (v: number) => `$${(v / 1_000_000).toFixed(1)}M`;
-const fmtK = (v: number) => `$${(v / 1_000).toFixed(0)}K`;
 const Panel = ({ children, className }: { children: React.ReactNode; className?: string }) => (
   <div className={cn("rounded-[var(--radius)] border border-border bg-card p-6 shadow-[var(--shadow-card)]", className)}>{children}</div>
 );
@@ -200,10 +199,10 @@ export default function ExecutiveScenariosPage() {
           </Panel>
           {/* Summary Cards */}
           <KineticGrid className="grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerMs={50}>
-            <MetricCardMoonshot label="PROJECTED MONTHLY NOI" value={fmtK(summary.endNoi)} color="emerald" trend={summary.endNoi > 0 ? "up" : "down"} sparklineVariant={1} />
-            <MetricCardMoonshot label="PROJECTED CASH FLOW" value={fmtK(summary.endCashFlow)} color={summary.endCashFlow >= 0 ? "blue" : "rose"} trend={summary.endCashFlow >= 0 ? "up" : "down"} sparklineVariant={2} />
-            <MetricCardMoonshot label="END OCCUPANCY" value={`${summary.endOccupancy.toFixed(1)}%`} color="amber" trend={assumptions.occupancyChange >= 0 ? "up" : "down"} sparklineVariant={3} />
-            <MetricCardMoonshot label="TOTAL NOI (PERIOD)" value={fmtM(summary.totalNoi)} color="indigo" trend="flat" sparklineVariant={4} />
+            <KPITile label="Projected monthly NOI" value={formatUsdCompact(summary.endNoi)} tone={usdTone(summary.endNoi)} info="Net operating income in the last projected month: revenue minus labor minus other operating expense." />
+            <KPITile label="Projected cash flow" value={formatUsdCompact(summary.endCashFlow)} tone={usdTone(summary.endCashFlow)} info="Projected monthly NOI minus monthly debt service, in the last projected month." />
+            <KPITile label="End occupancy" value={`${summary.endOccupancy.toFixed(1)}%`} info="Occupancy in the last projected month: the entered baseline plus the occupancy change." />
+            <KPITile label="Total NOI (period)" value={formatUsdCompact(summary.totalNoi)} tone={usdTone(summary.totalNoi)} info="Sum of projected monthly NOI over the time horizon." />
           </KineticGrid>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -290,8 +289,8 @@ export default function ExecutiveScenariosPage() {
                     <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => fmtM(v as number)} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--card-foreground))", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => formatUsdCompact(v as number)} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--card-foreground))", fontSize: 12 }} formatter={(v) => formatUsdCompact(Number(v))} />
                       <Area type="monotone" dataKey="revenue" stroke={CC.emerald} fill={CC.emerald} fillOpacity={0.15} strokeWidth={2} name="Revenue" />
                       <Area type="monotone" dataKey="labor" stroke={CC.rose} fill={CC.rose} fillOpacity={0.15} strokeWidth={2} name="Labor" />
                       <Line type="monotone" dataKey="noi" stroke={CC.amber} strokeWidth={3} dot={{ r: 3, fill: "hsl(var(--card))" }} name="NOI" />
@@ -304,14 +303,14 @@ export default function ExecutiveScenariosPage() {
               {/* Cash Flow */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Monthly Cash Flow</h3>
-                <p className="text-xs text-muted-foreground mb-4">NOI minus debt service ({fmtK(baseline.monthlyDebtService)}/mo)</p>
+                <p className="text-xs text-muted-foreground mb-4">NOI minus debt service ({formatUsdCompact(baseline.monthlyDebtService)}/mo)</p>
                 <div className="h-[200px] min-w-0">
                   <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 200 }}>
                     <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CC.grid} />
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => fmtK(v as number)} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--card-foreground))", fontSize: 12 }} formatter={(v) => fmtK(Number(v))} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: CC.axis }} tickFormatter={v => formatUsdCompact(v as number)} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--card-foreground))", fontSize: 12 }} formatter={(v) => formatUsdCompact(Number(v))} />
                       <Bar dataKey="cashFlow" radius={[4, 4, 0, 0]} name="Cash Flow">
                         {data.map((entry, i) => (
                           <rect key={i} fill={entry.cashFlow >= 0 ? CC.emerald : CC.rose} fillOpacity={0.7} />
@@ -325,7 +324,8 @@ export default function ExecutiveScenariosPage() {
               {/* Projection Table */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3">Monthly Detail</h3>
-                <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                {/* A scroll box must be reachable by keyboard (axe scrollable-region-focusable, COL-658). */}
+                <div tabIndex={0} role="region" aria-label="Monthly detail" className="overflow-x-auto max-h-[300px] overflow-y-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <table className="w-full text-left">
                     <thead className="sticky top-0 bg-card/90">
                       <tr className="border-b border-border">
@@ -341,10 +341,10 @@ export default function ExecutiveScenariosPage() {
                       {data.map((d, i) => (
                         <tr key={i} className="border-b border-border hover:bg-muted/20">
                           <td className="px-3 py-2 text-xs text-muted-foreground">{d.month}</td>
-                          <td className="px-3 py-2 text-xs tabular-nums text-success">{fmtK(d.revenue)}</td>
-                          <td className="px-3 py-2 text-xs tabular-nums text-destructive">{fmtK(d.labor)}</td>
-                          <td className={cn("px-3 py-2 text-xs tabular-nums font-semibold", d.noi >= 0 ? "text-warning" : "text-destructive")}>{fmtK(d.noi)}</td>
-                          <td className={cn("px-3 py-2 text-xs tabular-nums font-semibold", d.cashFlow >= 0 ? "text-success" : "text-destructive")}>{fmtK(d.cashFlow)}</td>
+                          <td className="px-3 py-2 text-xs tabular-nums text-success">{formatUsdCompact(d.revenue)}</td>
+                          <td className="px-3 py-2 text-xs tabular-nums text-destructive">{formatUsdCompact(d.labor)}</td>
+                          <td className={cn("px-3 py-2 text-xs tabular-nums font-semibold", d.noi >= 0 ? "text-warning" : "text-destructive")}>{formatUsdCompact(d.noi)}</td>
+                          <td className={cn("px-3 py-2 text-xs tabular-nums font-semibold", d.cashFlow >= 0 ? "text-success" : "text-destructive")}>{formatUsdCompact(d.cashFlow)}</td>
                           <td className="px-3 py-2 text-xs tabular-nums text-muted-foreground">{d.occupancy.toFixed(1)}%</td>
                         </tr>
                       ))}

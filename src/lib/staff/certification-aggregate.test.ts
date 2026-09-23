@@ -6,8 +6,8 @@ const NOW = new Date("2026-09-23T12:00:00");
 
 describe("aggregateCertStatus", () => {
   it("does not call zero certifications 'Certs OK' (COL-649)", () => {
-    expect(aggregateCertStatus([], NOW)).toBe("none_on_file");
-    expect(CERT_STATUS_LABEL.none_on_file).toBe("No certs on file");
+    expect(aggregateCertStatus([], NOW)).toBe("not_verified");
+    expect(CERT_STATUS_LABEL.not_verified).toBe("No certs on file");
   });
 
   it("is current when every certification is valid well past the window", () => {
