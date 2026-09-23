@@ -35,6 +35,38 @@ export const ADMIN_ALIAS_SEGMENTS = [
   "vendors",
 ] as const;
 
+/**
+ * `/admin/v2/<segment>` pages were one-line re-exports of `/admin/<segment>` (COL-654);
+ * the tree is retired and each URL 308s to its `/admin` equivalent. Only the flag-gated
+ * design-system preview (`/admin/v2/design-preview`) still renders under `/admin/v2`.
+ */
+export const RETIRED_V2_SEGMENTS = [
+  "admissions",
+  "executive",
+  "finance",
+  "incidents",
+  "quality",
+  "residents",
+  "rounding",
+  "settings",
+] as const;
+
+/**
+ * `src/app/(caregiver)/<segment>` pages are also reachable at `/<segment>`, where the
+ * floor app's nav shows nothing active (COL-654). `/caregiver/<segment>` is canonical.
+ */
+export const CAREGIVER_ALIAS_SEGMENTS = [
+  "clock",
+  "followups",
+  "handoff",
+  "incident-draft",
+  "me",
+  "meds",
+  "prn-followup",
+  "resident",
+  "tasks",
+] as const;
+
 export type LegacyRedirect = {
   source: string;
   destination: string;
@@ -46,6 +78,29 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
     { source: `/${seg}`, destination: `/admin/${seg}`, permanent: true },
     { source: `/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
   ]),
+  { source: "/admin/v2", destination: "/admin", permanent: true },
+  // The v2 alert detail only ever redirected to the alert's anchor on the list.
+  {
+    source: "/admin/v2/executive/alerts/:id",
+    destination: "/admin/executive/alerts",
+    permanent: true,
+  },
+  ...RETIRED_V2_SEGMENTS.flatMap((seg) => [
+    { source: `/admin/v2/${seg}`, destination: `/admin/${seg}`, permanent: true },
+    { source: `/admin/v2/${seg}/:path*`, destination: `/admin/${seg}/:path*`, permanent: true },
+  ]),
+  ...CAREGIVER_ALIAS_SEGMENTS.flatMap((seg) => [
+    { source: `/${seg}`, destination: `/caregiver/${seg}`, permanent: true },
+    { source: `/${seg}/:path*`, destination: `/caregiver/${seg}/:path*`, permanent: true },
+  ]),
+  // /clinical/residents* rendered the admin roster and resident record in a second shell
+  // with no sidebar (COL-654); nothing links to it.
+  { source: "/clinical/residents/add", destination: "/admin/residents/new", permanent: true },
+  { source: "/clinical/residents", destination: "/admin/residents", permanent: true },
+  { source: "/clinical/residents/:path*", destination: "/admin/residents/:path*", permanent: true },
+  { source: "/clinical", destination: "/admin/residents", permanent: true },
+  // "Close" was a second tab rendering Period close (COL-654).
+  { source: "/admin/finance/close", destination: "/admin/finance/period-close", permanent: true },
   // The medication reconciliation hub lives at /admin/discharge; the pipeline URL
   // rendered the same hub outside the admin shell (COL-644).
   {

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   REPUTATION_REPLY_NEW_LOADING_PROFILE_COPY,
@@ -159,7 +160,7 @@ export default function AdminReputationReplyNewPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice reason="A reply answers a review on one building's listing." />
       ) : null}
 
       {fetchErrorBannerMessage ? (
@@ -168,6 +169,7 @@ export default function AdminReputationReplyNewPage() {
         </p>
       ) : null}
 
+      {facilityReady ? (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Compose</CardTitle>
@@ -260,6 +262,7 @@ export default function AdminReputationReplyNewPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
+import { formatSeverityChoice } from "@/lib/incidents/incidents-display-copy";
 
 const CATEGORY_LABELS: Record<(typeof caregiverIncidentCategoryValues)[number], string> = {
   fall_with_injury: "Fall with injury",
@@ -37,10 +38,10 @@ const CATEGORY_LABELS: Record<(typeof caregiverIncidentCategoryValues)[number], 
 };
 
 const SEVERITY_LABELS: Record<(typeof caregiverIncidentSeverityValues)[number], string> = {
-  level_1: "Level 1 — minor / no injury",
-  level_2: "Level 2 — minor injury / repeat event",
-  level_3: "Level 3 — moderate injury / med error",
-  level_4: "Level 4 — major injury / regulatory trigger",
+  level_1: formatSeverityChoice("level_1"),
+  level_2: formatSeverityChoice("level_2"),
+  level_3: formatSeverityChoice("level_3"),
+  level_4: formatSeverityChoice("level_4"),
 };
 
 const SHIFT_LABELS: Record<(typeof caregiverIncidentShiftValues)[number], string> = {
@@ -290,9 +291,7 @@ function AdminIncidentFormInner() {
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Primary Classification */}
         <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span> Primary Classification
-          </h3>
+          <h2 className="mb-6 text-base font-semibold text-foreground">Primary classification</h2>
 
           <div className="space-y-6">
             <div className="space-y-2">
@@ -350,9 +349,7 @@ function AdminIncidentFormInner() {
 
         {/* Details */}
         <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span> Details & Location
-          </h3>
+          <h2 className="mb-6 text-base font-semibold text-foreground">Details and location</h2>
 
           <div className="space-y-6">
             <div className="space-y-2">

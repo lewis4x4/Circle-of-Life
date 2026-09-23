@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -21,13 +23,15 @@ export function FacilityFormSelect<T extends string>(props: {
   hideLabel?: boolean;
   className?: string;
 }) {
-  const { id, label, placeholder, value, options, onValueChange, disabled, hideLabel, className } = props;
+  const { id: idProp, label, placeholder, value, options, onValueChange, disabled, hideLabel, className } = props;
+  const generatedId = useId();
+  const id = idProp ?? generatedId;
 
   return (
     <div className={cn("space-y-2", className)}>
       {hideLabel ? null : <Label htmlFor={id}>{label}</Label>}
       <Select value={value || undefined} onValueChange={(v) => onValueChange(v as T)} disabled={disabled}>
-        <SelectTrigger id={id} className="w-full">
+        <SelectTrigger id={id} aria-label={hideLabel ? label : undefined} className="w-full">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

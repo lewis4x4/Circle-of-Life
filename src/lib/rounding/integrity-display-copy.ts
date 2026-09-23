@@ -4,10 +4,6 @@
  * never interpolate legacy "selected facility" copy.
  */
 
-import { ROUNDING_SELECT_FACILITY_FIRST_COPY } from "@/lib/rounding/rounding-scope-copy";
-
-export { ROUNDING_SELECT_FACILITY_FIRST_COPY as INTEGRITY_SELECT_FACILITY_FIRST_COPY };
-
 export const INTEGRITY_NO_FACILITY_NAME_COPY = "No facility name posted";
 
 export type IntegrityFacilityScope =
@@ -32,7 +28,8 @@ const INTEGRITY_SUBTITLE_BASE =
 /** Page header subtitle — never interpolates "selected facility". */
 export function formatIntegrityPageSubtitle(scope: IntegrityFacilityScope): string {
   if (scope.kind === "unscoped") {
-    return `${INTEGRITY_SUBTITLE_BASE} are per facility. ${ROUNDING_SELECT_FACILITY_FIRST_COPY}`;
+    // The unscoped page is behind the facility gate (COL-651); the subtitle only says what it is.
+    return `${INTEGRITY_SUBTITLE_BASE} are per facility.`;
   }
   if (scope.kind === "missing_name") {
     return `${INTEGRITY_SUBTITLE_BASE}. ${INTEGRITY_NO_FACILITY_NAME_COPY}.`;
@@ -44,7 +41,7 @@ export function formatIntegrityPageSubtitle(scope: IntegrityFacilityScope): stri
 export function formatIntegrityNoFlagsEmptyTitle(scope: IntegrityFacilityScope): string {
   if (scope.kind === "named") return `No integrity flags at ${scope.name}`;
   if (scope.kind === "unscoped") {
-    return `No integrity flags posted. ${ROUNDING_SELECT_FACILITY_FIRST_COPY}`;
+    return "No integrity flags posted";
   }
   return "No integrity flags posted";
 }

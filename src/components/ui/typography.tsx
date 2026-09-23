@@ -49,7 +49,7 @@ export function TitleH1({
   return (
     <h1
       className={cn(
-        "text-3xl sm:text-4xl font-bold tracking-tight text-white",
+        "text-3xl sm:text-4xl font-bold tracking-tight text-foreground",
         className
       )}
     >

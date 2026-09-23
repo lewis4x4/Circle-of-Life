@@ -12,6 +12,7 @@ vi.mock("@/lib/rounding/watchlist-fetch", () => ({
   fetchWatchlistObservationEvidence: mocks.evidence,
 }));
 vi.mock("../rounding-hub-nav", () => ({ RoundingHubNav: () => null }));
+vi.mock("@/components/common/FacilityGate", () => ({ FacilityGateNotice: () => <p>Facility gate</p> }));
 vi.mock("@/components/rounding/WatchlistDispositionForm", () => ({ WatchlistDispositionForm: () => null }));
 vi.mock("@/components/rounding/WatchlistPortfolioTable", () => ({ WatchlistPortfolioTable: ({ rows }: { rows: unknown[] }) => <p>Portfolio records: {rows.length}</p> }));
 vi.mock("@/components/rounding/WatchlistFacilityTable", () => ({ WatchlistFacilityTable: ({ rows }: { rows: Array<{ signal_label: string }> }) => <div>{rows.map((row) => <p key={row.signal_label}>{row.signal_label}</p>)}</div> }));
@@ -77,7 +78,7 @@ it("does not read resident records without a selected facility", async () => {
   const params = Promise.resolve({ residentId: "resident-1" });
   await act(async () => { render(<Suspense><ResidentWatchlistPage params={params} /></Suspense>); });
   expect(mocks.history).not.toHaveBeenCalled(); expect(mocks.ledger).not.toHaveBeenCalled();
-  expect(screen.getByText("Choose a building to see this resident’s record.")).toBeTruthy();
+  expect(screen.getByText("Facility gate")).toBeTruthy();
 });
 it("does not print Open Acute signals 0 for a building the portfolio never evaluated (COL-649)", async () => {
   mocks.portfolio.mockResolvedValue([{ facility_id: "facility-b", open_acute_signal_count: 4, residents_on_watchlist: 1, data_quality_signal_count: 0 }]);

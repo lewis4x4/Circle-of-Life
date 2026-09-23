@@ -287,8 +287,8 @@ export default function CaregiverResidentConditionChangePage() {
             <div className="space-y-3 rounded-lg border border-rose-900/35 bg-black/25 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-rose-200/80">Category</Label>
-                  <select
+                  <Label htmlFor="condition-category" className="text-xs text-rose-200/80">Category</Label>
+                  <select id="condition-category"
                     className="flex h-10 w-full rounded-md border border-rose-900/50 bg-zinc-950 px-2 text-sm text-zinc-100"
                     value={changeType}
                     onChange={(e) => setChangeType(e.target.value)}
@@ -301,8 +301,8 @@ export default function CaregiverResidentConditionChangePage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-rose-200/80">Severity</Label>
-                  <select
+                  <Label htmlFor="condition-severity" className="text-xs text-rose-200/80">Severity</Label>
+                  <select id="condition-severity"
                     className="flex h-10 w-full rounded-md border border-rose-900/50 bg-zinc-950 px-2 text-sm text-zinc-100"
                     value={severity}
                     onChange={(e) => setSeverity(e.target.value)}
@@ -316,8 +316,8 @@ export default function CaregiverResidentConditionChangePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-rose-200/80">Description</Label>
-                <textarea
+                <Label htmlFor="condition-description" className="text-xs text-rose-200/80">Description</Label>
+                <textarea id="condition-description"
                   rows={4}
                   required
                   placeholder="Objective findings, vitals if taken, what changed and when…"

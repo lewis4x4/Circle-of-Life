@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ClipboardList, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,6 @@ export default function AdminNewStaffingSnapshotPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
       return;
     }
 
@@ -185,133 +185,131 @@ export default function AdminNewStaffingSnapshotPage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to enable this form.
-        </p>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Snapshot</CardTitle>
-          <CardDescription>
-            {previewRatio !== null ? (
-              <>
-                Computed ratio: <strong className="tabular-nums">{previewRatio.toFixed(2)}</strong> residents per
-                staff.
-              </>
-            ) : (
-              "Enter residents and staff to preview the computed ratio."
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="max-w-md space-y-4">
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="snapshot-at">
-                Snapshot time
-              </label>
-              <Input
-                id="snapshot-at"
-                type="datetime-local"
-                value={snapshotLocal}
-                onChange={(e) => setSnapshotLocal(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="shift">
-                Shift
-              </label>
-              <select
-                id="shift"
-                value={shift}
-                onChange={(e) => setShift(e.target.value as ShiftType)}
-                required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="" disabled>
-                  Select shift…
-                </option>
-                {SHIFT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="residents">
-                Residents present
-              </label>
-              <Input
-                id="residents"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                value={residentsPresent}
-                onChange={(e) => setResidentsPresent(e.target.value)}
-                placeholder="Count at snapshot time"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="staff">
-                Staff on duty
-              </label>
-              <Input
-                id="staff"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={staffOnDuty}
-                onChange={(e) => setStaffOnDuty(e.target.value)}
-                placeholder="Count at snapshot time"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="required">
-                Required ratio (max residents per staff)
-              </label>
-              <Input
-                id="required"
-                type="number"
-                inputMode="decimal"
-                min={0.01}
-                step={0.01}
-                value={requiredRatio}
-                onChange={(e) => setRequiredRatio(e.target.value)}
-                placeholder="From your facility's staffing rule"
-                required
-              />
-            </div>
-
-            <Button type="submit" disabled={submitting || !facilityReady}>
-              {submitting ? (
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Snapshot</CardTitle>
+            <CardDescription>
+              {previewRatio !== null ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
+                  Computed ratio: <strong className="tabular-nums">{previewRatio.toFixed(2)}</strong> residents per
+                  staff.
                 </>
               ) : (
-                "Record snapshot"
+                "Enter residents and staff to preview the computed ratio."
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="max-w-md space-y-4">
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="snapshot-at">
+                  Snapshot time
+                </label>
+                <Input
+                  id="snapshot-at"
+                  type="datetime-local"
+                  value={snapshotLocal}
+                  onChange={(e) => setSnapshotLocal(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="shift">
+                  Shift
+                </label>
+                <select
+                  id="shift"
+                  value={shift}
+                  onChange={(e) => setShift(e.target.value as ShiftType)}
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="" disabled>
+                    Select shift…
+                  </option>
+                  {SHIFT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="residents">
+                  Residents present
+                </label>
+                <Input
+                  id="residents"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  value={residentsPresent}
+                  onChange={(e) => setResidentsPresent(e.target.value)}
+                  placeholder="Count at snapshot time"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="staff">
+                  Staff on duty
+                </label>
+                <Input
+                  id="staff"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  value={staffOnDuty}
+                  onChange={(e) => setStaffOnDuty(e.target.value)}
+                  placeholder="Count at snapshot time"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="required">
+                  Required ratio (max residents per staff)
+                </label>
+                <Input
+                  id="required"
+                  type="number"
+                  inputMode="decimal"
+                  min={0.01}
+                  step={0.01}
+                  value={requiredRatio}
+                  onChange={(e) => setRequiredRatio(e.target.value)}
+                  placeholder="From your facility's staffing rule"
+                  required
+                />
+              </div>
+
+              <Button type="submit" disabled={submitting || !facilityReady}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Record snapshot"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="Ratio snapshots are taken for one building, so this form opens once a facility is chosen." />
+      )}
     </div>
   );
 }

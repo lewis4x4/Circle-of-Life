@@ -20,7 +20,8 @@ export async function fetchMedicationErrors(
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<MedicationErrorRow[]> {
   if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-    throw new Error("Select a facility.");
+    // Callers gate on one facility first (COL-651); this is the invariant, not the gate.
+    throw new Error("Medication errors load for one facility at a time.");
   }
 
   const res = (await supabase

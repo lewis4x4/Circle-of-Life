@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -45,7 +46,7 @@ export default function NewPolicyPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility.");
+      setError("No facility is in scope.");
       return;
     }
     if (!title.trim() || !content.trim()) {
@@ -95,12 +96,12 @@ export default function NewPolicyPage() {
 
   if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
     return (
-      <p className="text-sm text-slate-500">
-        Select a facility first.{" "}
-        <Link href="/admin/compliance/policies" className="underline">
-          Back
-        </Link>
-      </p>
+      <div className="mx-auto max-w-3xl">
+        <FacilityGateNotice
+          title="New policy"
+          reason="A policy is published to one building's staff and tracked there for acknowledgment."
+        />
+      </div>
     );
   }
 

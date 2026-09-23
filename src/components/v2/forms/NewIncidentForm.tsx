@@ -15,6 +15,7 @@ import type { FacilityOption } from "./NewResidentForm";
 import type { ResidentOption } from "./NewAdmissionForm";
 import { V2FormField } from "./V2FormField";
 import { V2FormShell } from "./V2FormShell";
+import { formatSeverityChoice } from "@/lib/incidents/incidents-display-copy";
 
 export function NewIncidentForm({
   facilities,
@@ -160,10 +161,11 @@ export function NewIncidentForm({
           {...register("severity")}
           className="h-8 w-full rounded-sm border border-border bg-surface px-2 text-sm text-text-primary"
         >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
+          {/* Stored as level_1..4 by /api/v2/forms; staff see the same words as everywhere else (COL-689). */}
+          <option value="low">{formatSeverityChoice("level_1")}</option>
+          <option value="medium">{formatSeverityChoice("level_2")}</option>
+          <option value="high">{formatSeverityChoice("level_3")}</option>
+          <option value="critical">{formatSeverityChoice("level_4")}</option>
         </select>
       </V2FormField>
       <V2FormField

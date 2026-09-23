@@ -51,6 +51,13 @@ const RECORD_FORMS: Record<string, { uiState?: string[]; forbidden?: RegExp[] }>
   "src/app/(admin)/admin/knowledge/seed-targets/page.tsx": { uiState: ["filter"] },
   "src/app/(admin)/training/page.tsx": { forbidden: [/Jane Supervisor/] },
   "src/app/(admin)/reputation/accounts/new/page.tsx": {},
+  // COL-676: quoted care level / room, 1823 status, Medicaid stage, and the resident rate agreement.
+  "src/app/(admin)/admin/admissions/[id]/page.tsx": {
+    forbidden: [/setRateCareLevelDraft\("[123]"\)/, /setRateAccommodationDraft\("private"\)/, /\?\? "pending"\)/, /\?\? "prospect"\)/],
+  },
+  "src/app/(admin)/residents/[id]/billing/page.tsx": {
+    forbidden: [/"legacy_rate_lock" :/, /setRoomClass\("private"\)/, /Imported from current Homewood A\/R/],
+  },
 };
 
 /** `const [name, setName] = useState<T>(<literal>)` with a non-empty string, a number, or a list of strings. */

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, GraduationCap, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -130,7 +131,6 @@ export default function AdminNewInserviceSessionPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
       return;
     }
     const t = topic.trim();
@@ -227,179 +227,177 @@ export default function AdminNewInserviceSessionPage() {
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can create
-        sessions. Choose a single facility in the header (not &quot;All facilities&quot;).
+        sessions..
       </p>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to load staff and programs.
-        </p>
-      )}
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Session & attendees</CardTitle>
+            <CardDescription>
+              Required: date, topic, trainer, hours, and at least one staff attendee.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="max-w-2xl space-y-4">
+              {error && (
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
+                  {error}
+                </p>
+              )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Session & attendees</CardTitle>
-          <CardDescription>
-            Required: date, topic, trainer, hours, and at least one staff attendee.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="max-w-2xl space-y-4">
-            {error && (
-              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
-                {error}
-              </p>
-            )}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="sessionDate">Session date (ET)</Label>
-                <Input
-                  id="sessionDate"
-                  type="date"
-                  value={sessionDate}
-                  onChange={(e) => setSessionDate(e.target.value)}
-                  disabled={!facilityReady || loading}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hours">Hours</Label>
-                <Input
-                  id="hours"
-                  type="number"
-                  step="0.25"
-                  min="0.01"
-                  max="99.99"
-                  value={hours}
-                  onChange={(e) => setHours(e.target.value)}
-                  disabled={!facilityReady || loading}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="topic">Topic</Label>
-              <Input
-                id="topic"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                disabled={!facilityReady || loading}
-                placeholder="e.g. Fire safety refresher"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="trainer">Trainer name</Label>
-              <Input
-                id="trainer"
-                value={trainerName}
-                onChange={(e) => setTrainerName(e.target.value)}
-                disabled={!facilityReady || loading}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="program">Training program (optional)</Label>
-              <select
-                id="program"
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
-                value={programId}
-                onChange={(e) => setProgramId(e.target.value)}
-                disabled={!facilityReady || loading}
-              >
-                <option value="">None</option>
-                {programList.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.code})
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                If you pick a catalog program, each selected attendee also receives a matching{" "}
-                <strong>staff training completion</strong> row (same date and hours as this session).
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location (optional)</Label>
-              <Input
-                id="location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                disabled={!facilityReady || loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                disabled={!facilityReady || loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <fieldset className="space-y-2 border-0 p-0">
-                <legend className="text-sm font-medium leading-none">Attendees</legend>
-                <div
-                  className="max-h-56 overflow-y-auto rounded-md border border-slate-200 p-3 dark:border-slate-800"
-                  role="group"
-                  aria-label="Staff attendees for this in-service session"
-                >
-                {loading ? (
-                  <p className="text-sm text-slate-500">Loading staff…</p>
-                ) : staffList.length === 0 ? (
-                  <p className="text-sm text-slate-500">No staff in this facility.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {staffList.map((s) => (
-                      <li key={s.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`staff-${s.id}`}
-                          checked={selectedStaffIds.has(s.id)}
-                          onChange={() => toggleStaff(s.id)}
-                          className="h-4 w-4 rounded border-slate-300"
-                          aria-label={`Attendee ${s.name}`}
-                        />
-                        <label htmlFor={`staff-${s.id}`} className="text-sm cursor-pointer">
-                          {s.name}
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="sessionDate">Session date (ET)</Label>
+                  <Input
+                    id="sessionDate"
+                    type="date"
+                    value={sessionDate}
+                    onChange={(e) => setSessionDate(e.target.value)}
+                    disabled={!facilityReady || loading}
+                    required
+                  />
                 </div>
-              </fieldset>
-              <p className="text-[10px] text-slate-500">
-                {selectedStaffIds.size} selected
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hours">Hours</Label>
+                  <Input
+                    id="hours"
+                    type="number"
+                    step="0.25"
+                    min="0.01"
+                    max="99.99"
+                    value={hours}
+                    onChange={(e) => setHours(e.target.value)}
+                    disabled={!facilityReady || loading}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={!facilityReady || loading || submitting}>
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  "Save session"
-                )}
-              </Button>
-              <Link href="/admin/training" className={buttonVariants({ variant: "outline" })}>
-                Cancel
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="topic">Topic</Label>
+                <Input
+                  id="topic"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  disabled={!facilityReady || loading}
+                  placeholder="e.g. Fire safety refresher"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trainer">Trainer name</Label>
+                <Input
+                  id="trainer"
+                  value={trainerName}
+                  onChange={(e) => setTrainerName(e.target.value)}
+                  disabled={!facilityReady || loading}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="program">Training program (optional)</Label>
+                <select
+                  id="program"
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950"
+                  value={programId}
+                  onChange={(e) => setProgramId(e.target.value)}
+                  disabled={!facilityReady || loading}
+                >
+                  <option value="">None</option>
+                  {programList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.code})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  If you pick a catalog program, each selected attendee also receives a matching{" "}
+                  <strong>staff training completion</strong> row (same date and hours as this session).
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location (optional)</Label>
+                <Input
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  disabled={!facilityReady || loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Input
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={!facilityReady || loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <fieldset className="space-y-2 border-0 p-0">
+                  <legend className="text-sm font-medium leading-none">Attendees</legend>
+                  <div
+                    className="max-h-56 overflow-y-auto rounded-md border border-slate-200 p-3 dark:border-slate-800"
+                    role="group"
+                    aria-label="Staff attendees for this in-service session"
+                  >
+                  {loading ? (
+                    <p className="text-sm text-slate-500">Loading staff…</p>
+                  ) : staffList.length === 0 ? (
+                    <p className="text-sm text-slate-500">No staff in this facility.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {staffList.map((s) => (
+                        <li key={s.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`staff-${s.id}`}
+                            checked={selectedStaffIds.has(s.id)}
+                            onChange={() => toggleStaff(s.id)}
+                            className="h-4 w-4 rounded border-slate-300"
+                            aria-label={`Attendee ${s.name}`}
+                          />
+                          <label htmlFor={`staff-${s.id}`} className="text-sm cursor-pointer">
+                            {s.name}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  </div>
+                </fieldset>
+                <p className="text-[10px] text-slate-500">
+                  {selectedStaffIds.size} selected
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={!facilityReady || loading || submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Save session"
+                  )}
+                </Button>
+                <Link href="/admin/training" className={buttonVariants({ variant: "outline" })}>
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="In-service sessions are held at one building, so staff, programs and this form load once a facility is chosen." />
+      )}
     </div>
   );
 }

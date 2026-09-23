@@ -57,6 +57,10 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <section data-testid="facility-gate">{reason}</section>,
+}));
+
 vi.mock("./quality-hub-nav", () => ({
   QualityHubNav: () => <div data-testid="quality-hub-nav" />,
 }));
@@ -127,5 +131,26 @@ describe("AdminQualityHubPage auth hydration", () => {
 
     expect(screen.getByText("No catalog measures posted.")).toBeInTheDocument();
     expect(screen.queryByText("No Baseline Quality Measures.")).not.toBeInTheDocument();
+  });
+});
+
+describe("AdminQualityHubPage under All facilities (COL-651)", () => {
+  beforeEach(() => {
+    queryMock.data = undefined;
+    queryMock.isPending = false;
+    queryMock.isError = false;
+    queryMock.error = null;
+    authMock.loading = false;
+    authMock.organizationId = ORG_UUID;
+    authMock.user = { id: "user-1" };
+    facilityMock.selectedFacilityId = null;
+  });
+
+  it("shows the shared facility gate and no KPI tiles carrying gate text", () => {
+    render(<AdminQualityHubPage />);
+
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(screen.queryByText("Active Measures")).not.toBeInTheDocument();
+    expect(screen.queryByText(/select a facility/i)).not.toBeInTheDocument();
   });
 });

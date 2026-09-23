@@ -770,7 +770,7 @@ function CleanupSheet(props: { residue: VendorFacilityRow | null; onClose: () =>
                 <Button type="button" size="sm" variant="outline" className="rounded-md" disabled>
                   Move ↗
                 </Button>
-                <Button type="button" size="sm" variant="ghost" className="rounded-md" disabled>
+                <Button type="button" size="sm" variant="ghost" className="rounded-md" disabled aria-label="Remove">
                   <Trash2 className="size-4" aria-hidden />
                 </Button>
               </div>

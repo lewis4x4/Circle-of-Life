@@ -10,6 +10,7 @@ import {
   type MedicationErrorRow,
 } from "@/lib/medications/load-medication-errors";
 import { createClient } from "@/lib/supabase/server";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
 export default async function AdminMedicationErrorsPage() {
   const cookieStore = await cookies();
@@ -21,10 +22,13 @@ export default async function AdminMedicationErrorsPage() {
   let initialRows: MedicationErrorRow[] = [];
   let initialError: string | null = null;
 
-  try {
-    initialRows = await fetchMedicationErrors(initialFacilityId, supabase);
-  } catch (error) {
-    initialError = error instanceof Error ? error.message : "Load failed";
+  // Under All facilities the client renders the facility gate; there is nothing to load.
+  if (isValidFacilityIdForQuery(initialFacilityId)) {
+    try {
+      initialRows = await fetchMedicationErrors(initialFacilityId, supabase);
+    } catch (error) {
+      initialError = error instanceof Error ? error.message : "Load failed";
+    }
   }
 
   return (

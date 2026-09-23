@@ -8,6 +8,7 @@ import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.m
 import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
 import requireTimeZone from "./eslint-rules/require-time-zone.mjs";
 import noMonoProse from "./eslint-rules/no-mono-prose.mjs";
+import iconButtonNeedsName from "./eslint-rules/icon-button-needs-name.mjs";
 
 const uiV2Plugin = {
   rules: {
@@ -176,8 +177,8 @@ const eslintConfig = defineConfig([
     // COL-658: a visible <label> must name its control — either `htmlFor` the
     // control's `id`, or wrap the control. A sibling label with neither leaves
     // the select/input unnamed for screen readers (axe `label` / `select-name`,
-    // critical). Pre-existing violations are recorded in eslint-suppressions.json
-    // and are being fixed route by route; new ones fail lint.
+    // critical). Every pre-existing violation is fixed; there are no
+    // suppressions for this rule, so any new one fails lint.
     files: ["src/**/*.{tsx,jsx}"],
     rules: {
       "jsx-a11y/label-has-associated-control": [
@@ -199,6 +200,18 @@ const eslintConfig = defineConfig([
           depth: 4,
         },
       ],
+    },
+  },
+  {
+    // COL-658: icon-only buttons must carry an accessible name. The Button
+    // primitive's icon sizes and SelectTrigger enforce this in their types;
+    // this covers native <button> and non-icon-size <Button>.
+    files: ["src/**/*.{tsx,jsx}"],
+    plugins: {
+      a11y: { rules: { "icon-button-needs-name": iconButtonNeedsName } },
+    },
+    rules: {
+      "a11y/icon-button-needs-name": "error",
     },
   },
 ]);

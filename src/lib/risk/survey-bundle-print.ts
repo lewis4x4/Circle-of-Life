@@ -1,4 +1,5 @@
 import type { SurveyBundlePacket } from "@/lib/risk/survey-bundle";
+import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import {
   formatSurveyBundlePrintAdministratorName,
   formatSurveyBundlePrintEntityName,
@@ -51,7 +52,7 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
           (row) => `
             <tr>
               <td>${escapeHtml(row.incidentNumber)}</td>
-              <td>${escapeHtml(row.severity)}</td>
+              <td>${escapeHtml(formatLevelWord(row.severity))}</td>
               <td>${escapeHtml(row.status)}</td>
               <td>${row.ahcaReportable ? "Yes" : "No"}</td>
               <td>${escapeHtml(new Date(row.occurredAt).toLocaleString())}</td>

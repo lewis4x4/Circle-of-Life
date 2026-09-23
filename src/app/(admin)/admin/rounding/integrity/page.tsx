@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { IntegrityCompliancePanel } from "@/components/rounding/IntegrityCompliancePanel";
 import {
@@ -488,14 +489,7 @@ function InfoBanner({
 
 function AllFacilitiesInterstitial() {
   return (
-    <RoundingEmptyNotice
-      label="Facility scope required"
-      copy={{
-        why: "No building selected.",
-        guidance:
-          "Choose one in the top bar to see its compliance figures and the flags waiting for review.",
-      }}
-    />
+    <FacilityGateNotice reason="Rounding compliance figures and integrity flags are reviewed per building." />
   );
 }
 

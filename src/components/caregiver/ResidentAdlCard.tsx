@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { CheckCircle2, Clock3, Loader2, UserRound } from "lucide-react";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
 import type { ResidentWithRoom } from "@/lib/caregiver/facility-residents";
@@ -24,6 +24,8 @@ export function ResidentAdlCard({
     notes: string;
   }) => Promise<boolean>;
 }) {
+  // One card per resident on the floor list: ids must be unique (COL-658).
+  const uid = useId();
   const [adlType, setAdlType] = useState("rounding");
   const [assistance, setAssistance] = useState<Database["public"]["Enums"]["assistance_level"]>("supervision");
   const [refused, setRefused] = useState(false);
@@ -60,8 +62,8 @@ export function ResidentAdlCard({
 
         <div className="grid gap-3 sm:grid-cols-2 pt-2">
           <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">ADL Type</Label>
-            <select
+            <Label htmlFor={`${uid}-adl-type`} className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">ADL Type</Label>
+            <select id={`${uid}-adl-type`}
               className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={adlType}
               onChange={(e) => setAdlType(e.target.value)}
@@ -74,8 +76,8 @@ export function ResidentAdlCard({
             </select>
           </div>
           <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">Assistance</Label>
-            <select
+            <Label htmlFor={`${uid}-assistance`} className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">Assistance</Label>
+            <select id={`${uid}-assistance`}
               className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={assistance}
               onChange={(e) => setAssistance(e.target.value as Database["public"]["Enums"]["assistance_level"])}

@@ -313,8 +313,8 @@ export default function CaregiverResidentBehaviorPage() {
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Behavior type</Label>
-                  <select
+                  <Label htmlFor="behavior-behavior-type" className="text-xs text-zinc-400">Behavior type</Label>
+                  <select id="behavior-behavior-type"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={behaviorType}
                     onChange={(e) => setBehaviorType(e.target.value)}
@@ -327,8 +327,8 @@ export default function CaregiverResidentBehaviorPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Duration (minutes)</Label>
-                  <input
+                  <Label htmlFor="behavior-duration-minutes" className="text-xs text-zinc-400">Duration (minutes)</Label>
+                  <input id="behavior-duration-minutes"
                     type="number"
                     min={0}
                     placeholder="Optional"
@@ -339,8 +339,8 @@ export default function CaregiverResidentBehaviorPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">What was observed</Label>
-                <textarea
+                <Label htmlFor="behavior-what-was-observed" className="text-xs text-zinc-400">What was observed</Label>
+                <textarea id="behavior-what-was-observed"
                   rows={3}
                   required
                   placeholder="Objective description"
@@ -351,8 +351,8 @@ export default function CaregiverResidentBehaviorPage() {
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Antecedent (optional)</Label>
-                  <textarea
+                  <Label htmlFor="behavior-antecedent-optional" className="text-xs text-zinc-400">Antecedent (optional)</Label>
+                  <textarea id="behavior-antecedent-optional"
                     rows={2}
                     className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
                     value={antecedent}
@@ -360,8 +360,8 @@ export default function CaregiverResidentBehaviorPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Consequence / outcome (optional)</Label>
-                  <textarea
+                  <Label htmlFor="behavior-consequence-outcome-optional" className="text-xs text-zinc-400">Consequence / outcome (optional)</Label>
+                  <textarea id="behavior-consequence-outcome-optional"
                     rows={2}
                     className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
                     value={consequence}
@@ -370,8 +370,8 @@ export default function CaregiverResidentBehaviorPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Interventions used (comma-separated)</Label>
-                <input
+                <Label htmlFor="behavior-interventions-used-comma-separated" className="text-xs text-zinc-400">Interventions used (comma-separated)</Label>
+                <input id="behavior-interventions-used-comma-separated"
                   type="text"
                   placeholder="e.g. redirection, music, 1:1 sitter"
                   className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
@@ -380,8 +380,8 @@ export default function CaregiverResidentBehaviorPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Intervention effective?</Label>
-                <select
+                <Label htmlFor="behavior-intervention-effective" className="text-xs text-zinc-400">Intervention effective?</Label>
+                <select id="behavior-intervention-effective"
                   className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                   value={interventionEffective}
                   onChange={(e) => setInterventionEffective(e.target.value as "" | "yes" | "no")}
@@ -392,8 +392,8 @@ export default function CaregiverResidentBehaviorPage() {
                 </select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Additional notes</Label>
-                <textarea
+                <Label htmlFor="behavior-additional-notes" className="text-xs text-zinc-400">Additional notes</Label>
+                <textarea id="behavior-additional-notes"
                   rows={2}
                   className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
                   value={notes}
