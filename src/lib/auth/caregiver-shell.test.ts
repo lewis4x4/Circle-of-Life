@@ -57,7 +57,8 @@ describe("caregiverShellAccessRedirect", () => {
   });
 
   it("lets med-techs (who absorbed the retired caregiver role) through everywhere in the shell", () => {
-    for (const path of ["/caregiver", "/caregiver/report", "/caregiver/tasks", "/caregiver/rounds", "/caregiver/meds", "/tasks"]) {
+    // /caregiver/clock is the med-tech clock-in path that opens their cockpit shift (COL-655, COL-668).
+    for (const path of ["/caregiver", "/caregiver/report", "/caregiver/tasks", "/caregiver/rounds", "/caregiver/meds", "/caregiver/clock", "/tasks"]) {
       expect(redirectTarget(path, "med_tech")).toBeNull();
     }
   });

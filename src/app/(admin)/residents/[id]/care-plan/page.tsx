@@ -764,9 +764,9 @@ export default function AdminResidentCarePlanPage() {
             <p className="text-xs text-muted-foreground">{CARE_PLAN_APPROVAL_RATE_COPY}</p>
 
             <div>
-              <label className="text-sm font-medium text-foreground block mb-3">
+              <p className="text-sm font-medium text-foreground block mb-3">
                 Digital signature <span className="text-destructive">*</span>
-              </label>
+              </p>
               <SignaturePad
                 onSignatureChange={setSignatureData}
                 height={150}

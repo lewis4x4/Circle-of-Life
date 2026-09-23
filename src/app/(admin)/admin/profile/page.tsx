@@ -211,7 +211,7 @@ export default function AdminProfilePage() {
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-[160px_1fr]">
             <div className="space-y-3">
-              <Label>Avatar</Label>
+              <p className="text-sm leading-none font-medium">Avatar</p>
               {/* P1 #16: drop fake role=button + tabIndex=0 on a disabled affordance; tooltip can still trigger on hover/focus of a non-interactive wrapper. */}
               <Tooltip>
                 <TooltipTrigger
@@ -271,7 +271,7 @@ export default function AdminProfilePage() {
               </div>
 
               <div className="grid gap-2">
-                <Label>Role</Label>
+                <p className="text-sm leading-none font-medium">Role</p>
                 {/* ROAD-31: read-only badge instead of fake disabled input — communicates "computed metadata". */}
                 <div className="flex items-center gap-2 py-1">
                   <Badge variant="default">{roleConfig.roleLabel}</Badge>
