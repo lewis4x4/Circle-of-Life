@@ -102,3 +102,23 @@ it("passes the working-facility prompt through as written", async () => {
 
   expect(result.current.error).toBe("Choose your working facility in the header before continuing.");
 });
+
+it("reads resident rooms through beds, since residents has no room_number column", async () => {
+  mocks.read.mockImplementation((call: { table: string }) =>
+    call.table === "meal_services"
+      ? { data: [{ id: "svc-1", venue: "main_dining", meal_period: "lunch", scheduled_start: "2026-09-22T15:30:00Z", status: "service", expected_count: 1, served_count: 0 }], error: null }
+      : call.table === "fortification_recommendations"
+        ? { data: [{ id: "f-1", resident_id: "r-1", status: "pending", residents: { first_name: "Ann", last_name: "Lee", beds: { rooms: { room_number: "12B" } } } }], error: null }
+        : { data: [], error: null },
+  );
+
+  const { result } = renderHook(() => useDietaryToday());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  for (const call of mocks.selects.filter((s) => s.columns.includes("residents("))) {
+    expect(call.columns, call.table).not.toMatch(/residents\([^()]*\broom_number\b/);
+    expect(call.columns, call.table).toContain("beds!residents_bed_id_fkey(rooms(room_number))");
+  }
+  expect(mocks.selects.map((s) => s.table)).toEqual(expect.arrayContaining(["tray_tickets", "fortification_recommendations", "meal_refusals"]));
+  expect(result.current.fortification[0]?.room).toBe("12B");
+});

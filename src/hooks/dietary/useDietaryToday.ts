@@ -124,6 +124,19 @@ async function loadFirstNames(ids: readonly (string | null)[]): Promise<Map<stri
   return names;
 }
 
+/**
+ * `residents` has no room_number column (a 42703 took the whole deck down,
+ * COL-636). Room lives on rooms, reached through the resident's bed, as on
+ * the Smart Rounding live board.
+ */
+const RESIDENT_ROOM_EMBED = "beds!residents_bed_id_fkey(rooms(room_number))";
+
+function residentRoomNumber(resident: QueryRow | null | undefined): string | undefined {
+  const bed = resident?.beds as QueryRow | null | undefined;
+  const room = bed?.rooms as QueryRow | null | undefined;
+  return (room?.room_number as string | null | undefined) ?? undefined;
+}
+
 /** Thrown for states the cook can act on; its message is shown as written. */
 class KitchenContextError extends Error {}
 
@@ -235,7 +248,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       if (serviceIds.length > 0) {
         const { data: ticketRows } = await q(
           "tray_tickets",
-          "id, meal_service_id, resident_id, diet_order_snapshot, menu_items, fortification_items, status, iddsi_confirmed_food, allergen_check_passed, carb_count_g, sodium_mg, calorie_count, residents(first_name, last_name, room_number)",
+          `id, meal_service_id, resident_id, diet_order_snapshot, menu_items, fortification_items, status, iddsi_confirmed_food, allergen_check_passed, carb_count_g, sodium_mg, calorie_count, residents(first_name, last_name, ${RESIDENT_ROOM_EMBED})`,
           {
             facility_id: facilityId,
             _in: { col: "meal_service_id", vals: serviceIds },
@@ -269,7 +282,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
                   }
                 : null,
             ),
-            room: formatDietaryTodayRoom(res?.room_number as string | undefined),
+            room: formatDietaryTodayRoom(residentRoomNumber(res)),
             diet_type: dietType as TrayTicket["diet_type"],
             diet_label: dietLabel(dietType),
             iddsi_level: iddsi,
@@ -315,7 +328,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
 
       // ── Fortification recommendations (pending) ──
       const { data: fortRows } = await q("fortification_recommendations",
-        "id, resident_id, trigger_evidence, recommended_items, estimated_added_calories, status, residents(first_name, last_name, room_number, diet_orders(diet_type))",
+        `id, resident_id, trigger_evidence, recommended_items, estimated_added_calories, status, residents(first_name, last_name, ${RESIDENT_ROOM_EMBED}, diet_orders(diet_type))`,
         {
           facility_id: facilityId,
           status: "pending",
@@ -350,7 +363,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
                 }
               : null,
           ),
-          room: formatDietaryTodayRoom(res?.room_number as string | undefined),
+          room: formatDietaryTodayRoom(residentRoomNumber(res)),
           diet_type: dt ? dietLabel(dt) : "Regular",
           trigger: lossStr,
           add: items || "Supplement",
@@ -372,7 +385,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       // ── Refusals (last 24h) ──
       const dayAgo = new Date(Date.now() - 86400000).toISOString();
       const { data: refusalRows } = await q("meal_refusals",
-        "id, resident_id, refused_items, reason, refused_at, residents(first_name, last_name, room_number)",
+        `id, resident_id, refused_items, reason, refused_at, residents(first_name, last_name, ${RESIDENT_ROOM_EMBED})`,
         {
           facility_id: facilityId,
           _gte: { col: "refused_at", val: dayAgo },
@@ -397,7 +410,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
                 }
               : null,
           ),
-          room: formatDietaryTodayRoom(res?.room_number as string | undefined),
+          room: formatDietaryTodayRoom(residentRoomNumber(res)),
           item: items,
           suggest: "Alternate available",
           at: atStr,
