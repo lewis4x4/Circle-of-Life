@@ -78,6 +78,9 @@ export default function StaffFamilyMessagesPage() {
   const [residentName, setResidentName] = useState("");
   const [msgLoading, setMsgLoading] = useState(false);
   const [msgError, setMsgError] = useState<string | null>(null);
+  // A failed post is kept against the resident it was written for, so the operator
+  // still learns about it after moving on to someone else (FL-003).
+  const [unposted, setUnposted] = useState<Readonly<Record<string, string>>>({});
 
   const [drafts, setDrafts] = useState<FamilyBulletinDraftStore>({});
   const [posting, setPosting] = useState(false);
@@ -173,6 +176,27 @@ export default function StaffFamilyMessagesPage() {
   const activeComposeResidentId = selectedResidentId ?? composeResidentId;
   activeResidentRef.current = activeComposeResidentId;
   const activeDraft = draftForResident(drafts, activeComposeResidentId);
+  const composerError = msgError ?? (activeComposeResidentId ? unposted[activeComposeResidentId] ?? null : null);
+  const unpostedElsewhere = Object.entries(unposted)
+    .filter(([id]) => id !== activeComposeResidentId)
+    .map(([id, reason]) => ({
+      id,
+      reason,
+      name: threads.find((thread) => thread.residentId === id)?.residentName || "another resident",
+    }));
+  const unpostedNotice = unpostedElsewhere.length > 0 ? (
+    <div
+      role="alert"
+      data-testid="family-note-unposted"
+      className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+    >
+      {unpostedElsewhere.map((note) => (
+        <p key={note.id}>
+          Your note for {note.name} was not posted: {note.reason} The text is kept. Open that resident to post it again.
+        </p>
+      ))}
+    </div>
+  ) : null;
 
   const handleComposeResidentChange = useCallback((residentId: string) => {
     if (inFlightPost.current && residentId) return;
@@ -239,19 +263,28 @@ export default function StaffFamilyMessagesPage() {
         return;
       }
       if (!result.ok) {
+        setUnposted((current) => ({ ...current, [residentId]: result.error }));
         if (activeResidentRef.current === residentId || activeResidentRef.current === "") {
           setMsgError(result.error);
         }
         return;
       }
+      setUnposted((current) => {
+        if (!(residentId in current)) return current;
+        const next = { ...current };
+        delete next[residentId];
+        return next;
+      });
       setDrafts((store) => clearPostedResidentDraft(store, residentId, snapshot.body));
       if (visibleLogResident.current === residentId) {
         await openResidentLog(residentId);
       }
       await loadThreads();
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to post bulletin note";
+      setUnposted((current) => ({ ...current, [residentId]: message }));
       if (isCurrentAsyncGeneration(generation, postGeneration.current)) {
-        setMsgError(err instanceof Error ? err.message : "Failed to post bulletin note");
+        setMsgError(message);
       }
     } finally {
       if (inFlightPost.current?.generation === generation) {
@@ -270,6 +303,7 @@ export default function StaffFamilyMessagesPage() {
     const nextAuthorId = user?.id ?? null;
     if (draftAuthorId.current !== undefined && draftAuthorId.current !== nextAuthorId) {
       setDrafts({});
+      setUnposted({});
     }
     draftAuthorId.current = nextAuthorId;
   }, [user?.id]);
@@ -483,6 +517,7 @@ export default function StaffFamilyMessagesPage() {
           </div>
         ) : null}
 
+        {unpostedNotice}
         <StaffFamilyBulletinSection
           residentId={selectedResidentId}
           recipientLabel={selectedThread?.residentName || residentName || null}
@@ -490,7 +525,7 @@ export default function StaffFamilyMessagesPage() {
           draft={activeDraft.body}
           deliveryMethod={activeDraft.deliveryMethod}
           posting={posting}
-          error={msgError}
+          error={composerError}
           onDraftChange={handleDraftChange}
           onDeliveryMethodChange={handleDeliveryMethodChange}
           onPost={() => { void handlePost(); }}
@@ -526,6 +561,7 @@ export default function StaffFamilyMessagesPage() {
         </p>
       </div>
 
+      {unpostedNotice}
       <StaffFamilyBulletinSection
         residentId={composeResidentId}
         onResidentChange={handleComposeResidentChange}
@@ -533,7 +569,7 @@ export default function StaffFamilyMessagesPage() {
         draft={activeDraft.body}
         deliveryMethod={activeDraft.deliveryMethod}
         posting={posting}
-        error={msgError}
+        error={composerError}
         onDraftChange={handleDraftChange}
         onDeliveryMethodChange={handleDeliveryMethodChange}
         onPost={() => { void handlePost(); }}
