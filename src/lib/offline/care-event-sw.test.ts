@@ -72,11 +72,12 @@ function postedBodies(posts: { init: RequestInit }[]): Record<string, unknown>[]
 }
 
 describe("service worker care event queue", () => {
-  it("declares the second database version and cache generation", () => {
+  it("declares the second database version and retires every static cache generation", () => {
     const source = fs.readFileSync("public/sw.js", "utf8");
     expect(source).toContain('const DB_VERSION = 2;');
-    expect(source).toContain('const STATIC_CACHE = "haven-static-v5";');
-    expect(source).toContain('"haven-static-v4"');
+    // COL-674: no fetch handler, so no static cache; v4 and v5 are deleted on activate.
+    expect(source).not.toContain('addEventListener("fetch"');
+    expect(source).toContain('"haven-static-v4", "haven-static-v5"');
     expect(source).toContain('createObjectStore(CARE_EVENT_STORE_NAME, { keyPath: "clientEventId" })');
     expect(source).toContain('"haven-care-event-sync"');
   });
