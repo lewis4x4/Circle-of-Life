@@ -429,7 +429,7 @@ export default function ReportsOverviewPage() {
               </div>
               <Link
                 href="/admin/reports/templates"
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                className="text-sm font-medium text-primary underline underline-offset-4 hover:decoration-2"
               >
                 Open template library
               </Link>

@@ -9,6 +9,8 @@ import {
   isRoundingManagerRole,
 } from "@/lib/rounding/auth";
 import {
+  COMPLIANCE_NO_STAFF_LABEL,
+  COMPLIANCE_UNNAMED_STAFF_LABEL,
   summarizeObservationCompliance,
   type ComplianceRow,
 } from "@/lib/rounding/observation-compliance-summary";
@@ -138,7 +140,9 @@ export async function GET(request: Request) {
       const label = `${first} ${last}`.trim();
       staffByTask.set(row.id, {
         key: row.assigned_staff_id ?? "no_staff",
-        label: label || "No assigned staff",
+        label: row.assigned_staff_id
+          ? label || COMPLIANCE_UNNAMED_STAFF_LABEL
+          : COMPLIANCE_NO_STAFF_LABEL,
       });
     }
 

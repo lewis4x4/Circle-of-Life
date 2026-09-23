@@ -446,7 +446,7 @@ export function EmergencyTab({
             Verify all contacts
           </Button>
           <Link
-            href={`/admin/facilities/${facilityId}/emergency-contacts/print`}
+            href={`/print/facilities/${facilityId}/emergency-contacts`}
             target="_blank"
             rel="noopener noreferrer"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex gap-1.5")}
