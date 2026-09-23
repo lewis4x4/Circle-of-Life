@@ -59,3 +59,10 @@ it("gives a med-tech a link back to the Med-Tech app, and a housekeeper none", a
   await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
   expect(screen.queryByRole("link", { name: "Med-Tech app" })).toBeNull();
 });
+
+it("lets the header scroll away on a phone so only the bottom tab bar stays (COL-657)", async () => {
+  await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
+  const header = screen.getByRole("banner");
+  expect(header.className).toContain("md:sticky");
+  expect(header.className).not.toMatch(/(^|\s)sticky(\s|$)/);
+});
