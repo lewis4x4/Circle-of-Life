@@ -143,14 +143,15 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     visibleGroups: [],
     sections: {},
   },
-  // Owner ruling 2026-09-22 ("need to add Marketing"): pipeline, referrals and reputation
-  // only. Admin-eligible, but the admin shell sends marketing anywhere else back here
-  // (isMarketingAllowedAdminPath). Reputation has no nav item for any role; it is reached
+  // Owner rulings 2026-09-22: the people who go out and find residents to place ("need to
+  // add Marketing", renamed Recruiter the same day). Pipeline, referrals and reputation
+  // only. Admin-eligible, but the admin shell sends recruiter anywhere else back here
+  // (isRecruiterAllowedAdminPath). Reputation has no nav item for any role; it is reached
   // from its own URL.
-  marketing: {
+  recruiter: {
     route: "/admin/referrals",
     shell: "admin",
-    roleLabel: "Marketing",
+    roleLabel: "Recruiter",
     primaryTaskLanes: ["referrals", "pipeline", "reputation"],
     firstScreenPriority: ["referrals", "pipeline", "reputation"],
     suppressedSections: ["clinical_follow_through", "resident_records", "finance", "staffing", "settings"],

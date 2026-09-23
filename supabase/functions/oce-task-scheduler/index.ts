@@ -67,7 +67,7 @@ type AppRole =
   | "dietary_aide"
   | "housekeeper"
   | "maintenance_role"
-  | "marketing"
+  | "recruiter"
   | "family"
   | "broker";
 

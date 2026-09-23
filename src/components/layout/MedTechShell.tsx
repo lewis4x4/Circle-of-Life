@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isMarketingRole, isMedTechRole } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isRecruiterRole, isMedTechRole } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 
@@ -49,7 +49,7 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     // Med-tech staff use this surface day-to-day. Admins/owners also need
     // visibility here for support and oversight, so they're allowed through
     // rather than bounced back to their own dashboard.
-    if (isMedTechRole(role) || (isAdminEligibleAppRole(role) && !isMarketingRole(role))) {
+    if (isMedTechRole(role) || (isAdminEligibleAppRole(role) && !isRecruiterRole(role))) {
       setIsMedTech(isMedTechRole(role));
       setAuthorized(true);
       setChecking(false);
@@ -57,7 +57,7 @@ export function MedTechShell({ children }: { children: React.ReactNode }) {
     }
 
     // Other roles get redirected to their proper shell.
-    if (role === "housekeeper" || isMarketingRole(role)) {
+    if (role === "housekeeper" || isRecruiterRole(role)) {
       router.replace(getDashboardRouteForRole(role));
     } else if (role === "family") {
       router.replace("/family");

@@ -5,8 +5,8 @@ import {
   isAdminEligibleAppRole,
   isDietaryRole,
   isFacilityOperatorRole,
-  isMarketingAllowedAdminPath,
-  isMarketingRole,
+  isRecruiterAllowedAdminPath,
+  isRecruiterRole,
   isOrgAdminAppRole,
   type AuthClaimUser,
 } from "@/lib/auth/app-role";
@@ -89,8 +89,8 @@ export function adminShellAccessRedirect(request: NextRequest, user: AuthClaimUs
   if (nextUrl.pathname === "/admin" && roleHome !== "/admin") {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
-  // Marketing: referrals, pipeline and reputation only (owner ruling 2026-09-22).
-  if (isMarketingRole(role) && !isMarketingAllowedAdminPath(nextUrl.pathname)) {
+  // Recruiter: referrals, pipeline and reputation only (owner ruling 2026-09-22).
+  if (isRecruiterRole(role) && !isRecruiterAllowedAdminPath(nextUrl.pathname)) {
     return NextResponse.redirect(new URL(roleHome, nextUrl.origin));
   }
 

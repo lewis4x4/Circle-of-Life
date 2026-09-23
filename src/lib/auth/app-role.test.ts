@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
 import { adminShellAccessRedirect } from "./admin-shell";
-import { isAdminEligibleAppRole, isDietaryRole, isMarketingAllowedAdminPath, isMedTechRole } from "./app-role";
+import { isAdminEligibleAppRole, isDietaryRole, isRecruiterAllowedAdminPath, isMedTechRole } from "./app-role";
 import { caregiverShellAccessRedirect } from "./caregiver-shell";
 import { dietaryShellAccessRedirect } from "./dietary-shell";
 import { getDashboardRouteForRole, getRoleDashboardConfig, getShellForRole } from "./dashboard-routing";
@@ -84,16 +84,16 @@ describe("cook holds dietary + dietary_aide", () => {
   });
 });
 
-describe("owner ruling 2026-09-22: marketing is referrals, pipeline and reputation only", () => {
+describe("owner ruling 2026-09-22: recruiter is referrals, pipeline and reputation only", () => {
   it("is admin-eligible and lands on the referrals page", () => {
-    expect(isAdminEligibleAppRole("marketing")).toBe(true);
-    expect(getDashboardRouteForRole("marketing")).toBe("/admin/referrals");
-    expect(getShellForRole("marketing")).toBe("admin");
-    const config = getRoleDashboardConfig("marketing");
-    expect(config.roleLabel).toBe("Marketing");
+    expect(isAdminEligibleAppRole("recruiter")).toBe(true);
+    expect(getDashboardRouteForRole("recruiter")).toBe("/admin/referrals");
+    expect(getShellForRole("recruiter")).toBe("admin");
+    const config = getRoleDashboardConfig("recruiter");
+    expect(config.roleLabel).toBe("Recruiter");
     expect(config.visibleGroups).toEqual(["Pipeline"]);
     expect(config.visibleItemKeys).toEqual(["referrals"]);
-    expect(redirectPath(adminShellAccessRedirect(new NextRequest("https://haven.test/admin"), asUser("marketing")))).toBe(
+    expect(redirectPath(adminShellAccessRedirect(new NextRequest("https://haven.test/admin"), asUser("recruiter")))).toBe(
       "/admin/referrals",
     );
   });
@@ -108,8 +108,8 @@ describe("owner ruling 2026-09-22: marketing is referrals, pipeline and reputati
       "/reputation",
       "/admin/reputation/replies",
     ]) {
-      expect(isMarketingAllowedAdminPath(path)).toBe(true);
-      expect(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("marketing"))).toBeNull();
+      expect(isRecruiterAllowedAdminPath(path)).toBe(true);
+      expect(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("recruiter"))).toBeNull();
     }
   });
 
@@ -130,7 +130,7 @@ describe("owner ruling 2026-09-22: marketing is referrals, pipeline and reputati
       "/print/resident/abc",
       "/admin/executive",
     ]) {
-      expect(redirectPath(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("marketing")))).toBe(
+      expect(redirectPath(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("recruiter")))).toBe(
         "/admin/referrals",
       );
     }
@@ -142,7 +142,7 @@ describe("owner ruling 2026-09-22: marketing is referrals, pipeline and reputati
       [medTechShellAccessRedirect, "/med-tech"],
       [dietaryShellAccessRedirect, "/dietary"],
     ] as const) {
-      expect(redirectPath(redirect(new NextRequest(`https://haven.test${path}`), asUser("marketing")))).toBe("/admin/referrals");
+      expect(redirectPath(redirect(new NextRequest(`https://haven.test${path}`), asUser("recruiter")))).toBe("/admin/referrals");
     }
   });
 });

@@ -13,9 +13,9 @@ export const ADMIN_ELIGIBLE_APP_ROLES = new Set<string>([
   "med_tech",
   "maintenance_role",
   "broker",
-  // Marketing opens the admin shell but only its referrals / pipeline / reputation pages
-  // (isMarketingAllowedAdminPath below; owner ruling 2026-09-22).
-  "marketing",
+  // Recruiter opens the admin shell but only its referrals / pipeline / reputation pages
+  // (isRecruiterAllowedAdminPath below; owner ruling 2026-09-22).
+  "recruiter",
 ]);
 
 export type AuthClaimUser = {
@@ -72,16 +72,16 @@ export function isDietaryRole(role: string): boolean {
   return role === "cook" || role === "dietary" || role === "dietary_aide";
 }
 
-/** Marketing role — referrals, pipeline and reputation only (owner ruling 2026-09-22). */
-export function isMarketingRole(role: string): boolean {
-  return role === "marketing";
+/** Recruiter role — referrals, pipeline and reputation only (owner ruling 2026-09-22). */
+export function isRecruiterRole(role: string): boolean {
+  return role === "recruiter";
 }
 
 /**
- * Admin-shell pages a marketing user may open. Everything else in the admin shell
+ * Admin-shell pages a recruiter user may open. Everything else in the admin shell
  * (residents, clinical, billing, payroll, staff, settings, ...) sends them to their home.
  */
-const MARKETING_ADMIN_PATH_PREFIXES = [
+const RECRUITER_ADMIN_PATH_PREFIXES = [
   "/admin/referrals",
   // Pipeline aliases for the referral CRM. /pipeline/recent-admissions and
   // /pipeline/discharge-management lead into resident records and stay closed.
@@ -91,8 +91,8 @@ const MARKETING_ADMIN_PATH_PREFIXES = [
   "/admin/reputation",
 ] as const;
 
-export function isMarketingAllowedAdminPath(pathname: string): boolean {
-  return MARKETING_ADMIN_PATH_PREFIXES.some(
+export function isRecruiterAllowedAdminPath(pathname: string): boolean {
+  return RECRUITER_ADMIN_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
