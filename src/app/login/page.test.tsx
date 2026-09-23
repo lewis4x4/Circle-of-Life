@@ -71,3 +71,12 @@ describe("login credential safety before hydration", () => {
     expect(mocks.auth.signInWithPassword).not.toHaveBeenCalled();
   });
 });
+
+describe("login way back to the public site (COL-662)", () => {
+  it("links to the public site's front page, not the apex that redirects to sign-in", () => {
+    prerender();
+    const link = Array.from(container.querySelectorAll("a")).find((a) => a.textContent?.includes("Circle of Life website"));
+    expect(link).toBeTruthy();
+    expect(link).toHaveAttribute("href", "/campuses");
+  });
+});

@@ -24,6 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { STAND_UP_WORKBOOK_URL, STAND_UP_WORKBOOK_LINK_TEXT } from "@/lib/stand-up/model";
 import { Card, CardContent } from "@/components/ui/card";
+import { BackLink } from "@/design-system/components/BackLink";
+import { PUBLIC_SITE_HOME_HREF } from "@/lib/routing/public-site";
 
 const SIGN_IN_UNAVAILABLE_MESSAGE =
   "Sign-in is temporarily unavailable. Contact your facility administrator or support.";
@@ -254,9 +256,8 @@ export default function LoginPage() {
           </div>
           <span className="font-serif text-2xl tracking-tight text-white drop-shadow-md">Haven</span>
         </div>
-        <p className="hidden text-xs uppercase tracking-[0.22em] text-slate-300 sm:block">
-          Operations Platform
-        </p>
+        {/* Staff reach sign-in from the public site; give them the way back (COL-662). */}
+        <BackLink label="Circle of Life website" href={PUBLIC_SITE_HOME_HREF} className="text-slate-200 hover:text-white" />
       </header>
 
       {/* Centered hero + form */}
