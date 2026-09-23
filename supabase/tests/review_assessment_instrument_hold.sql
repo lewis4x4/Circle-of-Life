@@ -132,7 +132,7 @@ BEGIN
       END IF;
       IF v_sqlstate <> 'P0001' THEN
         RAISE EXCEPTION 'role % got sqlstate % not P0001', r.role, v_sqlstate; END IF;
-      IF v_detail <> 'PHQ-9 on hold until safety follow-up is added' THEN
+      IF v_detail <> 'PHQ-9 cannot be recorded in Haven yet.' THEN
         RAISE EXCEPTION 'role % got no usable detail: %', r.role, v_detail; END IF;
       v_blocked := v_blocked + 1;
     END;
