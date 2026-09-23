@@ -282,7 +282,7 @@ export function AdminStaffPageClient({
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
-            Staffing roster
+            Staff roster
           </h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             Roster from staff, certifications, and upcoming shift assignments.

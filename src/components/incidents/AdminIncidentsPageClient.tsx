@@ -219,9 +219,9 @@ export function AdminIncidentsPageClient({
       <header className="relative z-10 shrink-0 flex flex-wrap items-end justify-between gap-3 px-1">
         <div>
            
-           <h2 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-3 md:text-4xl">
+           <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-3 md:text-4xl">
              Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <></>}
-           </h2>
+           </h1>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/admin/incidents/reports-log" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}>
