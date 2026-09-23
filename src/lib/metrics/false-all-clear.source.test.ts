@@ -33,7 +33,10 @@ describe("false all-clear ratchet (COL-649)", () => {
     const baseline = readBaseline();
     const shrunk: FalseAllClearCounts = {};
     for (const [file, rules] of Object.entries(counts).sort(([a], [b]) => a.localeCompare(b))) {
-      for (const [rule, n] of Object.entries(rules) as Array<[FalseAllClearRule, number]>) {
+      const sortedRules = (Object.entries(rules) as Array<[FalseAllClearRule, number]>).sort(([a], [b]) =>
+        a.localeCompare(b),
+      );
+      for (const [rule, n] of sortedRules) {
         // Only ever shrink: a file cannot gain allowance by regenerating.
         const allowed = Math.min(n, baseline[file]?.[rule] ?? 0);
         if (allowed > 0) (shrunk[file] ??= {})[rule] = allowed;
