@@ -12,7 +12,19 @@ import {
 } from "@/components/common/admin-list-patterns";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { notYetSentCaption } from "@/lib/billing/receivables";
 import { formatCents } from "@/lib/finance/format-cents";
+import {
+  forecastBilledValue,
+  forecastCollectedValue,
+  forecastDaysCell,
+  forecastDaysValue,
+  forecastDsoAccent,
+  forecastDsoDetail,
+  forecastPctCell,
+  forecastPctValue,
+  forecastRunRateValue,
+} from "@/lib/finance/forecast-display-copy";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { ForecastSnapshot } from "@/lib/finance/load-forecast-data";
 
@@ -21,14 +33,6 @@ type FinanceForecastPageClientProps = {
   initialError: string | null;
   initialFacilityId: string | null;
 };
-
-function formatDays(value: number): string {
-  return `${value.toFixed(1)}d`;
-}
-
-function formatPct(value: number): string {
-  return `${value.toFixed(1)}%`;
-}
 
 function formatMonthOffset(months: number): string {
   if (months < 0) return `${Math.abs(months)} mo overdue`;
@@ -51,6 +55,12 @@ export default function FinanceForecastPageClient({
     const scopedFacility = snapshot?.facilities.find((facility) => facility.id === initialFacilityId);
     return `Facility scope · ${scopedFacility?.name ?? "selected facility"}`;
   }, [initialFacilityId, snapshot?.facilities]);
+
+  const costRecordCount = snapshot
+    ? snapshot.cost.summary.laborRecordCount + snapshot.cost.summary.vendorInvoiceCount
+    : 0;
+  const capexValue = (cents: number) =>
+    snapshot && snapshot.capex.summary.scheduledAssetCount === 0 ? "No plan" : formatCents(cents);
 
   return (
     <div className="space-y-6">
@@ -93,32 +103,43 @@ export default function FinanceForecastPageClient({
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <ForecastMetricCard
               icon={Wallet}
-              label="Gross AR exposure"
+              label="Open receivables (sent)"
               value={formatCents(snapshot.dso.summary.openArCents)}
               detail={snapshot.residentMoneyNeedsReview ? "Resident funds incomplete; legacy or ledger review required" : `Resident funds held separately ${formatCents(snapshot.dso.summary.trustCoverageCents)}; bank and books unverified`}
+              note={notYetSentCaption(snapshot.notYetSent.count, formatCents(snapshot.notYetSent.cents))}
             />
             <ForecastMetricCard
               icon={TrendingUp}
               label="DSO run-rate"
-              value={formatDays(snapshot.dso.summary.currentDsoDays)}
-              detail={`Projected 30d ${formatDays(snapshot.dso.summary.projected30DayDsoDays)}`}
-              accent={
-                snapshot.dso.summary.projected30DayDsoDays > snapshot.dso.summary.currentDsoDays
-                  ? "amber"
-                  : "emerald"
-              }
+              value={forecastDaysValue(snapshot.dso.summary.currentDsoDays)}
+              detail={forecastDsoDetail(snapshot.dso.summary.projected30DayDsoDays, snapshot.dso.summary.trailing90BilledCount)}
+              accent={forecastDsoAccent(snapshot.dso.summary.currentDsoDays, snapshot.dso.summary.projected30DayDsoDays)}
             />
             <ForecastMetricCard
               icon={ArrowRight}
               label="30d cost / resident"
-              value={formatUsdFromCents(snapshot.cost.summary.costPerResidentCents)}
-              detail={`${snapshot.cost.summary.activeResidents} active residents in scope`}
+              value={
+                costRecordCount === 0 ? "No cost posted" : formatUsdFromCents(snapshot.cost.summary.costPerResidentCents)
+              }
+              detail={
+                costRecordCount === 0
+                  ? "No approved payroll or vendor invoices in the last 30 days"
+                  : `${snapshot.cost.summary.activeResidents} active residents in scope`
+              }
             />
             <ForecastMetricCard
               icon={Wrench}
               label="Capex due next 12m"
-              value={formatCents(snapshot.capex.summary.due12MonthsCostCents)}
-              detail={`${snapshot.capex.summary.due12MonthsCount} asset(s) due`}
+              value={
+                snapshot.capex.summary.scheduledAssetCount === 0
+                  ? "No capital plan"
+                  : formatCents(snapshot.capex.summary.due12MonthsCostCents)
+              }
+              detail={
+                snapshot.capex.summary.scheduledAssetCount === 0
+                  ? "No asset has a replacement date and estimate yet"
+                  : `${snapshot.capex.summary.due12MonthsCount} asset${snapshot.capex.summary.due12MonthsCount === 1 ? "" : "s"} due`
+              }
               accent={snapshot.capex.summary.overdueCount > 0 ? "red" : "indigo"}
             />
           </div>
@@ -133,10 +154,19 @@ export default function FinanceForecastPageClient({
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-4">
-                <MetricInline label="Trailing 90d billed" value={formatCents(snapshot.dso.summary.trailing90BilledCents)} />
-                <MetricInline label="Trailing 90d collected" value={formatCents(snapshot.dso.summary.trailing90CollectedCents)} />
-                <MetricInline label="Collection efficiency" value={formatPct(snapshot.dso.summary.collectionEfficiencyPct)} />
-                <MetricInline label="Open receivables" value={formatCents(snapshot.dso.summary.netExposureCents)} />
+                <MetricInline
+                  label="Trailing 90d billed"
+                  value={forecastBilledValue(snapshot.dso.summary.trailing90BilledCents, snapshot.dso.summary.trailing90BilledCount)}
+                />
+                <MetricInline
+                  label="Trailing 90d collected"
+                  value={forecastCollectedValue(
+                    snapshot.dso.summary.trailing90CollectedCents,
+                    snapshot.dso.summary.trailing90PaymentCount,
+                  )}
+                />
+                <MetricInline label="Collection efficiency" value={forecastPctValue(snapshot.dso.summary.collectionEfficiencyPct)} />
+                <MetricInline label="Open receivables (sent)" value={formatCents(snapshot.dso.summary.netExposureCents)} />
               </div>
 
               {snapshot.dso.rows.length === 0 ? (
@@ -164,20 +194,26 @@ export default function FinanceForecastPageClient({
                           <td className="py-3 pr-4">{row.facilityName}</td>
                           <td className="py-3 pr-4">{formatCents(row.openArCents)}</td>
                           <td className="py-3 pr-4">{snapshot.residentMoneyReviewFacilityIds.includes(row.facilityId) ? "Not established / review required" : formatCents(row.trustCoverageCents)}</td>
-                          <td className="py-3 pr-4">{formatDays(row.currentDsoDays)}</td>
+                          <td className="py-3 pr-4">{forecastDaysCell(row.currentDsoDays)}</td>
                           <td className="py-3 pr-4">
                             <span
                               className={
-                                row.projected30DayDsoDays > row.currentDsoDays
+                                forecastDsoAccent(row.currentDsoDays, row.projected30DayDsoDays) === "amber"
                                   ? "text-amber-600 dark:text-amber-400"
-                                  : "text-emerald-600 dark:text-emerald-400"
+                                  : forecastDsoAccent(row.currentDsoDays, row.projected30DayDsoDays) === "emerald"
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-muted-foreground"
                               }
                             >
-                              {formatDays(row.projected30DayDsoDays)}
+                              {forecastDaysCell(row.projected30DayDsoDays)}
                             </span>
                           </td>
-                          <td className="py-3 pr-4">{formatCents(row.trailing90CollectedCents)}</td>
-                          <td className="py-3">{formatPct(row.collectionEfficiencyPct)}</td>
+                          <td className="py-3 pr-4">
+                            {snapshot.dso.summary.trailing90PaymentCount === 0
+                              ? "No payments recorded"
+                              : formatCents(row.trailing90CollectedCents)}
+                          </td>
+                          <td className="py-3">{forecastPctCell(row.collectionEfficiencyPct)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -197,8 +233,22 @@ export default function FinanceForecastPageClient({
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-4">
-                  <MetricInline label="Labor run-rate" value={formatCents(snapshot.cost.summary.laborCostCents)} />
-                  <MetricInline label="Vendor run-rate" value={formatCents(snapshot.cost.summary.vendorCostCents)} />
+                  <MetricInline
+                    label="Labor run-rate"
+                    value={forecastRunRateValue(
+                      snapshot.cost.summary.laborCostCents,
+                      snapshot.cost.summary.laborRecordCount,
+                      "No approved time",
+                    )}
+                  />
+                  <MetricInline
+                    label="Vendor run-rate"
+                    value={forecastRunRateValue(
+                      snapshot.cost.summary.vendorCostCents,
+                      snapshot.cost.summary.vendorInvoiceCount,
+                      "No vendor invoices",
+                    )}
+                  />
                   <MetricInline label="Approved hours" value={snapshot.cost.summary.approvedHours.toFixed(1)} />
                   <MetricInline label="Overtime hours" value={snapshot.cost.summary.overtimeHours.toFixed(1)} />
                 </div>
@@ -229,7 +279,9 @@ export default function FinanceForecastPageClient({
                             <td className="py-3 pr-4">{formatCents(row.laborCostCents)}</td>
                             <td className="py-3 pr-4">{formatCents(row.vendorCostCents)}</td>
                             <td className="py-3 pr-4">{formatCents(row.totalCostCents)}</td>
-                            <td className="py-3">{formatUsdFromCents(row.costPerResidentCents)}</td>
+                            <td className="py-3">
+                              {row.totalCostCents === 0 ? "No cost posted" : formatUsdFromCents(row.costPerResidentCents)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -248,9 +300,9 @@ export default function FinanceForecastPageClient({
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <MetricInline label="Overdue" value={formatCents(snapshot.capex.summary.overdueCostCents)} />
-                  <MetricInline label="Next 12m" value={formatCents(snapshot.capex.summary.due12MonthsCostCents)} />
-                  <MetricInline label="13-36m" value={formatCents(snapshot.capex.summary.due36MonthsCostCents)} />
+                  <MetricInline label="Overdue" value={capexValue(snapshot.capex.summary.overdueCostCents)} />
+                  <MetricInline label="Next 12m" value={capexValue(snapshot.capex.summary.due12MonthsCostCents)} />
+                  <MetricInline label="13-36m" value={capexValue(snapshot.capex.summary.due36MonthsCostCents)} />
                 </div>
 
                 {snapshot.capex.dueSoon.length === 0 ? (
@@ -356,12 +408,15 @@ function ForecastMetricCard({
   label,
   value,
   detail,
+  note,
   accent = "indigo",
 }: {
   icon: typeof Wallet;
   label: string;
   value: string;
   detail: string;
+  /** Second line naming what the figure leaves out. */
+  note?: string | null;
   accent?: "indigo" | "emerald" | "amber" | "red";
 }) {
   const accentClass =
@@ -380,6 +435,7 @@ function ForecastMetricCard({
           <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
           <p className="text-2xl font-semibold text-slate-900 dark:text-white">{value}</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>
+          {note ? <p className="text-xs text-slate-600 dark:text-slate-400">{note}</p> : null}
         </div>
         <div className="rounded-xl border border-white/50 bg-white/70 p-3 text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-200">
           <Icon className="h-5 w-5" />
