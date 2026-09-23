@@ -20,8 +20,13 @@ export type BillingOverviewKpiContext = {
   totalInvoiceRows: number;
   openArTotalCents: number;
   cohortResidentCount: number;
+  /** Sent (non-draft, non-void) invoice totals dated in the period. */
   periodBilledCents: number;
+  /** Portion of `periodBilledCents` already settled by payments or credits. */
+  periodAppliedCents: number;
   periodAppliedRatePct: number | null;
+  /** Drafts dated in the period — built but not sent, so not billed. */
+  periodDraftCount: number;
   ninetyPlusSharePct: number | null;
   overdueCount: number;
 };
@@ -63,7 +68,7 @@ export function billingOverviewNinetyPlusShareEmptyCopy(ctx: BillingOverviewKpiC
   const loadGap = sharedLoadGap("ninety_plus_share", ctx);
   if (loadGap) return loadGap;
   if (!ctx.invoiceFetchComplete) return LOADING_COPY.ninety_plus_share;
-  if (ctx.openArTotalCents <= 0) return "No open AR to age";
+  if (ctx.openArTotalCents <= 0) return "No sent invoices with a balance";
   if (ctx.ninetyPlusSharePct == null) return "No ninety-plus bucket yet";
   return null;
 }
@@ -73,7 +78,13 @@ export function billingOverviewAppliedPeriodEmptyCopy(ctx: BillingOverviewKpiCon
   const loadGap = sharedLoadGap("applied_period", ctx);
   if (loadGap) return loadGap;
   if (!ctx.invoiceFetchComplete) return LOADING_COPY.applied_period;
-  if (ctx.periodBilledCents === 0) return "No invoices this period";
+  if (ctx.periodBilledCents === 0) {
+    if (ctx.periodDraftCount > 0) {
+      return `No invoices sent this period — ${ctx.periodDraftCount} draft${ctx.periodDraftCount === 1 ? "" : "s"} not yet sent`;
+    }
+    return "No invoices sent this period";
+  }
+  if (ctx.periodAppliedCents <= 0) return "No payments recorded";
   if (ctx.periodAppliedRatePct == null) return "Collection rate not available";
   return null;
 }
@@ -113,8 +124,8 @@ export function billingActionQueueOverdueCopy(ctx: BillingOverviewKpiContext): s
   if (ctx.loadFailed) return "Overdue list did not load";
   if (ctx.isLoading && !ctx.invoiceFetchComplete) return "Loading overdue invoices…";
   if (ctx.totalInvoiceRows === 0) return "No invoices in scope — nothing overdue yet";
-  if (ctx.overdueCount === 0) return "No overdue invoices in scope";
-  return `${ctx.overdueCount} overdue invoice${ctx.overdueCount === 1 ? "" : "s"} awaiting follow-up`;
+  if (ctx.overdueCount === 0) return "No sent invoices past their due date";
+  return `${ctx.overdueCount} sent invoice${ctx.overdueCount === 1 ? "" : "s"} past due awaiting follow-up`;
 }
 
 /** Action queue line when no draft invoices need finalization. */
@@ -123,7 +134,7 @@ export function billingActionQueueDraftCopy(draftCount: number, ctx: BillingOver
   if (ctx.isLoading && !ctx.invoiceFetchComplete) return "Loading draft invoices…";
   if (ctx.totalInvoiceRows === 0) return "No invoices in scope — no drafts yet";
   if (draftCount === 0) return "No draft invoices in scope";
-  return `${draftCount} draft invoice${draftCount === 1 ? "" : "s"} to finalize`;
+  return `${draftCount} draft invoice${draftCount === 1 ? "" : "s"} not yet sent — review and send`;
 }
 
 /** Summary line under the overview KPI strip. */
