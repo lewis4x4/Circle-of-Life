@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import { incidentSeverityOptions } from "@/lib/incidents/incidents-display-copy";
 
 type IncidentSeverity = Database["public"]["Enums"]["incident_severity"];
 type StaffRole = Database["public"]["Enums"]["staff_role"];
@@ -38,12 +39,7 @@ type RouteRow = {
 
 type FacilityOption = { id: string; name: string };
 
-const SEVERITY_OPTIONS: Array<{ value: RouteRow["severity_min"]; label: string }> = [
-  { value: "level_1", label: "Level 1 — FYI" },
-  { value: "level_2", label: "Level 2 — Standard" },
-  { value: "level_3", label: "Level 3 — Urgent" },
-  { value: "level_4", label: "Level 4 — Critical" },
-];
+const SEVERITY_OPTIONS: Array<{ value: RouteRow["severity_min"]; label: string }> = incidentSeverityOptions(false);
 
 const CHANNEL_OPTIONS = [
   { value: "email", label: "Email" },
