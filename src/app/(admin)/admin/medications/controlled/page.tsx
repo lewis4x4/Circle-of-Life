@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ type FilterType = "all" | "discrepancies" | "pending";
 export default function AdminControlledSubstancesPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +62,9 @@ export default function AdminControlledSubstancesPage() {
     setLoading(true);
     setError(null);
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      // Gated below (COL-651); no facility is not a load error.
       setRows([]);
       setLoading(false);
-      setError("Select a facility.");
       return;
     }
     try {
@@ -189,6 +191,7 @@ export default function AdminControlledSubstancesPage() {
             Shift reconciliation audit trail. Discrepancies require resolution.
           </p>
         </div>
+        {facilityReady ? (
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             onClick={() => setCountModalOpen(true)}
@@ -198,8 +201,13 @@ export default function AdminControlledSubstancesPage() {
             Initiate Count
           </Button>
         </div>
+        ) : null}
       </div>
 
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Controlled-substance counts are reconciled per building, shift by shift." />
+      ) : (
+      <>
       {error ? (
         <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm text-destructive flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
@@ -460,6 +468,8 @@ export default function AdminControlledSubstancesPage() {
             </MotionList>
           </div>
         </div>
+      )}
+      </>
       )}
 
       {/* Modals */}

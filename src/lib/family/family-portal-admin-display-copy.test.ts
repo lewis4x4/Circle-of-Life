@@ -5,8 +5,6 @@ import {
   FAMILY_PORTAL_ADMIN_NO_NOTE_COPY,
   FAMILY_PORTAL_ADMIN_NO_RESIDENT_NAME_COPY,
   FAMILY_PORTAL_ADMIN_NO_ROOM_COPY,
-  FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY,
-  familyPortalAdminKpiValue,
   formatFamilyPortalAdminConferenceRoom,
   formatFamilyPortalAdminMatchedKeywords,
   formatFamilyPortalAdminNoteBody,
@@ -71,25 +69,6 @@ describe("formatFamilyPortalAdminResidentName", () => {
   });
 });
 
-describe("familyPortalAdminKpiValue", () => {
-  it("names missing facility scope instead of an em dash", () => {
-    expect(familyPortalAdminKpiValue("pending_triage", false, 3)).toBe(
-      "Select a facility to load triage counts",
-    );
-    expect(familyPortalAdminKpiValue("conferences_this_week", false, 2)).toBe(
-      "Select a facility to load conferences",
-    );
-    expect(familyPortalAdminKpiValue("consents_expiring", false, 1)).toBe(
-      "Select a facility to load consent counts",
-    );
-  });
-
-  it("keeps numeric counts when facility scope is ready", () => {
-    expect(familyPortalAdminKpiValue("pending_triage", true, 0)).toBe(0);
-    expect(familyPortalAdminKpiValue("conferences_this_week", true, 4)).toBe(4);
-  });
-});
-
 describe("resolveFamilyPortalAdminFacilityScope", () => {
   it("returns unscoped when facility scope is not ready", () => {
     expect(resolveFamilyPortalAdminFacilityScope(false, null)).toEqual({ kind: "unscoped" });
@@ -112,11 +91,10 @@ describe("resolveFamilyPortalAdminFacilityScope", () => {
 });
 
 describe("formatFamilyPortalAdminPageSubtitle", () => {
-  it("uses the shared select-facility gap when unscoped", () => {
-    expect(formatFamilyPortalAdminPageSubtitle({ kind: "unscoped" })).toContain(
-      FAMILY_PORTAL_ADMIN_SELECT_FACILITY_FIRST_COPY,
-    );
-    expect(formatFamilyPortalAdminPageSubtitle({ kind: "unscoped" })).not.toContain("selected facility");
+  it("leaves the facility ask to the page's FacilityGate when unscoped (COL-651)", () => {
+    const subtitle = formatFamilyPortalAdminPageSubtitle({ kind: "unscoped" });
+    expect(subtitle).not.toMatch(/select a facility/i);
+    expect(subtitle).not.toContain("selected facility");
   });
 
   it("interpolates the facility name only when resolved", () => {

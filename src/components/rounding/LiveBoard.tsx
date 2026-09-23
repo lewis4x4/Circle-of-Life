@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RefreshCw, UserPlus } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { LiveBoardCadenceHeader } from "@/components/rounding/LiveBoardCadenceHeader";
 import { LiveBoardSummary } from "@/components/rounding/LiveBoardSummary";
 import { LiveBoardTaskRow } from "@/components/rounding/LiveBoardTaskRow";
@@ -153,7 +154,7 @@ function ScopedLiveBoard() {
       <RoundingHubNav />
 
       {boardState === "no_facility" ? (
-        <RoundingEmptyNotice label="Facility scope required" copy={emptyCopy} />
+        <FacilityGateNotice reason="Rounding checks are scheduled and recorded per building." />
       ) : (
         <>
           <LiveBoardCadenceHeader

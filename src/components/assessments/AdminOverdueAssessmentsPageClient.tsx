@@ -10,7 +10,6 @@ import {
   fetchCarePlanReviewsDueFromSupabase,
   fetchClinicalDeskScope,
   fetchOverdueAssessmentsFromSupabase,
-  NO_FACILITY_SOURCE_NOTICE,
   type ClinicalDeskScope,
   type CarePlanReviewDueRow,
   type OverdueAssessmentRow,
@@ -18,6 +17,7 @@ import {
 import { clinicalDeskEmptyCopy, clinicalDeskQueueState } from "@/lib/assessments/overdue-assessments-display-copy";
 import { clinicalQueueCount, formatQueueChip } from "@/lib/clinical/clinical-queue-state";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,7 +41,6 @@ type AdminOverdueAssessmentsPageClientProps = {
   initialError: string | null;
   initialFacilityId: string | null;
   initialScope: ClinicalDeskScope | null;
-  initialSourceNotice: string | null;
 };
 
 export function AdminOverdueAssessmentsPageClient({
@@ -50,16 +49,16 @@ export function AdminOverdueAssessmentsPageClient({
   initialError,
   initialFacilityId,
   initialScope,
-  initialSourceNotice,
 }: AdminOverdueAssessmentsPageClientProps) {
   const { selectedFacilityId } = useFacilityStore();
+  // No cross-facility queue exists; under All facilities the desk is gated (COL-651).
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const skipNextLoadRef = useRef(initialError == null);
   const [assessments, setAssessments] = useState<AssessmentRow[]>(initialAssessments);
   const [carePlans, setCarePlans] = useState<CarePlanRow[]>(initialCarePlans);
   const [scope, setScope] = useState<ClinicalDeskScope | null>(initialScope);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
-  const [sourceNotice, setSourceNotice] = useState<string | null>(initialSourceNotice);
   const [diffCarePlanId, setDiffCarePlanId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -72,13 +71,11 @@ export function AdminOverdueAssessmentsPageClient({
 
     setIsLoading(true);
     setError(null);
-    setSourceNotice(null);
     try {
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
         setAssessments([]);
         setCarePlans([]);
         setScope(null);
-        setSourceNotice(NO_FACILITY_SOURCE_NOTICE);
         return;
       }
 
@@ -168,6 +165,7 @@ export function AdminOverdueAssessmentsPageClient({
              Unified exception queue for Assessments and Care Plan drafts.
            </p>
          </div>
+         {facilityReady ? (
          <div className="flex flex-wrap gap-3">
            <div className="inline-flex items-center px-4 py-2 rounded-full border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 shadow-sm text-sm font-bold tracking-wide">
              <ClipboardCheck className="mr-2 h-4 w-4 text-rose-500" />
@@ -178,14 +176,12 @@ export function AdminOverdueAssessmentsPageClient({
              {plansDueChip}
            </div>
          </div>
+         ) : null}
       </div>
 
-      {sourceNotice ? (
-        <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 text-sm font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-          {sourceNotice}
-        </div>
-      ) : null}
-
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Assessments and care-plan reviews come due per building; the desk does not add them up across facilities." />
+      ) : (
       <div className="grid lg:grid-cols-12 gap-6 flex-1 min-h-[400px]">
         {/* Left Drawer: Overdue Assessments */}
         <div className="lg:col-span-4 flex flex-col h-full overflow-hidden">
@@ -313,6 +309,7 @@ export function AdminOverdueAssessmentsPageClient({
         </div>
 
       </div>
+      )}
 
       {/* Care Plan Diff Modal */}
       <CarePlanDiffModal
