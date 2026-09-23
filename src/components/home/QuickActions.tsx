@@ -7,12 +7,12 @@ const BASE = "inline-flex h-9 items-center gap-2 rounded-lg border border-border
 const BADGE = "inline-flex h-[18px] items-center rounded border px-1.5 text-[10px] font-semibold uppercase tracking-wide";
 
 type LiveAction = { label: string; href: string; icon: typeof CreditCard };
-type PendingAction = { key: HomeModuleKey; label: string; week: string; note: string; icon: typeof CreditCard; tone: string };
+type PendingAction = { key: HomeModuleKey; label: string; badge: string; note: string; icon: typeof CreditCard; tone: string };
 
 /** Home modules that ship dark and are switched on per facility (COL-591, COL-594). */
 export type HomeModuleKey = "record_payment" | "past_due" | "quick_note" | "collections_log" | "call_out";
 
-/** The locked quick-link order (COL-593 §9.5): live links first, then the week-badged ones. */
+/** The locked quick-link order (COL-593 §9.5): live links first, then the ones not yet switched on. */
 export function liveQuickActions(facilityId: string): LiveAction[] {
   return [
     { label: "Open Stand Up", href: "/admin/stand-up", icon: CalendarDays },
@@ -25,13 +25,14 @@ export function liveQuickActions(facilityId: string): LiveAction[] {
 
 /**
  * A module is built before it is released: until it is switched on for this
- * facility its button renders disabled with its week badge — a teaching cue
- * for the operator, not a placeholder.
+ * facility its button renders disabled with a "Coming soon" badge — a teaching cue
+ * for the operator, not a placeholder. The badge never names a rollout week:
+ * "Week 2" means nothing to an operator (COL-652).
  */
 export const PENDING_QUICK_ACTIONS: PendingAction[] = [
-  { key: "record_payment", label: "Record payment", week: "Week 2", note: "Ships in week 2: past-due rent and Record payment on Home.", icon: CreditCard, tone: "border-warning/40 text-warning" },
-  { key: "call_out", label: "Call-out", week: "Week 4", note: "Ships in week 4: phone-first call-out.", icon: Phone, tone: "border-success/45 text-success" },
-  { key: "quick_note", label: "Quick note", week: "Week 3", note: "Ships in week 3: a note that becomes a task.", icon: PenLine, tone: "border-info/40 text-info" },
+  { key: "record_payment", label: "Record payment", badge: "Coming soon", note: "Not turned on for this facility yet: past-due rent and Record payment on Home.", icon: CreditCard, tone: "border-warning/40 text-warning" },
+  { key: "call_out", label: "Call-out", badge: "Coming soon", note: "Not turned on for this facility yet: phone-first call-out.", icon: Phone, tone: "border-success/45 text-success" },
+  { key: "quick_note", label: "Quick note", badge: "Coming soon", note: "Not turned on for this facility yet: a note that becomes a task.", icon: PenLine, tone: "border-info/40 text-info" },
 ];
 
 export function QuickActions({ facilityId, released = [], onAction }: {
@@ -53,7 +54,7 @@ export function QuickActions({ facilityId, released = [], onAction }: {
       ) : (
         <button key={action.label} type="button" className={cn(BASE, "cursor-not-allowed opacity-55")} disabled title={action.note}>
           <action.icon className="size-[15px]" aria-hidden /> {action.label}
-          <span className={cn(BADGE, action.tone)}>{action.week}</span>
+          <span className={cn(BADGE, action.tone)}>{action.badge}</span>
         </button>
       ))}
     </div>

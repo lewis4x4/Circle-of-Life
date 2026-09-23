@@ -58,7 +58,7 @@ type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
 /** Surcharge cells rendered per rate row — defined once, not re-allocated per render. */
 const RATE_SURCHARGE_FIELDS: ReadonlyArray<[label: string, get: (row: RateRow) => number | null]> = [
-  ["Base semi-private", (row) => row.baseSemiPrivateCents],
+  ["Base companion", (row) => row.baseSemiPrivateCents],
   ["Care surcharge L1", (row) => row.careSurchargeLevel1Cents],
   ["Care surcharge L2", (row) => row.careSurchargeLevel2Cents],
   ["Care surcharge L3", (row) => row.careSurchargeLevel3Cents],

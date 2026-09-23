@@ -93,7 +93,7 @@ export function FacilityRatesMetricsStrip({
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Active room rates</p>
         <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{snapshot.activeRoomRateCount}</p>
-        <p className="mt-1 text-[12px] text-muted-foreground">Private &amp; semi-private lines</p>
+        <p className="mt-1 text-[12px] text-muted-foreground">Private &amp; companion lines</p>
       </div>
 
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">

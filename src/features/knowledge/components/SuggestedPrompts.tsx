@@ -8,7 +8,7 @@ interface SuggestedPromptsProps {
 }
 
 const PROMPTS = [
-  { icon: HelpCircle, label: "Residents", text: "What room is Elmer Price in?" },
+  { icon: HelpCircle, label: "Residents", text: "Which residents have a care plan review due this week?" },
   { icon: ClipboardList, label: "Operations", text: "Show me today's census and available beds." },
   { icon: BookOpen, label: "Policies", text: "What are our medication administration policies?" },
   { icon: Shield, label: "Compliance", text: "Show recent AHCA survey deficiencies and plans of correction." },

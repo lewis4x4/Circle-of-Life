@@ -168,7 +168,7 @@ export default function AdminPublishQueuePage() {
             Publish queue
           </h2>
           <p className="text-sm text-muted-foreground max-w-2xl">
-            Facility_admin / DON review of staff pages submitted for the Knowledge Base. Approve to
+            Administrator or DON review of staff pages submitted for the Knowledge Base. Approve to
             publish for the requested audience, or reject with a note.
           </p>
         </header>

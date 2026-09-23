@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { Camera, Copy, Loader2, Lock, UploadCloud } from "lucide-react";
+import { Camera, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,10 @@ import { cn } from "@/lib/utils";
 import { useOrganizationName } from "@/components/layout/UserMenu/user-menu-data";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 
+// Only sections that exist are listed; placeholder "Soon" tabs told staff about the roadmap (COL-652).
 const PROFILE_TABS = [
   { value: "profile", label: "Profile" },
-  { value: "notifications", label: "Notifications" },
   { value: "security", label: "Security" },
-  { value: "sessions", label: "Sessions" },
-  { value: "preferences", label: "Preferences" },
 ] as const;
 
 type ProfileTabValue = (typeof PROFILE_TABS)[number]["value"];
@@ -158,7 +156,6 @@ export default function AdminProfilePage() {
         />
       </header>
 
-      {/* P0-7 + ROAD-28: stub tabs render as disabled <button> with "Soon" badge — still in tablist for ARIA, no navigation. */}
       <nav
         ref={tablistRef}
         role="tablist"
@@ -168,40 +165,13 @@ export default function AdminProfilePage() {
       >
         {PROFILE_TABS.map((tab) => {
           const active = activeTab === tab.value;
-          const isStub = tab.value !== "profile" && tab.value !== "security";
           const href = tab.value === "profile" ? "/admin/profile" : `/admin/profile?tab=${tab.value}`;
           const className = cn(
             "inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium",
             "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
             active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-            isStub && "cursor-not-allowed opacity-70",
           );
-          const soonBadge = isStub ? (
-            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Soon
-            </span>
-          ) : null;
-          if (isStub) {
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                id={`profile-tab-${tab.value}`}
-                role="tab"
-                aria-selected={false}
-                aria-controls="profile-tabpanel"
-                aria-disabled={true}
-                disabled
-                tabIndex={-1}
-                data-state="inactive"
-                className={className}
-              >
-                {tab.label}
-                {soonBadge}
-              </button>
-            );
-          }
           // FIX-P2-C / UI audit P2-8: tabs already carry aria-selected; aria-current is
           // redundant here and semantically mixed with role="tab". Reserve aria-current for
           // non-tab nav patterns (breadcrumb, primary site nav).
@@ -245,7 +215,7 @@ export default function AdminProfilePage() {
                 <TooltipTrigger
                   render={
                     <div
-                      aria-label="Avatar upload coming soon"
+                      aria-label="Profile photo"
                       className="group relative flex size-[120px] cursor-not-allowed items-center justify-center overflow-hidden rounded-full border border-dashed border-border bg-muted/30 text-muted-foreground outline-none"
                     />
                   }
@@ -262,12 +232,8 @@ export default function AdminProfilePage() {
                     <Camera className="size-5" aria-hidden />
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="right">Avatar upload coming soon</TooltipContent>
+                <TooltipContent side="right">Photo upload is not available yet.</TooltipContent>
               </Tooltip>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <UploadCloud className="size-3.5" aria-hidden />
-                Drag-and-drop upload coming soon
-              </div>
             </div>
 
             <div className="grid gap-4">
@@ -352,7 +318,7 @@ export default function AdminProfilePage() {
             </Button>
           </CardFooter>
         </Card>
-      ) : activeTab === "security" ? (
+      ) : (
         <Card size="lg">
           <CardHeader>
             <CardTitle>Security</CardTitle>
@@ -365,19 +331,6 @@ export default function AdminProfilePage() {
                 await refresh();
               }}
             />
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{PROFILE_TABS.find((tab) => tab.value === activeTab)?.label}</CardTitle>
-            <CardDescription>This profile section is planned for the next phase.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3 rounded-[var(--radius)] border border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground">
-              <Lock className="size-4" aria-hidden />
-              Coming soon
-            </div>
           </CardContent>
         </Card>
       )}
