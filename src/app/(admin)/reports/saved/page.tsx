@@ -156,9 +156,9 @@ export default function SavedReportsPage() {
             <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400 mt-1">Create from template and pin to current version.</p>
           </div>
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-[2fr_1fr_auto] items-center">
-            <input className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" placeholder="Variant name" value={name} onChange={(event) => setName(event.target.value)} />
+            <input aria-label="Variant name" className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" placeholder="Variant name" value={name} onChange={(event) => setName(event.target.value)} />
             <div className="w-full relative">
-              <select
+              <select aria-label="Template"
                 className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={selectedTemplate}
                 onChange={(event) => setSelectedTemplate(event.target.value)}

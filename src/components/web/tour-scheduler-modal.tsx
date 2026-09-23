@@ -86,10 +86,10 @@ export function TourSchedulerModal({
 
             {/* Step 1: Select Facility */}
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-stone-600 block mb-2">
+              <p id="tour-modal-campus-label" className="text-xs font-bold uppercase tracking-wider text-stone-600 block mb-2">
                 1. Select North Florida Campus
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              </p>
+              <div role="group" aria-labelledby="tour-modal-campus-label" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {FACILITIES.map((f) => (
                   <button
                     type="button"
@@ -117,10 +117,10 @@ export function TourSchedulerModal({
             {/* Step 2: Date & Time */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-600 block mb-1.5">
+                <label htmlFor="tour-modal-2-preferred-date" className="text-xs font-bold uppercase tracking-wider text-stone-600 block mb-1.5">
                   2. Preferred Date
                 </label>
-                <input
+                <input id="tour-modal-2-preferred-date"
                   type="date"
                   aria-label="Preferred Date"
                   required
@@ -131,10 +131,10 @@ export function TourSchedulerModal({
               </div>
 
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-stone-600 block mb-1.5">
+                <label htmlFor="tour-modal-3-preferred-time" className="text-xs font-bold uppercase tracking-wider text-stone-600 block mb-1.5">
                   3. Preferred Time
                 </label>
-                <select
+                <select id="tour-modal-3-preferred-time"
                   aria-label="Preferred Time"
                   value={tourTime}
                   onChange={(e) => setTourTime(e.target.value)}
@@ -191,8 +191,8 @@ export function TourSchedulerModal({
             {/* Step 4: Contact Information */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-bold text-stone-600 block mb-1">Your Full Name</label>
-                <input
+                <label htmlFor="tour-modal-your-full-name" className="text-xs font-bold text-stone-600 block mb-1">Your Full Name</label>
+                <input id="tour-modal-your-full-name"
                   type="text"
                   aria-label="Your Full Name"
                   maxLength={160}
@@ -205,8 +205,8 @@ export function TourSchedulerModal({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-stone-600 block mb-1">Mobile Phone (for SMS)</label>
-                <input
+                <label htmlFor="tour-modal-mobile-phone-for-sms" className="text-xs font-bold text-stone-600 block mb-1">Mobile Phone (for SMS)</label>
+                <input id="tour-modal-mobile-phone-for-sms"
                   type="tel"
                   aria-label="Mobile Phone"
                   maxLength={40}
@@ -219,8 +219,8 @@ export function TourSchedulerModal({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-stone-600 block mb-1">Email Address</label>
-                <input
+                <label htmlFor="tour-modal-email-address" className="text-xs font-bold text-stone-600 block mb-1">Email Address</label>
+                <input id="tour-modal-email-address"
                   type="email"
                   aria-label="Email Address"
                   maxLength={254}

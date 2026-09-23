@@ -153,7 +153,7 @@ export default function ScheduledReportsPage() {
           </div>
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-4 items-center">
             <div className="w-full relative">
-              <select
+              <select aria-label="Report"
                 className="flex h-12 w-full rounded-2xl border border-slate-200 bg-card px-5 py-2 text-sm dark:border-white/10 shadow-inner focus:outline-none focus:ring-2 focus:ring-ring appearance-none font-mono uppercase tracking-wider text-[11px] font-bold text-slate-700 dark:text-slate-200"
                 value={sourceId}
                 onChange={(event) => setSourceId(event.target.value)}
