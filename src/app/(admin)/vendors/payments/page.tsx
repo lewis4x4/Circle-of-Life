@@ -105,6 +105,15 @@ export default function VendorPaymentsPage() {
     !!organizationId &&
     canOperateFacilityVendorWorkflow(appRole as Database["public"]["Enums"]["app_role"]);
 
+  // Submit stays off until the payment names who paid whom, where, and how much (COL-662).
+  const amountCents = Math.round(Number.parseFloat(amount) * 100);
+  const missingPaymentFields = [
+    !entityId && "entity",
+    !vendorId && "vendor",
+    !facilityId && "facility",
+    !(Number.isFinite(amountCents) && amountCents > 0) && "amount",
+  ].filter(Boolean) as string[];
+
   async function onPay(e: React.FormEvent) {
     e.preventDefault();
     if (!organizationId || !canPay || !entityId || !vendorId || !facilityId) return;
@@ -235,9 +244,18 @@ export default function VendorPaymentsPage() {
                   <option value="card">Card</option>
                 </select>
               </div>
-              <Button type="submit" disabled={saving}>
+              <Button
+                type="submit"
+                disabled={saving || missingPaymentFields.length > 0}
+                aria-describedby={missingPaymentFields.length > 0 ? "vendor-payment-missing" : undefined}
+              >
                 {saving ? "Saving…" : "Record payment"}
               </Button>
+              {missingPaymentFields.length > 0 ? (
+                <p id="vendor-payment-missing" className="text-xs text-muted-foreground">
+                  Choose or enter the {missingPaymentFields.join(", ")} to record a payment.
+                </p>
+              ) : null}
             </form>
           </CardContent>
         </Card>

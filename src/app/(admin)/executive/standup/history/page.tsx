@@ -173,12 +173,6 @@ export default function ExecutiveStandupHistoryPage() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Refresh
             </Button>
-            {rows.length === 0 && canCreateDraft ? (
-              <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
-                {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-                Generate first draft
-              </Button>
-            ) : null}
           </div>
         </header>
 
