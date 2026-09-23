@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatOperationsVendorsCardDescription } from "@/lib/operations/operations-display-copy";
 import { cn } from "@/lib/utils";
 
 type VendorRow = {
@@ -27,7 +28,11 @@ type VendorRow = {
 };
 
 export default function OperationsVendorBookingsPage() {
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const scopedFacilityName = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
+  }, [availableFacilities, selectedFacilityId]);
   const [vendors, setVendors] = useState<VendorRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -152,7 +157,7 @@ export default function OperationsVendorBookingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Facility vendors</CardTitle>
-          <CardDescription>{loading ? "Loading vendors..." : `${vendors.length} vendor links for the selected facility`}</CardDescription>
+          <CardDescription>{loading ? "Loading vendors..." : formatOperationsVendorsCardDescription(vendors.length, scopedFacilityName)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {vendors.map((vendor) => (

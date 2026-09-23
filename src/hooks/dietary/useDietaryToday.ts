@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import type {
   DietaryDeckState,
@@ -101,6 +102,47 @@ async function q(
   return { data: data as QueryRow[] | null, error };
 }
 
+/**
+ * First names for the given user ids. A display nicety only: a failed or
+ * RLS-hidden read leaves the name unresolved instead of failing the deck.
+ */
+async function loadFirstNames(ids: readonly (string | null)[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+  const names = new Map<string, string>();
+  if (unique.length === 0) return names;
+  try {
+    const { data } = await q("user_profiles", "id, full_name", {
+      _in: { col: "id", vals: unique },
+    });
+    for (const row of data ?? []) {
+      const first = (row.full_name as string | null | undefined)?.trim().split(/\s+/)[0];
+      if (first) names.set(row.id as string, first);
+    }
+  } catch (error) {
+    console.warn("[useDietaryToday] HACCP logger names unavailable", error);
+  }
+  return names;
+}
+
+/**
+ * `residents` has no room_number column (a 42703 took the whole deck down,
+ * COL-636). Room lives on rooms, reached through the resident's bed, as on
+ * the Smart Rounding live board.
+ */
+const RESIDENT_ROOM_EMBED = "beds!residents_bed_id_fkey(rooms(room_number))";
+
+function residentRoomNumber(resident: QueryRow | null | undefined): string | undefined {
+  const bed = resident?.beds as QueryRow | null | undefined;
+  const room = bed?.rooms as QueryRow | null | undefined;
+  return (room?.room_number as string | null | undefined) ?? undefined;
+}
+
+/** Thrown for states the cook can act on; its message is shown as written. */
+class KitchenContextError extends Error {}
+
+const KITCHEN_DATA_FALLBACK =
+  "Kitchen data is unavailable right now. Try again, or tell your manager if this keeps happening.";
+
 function fmtTime(ts: string): string {
   return new Date(ts).toLocaleTimeString([], {
     hour: "2-digit", minute: "2-digit", hour12: false,
@@ -153,12 +195,12 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       const sb = createClient();
       const { data: { user } } = await sb.auth.getUser();
       if (!user) {
-        setState((s) => ({ ...s, loading: false, error: "Not authenticated" }));
+        setState((s) => ({ ...s, loading: false, error: "Your session has ended. Sign in again to open the kitchen." }));
         return;
       }
 
       const context = await loadCaregiverFacilityContext(sb);
-      if (!context.ok) throw new Error(context.error);
+      if (!context.ok) throw new KitchenContextError(context.error);
       const facilityId = context.ctx.facilityId;
       if (current !== generation.current) return;
 
@@ -206,7 +248,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       if (serviceIds.length > 0) {
         const { data: ticketRows } = await q(
           "tray_tickets",
-          "id, meal_service_id, resident_id, diet_order_snapshot, menu_items, fortification_items, status, iddsi_confirmed_food, allergen_check_passed, carb_count_g, sodium_mg, calorie_count, residents(first_name, last_name, room_number)",
+          `id, meal_service_id, resident_id, diet_order_snapshot, menu_items, fortification_items, status, iddsi_confirmed_food, allergen_check_passed, carb_count_g, sodium_mg, calorie_count, residents(first_name, last_name, ${RESIDENT_ROOM_EMBED})`,
           {
             facility_id: facilityId,
             _in: { col: "meal_service_id", vals: serviceIds },
@@ -240,7 +282,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
                   }
                 : null,
             ),
-            room: formatDietaryTodayRoom(res?.room_number as string | undefined),
+            room: formatDietaryTodayRoom(residentRoomNumber(res)),
             diet_type: dietType as TrayTicket["diet_type"],
             diet_label: dietLabel(dietType),
             iddsi_level: iddsi,
@@ -259,8 +301,10 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
 
       // ── HACCP logs for today ──
       const startOfDay = facilityDatetimeLocalToUtcIso(`${today}T00:00`);
+      // haccp_logs.logged_by references auth.users, not user_profiles, so PostgREST
+      // cannot embed the name (COL-636). Resolve names by id in a second read.
       const { data: haccpRows } = await q("haccp_logs",
-        "id, log_type, item, temperature_f, in_safe_range, logged_at, user_profiles!logged_by(full_name)",
+        "id, log_type, item, temperature_f, in_safe_range, logged_at, logged_by",
         {
           facility_id: facilityId,
           _gte: { col: "logged_at", val: startOfDay },
@@ -268,23 +312,23 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
           _limit: 10,
         },
       );
+      const loggerNames = await loadFirstNames(
+        (haccpRows ?? []).map((h) => h.logged_by as string | null),
+      );
 
-      const haccp: HACCPEntry[] = (haccpRows ?? []).map((h) => {
-        const prof = h["user_profiles!logged_by"] as QueryRow | null;
-        return {
-          id: h.id as string,
-          time: fmtTime(h.logged_at as string),
-          item: h.item as string,
-          temperature_f: h.temperature_f as number,
-          in_safe_range: h.in_safe_range as boolean,
-          logged_by: (prof?.full_name as string | undefined)?.split(" ")[0] ?? "Staff",
-          log_type: h.log_type as string,
-        };
-      });
+      const haccp: HACCPEntry[] = (haccpRows ?? []).map((h) => ({
+        id: h.id as string,
+        time: fmtTime(h.logged_at as string),
+        item: h.item as string,
+        temperature_f: h.temperature_f as number,
+        in_safe_range: h.in_safe_range as boolean,
+        logged_by: loggerNames.get(h.logged_by as string) ?? "Staff",
+        log_type: h.log_type as string,
+      }));
 
       // ── Fortification recommendations (pending) ──
       const { data: fortRows } = await q("fortification_recommendations",
-        "id, resident_id, trigger_evidence, recommended_items, estimated_added_calories, status, residents(first_name, last_name, room_number, diet_orders(diet_type))",
+        `id, resident_id, trigger_evidence, recommended_items, estimated_added_calories, status, residents(first_name, last_name, ${RESIDENT_ROOM_EMBED}, diet_orders(diet_type))`,
         {
           facility_id: facilityId,
           status: "pending",
@@ -319,7 +363,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
                 }
               : null,
           ),
-          room: formatDietaryTodayRoom(res?.room_number as string | undefined),
+          room: formatDietaryTodayRoom(residentRoomNumber(res)),
           diet_type: dt ? dietLabel(dt) : "Regular",
           trigger: lossStr,
           add: items || "Supplement",
@@ -341,7 +385,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       // ── Refusals (last 24h) ──
       const dayAgo = new Date(Date.now() - 86400000).toISOString();
       const { data: refusalRows } = await q("meal_refusals",
-        "id, resident_id, refused_items, reason, refused_at, residents(first_name, last_name, room_number)",
+        `id, resident_id, refused_items, reason, refused_at, residents(first_name, last_name, ${RESIDENT_ROOM_EMBED})`,
         {
           facility_id: facilityId,
           _gte: { col: "refused_at", val: dayAgo },
@@ -366,7 +410,7 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
                 }
               : null,
           ),
-          room: formatDietaryTodayRoom(res?.room_number as string | undefined),
+          room: formatDietaryTodayRoom(residentRoomNumber(res)),
           item: items,
           suggest: "Alternate available",
           at: atStr,
@@ -426,7 +470,10 @@ export function useDietaryToday(): DietaryDeckState & { refresh: () => Promise<v
       setState((s) => ({
         ...s,
         loading: false,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error:
+          err instanceof KitchenContextError
+            ? err.message
+            : formatLiveDataLoadError(err, KITCHEN_DATA_FALLBACK),
       }));
     }
   }, []);

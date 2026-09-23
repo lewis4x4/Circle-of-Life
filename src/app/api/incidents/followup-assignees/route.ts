@@ -7,8 +7,8 @@ import {
 } from "@/lib/admin/api-auth";
 import { ADMIN_ELIGIBLE_ROLES, type AppRole } from "@/lib/rbac";
 
-// Marketing (referrals / pipeline / reputation only) is never an incident follow-up assignee.
-const ASSIGNEE_ROLES = (Array.from(ADMIN_ELIGIBLE_ROLES) as AppRole[]).filter((role) => role !== "marketing");
+// Recruiter (referrals / pipeline / reputation only) is never an incident follow-up assignee.
+const ASSIGNEE_ROLES = (Array.from(ADMIN_ELIGIBLE_ROLES) as AppRole[]).filter((role) => role !== "recruiter");
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

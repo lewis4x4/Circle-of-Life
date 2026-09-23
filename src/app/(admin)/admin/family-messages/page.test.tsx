@@ -243,6 +243,38 @@ describe("staff family bulletin drafts", () => {
     expect(screen.getByPlaceholderText(/write an update/i)).toHaveValue("Ada ate lunch.");
   });
 
+  it("keeps saying a note was not posted after the operator moves to another resident, until it posts", async () => {
+    const user = userEvent.setup();
+    mocks.fetchStaffMessageThreads.mockResolvedValue({
+      ok: true,
+      threads: [thread(RESIDENT_A, "Ada Alpha"), thread(RESIDENT_B, "Bea Beta")],
+    });
+    mocks.postStaffMessage.mockResolvedValueOnce({ ok: false, error: "network request failed." });
+    const residentSelect = await openHub();
+    await user.selectOptions(residentSelect, RESIDENT_A);
+    await user.type(screen.getByPlaceholderText(/write an update/i), "Ada ate lunch.");
+    await user.click(screen.getByRole("button", { name: /post update/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/network request failed/i);
+
+    // Moving on must not make the failure disappear.
+    await user.selectOptions(screen.getByLabelText("Resident"), RESIDENT_B);
+    expect(await screen.findByTestId("family-note-unposted")).toHaveTextContent(
+      "Your note for Ada Alpha was not posted: network request failed.",
+    );
+
+    // Back on Ada: the composer still says so, and the text is still there.
+    await user.selectOptions(screen.getByLabelText("Resident"), RESIDENT_A);
+    expect(screen.queryByTestId("family-note-unposted")).toBeNull();
+    expect(screen.getByRole("alert")).toHaveTextContent(/network request failed/i);
+    expect(screen.getByPlaceholderText(/write an update/i)).toHaveValue("Ada ate lunch.");
+
+    // A successful retry clears it everywhere.
+    await user.click(screen.getByRole("button", { name: /post update/i }));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    await user.selectOptions(screen.getByLabelText("Resident"), RESIDENT_B);
+    expect(screen.queryByTestId("family-note-unposted")).toBeNull();
+  });
+
   it("ignores a stale resident log after the operator opens someone else", async () => {
     const user = userEvent.setup();
     mocks.fetchStaffMessageThreads.mockResolvedValue({

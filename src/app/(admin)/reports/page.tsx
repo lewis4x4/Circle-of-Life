@@ -12,6 +12,8 @@ import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
 import { createClient } from "@/lib/supabase/client";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
+import { loadReportRunHistory, type ReportRunHistoryItem } from "@/lib/reports/load-report-run-history";
+import { deriveReportScheduleState, deriveTemplateScheduleLabel, type ScheduleListRow } from "@/lib/reports/report-status";
 import {
   mergeReportingHubOnboardingDismissed,
   parseReportingHubOnboardingDismissedAt,
@@ -28,15 +30,6 @@ const ONBOARD_STEPS = [
   { n: 4, title: "Audit & export", body: "Every execution stays in history with timestamps." },
 ] as const;
 
-type RecentRun = {
-  id: string;
-  source_type: string;
-  source_id: string;
-  status: string;
-  started_at: string;
-  completed_at: string | null;
-};
-
 type TemplateCatalogRow = { id: string; slug: string; name: string };
 
 type HubRow = {
@@ -52,6 +45,7 @@ type StatusCounts = {
   templates: number;
   saved: number;
   schedules: number;
+  schedulesNeedingAttention: number;
   packs: number;
   history: number;
 };
@@ -66,17 +60,12 @@ function formatRunTime(iso: string): string {
   });
 }
 
-function scheduleMatchesTemplate(scheduleSourceId: string, t: TemplateCatalogRow): boolean {
-  const sid = scheduleSourceId.trim();
-  return sid === t.id || sid === t.slug;
-}
-
 export default function ReportsOverviewPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState<StatusCounts | null>(null);
-  const [recentRuns, setRecentRuns] = useState<RecentRun[]>([]);
+  const [recentRuns, setRecentRuns] = useState<ReportRunHistoryItem[]>([]);
   const [pinnedRows, setPinnedRows] = useState<HubRow[]>([]);
   const [hubRowsFallback, setHubRowsFallback] = useState(false);
   const [homeHref, setHomeHref] = useState("/admin/executive");
@@ -101,13 +90,14 @@ export default function ReportsOverviewPage() {
         profileRes,
         templatesRes,
         savedRes,
-        schedulesRes,
         packsRes,
         runsTotalRes,
-        recentRes,
+        recentItems,
         catalogRes,
         userRunsRes,
+        orgRunsRes,
         scheduleListRes,
+        packItemsRes,
       ] = await Promise.all([
         supabase.from("user_profiles").select("settings").eq("id", uId).maybeSingle(),
         supabase.from("report_templates").select("id", { count: "exact", head: true }),
@@ -116,12 +106,6 @@ export default function ReportsOverviewPage() {
           .select("id", { count: "exact", head: true })
           .eq("organization_id", ctx.ctx.organizationId)
           .is("deleted_at", null),
-        supabase
-          .from("report_schedules")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", ctx.ctx.organizationId)
-          .is("deleted_at", null)
-          .eq("status", "active"),
         supabase
           .from("report_packs")
           .select("id", { count: "exact", head: true })
@@ -132,12 +116,7 @@ export default function ReportsOverviewPage() {
           .from("report_runs")
           .select("id", { count: "exact", head: true })
           .eq("organization_id", ctx.ctx.organizationId),
-        supabase
-          .from("report_runs")
-          .select("id, source_type, source_id, status, started_at, completed_at")
-          .eq("organization_id", ctx.ctx.organizationId)
-          .order("started_at", { ascending: false })
-          .limit(6),
+        loadReportRunHistory(supabase, ctx.ctx.organizationId, 6),
         supabase
           .from("report_templates")
           .select("id, slug, name")
@@ -151,9 +130,22 @@ export default function ReportsOverviewPage() {
           .not("template_id", "is", null)
           .order("started_at", { ascending: false })
           .limit(2000),
+        // Last run is organisation-wide so it agrees with History; the per-user query above only ranks pins.
+        supabase
+          .from("report_runs")
+          .select("template_id, started_at")
+          .eq("organization_id", ctx.ctx.organizationId)
+          .not("template_id", "is", null)
+          .order("started_at", { ascending: false })
+          .limit(2000),
         supabase
           .from("report_schedules")
-          .select("source_type, source_id, status")
+          .select("source_type, source_id, status, recurrence_rule, output_format, next_run_at, last_error")
+          .eq("organization_id", ctx.ctx.organizationId)
+          .is("deleted_at", null),
+        supabase
+          .from("report_pack_items")
+          .select("pack_id, source_id")
           .eq("organization_id", ctx.ctx.organizationId)
           .is("deleted_at", null),
       ]);
@@ -164,13 +156,13 @@ export default function ReportsOverviewPage() {
         profileRes.error,
         templatesRes.error,
         savedRes.error,
-        schedulesRes.error,
         packsRes.error,
         runsTotalRes.error,
-        recentRes.error,
         catalogRes.error,
         userRunsRes.error,
+        orgRunsRes.error,
         scheduleListRes.error,
+        packItemsRes.error,
       ].find(Boolean);
 
       if (firstErr) throw new Error(firstErr.message);
@@ -179,44 +171,46 @@ export default function ReportsOverviewPage() {
       setReportingHubOnboardingDismissed(!!parseReportingHubOnboardingDismissedAt(settings));
       setPreferencesReady(true);
 
+      const scheduleRows = (scheduleListRes.data ?? []) as ScheduleListRow[];
+      const now = new Date();
+      const scheduleKinds = scheduleRows.map((s) => deriveReportScheduleState(s, now).kind);
+
       setCounts({
         templates: templatesRes.count ?? 0,
         saved: savedRes.count ?? 0,
-        schedules: schedulesRes.count ?? 0,
+        schedules: scheduleKinds.filter((k) => k === "active").length,
+        schedulesNeedingAttention: scheduleKinds.filter((k) => k === "overdue" || k === "needs_setup" || k === "failed").length,
         packs: packsRes.count ?? 0,
         history: runsTotalRes.count ?? 0,
       });
-      setRecentRuns((recentRes.data ?? []) as RecentRun[]);
+      setRecentRuns(recentItems);
 
       const cat = (catalogRes.data ?? []) as TemplateCatalogRow[];
 
       const tplById = new Map(cat.map((t) => [t.id, t]));
-      const aggregates = new Map<string, { runCount: number; lastRunAt: string | null }>();
+      const aggregates = new Map<string, { runCount: number }>();
       const userRunRows = (userRunsRes.data ?? []) as { template_id: string; started_at: string }[];
 
       for (const row of userRunRows) {
         const tid = row.template_id;
         if (!tplById.has(tid)) continue;
-        const prev = aggregates.get(tid);
-        const nextCount = (prev?.runCount ?? 0) + 1;
-        const lastRunAt = prev?.lastRunAt ?? row.started_at;
-        aggregates.set(tid, { runCount: nextCount, lastRunAt });
+        aggregates.set(tid, { runCount: (aggregates.get(tid)?.runCount ?? 0) + 1 });
       }
 
-      const scheduleRows =
-        (scheduleListRes.data ?? []) as {
-          source_type: string;
-          source_id: string;
-          status: string;
-        }[];
-
-      function deriveScheduleLabel(t: TemplateCatalogRow): string {
-        const relevant = scheduleRows.filter((s) => s.source_type === "template" && scheduleMatchesTemplate(s.source_id, t));
-        if (!relevant.length) return "Not scheduled";
-        if (relevant.some((s) => s.status === "active")) return "Scheduled";
-        if (relevant.some((s) => s.status === "paused")) return "Paused";
-        return "Not scheduled";
+      const orgLastRunAt = new Map<string, string>();
+      for (const row of (orgRunsRes.data ?? []) as { template_id: string; started_at: string }[]) {
+        if (!orgLastRunAt.has(row.template_id)) orgLastRunAt.set(row.template_id, row.started_at);
       }
+
+      const packTemplateIds = new Map<string, Set<string>>();
+      for (const item of (packItemsRes.data ?? []) as { pack_id: string; source_id: string }[]) {
+        const set = packTemplateIds.get(item.pack_id) ?? new Set<string>();
+        set.add(item.source_id);
+        packTemplateIds.set(item.pack_id, set);
+      }
+
+      const deriveScheduleLabel = (t: TemplateCatalogRow) =>
+        deriveTemplateScheduleLabel(t, scheduleRows, packTemplateIds, now);
 
       let rows: HubRow[] = [...aggregates.entries()]
         .map(([tid, agg]) => {
@@ -227,7 +221,7 @@ export default function ReportsOverviewPage() {
             slug: tpl.slug,
             name: tpl.name,
             runCount: agg.runCount,
-            lastRunAt: agg.lastRunAt,
+            lastRunAt: orgLastRunAt.get(tid) ?? null,
             scheduleLabel: deriveScheduleLabel(tpl),
           } satisfies HubRow;
         })
@@ -243,7 +237,7 @@ export default function ReportsOverviewPage() {
           slug: tpl.slug,
           name: tpl.name,
           runCount: 0,
-          lastRunAt: null,
+          lastRunAt: orgLastRunAt.get(tpl.id) ?? null,
           scheduleLabel: deriveScheduleLabel(tpl),
         }));
       }
@@ -290,7 +284,7 @@ export default function ReportsOverviewPage() {
     () => [
       { href: "/admin/reports/templates", label: "Templates", value: counts?.templates ?? 0 },
       { href: "/admin/reports/saved", label: "Saved", value: counts?.saved ?? 0 },
-      { href: "/admin/reports/scheduled", label: "Schedules", value: counts?.schedules ?? 0 },
+      { href: "/admin/reports/scheduled", label: "Schedules on time", value: counts?.schedules ?? 0 },
       { href: "/admin/reports/packs", label: "Packs", value: counts?.packs ?? 0 },
       { href: "/admin/reports/history", label: "History", value: counts?.history ?? 0 },
     ],
@@ -404,6 +398,17 @@ export default function ReportsOverviewPage() {
             </div>
           ))}
         </section>
+
+        {!loading && counts && counts.schedulesNeedingAttention > 0 ? (
+          <p role="status" className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+            {counts.schedulesNeedingAttention === 1
+              ? "1 schedule is not running."
+              : `${counts.schedulesNeedingAttention} schedules are not running.`}{" "}
+            <Link href="/admin/reports/scheduled" className="font-medium underline underline-offset-4">
+              Review schedules
+            </Link>
+          </p>
+        ) : null}
 
         <div className="grid gap-8 lg:grid-cols-12">
           {/* Pinned templates */}
@@ -520,48 +525,29 @@ export default function ReportsOverviewPage() {
                 <div className="space-y-3">
                   <div className="flex gap-3 text-[13px] font-medium text-muted-foreground">
                     <span className="min-w-0 flex-1">Run</span>
-                    <span className="w-[72px] shrink-0">Status</span>
+                    <span className="shrink-0">Status</span>
                     <span className="w-[102px] shrink-0 text-right">Started</span>
                   </div>
                   <ul className="space-y-1">
-                    {recentRuns.map((run) => {
-                      const detailHref = `/admin/reports/run/${encodeURIComponent(run.source_type)}/${encodeURIComponent(run.source_id)}`;
-                      const statusOk = run.status === "completed";
-                      const statusFail = run.status === "failed";
-                      const label =
-                        run.source_type === "template"
-                          ? "Template run"
-                          : run.source_type === "saved_view"
-                            ? "Saved view"
-                            : run.source_type === "pack"
-                              ? "Pack"
-                              : run.source_type;
-                      return (
-                        <li key={run.id}>
-                          <Link
-                            href={detailHref}
-                            className="flex flex-wrap gap-x-3 gap-y-1 rounded-md px-2 py-2 text-[13px] leading-tight hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <span className="min-w-0 flex-1 text-foreground">
-                              {label}
-                              <span className="sr-only">{`, started ${formatRunTime(run.started_at)}`}</span>
-                            </span>
-                            <span className="w-[72px] shrink-0">
-                              {statusOk ? (
-                                <StatusPill tone="muted">Done</StatusPill>
-                              ) : statusFail ? (
-                                <StatusPill tone="danger">Failed</StatusPill>
-                              ) : (
-                                <StatusPill tone="warning">{run.status}</StatusPill>
-                              )}
-                            </span>
-                            <span className="w-[102px] shrink-0 tabular-nums text-right text-[12px] text-muted-foreground">
-                              {formatRunTime(run.started_at)}
-                            </span>
-                          </Link>
-                        </li>
-                      );
-                    })}
+                    {recentRuns.map((run) => (
+                      <li key={run.id}>
+                        <Link
+                          href={`/admin/reports/history/${encodeURIComponent(run.id)}`}
+                          className="flex flex-wrap gap-x-3 gap-y-1 rounded-md px-2 py-2 text-[13px] leading-tight hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <span className="min-w-0 flex-1 text-foreground">
+                            {run.reportName}
+                            <span className="sr-only">{`, ${run.facilityLabel}, started ${formatRunTime(run.startedAt)}`}</span>
+                          </span>
+                          <span className="shrink-0">
+                            <StatusPill tone={run.state.tone}>{run.state.kind === "interrupted" ? "Interrupted" : run.state.label}</StatusPill>
+                          </span>
+                          <span className="w-[102px] shrink-0 tabular-nums text-right text-[12px] text-muted-foreground">
+                            {formatRunTime(run.startedAt)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}

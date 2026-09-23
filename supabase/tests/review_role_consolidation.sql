@@ -1,6 +1,6 @@
 -- Role consolidation (Brian, 2026-09-22), migration 468. Fails the replay if a later
 -- migration grants a retired role again:
---   nurse, caregiver -> med_tech        dietary, dietary_aide -> cook        + marketing
+--   nurse, caregiver -> med_tech        dietary, dietary_aide -> cook        + recruiter (named marketing until 469)
 -- Retired literals may remain only inside exclusion lists (NOT IN / <> ALL), where they
 -- exclude nobody.
 BEGIN;
@@ -20,11 +20,11 @@ BEGIN
       AND p.proname NOT IN ('role_tier','submit_care_event');
   IF v IS NOT NULL THEN RAISE EXCEPTION 'Functions grant a retired role: %', v; END IF;
 
-  IF haven.role_tier('med_tech') <> 50 OR haven.role_tier('cook') <> 40 OR haven.role_tier('marketing') <> 50 THEN
-    RAISE EXCEPTION 'role_tier: med_tech 50, cook 40, marketing 50';
+  IF haven.role_tier('med_tech') <> 50 OR haven.role_tier('cook') <> 40 OR haven.role_tier('recruiter') <> 50 THEN
+    RAISE EXCEPTION 'role_tier: med_tech 50, cook 40, recruiter 50';
   END IF;
-  IF NOT (ARRAY['cook','housekeeper','marketing','med_tech'] <@ enum_range(NULL::public.app_role)::text[]) THEN
-    RAISE EXCEPTION 'cook, housekeeper, marketing and med_tech must be login roles';
+  IF NOT (ARRAY['cook','housekeeper','recruiter','med_tech'] <@ enum_range(NULL::public.app_role)::text[]) THEN
+    RAISE EXCEPTION 'cook, housekeeper, recruiter and med_tech must be login roles';
   END IF;
   IF NOT (ARRAY['cook','housekeeping'] <@ enum_range(NULL::public.staff_role)::text[]) THEN
     RAISE EXCEPTION 'cook and housekeeping must be staff positions';
@@ -34,8 +34,8 @@ BEGIN
     OR EXISTS (SELECT 1 FROM public.search_tool_policies WHERE app_role IN ('nurse','caregiver','dietary','dietary_aide')) THEN
     RAISE EXCEPTION 'A retired role is still held or configured';
   END IF;
-  IF position('''marketing''' IN (SELECT prosrc FROM pg_proc WHERE proname = 'referral_capability')) = 0 THEN
-    RAISE EXCEPTION 'Marketing has no referral capability';
+  IF position('''recruiter''' IN (SELECT prosrc FROM pg_proc WHERE proname = 'referral_capability')) = 0 THEN
+    RAISE EXCEPTION 'Recruiter has no referral capability';
   END IF;
 END
 $probe$;

@@ -8,8 +8,15 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/hooks/useFacilityStore", () => ({
   useFacilityStore: (
-    selector: (state: { selectedFacilityId: string }) => unknown,
-  ) => selector({ selectedFacilityId: mocks.facilityId }),
+    selector: (state: {
+      selectedFacilityId: string;
+      availableFacilities: Array<{ id: string; name: string }>;
+    }) => unknown,
+  ) =>
+    selector({
+      selectedFacilityId: mocks.facilityId,
+      availableFacilities: [{ id: mocks.facilityId, name: "Anon Facility A" }],
+    }),
 }));
 afterEach(() => vi.unstubAllGlobals());
 describe("BenefitsQueue", () => {
@@ -35,6 +42,10 @@ describe("BenefitsQueue", () => {
       );
     vi.stubGlobal("fetch", fetch);
     render(<BenefitsQueue />);
+    expect(
+      screen.getByText(/Showing Anon Facility A\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/selected facility/i)).not.toBeInTheDocument();
     await screen.findByText(
       "No benefits cases match this view. Start a case below for an authorized resident.",
     );

@@ -11,7 +11,10 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
-import { formatReputationListingLabel } from "@/lib/reputation/reputation-display-copy";
+import {
+  formatReputationHubCardSubtitle,
+  formatReputationListingLabel,
+} from "@/lib/reputation/reputation-display-copy";
 import { GOOGLE_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/google-business-reviews";
 import { YELP_IMPORTED_REPLY_PLACEHOLDER } from "@/lib/reputation/yelp-fusion";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -108,7 +111,11 @@ function buildReputationRepliesCsv(rows: ReplyRow[]): string {
 export default function AdminReputationHubPage() {
   const supabase = createClient();
   const { user } = useHavenAuth();
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const scopedFacilityName = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
+  }, [availableFacilities, selectedFacilityId]);
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [draftBodies, setDraftBodies] = useState<Record<string, string>>({});
@@ -437,7 +444,7 @@ export default function AdminReputationHubPage() {
           <div className="h-[180px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">Connected listings and reply workflow for the selected facility.</p>
+                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">{formatReputationHubCardSubtitle(scopedFacilityName)}</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
                    <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive whitespace-nowrap")} >
                      + Connect Listing

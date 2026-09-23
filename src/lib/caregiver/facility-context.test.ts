@@ -1,6 +1,6 @@
 import { beforeEach, expect, it } from "vitest";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { preferredFacilityId, selectWorkingFacility, workingFacilityKey } from "./facility-context";
+import { loadCaregiverFacilityContextForUser, preferredFacilityId, selectWorkingFacility, workingFacilityKey } from "./facility-context";
 const a = { facilityId: "a", organizationId: "org", facilityName: "A", timeZone: "America/New_York" };
 const b = { ...a, facilityId: "b", facilityName: "B" };
 it("requires an explicit selection for multiple facilities", () => { expect(selectWorkingFacility([a,b], null)).toBeNull(); expect(selectWorkingFacility([a,b], "b")).toEqual(b); });
@@ -28,4 +28,20 @@ it("falls back to the admin shell facility picker when no shift was started", ()
 
 it("reports no preference when neither header has a selection", () => {
   expect(preferredFacilityId("user-1")).toBeNull();
+});
+
+function profileClient(result: { data: unknown; error: unknown }) {
+  const query = { select: () => query, eq: () => query, maybeSingle: async () => result };
+  return { from: () => query } as unknown as Parameters<typeof loadCaregiverFacilityContextForUser>[0];
+}
+
+it("never hands a database error to staff as the working-facility message", async () => {
+  const dbError = Object.assign(new Error("permission denied for table user_profiles"), { code: "42501" });
+  const result = await loadCaregiverFacilityContextForUser(profileClient({ data: null, error: dbError }), { userId: "user-1" });
+  expect(result).toEqual({ ok: false, error: "Your working facility could not be loaded right now. Try again." });
+});
+
+it("keeps the staff-facing message for an account with no profile", async () => {
+  const result = await loadCaregiverFacilityContextForUser(profileClient({ data: null, error: null }), { userId: "user-1" });
+  expect(result).toEqual({ ok: false, error: "Your staff profile is unavailable." });
 });

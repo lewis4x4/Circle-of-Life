@@ -63,7 +63,7 @@ Common scripts (see `package.json` for the full list — many `homewood:*` / `de
 
 ### App Router shape
 - `src/app/` uses **route groups** to layer experiences without affecting the URL: `(admin)`, `(caregiver)`, `(med-tech)`, `(dietary)`, `(family)`, `(onboarding)`. Most operator surfaces live under `src/app/(admin)/admin/<segment>/`.
-- `next.config.ts` redirects bare `/<segment>` → `/admin/<segment>` for mirrored hubs. Do not add a top-level `/<segment>/page.tsx` if `(admin)/<segment>` exists — the redirect will collide. `check:admin-shell` runs in `build` to enforce this.
+- `next.config.ts` redirects bare `/<segment>` → `/admin/<segment>` for mirrored hubs. Do not add a top-level `/<segment>/page.tsx` if `(admin)/<segment>` exists — the redirect will collide. `check:admin-shell` runs in `build` to enforce this. The redirect list lives in `src/lib/routing/legacy-redirects.ts`; only `(admin)/admin/layout.tsx` mounts the admin shell, so a mirrored `(admin)/<segment>` missing from that list renders with no header or nav (COL-644). `src/lib/routing/route-shell-coverage.test.ts` fails on any such gap and on any unclassified top-level `src/app` folder.
 - A `v2` namespace under `(admin)/admin/v2/` is the design-system-composed surface (lint forbids direct primitive imports outside `design-preview/`).
 
 ### Design system
@@ -142,7 +142,7 @@ Owner rulings by Brian, 2026-09-22. This is the login-role model (`app_role`). S
 | `cook` | Cook | `/dietary` | Holds everything the retired `dietary` and `dietary_aide` roles held. |
 | `housekeeper` | Housekeeper | `/caregiver/housekeeper` | Floor app housekeeper paths only (plus clock, schedules, me, policies, acknowledgments, shift swaps). Never clinical. Unlicensed staff who are not Med-Techs are Housekeeping. |
 | `maintenance_role` | Maintenance | `/admin/facilities` | |
-| `recruiter` | Recruiter | `/admin/referrals` | Finds residents to place. Referrals, pipeline and reputation only; the admin shell refuses it everywhere else. Briefly named `marketing` in PR #671; a follow-up migration renames the enum value. Say "Recruiter", never "marketing". |
+| `recruiter` | Recruiter | `/admin/referrals` | Finds residents to place. Referrals, pipeline and reputation only; the admin shell refuses it everywhere else. Briefly named `marketing` in PR #671; migration 469 renamed the enum value. Say "Recruiter", never "marketing". |
 | `family` | Family Member | `/family` | |
 | `broker` | Broker | `/admin/insurance` | |
 

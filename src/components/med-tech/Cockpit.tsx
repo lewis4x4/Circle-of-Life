@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
 import { ShiftBar } from "./ShiftBar";
@@ -23,7 +24,7 @@ export function Cockpit() {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center">
         <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-slate-300">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           Loading shift data...
@@ -35,7 +36,7 @@ export function Cockpit() {
   if (error) {
     const noShift = error === "No active shift";
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center">
         <div
           className={
             noShift
@@ -54,16 +55,23 @@ export function Cockpit() {
           </h2>
           <p className="text-sm text-slate-400">
             {noShift
-              ? "The Med-Tech cockpit lights up once a med-tech is clocked in. Start a shift from the scheduling system and this page will populate with the live med pass."
+              ? "No med-tech shift is open for you, so there is no med pass to show here. Clock in and work medications from the floor app."
               : error}
           </p>
+          {noShift ? (
+            // Med-techs hold the floor app since #671, including its time clock (COL-661 A7).
+            <div className="mt-3 flex justify-center gap-4 text-sm">
+              <Link href="/caregiver/clock" className="underline">Time clock</Link>
+              <Link href="/caregiver/meds" className="underline">Medications</Link>
+            </div>
+          ) : null}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-full text-white flex flex-col font-sans antialiased overflow-hidden">
+    <div className="h-full w-full text-white flex flex-col font-sans antialiased overflow-hidden">
       {/* Ambient gradient blobs */}
       <div className="pointer-events-none fixed -top-40 -left-40 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none fixed -bottom-40 -right-40 w-96 h-96 rounded-full bg-sky-600/10 blur-3xl" />
