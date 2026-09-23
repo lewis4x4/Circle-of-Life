@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import {
   canAuthorOperationsTemplates,
   OCE_CADENCE_TYPES,
@@ -107,10 +108,10 @@ export default function OperationsTemplatesPage() {
 
   const loadOptions = useCallback(async () => {
     try {
-      const facilityResponse = await fetch("/api/admin/facilities?page=1&page_size=100");
-      const facilityJson = await facilityResponse.json();
-      if (!facilityResponse.ok) throw new Error(facilityJson.error || "Failed to load facilities");
-      setFacilities((facilityJson.facilities || []).map((facility: FacilityOption) => ({ id: facility.id, name: facility.name })));
+      // The picker needs every facility the user can see, by name. The paginated
+      // /api/admin/facilities list (max 50 per page, with portfolio stats) is the
+      // wrong source: asking it for 100 rows failed validation on every load (COL-647).
+      setFacilities(await fetchAdminFacilityOptions());
 
       if (!selectedFacilityId) {
         setAssets([]);
