@@ -90,10 +90,6 @@
   "src/components/benefits/BenefitsQueue.tsx": {
     "silent-zero": 1
   },
-  "src/components/compliance/AdminCompliancePageClient.tsx": {
-    "all-clear-copy": 1,
-    "silent-zero": 8
-  },
   "src/components/coordinator/CoordinatorDashboardPageClient.tsx": {
     "silent-zero": 5
   },
@@ -147,9 +143,6 @@
   },
   "src/lib/caregiver/shift-brief.ts": {
     "count-or-zero": 4
-  },
-  "src/lib/compliance-dashboard-snapshot.ts": {
-    "count-or-zero": 6
   },
   "src/lib/coordinator/dashboard-brief.ts": {
     "count-or-zero": 6

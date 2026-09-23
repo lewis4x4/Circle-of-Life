@@ -65,7 +65,12 @@ export type BinderEvidence = {
   documentCount: number | null;
   expiringSoonCount: number | null;
   inservicesThisYear: number | null;
+  /** Due today through the 60-day window. Items already past due are in `drillsOverdue`, not here. */
   drillsDueSoon: number | null;
+  /** Emergency checklist items (drills, generator tests) whose next due date has passed (COL-649). */
+  drillsOverdue: number | null;
+  /** Facility documents whose expiration date has passed (COL-649). */
+  documentsExpired: number | null;
   lastSurvey: { date: string; type: string; result: string } | null;
 };
 
@@ -96,6 +101,8 @@ async function countWindow(
 
 export type BinderEvidenceDateWindow = {
   todayIso: string;
+  /** Last facility day before today: the inclusive upper bound for "already past due". */
+  yesterdayIso: string;
   in60Iso: string;
   yearStartIso: string;
 };
@@ -105,6 +112,7 @@ export function binderEvidenceDateWindow(now: Date = new Date()): BinderEvidence
   const todayIso = todayFacilityDateIso(now);
   return {
     todayIso,
+    yesterdayIso: facilityDateIsoDaysFromToday(-1, now),
     in60Iso: facilityDateIsoDaysFromToday(60, now),
     yearStartIso: `${todayIso.slice(0, 4)}-01-01`,
   };
@@ -116,13 +124,24 @@ export async function fetchBinderEvidence(
   facilityId: string,
   now: Date = new Date(),
 ): Promise<BinderEvidence> {
-  const { todayIso, in60Iso, yearStartIso } = binderEvidenceDateWindow(now);
+  const { todayIso, yesterdayIso, in60Iso, yearStartIso } = binderEvidenceDateWindow(now);
 
-  const [documentCount, expiringSoonCount, inservicesThisYear, drillsDueSoon] = await Promise.all([
+  const [
+    documentCount,
+    expiringSoonCount,
+    inservicesThisYear,
+    drillsDueSoon,
+    drillsOverdue,
+    documentsExpired,
+  ] = await Promise.all([
     countWindow(supabase, "facility_documents", facilityId, null, null, null),
     countWindow(supabase, "facility_documents", facilityId, "expiration_date", todayIso, in60Iso),
     countWindow(supabase, "inservice_log_sessions", facilityId, "session_date", yearStartIso, "2999-12-31"),
     countWindow(supabase, "emergency_checklist_items", facilityId, "next_due_date", todayIso, in60Iso),
+    // A window that starts today cannot see anything already late: a drill
+    // 158 days overdue read as "Drills due ≤60d 0" (COL-649).
+    countWindow(supabase, "emergency_checklist_items", facilityId, "next_due_date", null, yesterdayIso),
+    countWindow(supabase, "facility_documents", facilityId, "expiration_date", null, yesterdayIso),
   ]);
 
   let lastSurvey: BinderEvidence["lastSurvey"] = null;
@@ -146,5 +165,15 @@ export async function fetchBinderEvidence(
     lastSurvey = null;
   }
 
-  return { checkedAt: now.toISOString(), lastSurveyAvailable, documentCount, expiringSoonCount, inservicesThisYear, drillsDueSoon, lastSurvey };
+  return {
+    checkedAt: now.toISOString(),
+    lastSurveyAvailable,
+    documentCount,
+    expiringSoonCount,
+    inservicesThisYear,
+    drillsDueSoon,
+    drillsOverdue,
+    documentsExpired,
+    lastSurvey,
+  };
 }
