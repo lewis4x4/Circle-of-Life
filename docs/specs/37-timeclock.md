@@ -6,7 +6,7 @@ Mission alignment: pass. The ledger is append only, every manager change carries
 
 **Linear:** COL-352 (this module), COL-357 (ADP submission, owns the payroll gate), COL-355 (access revocation on termination), COL-349 (offboard), COL-363 (staff profile edit surface).
 **Migration:** `408_timeclock.sql` (404 to 406 landed on main from the Stand Up branches; 407 is reserved by COL-361). **Database probe:** `supabase/tests/review_timeclock.sql`.
-**Routes:** `/kiosk/timeclock` (no session), `/admin/timeclock`, `/admin/timeclock/[staffId]`, `/admin/timeclock/compare`, staff profile `Timeclock access` section, facility settings `Timeclock` tab.
+**Routes:** `/kiosk/timeclock` (no session; since spec 40 it redirects to `/kiosk/staff` on the front-door kiosk), `/admin/timeclock`, `/admin/timeclock/[staffId]`, `/admin/timeclock/compare`, staff profile `Timeclock access` section, facility settings `Timeclock` tab.
 
 ---
 
@@ -332,7 +332,7 @@ Upload a CSV exported from the uPunch app. Choose which uploaded columns hold em
 
 ## 10. Parallel run and cutover gates
 
-See `docs/homewood/timeclock-cutover.md` (phases, no dates) and `docs/operations/timeclock-kiosk-lockdown.md` (Mosyle supervised iPad locked to `https://circleoflifealf.com/kiosk/timeclock`).
+See `docs/homewood/timeclock-cutover.md` (phases, no dates) and `docs/operations/timeclock-kiosk-lockdown.md` (Mosyle supervised iPad locked to `https://circleoflifealf.com/kiosk` since spec 40; the old `/kiosk/timeclock` redirects to `/kiosk/staff`).
 
 Exit gate for the parallel run: consecutive pay periods with zero unexplained differences (count TBD by Brian), payroll export accepted by payroll, ADP alignment from COL-357 confirmed, Jessica Murphy confirms workweek, meal and rounding TBDs. Rollback: turn the facility flag off and resume uPunch cards.
 
