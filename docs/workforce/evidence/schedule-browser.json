@@ -1,0 +1,49 @@
+{
+  "checked_at": "2026-09-23T22:52:58.460Z",
+  "scope": "Synthetic local Supabase/route/shell adapters; actual Schedule component, Workforce context, and production CSS. Not hosted authentication, database, notification, or staff acceptance.",
+  "actual_component": "src/app/(admin)/schedules/[id]/page.tsx",
+  "screenshots": {
+    "desktop": {
+      "file": "schedule-desktop.png",
+      "viewport": "1440\u00d71000",
+      "state": "Draft after a configured Day shift was saved"
+    },
+    "phone": {
+      "file": "schedule-phone.png",
+      "viewport": "390\u00d7844",
+      "state": "Published, read only"
+    }
+  },
+  "checks": [
+    "Real grid cycled Off \u2192 configured Day \u2192 configured Night \u2192 Off and removed the no-op change.",
+    "Save submitted the configured shift ID to the fixture RPC; reload displayed its saved 06:00\u201318:00 times.",
+    "Publishing the synthetic week refreshed the actual component into read-only mode with edit/publish controls removed.",
+    "390px phone viewport kept page width contained while the seven-day table remained horizontally scrollable."
+  ],
+  "phone_layout": {
+    "pageWidth": 390,
+    "documentScrollWidth": 390,
+    "gridWidth": 353,
+    "gridScrollWidth": 1040
+  },
+  "page_errors": [],
+  "external_requests": [],
+  "accessibility": {
+    "standard": "WCAG 2 A/AA + 2.1 AA",
+    "desktop_violations": 0,
+    "phone_violations": 0,
+    "violations": []
+  },
+  "production_mutations": false,
+  "visual_verdict": {
+    "score": 92,
+    "verdict": "pass",
+    "category_match": true,
+    "differences": [
+      "Retained Haven shell and explicit synthetic labels surround the real Schedule page.",
+      "Phone keeps the person column and scrolls the seven-day grid horizontally."
+    ],
+    "suggestions": [],
+    "reasoning": "Desktop shows all seven day columns, actual times, hours and publish action without clipping. Phone preserves readable row heights and contains horizontal overflow inside the grid."
+  }
+}

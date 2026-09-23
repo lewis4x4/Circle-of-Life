@@ -13,9 +13,9 @@
 
 - Initial focused run: 419 tests across 20 suites passed.
 - Current-base integration: 58 tests across nine suites passed; separate source-scope/identity/race checks also passed.
-- Full typecheck and repository lint passed.
+- Full typecheck and repository lint passed. Ten loader regressions also cover unresolved employee identity, so hidden/missing staff metadata cannot silently become a zero attendance count.
 - Standalone Next application build passed, including the new routes. This does not override the failing release sequence gate.
-- Twelve desktop/tablet/phone screenshots and three axe route checks passed against production Workforce components/CSS with labelled synthetic source responses. These are not hosted authentication or staff acceptance.
+- Twelve desktop/tablet/phone screenshots and three axe route checks passed against production Workforce components/CSS with labelled synthetic source responses. An additional Schedule browser proof passed cell cycling, configured-time save/readback, publication/read-only state and phone scrolling; both additional captures have zero axe violations. These are not hosted authentication or staff acceptance.
 - Expanded schedule SQL proof passed publication, direct/legacy writes, scope, swap atomicity, and Home compatibility. Two concurrent writers serialized; the second overlap was rejected and one assignment persisted.
 - Final native PostgreSQL replay passed: **486 migration files, 113 SQL probes, all seven Smart Rounding acceptance suites, and 105 care-event parity cases**. The final command exited 0.
 

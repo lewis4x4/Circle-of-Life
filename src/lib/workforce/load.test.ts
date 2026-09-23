@@ -52,6 +52,16 @@ beforeEach(() => {
 });
 
 describe("Workforce source loading", () => {
+  it("fails closed when visible punches belong to an employee whose identity could not be loaded", async () => {
+    ledger.punches = [punch("outside-identity", "in", "2026-09-23T10:00:00Z", "unresolved-visitor")];
+    await expect(loadWorkforce(database(), FACILITY, "org", NOW)).rejects.toThrow("Recorded staff scope is incomplete");
+  });
+
+  it("fails closed when a published assignment has no visible employee identity", async () => {
+    const data = database({ shift_assignments: [{ ...assigned("unknown", "2026-09-23", "this-week"), staff_id: "unresolved-worker" }] });
+    await expect(loadWorkforce(data, FACILITY, "org", NOW)).rejects.toThrow("Recorded staff scope is incomplete");
+  });
+
   it("does not report zero expected hours when no schedule was published", async () => {
     const result = await loadWorkforce(database({ schedules: [] }), FACILITY, "org", NOW);
     expect(result.people[0]).toMatchObject({ scheduledMinutes: null, scheduleMissing: true });

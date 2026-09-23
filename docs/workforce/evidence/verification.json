@@ -32,6 +32,17 @@
       "screenshots": 12,
       "axe_routes": 3,
       "hosted_authentication": false
+    },
+    "workforce_loader": {
+      "tests": 10,
+      "result": "passed",
+      "includes": "unresolved punch and published-assignment employee identity fails closed"
+    },
+    "schedule_browser": {
+      "artifact": "schedule-browser.json",
+      "screenshots": 2,
+      "axe_violations": 0,
+      "production_data": false
     }
   },
   "canonical_gate": {

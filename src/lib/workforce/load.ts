@@ -43,6 +43,8 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
   const staffById = new Map<string, EmployeeSummary | TimeclockStaff>(staff.map((s) => [s.id, s]));
   // Visiting staff with punches still appear, but their personnel file is never inferred.
   for (const s of ledger.staff) if (!staffById.has(s.id)) staffById.set(s.id, s);
+  const recordedStaffIds = new Set([...publishedAssignments, ...ledger.punches, ...ledger.corrections, ...ledger.rejections].map((row) => row.staff_id).filter((id): id is string => !!id));
+  if ([...recordedStaffIds].some((id) => !staffById.has(id))) throw new Error("Recorded staff scope is incomplete. Employee information could not be resolved.");
   const periodStart = facilityDayStart(weekStart);
   const periodEnd = facilityDayStart(thisWeek);
   const yesterday = addFacilityCalendarDays(today, -1);
