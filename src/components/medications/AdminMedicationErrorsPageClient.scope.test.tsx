@@ -67,6 +67,6 @@ describe("medication errors follow the selected facility when the cookie and sto
     });
 
     expect(screen.queryByText("Select a facility.")).toBeNull();
-    expect(screen.getByText("wrong time")).toBeInTheDocument();
+    expect(screen.getByText("Wrong time")).toBeInTheDocument();
   });
 });
