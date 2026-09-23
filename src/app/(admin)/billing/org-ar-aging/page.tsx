@@ -13,11 +13,10 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { RECEIVABLE_DEFINITION_COPY, RECEIVABLE_INVOICE_STATUSES } from "@/lib/billing/receivables";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
-
-const OPEN = ["draft", "sent", "partial", "overdue"] as const;
 
 type Row = {
   entityId: string;
@@ -60,7 +59,7 @@ export default function AdminOrgArAgingPage() {
         .select("entity_id, facility_id, balance_due, status, deleted_at")
         .is("deleted_at", null)
         .gt("balance_due", 0)
-        .in("status", [...OPEN])
+        .in("status", [...RECEIVABLE_INVOICE_STATUSES])
         .limit(800);
       if (isValidFacilityIdForQuery(selectedFacilityId)) {
         q = q.eq("facility_id", selectedFacilityId);
@@ -133,7 +132,7 @@ export default function AdminOrgArAgingPage() {
                Org AR aging
              </h1>
             <p className="mt-2 font-medium tracking-wide text-slate-600 dark:text-zinc-400 max-w-2xl">
-               Open invoice balances rolled up to legal entity.
+               Open invoice balances rolled up to legal entity. {RECEIVABLE_DEFINITION_COPY}
             </p>
           </div>
         </header>
@@ -142,7 +141,10 @@ export default function AdminOrgArAgingPage() {
 
         {isLoading ? <AdminTableLoadingState /> : null}
         {!isLoading && rows.length === 0 && !error ? (
-          <AdminEmptyState title="No open entity AR" description="Zero-balance and closed statuses are excluded." />
+          <AdminEmptyState
+            title="No open entity AR"
+            description="No sent invoice in scope carries a balance. Drafts, zero-balance and closed invoices are excluded."
+          />
         ) : null}
         
         {!isLoading && rows.length > 0 ? (
@@ -150,7 +152,7 @@ export default function AdminOrgArAgingPage() {
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mt-1">By entity and facility</h3>
               <p className="text-[10px] font-mono tracking-wider text-slate-400 mt-1 uppercase">
-                 Sum of open invoices
+                 Sum of sent invoices with a balance
               </p>
             </div>
             
@@ -177,7 +179,7 @@ export default function AdminOrgArAgingPage() {
                          </div>
                          <div className="flex flex-col items-start mt-6 pt-4 border-t border-slate-100 dark:border-white/5">
                             <span className="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-1">Open AR</span>
-                            <span className="text-2xl font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                            <span className="text-2xl font-medium text-foreground tabular-nums">
                                {billingCurrency.format(r.totalCents / 100)}
                             </span>
                          </div>

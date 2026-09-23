@@ -1,3 +1,4 @@
+import { BILLED_INVOICE_STATUSES, RECEIVABLE_INVOICE_STATUSES } from "@/lib/billing/receivables";
 import { loadResidentMoneySnapshot } from "@/lib/finance/resident-money";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -66,7 +67,7 @@ export async function loadFinanceForecastData(
     .select("id, facility_id, resident_id, invoice_date, due_date, total, balance_due, status")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .in("status", ["sent", "partial", "overdue"]);
+    .in("status", [...RECEIVABLE_INVOICE_STATUSES]);
 
   let billedInvoicesQuery = supabase
     .from("invoices")
@@ -74,7 +75,7 @@ export async function loadFinanceForecastData(
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .gte("invoice_date", billedStart)
-    .in("status", ["sent", "paid", "partial", "overdue"]);
+    .in("status", [...BILLED_INVOICE_STATUSES]);
 
   let paymentsQuery = supabase
     .from("payments")
