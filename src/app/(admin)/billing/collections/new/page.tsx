@@ -330,8 +330,8 @@ export default function AdminNewCollectionActivityPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Resident</label>
-              <select
+              <label htmlFor="collection-resident" className="text-xs font-medium text-slate-600 dark:text-slate-400">Resident</label>
+              <select id="collection-resident"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={residentId}
                 onChange={(e) => setResidentId(e.target.value)}
@@ -349,7 +349,7 @@ export default function AdminNewCollectionActivityPage() {
 
             {residentId && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label htmlFor="collection-invoice-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">
                   Invoice (optional)
                 </label>
                 {invoicesLoading ? (
@@ -360,7 +360,7 @@ export default function AdminNewCollectionActivityPage() {
                 ) : invoices.length === 0 ? (
                   <p className="text-sm text-slate-500">No open invoices for this resident.</p>
                 ) : (
-                  <select
+                  <select id="collection-invoice-optional"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={invoiceId}
                     onChange={(e) => setInvoiceId(e.target.value)}
@@ -379,8 +379,8 @@ export default function AdminNewCollectionActivityPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Type</label>
-                <select
+                <label htmlFor="collection-type" className="text-xs font-medium text-slate-600 dark:text-slate-400">Type</label>
+                <select id="collection-type"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={activityType}
                   onChange={(e) => setActivityType(e.target.value)}
@@ -408,8 +408,8 @@ export default function AdminNewCollectionActivityPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
-              <textarea
+              <label htmlFor="collection-description" className="text-xs font-medium text-slate-600 dark:text-slate-400">Description</label>
+              <textarea id="collection-description"
                 className="min-h-[88px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -419,8 +419,8 @@ export default function AdminNewCollectionActivityPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Outcome</label>
-              <textarea
+              <label htmlFor="collection-outcome" className="text-xs font-medium text-slate-600 dark:text-slate-400">Outcome</label>
+              <textarea id="collection-outcome"
                 className="min-h-[64px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
                 value={outcome}
                 onChange={(e) => setOutcome(e.target.value)}
@@ -442,10 +442,10 @@ export default function AdminNewCollectionActivityPage() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                <label htmlFor="collection-follow-up-notes" className="text-xs font-medium text-slate-600 dark:text-slate-400">
                   Follow-up notes
                 </label>
-                <Input
+                <Input id="collection-follow-up-notes"
                   value={followUpNotes}
                   onChange={(e) => setFollowUpNotes(e.target.value)}
                   placeholder="What to do next (optional)"
