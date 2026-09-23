@@ -1,14 +1,9 @@
-import type { BillingRow, InvoiceStatusUi } from "@/lib/billing/load-invoices";
+import type { BillingRow } from "@/lib/billing/load-invoices";
+import { isOpenReceivable } from "@/lib/billing/receivables";
 
-const OPEN_AR_STATUSES: ReadonlySet<InvoiceStatusUi> = new Set([
-  "draft",
-  "sent",
-  "partial",
-  "overdue",
-]);
-
+/** Receivable with a balance (drafts are not billed yet — see receivables.ts). */
 export function rowContributesOpenAr(row: BillingRow): boolean {
-  return OPEN_AR_STATUSES.has(row.status) && row.amountDueCents > 0;
+  return isOpenReceivable({ status: row.status, balanceDueCents: row.amountDueCents });
 }
 
 /** Days past due (0 when not yet due or invalid). Matches AR aging hub bucketing. */
