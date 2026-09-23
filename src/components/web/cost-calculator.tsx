@@ -125,7 +125,7 @@ export function CostCalculator({ onOpenTourModal }: CostCalculatorProps) {
                         {level.monthlyFee === 0 ? "+$0" : `+$${level.monthlyFee}/mo`}
                       </span>
                     </div>
-                    <div className={`text-[11px] mt-1 ${careLevelId === level.id ? "text-stone-200" : "text-stone-600"}`}>
+                    <div className={`text-[11px] mt-1 line-clamp-2 ${careLevelId === level.id ? "text-stone-200" : "text-stone-600"}`}>
                       {level.description}
                     </div>
                   </button>

@@ -32,6 +32,7 @@ import {
 import { responsiblePartyContact } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type Acuity = 1 | 2 | 3;
 export type { ResidencyStatus };
@@ -389,7 +390,7 @@ const BEHAVIOR_TYPE_LABELS: Record<string, string> = {
 };
 
 function behaviorTypeLabel(value: string): string {
-  return BEHAVIOR_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
+  return BEHAVIOR_TYPE_LABELS[value] ?? enumLabel(value);
 }
 
 const CONDITION_TYPE_LABELS: Record<string, string> = {
@@ -405,7 +406,7 @@ const CONDITION_TYPE_LABELS: Record<string, string> = {
 };
 
 function conditionChangeTypeLabel(value: string): string {
-  return CONDITION_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
+  return CONDITION_TYPE_LABELS[value] ?? enumLabel(value);
 }
 
 export async function loadResidentOverviewDetail(

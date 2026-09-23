@@ -5,6 +5,7 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { z } from "zod";
 import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { CONTROL, DateTimeInput } from "./work-inputs";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * Shared machinery for the typed source-record entry surfaces (COL-241,
@@ -164,12 +165,12 @@ export function useSiteAssets(facilityId: string, assetTypes: readonly string[] 
 }
 
 export function assetLabel(asset: SiteAsset): string {
-  return `${asset.name}${asset.asset_tag ? ` · ${asset.asset_tag}` : ""} · ${asset.asset_type.replaceAll("_", " ")}`;
+  return `${asset.name}${asset.asset_tag ? ` · ${asset.asset_tag}` : ""} · ${enumLabel(asset.asset_type, { case: "lower" })}`;
 }
 
 export function describeAssetTypes(assetTypes: readonly string[] | null): string {
   if (!assetTypes || assetTypes.length === 0) return "site";
-  return assetTypes.map((type) => type.replaceAll("_", " ")).join(" or ");
+  return assetTypes.map((type) => enumLabel(type, { case: "lower" })).join(" or ");
 }
 
 /**

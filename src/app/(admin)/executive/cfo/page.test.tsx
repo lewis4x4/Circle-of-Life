@@ -94,7 +94,7 @@ describe("CfoDashboardPage auth hydration", () => {
 
     render(<CfoDashboardPage />);
 
-    expect(screen.getByText(/CFO finance board — all facilities in your organization, not the enterprise portfolio roll-up\./)).toBeInTheDocument();
+    expect(screen.getByText(/CFO finance board — all facilities in your organization\./)).toBeInTheDocument();
   });
 
   it("surfaces real fetch failures after auth resolves", () => {

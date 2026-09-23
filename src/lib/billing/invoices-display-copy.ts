@@ -29,12 +29,11 @@ function formatInvoiceDateMonthYear(invoiceDateIso: string | undefined): string 
   return formatBillingPeriodYm(ym);
 }
 
-function invoiceIdShortSuffix(invoiceId: string | undefined): string {
-  const normalized = invoiceId?.replace(/-/g, "").trim() ?? "";
-  if (normalized.length < 4) return "????";
-  return normalized.slice(-4).toLowerCase();
-}
-
+/**
+ * An invoice whose stored number is an internal key reads by its billing month.
+ * COL-689: the old "Invoice Sep 2026 · …57a0" suffix was the tail of a UUID; screens
+ * that list several invoices show the resident beside it, so the tail added nothing.
+ */
 function formatInternalInvoiceLabel(opts: {
   invoiceDateIso?: string;
   invoiceId?: string;
@@ -43,9 +42,7 @@ function formatInternalInvoiceLabel(opts: {
   const periodLabel =
     (opts.periodYm ? formatBillingPeriodYm(opts.periodYm) : null) ??
     formatInvoiceDateMonthYear(opts.invoiceDateIso);
-  const suffix = invoiceIdShortSuffix(opts.invoiceId);
-  if (periodLabel) return `Invoice ${periodLabel} · …${suffix}`;
-  return `Invoice · …${suffix}`;
+  return periodLabel ? `Invoice ${periodLabel}` : "Invoice (no date posted)";
 }
 
 export type InvoiceRowNumberInput = {

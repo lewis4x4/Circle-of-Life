@@ -4,6 +4,7 @@ import { isBilledStatus, isReceivableStatus } from "@/lib/billing/receivables";
 import { formatFamilyPaymentReference } from "@/lib/family/family-billing-copy";
 import { formatCents } from "@/lib/finance/format-cents";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type FamilyInvoiceRow = {
   id: string;
@@ -71,7 +72,7 @@ function periodLabel(start: string, end: string): string {
 }
 
 function statusLabel(s: Database["public"]["Enums"]["invoice_status"]): string {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 /** Balance totals over the invoices a family member can see. Drafts are not owed. */
@@ -226,7 +227,7 @@ export type FamilyPaymentRow = {
 };
 
 function paymentMethodLabel(m: Database["public"]["Enums"]["payment_method"]): string {
-  return m.replace(/_/g, " ");
+  return enumLabel(m);
 }
 
 /**

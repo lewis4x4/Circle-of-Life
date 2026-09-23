@@ -31,6 +31,12 @@ describe("enumLabel", () => {
     expect(enumLabel("  ", { empty: "Not set" })).toBe("Not set");
   });
 
+  it("leaves free text that is already words alone (COL-689)", () => {
+    expect(enumLabel("Call the on-call lead")).toBe("Call the on-call lead");
+    expect(enumLabel("near miss")).toBe("Near miss");
+    expect(enumLabel("near miss", { case: "lower" })).toBe("near miss");
+  });
+
   it("builds select options in order", () => {
     expect(enumOptions(["day", "evening"] as const)).toEqual([
       { value: "day", label: "Day" },

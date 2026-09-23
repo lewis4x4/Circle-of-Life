@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * Quiet Operator copy for the admin incident detail page (`/admin/incidents/[id]`).
  * Missing injury and fall fields name real gaps — never fabricate clinical text or resident names.
@@ -20,7 +21,7 @@ const INCIDENT_DETAIL_TIMESTAMP_FORMAT: Intl.DateTimeFormatOptions = {
 };
 
 function formatSnake(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 /** Injury severity on the detail injury section when unset, blank, or a lone em dash. */

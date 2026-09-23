@@ -29,6 +29,7 @@ import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { ForecastSnapshot } from "@/lib/finance/load-forecast-data";
 import { forecastResidentCountLabel } from "@/lib/billing/money-page-counts";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type FinanceForecastPageClientProps = {
   initialData: ForecastSnapshot | null;
@@ -327,7 +328,7 @@ export default function FinanceForecastPageClient({
                           <div>
                             <p className="font-medium text-slate-900 dark:text-white">{asset.assetName}</p>
                             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                              {asset.facilityName} · {asset.assetType.replaceAll("_", " ")}
+                              {asset.facilityName} · {enumLabel(asset.assetType, { case: "lower" })}
                             </p>
                           </div>
                           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">

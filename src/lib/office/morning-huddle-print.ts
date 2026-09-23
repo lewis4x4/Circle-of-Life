@@ -4,6 +4,7 @@ import {
   formatMorningHuddlePrintMissedMedReason,
   formatMorningHuddlePrintResidentName,
 } from "@/lib/office/morning-huddle-print-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function escapeHtml(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return "";
@@ -39,7 +40,7 @@ function formatDateLabel(iso: string): string {
 }
 
 function humanize(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 const MOVE_LABEL: Record<string, string> = {

@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * Quiet Operator copy for the morning huddle print packet table cells.
  * Missing values name real gaps — never silent em dashes or fabricated names.
@@ -16,7 +17,7 @@ function isBlankOrEmDash(value: string | null | undefined): boolean {
 }
 
 function humanizeShift(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 /** Incident row resident cell when unset, blank, or em dash. */

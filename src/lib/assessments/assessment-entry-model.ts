@@ -21,6 +21,7 @@
 
 import { computeTotalScore, lookupRiskLevel } from "./scoring";
 import type { AssessmentScores, AssessmentTemplate, AssessmentTemplateItem } from "./types";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const ASSESSMENT_SCHEDULE_BASIS_COPY = "standard schedule";
 export const ASSESSMENT_PROVISIONAL_LABEL = "Provisional result";
@@ -212,7 +213,7 @@ export function formatScoreOfMax(total: number, max: number | null | undefined):
 }
 
 export function formatRiskLevel(riskLevel: string): string {
-  return riskLevel.replace(/_/g, " ");
+  return enumLabel(riskLevel);
 }
 
 export function formatPoints(value: number): string {

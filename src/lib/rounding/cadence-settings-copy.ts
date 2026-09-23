@@ -10,6 +10,7 @@
 
 import { RoundingNoticeCopy } from "@/components/rounding/RoundingNotices";
 import { metricFromRead, type MetricState } from "@/lib/metrics/metric-state";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const CADENCE_SETTINGS_TITLE = "Observation cadence and escalation";
 
@@ -103,7 +104,7 @@ export function templateLine(templateName: string | null): string {
 
 /** A staff role, as an operator reads it rather than as it is stored. */
 export function staffRoleLabel(raw: string): string {
-  return raw.replace(/_/g, " ").replace(/^./, (character) => character.toUpperCase());
+  return enumLabel(raw);
 }
 
 /** A delivery channel, as an operator reads it. */

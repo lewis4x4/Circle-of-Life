@@ -5,6 +5,7 @@ import {
   FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK,
 } from "@/lib/family/family-portal-copy";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type FamilyCarePlanItemRow = {
   id: string;
@@ -69,7 +70,7 @@ function formatDateTime(iso: string | null | undefined): string {
 }
 
 function statusLabel(s: Database["public"]["Enums"]["care_plan_status"]): string {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function categoryLabel(c: Database["public"]["Enums"]["care_plan_item_category"]): string {
@@ -90,7 +91,7 @@ function categoryLabel(c: Database["public"]["Enums"]["care_plan_item_category"]
     pain_management: "Pain management",
     other: "Other care areas",
   };
-  return map[c] ?? c.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  return map[c] ?? enumLabel(c, { case: "title" });
 }
 
 const STATUS_RANK: Record<Database["public"]["Enums"]["care_plan_status"], number> = {

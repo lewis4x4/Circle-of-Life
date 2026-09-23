@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * Quiet Operator copy for resident detail overview verifier labels.
  * Missing staff joins name real gaps — never fabricate verifier names.
@@ -34,7 +35,7 @@ export function formatResidentOverviewGenderLabel(value: string | null | undefin
   const lower = trimmed.toLowerCase();
   if (lower === "male") return "Male";
   if (lower === "female") return "Female";
-  return trimmed.replace(/_/g, " ");
+  return enumLabel(trimmed);
 }
 
 /**

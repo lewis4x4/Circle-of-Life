@@ -12,6 +12,7 @@ import {
   formatAdmissionsHubTargetMoveInDateValue,
 } from "./admissions-hub-display-copy";
 import { REFERRAL_DETAIL_NO_DATE_OF_BIRTH_COPY } from "./referral-detail-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export { formatBuildingTabLicensedBedCount, formatReferralsHubReferralSource };
 
@@ -57,7 +58,7 @@ export function formatAdmissionsNewLastContactDate(
 
 /** CRM stage token on lead combobox rows. */
 export function formatAdmissionsNewLeadStage(status: string): string {
-  const t = status.trim().replace(/_/g, " ");
+  const t = enumLabel(status.trim(), { case: "lower", empty: "" });
   if (!t) return ADMISSIONS_NEW_NO_LEAD_STAGE_COPY;
   return t.replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
