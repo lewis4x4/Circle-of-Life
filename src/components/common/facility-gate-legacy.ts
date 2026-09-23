@@ -33,20 +33,7 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
     "src/lib/billing/load-rent-roll.ts",
   ],
 
-  "b3-operations": [
-    "src/app/(admin)/admin/operations/history/page.tsx",
-    "src/app/(admin)/admin/operations/profile/page.tsx",
-    "src/app/(admin)/admin/operations/templates/page.tsx",
-    "src/app/(admin)/transportation/calendar/page.tsx",
-    "src/app/(admin)/transportation/drivers/new/page.tsx",
-    "src/app/(admin)/transportation/inspections/new/page.tsx",
-    "src/app/(admin)/transportation/mileage-approvals/page.tsx",
-    "src/app/(admin)/transportation/page.tsx",
-    "src/app/(admin)/transportation/requests/[id]/page.tsx",
-    "src/app/(admin)/transportation/requests/new/page.tsx",
-    "src/app/(admin)/transportation/vehicles/new/page.tsx",
-    "src/lib/transportation/vehicle-new-display-copy.ts",
-  ],
+  "b3-operations": [],
 
   "b4-clinical": [
     "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
@@ -119,6 +106,8 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
 };
 
 export const NOT_A_GATE: Record<string, string> = {
+  "src/app/(admin)/admin/operations/templates/page.tsx":
+    "Validation for a template's own facility field: org-wide templates need none, facility-scoped ones pick one in the form.",
   "src/app/(admin)/admin/rounding/reports/page.tsx":
     "The report builder asks for a building alongside its date range; it is a form input, not a page gate.",
   "src/components/layout/AppShell.tsx":

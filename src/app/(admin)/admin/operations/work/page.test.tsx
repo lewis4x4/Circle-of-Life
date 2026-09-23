@@ -19,7 +19,7 @@ const env = vi.hoisted(() => ({
   replace: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: env.replace }),
+  useRouter: () => ({ replace: env.replace, refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams(env.query),
 }));
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -30,13 +30,17 @@ vi.mock("@/contexts/haven-auth-context", () => ({
     loading: false,
   }),
 }));
-vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({
+vi.mock("@/hooks/useFacilityStore", () => {
+  const state = {
     selectedFacilityId: null,
     availableFacilities: [],
     facilitiesCacheUserId: null,
-  }),
-}));
+    setSelectedFacility: () => true,
+  };
+  return {
+    useFacilityStore: (selector?: (s: typeof state) => unknown) => (selector ? selector(state) : state),
+  };
+});
 vi.mock("@/lib/admin-facilities", () => ({
   fetchAdminFacilityOptions: async () => [
     { id: "22222222-2222-4222-8222-222222222222", name: "Homewood" },

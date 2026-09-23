@@ -18,6 +18,7 @@ import {
 } from "date-fns";
 import { ArrowLeft, Bus, CalendarDays, ChevronLeft, ChevronRight, Clock, Download, MapPin } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -297,9 +298,7 @@ export default function TransportationWeekCalendarPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
-            Select a facility to load the calendar.
-          </p>
+          <FacilityGateNotice reason="Trips are scheduled per building, so the transport calendar shows one facility at a time." />
         )}
 
         {error && (
