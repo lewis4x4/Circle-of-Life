@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
 import { ShiftBar } from "./ShiftBar";
@@ -54,9 +55,16 @@ export function Cockpit() {
           </h2>
           <p className="text-sm text-slate-400">
             {noShift
-              ? "The Med-Tech cockpit lights up once a med-tech is clocked in. Start a shift from the scheduling system and this page will populate with the live med pass."
+              ? "No med-tech shift is open for you, so there is no med pass to show here. Clock in and work medications from the floor app."
               : error}
           </p>
+          {noShift ? (
+            // Med-techs hold the floor app since #671, including its time clock (COL-661 A7).
+            <div className="mt-3 flex justify-center gap-4 text-sm">
+              <Link href="/caregiver/clock" className="underline">Time clock</Link>
+              <Link href="/caregiver/meds" className="underline">Medications</Link>
+            </div>
+          ) : null}
         </div>
       </div>
     );
