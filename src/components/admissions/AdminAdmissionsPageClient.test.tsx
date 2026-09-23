@@ -39,6 +39,10 @@ vi.mock("@/contexts/haven-auth-context", () => ({
   useHavenAuth: () => ({ user: { id: "user-1" } }),
 }));
 
+vi.mock("@/lib/admin-facilities", () => ({
+  fetchAdminFacilityOptions: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock("@/lib/admissions/admissions-hub-bootstrap", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/admissions/admissions-hub-bootstrap")>()),
   loadAdmissionsHubBootstrap: mocks.loadBootstrapMock,
@@ -80,9 +84,11 @@ describe("<AdminAdmissionsPageClient /> facility gap copy", () => {
     );
 
     expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/select a facility in the header to load intake and discharge metrics/i),
-    ).toBeInTheDocument();
+    // COL-651: one gate with a picker — no gate text in KPI slots, no greyed actions, no empty lanes.
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(screen.queryByText(/select a facility/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("+ New referral")).not.toBeInTheDocument();
+    expect(screen.queryByText("Active pipeline")).not.toBeInTheDocument();
     expect(screen.getByText(/intake and discharge pipeline\./i)).toBeInTheDocument();
     expect(screen.queryByText("Demo ALF")).not.toBeInTheDocument();
   });
@@ -100,9 +106,7 @@ describe("<AdminAdmissionsPageClient /> facility gap copy", () => {
 
     expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
     expect(screen.queryByText("not-a-uuid")).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/select a facility in the header to load intake and discharge metrics/i),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
   });
 
   it("names the selected facility in the hub subtitle once one is selected", () => {
