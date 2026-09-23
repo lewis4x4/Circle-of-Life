@@ -183,7 +183,7 @@ export default function ExecutiveStandupPage() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <FileSpreadsheet className="h-3.5 w-3.5" />
-                Owner Operating System
+                Weekly stand up
               </div>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Executive Standup Pack</h1>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
@@ -306,11 +306,11 @@ export default function ExecutiveStandupPage() {
                       <div className="flex items-center justify-between"><span>Hospital / rehab</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.hospital_and_rehab_total)}</span></div>
                       <div className="flex items-center justify-between"><span>Overtime</span><span className="font-semibold">{formatStandupMetricValue(facility.metrics.overtime_hours)}</span></div>
                       <div className="pt-2">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Why red</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">What is flagged</div>
                         <ul className="mt-2 space-y-1 text-xs">
                           {(actions.find((row) => row.facilityId === facility.facilityId)?.whyRed.length
                             ? actions.find((row) => row.facilityId === facility.facilityId)?.whyRed
-                            : ["No active red flags beyond the current summary."])?.map((item) => (
+                            : ["Nothing flagged."])?.map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ul>
@@ -377,7 +377,7 @@ export default function ExecutiveStandupPage() {
 
         <section className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Workbook-equivalent sections</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">All sections</h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">Metrics with manual or forecast source modes are modeled but not yet fully automated.</p>
           </div>
 

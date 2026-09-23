@@ -74,7 +74,7 @@ function ScopeBrowser({ client, choices, organizationId, preferredFacility, broa
     const [kind, setKind] = useState<ReviewKind>("events");
     const available = selection.entityId && (broadScope || selection.facilityId !== null);
     return <>
-    <Card><CardHeader><CardTitle className="text-lg">Review scope</CardTitle><CardDescription>Selectors use currently authorized records. Each page is a live observation; previous and next pages can change between requests.</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-4">
+    <Card><CardHeader><CardTitle className="text-lg">Review scope</CardTitle><CardDescription>Lists show only records you can see. Pages are read live, so the previous and next pages can change as records change.</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-4">
       <label className="flex min-w-0 max-w-full flex-col gap-1 text-sm">Entity<select className={selectClass} value={selection.entityId} onChange={event => { const entityId = event.target.value; setSelection({ entityId, facilityId: broadScope ? null : choices.facilities.find(row => row.entity_id === entityId)?.id ?? null }); }}><option value="" disabled>Select entity</option>{choices.entities.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
       <label className="flex min-w-0 max-w-full flex-col gap-1 text-sm">Facility<select className={selectClass} value={selection.facilityId ?? ""} onChange={event => setSelection({ ...selection, facilityId: event.target.value || null })}>{broadScope ? <option value="">All authorized facilities in entity</option> : <option value="" disabled>Select facility</option>}{facilities.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
     </CardContent></Card>
@@ -115,7 +115,7 @@ function QueuePanel({ client, scope, kind }: {
         </CardHeader>
         <CardContent className="space-y-4">
           {result.error ? <ReadError message={result.error} retry={retry}/> : !page ? <p role="status">Loading current page…</p> : <>
-            <p className="text-sm text-muted-foreground">Observed {formatReviewTimestamp(page.observed_at)}. {page.returned_count} rows on this page; {page.total_count} matching records at this observation. Pages are not an immutable export or a complete import.</p>
+            <p className="text-sm text-muted-foreground">Observed {formatReviewTimestamp(page.observed_at)}. {page.returned_count} on this page; {page.total_count} matching records at that time. This is a live view, not a saved export.</p>
             <p className="text-sm">Coverage includes only eligible payment, invoice, manual journal and reversal receipts from the current receipt system. {page.unrepresented_eligible_receipts} eligible receipts lack source events. Earlier history and other sources are outside this count.</p>
             <p className="text-sm">Preparation is {page.staging_stopped ? "paused" : "available"}. External posting and business release remain disabled.</p>
             {page.items.length === 0 ? <p role="status">No {kindLabels[kind].toLowerCase()} in this scope at this observation.</p> : <QueueRows page={page} selectBatch={setBatchId}/>}

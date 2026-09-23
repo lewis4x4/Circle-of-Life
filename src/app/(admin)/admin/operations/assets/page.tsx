@@ -150,7 +150,7 @@ export default function OperationsAssetsPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations Cadence Engine</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Asset Register</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Track physical plant assets, upcoming service windows, and the maintenance templates tied to them.

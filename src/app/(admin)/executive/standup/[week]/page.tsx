@@ -453,7 +453,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                     </div>
                     <div className="mt-4 space-y-3">
                       {[
-                        { label: "Why red", items: action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the headline concern."] },
+                        { label: "What is flagged", items: action.whyRed.length > 0 ? action.whyRed : ["Nothing flagged."] },
                         { label: "Variance flags", items: action.varianceFlags.length > 0 ? action.varianceFlags : ["No material deltas versus the prior published week."] },
                         { label: "Recommended actions", items: action.interventions },
                       ].map(({ label, items }) => (

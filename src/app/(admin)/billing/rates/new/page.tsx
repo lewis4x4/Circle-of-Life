@@ -80,7 +80,7 @@ export default function AdminNewRateSchedulePage() {
     const semi = baseSemi.trim() ? dollarsToCents(baseSemi) : null;
     const comm = communityFee.trim() ? dollarsToCents(communityFee) : null;
     if (baseSemi.trim() && semi === null) {
-      setError("Semi-private rate must be a valid amount or empty.");
+      setError("Companion rate must be a valid amount or empty.");
       return;
     }
     if (communityFee.trim() && comm === null) {
@@ -140,7 +140,7 @@ export default function AdminNewRateSchedulePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New rate schedule</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Amounts are in US dollars; stored as cents. Publishing a new future-dated schedule automatically supersedes
+            Amounts are in US dollars. Publishing a new future-dated schedule automatically supersedes
             the prior open posted-rate card.
           </p>
         </div>
@@ -208,7 +208,7 @@ export default function AdminNewRateSchedulePage() {
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="semi">
-                Base semi-private (monthly, optional)
+                Base companion (monthly, optional)
               </label>
               <Input
                 id="semi"

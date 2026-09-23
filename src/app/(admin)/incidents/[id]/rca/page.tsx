@@ -688,7 +688,7 @@ export default function AdminIncidentRcaPage() {
       {!locked ? (
         <RecordDetailSection
           title="Completion checklist"
-          description="All items must pass to attest investigation complete (UAT / audit bar)."
+          description="Every item must be done before you can mark the investigation complete."
         >
           <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
             <li>At least one contributing factor selected ({selected.size} selected)</li>
@@ -826,11 +826,12 @@ export default function AdminIncidentRcaPage() {
         </div>
       </RecordDetailSection>
 
-      <p className="text-xs text-muted-foreground">
-        Factors from the incident record that are not in the checklist above remain in the database; selected IDs
-        here may include both checklist keys and legacy values ({[...selected].filter((id) => !allOptionIds.has(id)).length}{" "}
-        extra).
-      </p>
+      {[...selected].some((id) => !allOptionIds.has(id)) ? (
+        <p className="text-xs text-muted-foreground">
+          This incident also has {[...selected].filter((id) => !allOptionIds.has(id)).length} earlier factor(s) that are
+          not on the checklist above. They stay on the record.
+        </p>
+      ) : null}
     </div>
   );
 }
