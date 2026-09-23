@@ -1,17 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { FAMILY_SECTIONS, type FamilySectionKey } from "@/lib/family/family-sections";
 import { cn } from "@/lib/utils";
-
-type FamilySectionKey = "today" | "calendar" | "care" | "updates" | "billing";
-
-const SECTION_LINKS: Array<{ key: FamilySectionKey; href: string; label: string }> = [
-  { key: "today", href: "/family", label: "Today" },
-  { key: "calendar", href: "/family/calendar", label: "Calendar" },
-  { key: "care", href: "/family/care-plan", label: "Care" },
-  { key: "updates", href: "/family/messages", label: "Updates" },
-  { key: "billing", href: "/family/billing", label: "Billing" },
-];
 
 export function FamilySectionIntro({
   active,
@@ -40,11 +31,14 @@ export function FamilySectionIntro({
         <p className="mt-3 max-w-2xl mx-auto text-base text-stone-500">{description}</p>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-2">
-        {SECTION_LINKS.map((item) => (
+      {/* Same sections as the bottom tab bar (FAMILY_SECTIONS). On a phone the
+          bar is always on screen, so the pills only show from md up. */}
+      <nav aria-label="Family sections" className="hidden flex-wrap justify-center gap-2 md:flex">
+        {FAMILY_SECTIONS.map((item) => (
           <Link
             key={item.key}
             href={item.href}
+            aria-current={item.key === active ? "page" : undefined}
             className={cn(
               "rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors",
               item.key === active
@@ -55,7 +49,7 @@ export function FamilySectionIntro({
             {item.label}
           </Link>
         ))}
-      </div>
+      </nav>
     </div>
   );
 }
