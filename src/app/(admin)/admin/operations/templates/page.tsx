@@ -12,7 +12,14 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+import { EscalationStepEditor } from "@/components/operations/EscalationStepEditor";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
+import {
+  DEFAULT_ESCALATION_STEP,
+  draftsToLadder,
+  ladderToDrafts,
+  type EscalationStepDraft,
+} from "@/lib/operations/escalation-step-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +74,7 @@ type TemplateFormState = {
   estimated_minutes: string;
   auto_complete_after_hours: string;
   compliance_requirement: string;
-  escalation_ladder: string;
+  escalation_steps: EscalationStepDraft[];
   asset_ref: string;
   vendor_booking_ref: string;
   linked_document_id: string;
@@ -77,9 +84,6 @@ type TemplateFormState = {
   is_active: boolean;
 };
 
-const EMPTY_LADDER = `[
-  { "role": "facility_administrator", "sla_minutes": 30, "channel": "in_app", "enabled": true }
-]`;
 
 export default function OperationsTemplatesPage() {
   const router = useRouter();
@@ -218,9 +222,9 @@ export default function OperationsTemplatesPage() {
       return;
     }
 
-    const ladderText = form.escalation_ladder.trim();
-    if (ladderText && ladderText !== "[]" && normalizeEscalationLadder(ladderText).length === 0) {
-      setError("The escalation steps could not be read. Check the format, or leave the field empty.");
+    const ladder = draftsToLadder(form.escalation_steps);
+    if ("error" in ladder) {
+      setError(ladder.error);
       return;
     }
 
@@ -240,7 +244,7 @@ export default function OperationsTemplatesPage() {
       estimated_minutes: form.estimated_minutes ? Number.parseInt(form.estimated_minutes, 10) : null,
       auto_complete_after_hours: form.auto_complete_after_hours ? Number.parseInt(form.auto_complete_after_hours, 10) : null,
       compliance_requirement: form.compliance_requirement.trim() || null,
-      escalation_ladder: ladderText || "[]",
+      escalation_ladder: JSON.stringify(ladder.steps),
       asset_ref: form.scope === "facility" ? form.asset_ref || null : null,
       vendor_booking_ref: form.scope === "facility" ? form.vendor_booking_ref || null : null,
       linked_document_id: form.linked_document_id.trim() || null,
@@ -316,7 +320,7 @@ export default function OperationsTemplatesPage() {
       estimated_minutes: template.estimated_minutes?.toString() ?? "",
       auto_complete_after_hours: template.auto_complete_after_hours?.toString() ?? "",
       compliance_requirement: template.compliance_requirement ?? "",
-      escalation_ladder: JSON.stringify(normalizeEscalationLadder(template.escalation_ladder), null, 2),
+      escalation_steps: ladderToDrafts(template.escalation_ladder),
       asset_ref: template.asset_ref ?? "",
       vendor_booking_ref: template.vendor_booking_ref ?? "",
       linked_document_id: template.linked_document_id ?? "",
@@ -589,12 +593,11 @@ export default function OperationsTemplatesPage() {
               />
             </Field>
 
-            <Field label="Escalation steps (advanced; leave empty if unsure)">
-              <Textarea
-                value={form.escalation_ladder}
-                onChange={(event) => setForm((current) => ({ ...current, escalation_ladder: event.target.value }))}
-                rows={6}
-                placeholder={EMPTY_LADDER}
+            <Field label="Escalation steps">
+              <EscalationStepEditor
+                steps={form.escalation_steps}
+                onChange={(steps) => setForm((current) => ({ ...current, escalation_steps: steps }))}
+                disabled={saving}
               />
             </Field>
 
@@ -797,7 +800,7 @@ function createEmptyForm(selectedFacilityId: string): TemplateFormState {
     estimated_minutes: "",
     auto_complete_after_hours: "",
     compliance_requirement: "",
-    escalation_ladder: EMPTY_LADDER,
+    escalation_steps: [{ ...DEFAULT_ESCALATION_STEP }],
     asset_ref: "",
     vendor_booking_ref: "",
     linked_document_id: "",
