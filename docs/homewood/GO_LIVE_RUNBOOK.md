@@ -37,7 +37,7 @@ Run through this list in order. Every box must be checked before proceeding to T
   - [ ] `A11Y_BASELINE.md` — 0 critical, 0 serious violations on the 5 routes
   - [ ] `GO_LIVE_REPORT.md` shows **GO** at the top
 - [ ] **Sentry smoke test.** `npm run smoke:sentry` and verify the event appears in `https://blackrockai.sentry.io/issues/?project=4511196343959552`.
-- [ ] **Browser smoke.** From a clean session, sign in as each Homewood role (owner / facility_admin / nurse / caregiver / med_tech / family / dietary). Confirm each lands on the documented route per `RBAC_MATRIX.md`.
+- [ ] **Browser smoke.** From a clean session, sign in as each Homewood role (owner / facility_admin / med_tech / housekeeper / family / cook; `nurse`, `caregiver` and `dietary` are retired, see the Roles section in `AGENTS.md`). Confirm each lands on the documented route per `RBAC_MATRIX.md`.
 - [ ] **Backup taken.** Take a manual snapshot of the Supabase project before any go-live writes. Pro-tier projects do this automatically; verify the most recent backup is < 24 hours old.
 - [ ] **Tag main pre-launch:**
   ```bash
@@ -45,7 +45,7 @@ Run through this list in order. Every box must be checked before proceeding to T
   git push origin homewood-pre-launch
   ```
   This is the rollback target.
-- [ ] **Homewood ED dry run.** Walk Homewood Executive Director through caregiver shift, med pass, and incident workflows on a staging environment. Capture every "where do I…" question — log them in a punch list for launch-day support.
+- [ ] **Homewood ED dry run.** Walk Homewood Executive Director through the floor (Med-Tech) shift, med pass, and incident workflows on a staging environment. Capture every "where do I…" question — log them in a punch list for launch-day support.
 - [ ] **Schedule on-site.** Owner / launch lead on-site at Homewood T+0 through T+3 (covering days, evenings, and a weekend day).
 - [ ] **Comms plan.** Confirm the support phone line, the staff-facing Slack / WhatsApp channel, and the escalation chain (below). Distribute one-page laminated cheat-sheet to every Homewood employee.
 

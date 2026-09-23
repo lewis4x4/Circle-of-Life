@@ -54,7 +54,7 @@ See migrations **`081`** (DDL + view) and **`082`** (RLS + triggers).
 ## RLS (normative)
 
 - **`quality_measures`:** SELECT for users whose `haven.organization_id()` matches; INSERT/UPDATE for **`owner`** and **`org_admin`** (catalog stewardship).
-- **`quality_measure_results`** and **`pbj_export_batches`:** SELECT/INSERT/UPDATE for **`owner`**, **`org_admin`**, **`facility_admin`**, **`nurse`** with `facility_id ∈ haven.accessible_facility_ids()` (aligned with clinical admin patterns).
+- **`quality_measure_results`** and **`pbj_export_batches`:** SELECT/INSERT/UPDATE for **`owner`**, **`org_admin`**, **`facility_admin`**, **`med_tech`** with `facility_id ∈ haven.accessible_facility_ids()` (aligned with clinical admin patterns).
 
 ---
 

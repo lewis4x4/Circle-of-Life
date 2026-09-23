@@ -9,7 +9,7 @@ Infection surveillance, outbreak tracking, resident vitals monitoring, threshold
 
 ## Primary Users
 
-- Nurses
+- Med-Techs
 - Facility clinical leaders
 - Executive and compliance stakeholders monitoring outbreaks and health risk
 

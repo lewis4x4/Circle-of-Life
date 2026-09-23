@@ -1,5 +1,7 @@
 # Care events as built, 2026-09-16
 
+> **Roles note (2026-09-22, COL-615):** this record predates the role consolidation. The `caregiver` and `nurse` login roles it names were folded into `med_tech` by migration 468; see the Roles section in `AGENTS.md`.
+
 What spec 07A actually delivers on `main` and on the hosted projects, measured rather than assumed, and the gap list that keeps Homewood Lodge on paper.
 
 COL-354 is not a new incident module. Spec `docs/specs/07A-something-happened-capture.md` is the incident design. This document is the audit that decides what still has to be built before the paper incident form, the paper Incident Reports Log, the paper witness statement and the fax to the physician can stop.

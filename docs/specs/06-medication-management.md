@@ -4,13 +4,15 @@
 **Build Week:** 15-16
 **Scope authority:** `PHASE2-SCOPE.md` (Module 8 — Core/Enhanced/Future tiers)
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`, which holds everything both held. "Med-Tech" below is the Haven role; "physician" and "pharmacist" remain outside professions. Policy names are kept as written. See the Roles section in `AGENTS.md`.
+
 ---
 
 ## Phase 1 Foundation (already built — do not recreate)
 
 - `resident_medications` — full prescription model with controlled_schedule, PRN fields, status lifecycle
 - `emar_records` — Given/Refused/Held with PRN effectiveness tracking fields
-- eMAR queue UI in caregiver shell with one-tap Given/Refused
+- eMAR queue UI in the floor app (`/caregiver`) with one-tap Given/Refused
 - Edge Functions defined: `generate-emar-schedule`, `emar-missed-dose-check`, `prn-effectiveness-check`
 - Business rules: 1-hour admin window, 2-hour missed-dose flag, PRN effectiveness timing
 - Controlled substance count fields exist conceptually; no count table or verification workflow
@@ -40,9 +42,9 @@ CREATE TABLE verbal_orders (
   prescriber_phone text,
 
   -- Receipt
-  received_by uuid NOT NULL REFERENCES auth.users(id),  -- nurse who took the order
+  received_by uuid NOT NULL REFERENCES auth.users(id),  -- Med-Tech who took the order
   received_at timestamptz NOT NULL DEFAULT now(),
-  read_back_confirmed boolean NOT NULL DEFAULT false,    -- nurse read back the order
+  read_back_confirmed boolean NOT NULL DEFAULT false,    -- Med-Tech read back the order
 
   -- Co-signature (required within 48 hours per Florida regulation)
   -- NOTE: The physician does NOT log into Haven. A staff member records receipt
@@ -117,7 +119,7 @@ CREATE TABLE medication_errors (
   -- Follow-up
   root_cause text,                               -- determined during review
   corrective_actions text,                       -- what will prevent recurrence
-  reviewed_by uuid REFERENCES auth.users(id),    -- nurse who reviewed the error
+  reviewed_by uuid REFERENCES auth.users(id),    -- Med-Tech or administrator who reviewed the error
   reviewed_at timestamptz,
 
   -- Physician notification (required if harm occurred)
@@ -193,7 +195,7 @@ CREATE POLICY staff_see_verbal_orders ON verbal_orders
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY nurse_plus_create_verbal_orders ON verbal_orders
@@ -201,7 +203,7 @@ CREATE POLICY nurse_plus_create_verbal_orders ON verbal_orders
   WITH CHECK (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY nurse_plus_update_verbal_orders ON verbal_orders
@@ -209,7 +211,7 @@ CREATE POLICY nurse_plus_update_verbal_orders ON verbal_orders
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- MEDICATION ERRORS
@@ -221,7 +223,7 @@ CREATE POLICY admin_nurse_see_medication_errors ON medication_errors
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- Reporters can see their own submitted errors (for follow-up context)
@@ -238,7 +240,7 @@ CREATE POLICY clinical_staff_create_medication_errors ON medication_errors
   WITH CHECK (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 CREATE POLICY nurse_plus_update_medication_errors ON medication_errors
@@ -246,7 +248,7 @@ CREATE POLICY nurse_plus_update_medication_errors ON medication_errors
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- CONTROLLED SUBSTANCE COUNTS
@@ -258,7 +260,7 @@ CREATE POLICY clinical_staff_see_counts ON controlled_substance_counts
     organization_id = haven.organization_id()
     AND deleted_at IS NULL
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- Only med-pass-capable roles can originate counts (actual med-cart workflow)
@@ -267,7 +269,7 @@ CREATE POLICY med_staff_create_counts ON controlled_substance_counts
   WITH CHECK (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('nurse', 'caregiver')
+    AND haven.app_role() IN ('med_tech')
   );
 
 CREATE POLICY nurse_plus_update_counts ON controlled_substance_counts
@@ -275,7 +277,7 @@ CREATE POLICY nurse_plus_update_counts ON controlled_substance_counts
   USING (
     organization_id = haven.organization_id()
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse')
+    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech')
   );
 
 -- Audit triggers
@@ -299,20 +301,20 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON medication_errors
 
 ### Verbal Order Workflow
 
-1. **Capture.** Nurse receives verbal/phone order from physician. Opens verbal order form:
+1. **Capture.** A Med-Tech receives a verbal/phone order from physician. Opens verbal order form:
    - Selects resident, order type, types verbatim order text
    - Records prescriber name, indication
    - Confirms read-back (`read_back_confirmed = true`)
    - `cosignature_due_at` auto-set to `received_at + 48 hours`
 
 2. **Implementation.** After capturing:
-   - If `order_type = 'new_medication'`: nurse creates a new `resident_medications` row and links via `linked_medication_id`
-   - If `order_type = 'dose_change'` or `'frequency_change'`: nurse updates the existing medication and links it
-   - If `order_type = 'discontinue'`: nurse sets medication to `status = 'discontinued'`
+   - If `order_type = 'new_medication'`: Med-Tech creates a new `resident_medications` row and links via `linked_medication_id`
+   - If `order_type = 'dose_change'` or `'frequency_change'`: Med-Tech updates the existing medication and links it
+   - If `order_type = 'discontinue'`: Med-Tech sets medication to `status = 'discontinued'`
    - Marks `implemented = true` with timestamp
 
 3. **Co-signature countdown.**
-   - At 24 hours: alert to facility_admin + nurse ("Verbal order #X unsigned — 24 hours remaining")
+   - At 24 hours: alert to facility_admin + Med-Tech ("Verbal order #X unsigned — 24 hours remaining")
    - At 48 hours: if still pending, set `cosignature_status = 'expired'`. Alert to facility_admin ("Verbal order #X expired without physician co-signature — regulatory risk")
    - Co-signature is tracked in this system (facility_admin records that the physician signed the faxed/portal copy) — the physician does not log into Haven directly
 
@@ -320,10 +322,10 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON medication_errors
 
 ### PRN Effectiveness Follow-Up (Phase 2 enhancement of Phase 1 rule)
 
-Phase 1 defined the rule; Phase 2 adds the caregiver-facing prompt.
+Phase 1 defined the rule; Phase 2 adds the Med-Tech-facing prompt in the floor app.
 
 1. **Trigger.** When a PRN eMAR record is created with `status = 'given'` and the medication has `prn_effectiveness_check_minutes` set:
-   - The caregiver shell displays a pending follow-up card on `/caregiver/prn-followup` at `actual_time + prn_effectiveness_check_minutes`
+   - The floor app displays a pending follow-up card on `/caregiver/prn-followup` at `actual_time + prn_effectiveness_check_minutes`
 
 2. **Prompt.** The card shows:
    - Resident name, medication name, time given, reason given
@@ -333,19 +335,19 @@ Phase 1 defined the rule; Phase 2 adds the caregiver-facing prompt.
    - Submit → updates `emar_records`: `prn_effectiveness_checked = true`, `prn_effectiveness_time`, `prn_effectiveness_result`, `prn_effectiveness_notes`
 
 3. **Overdue escalation.** If not documented within `prn_effectiveness_check_minutes + 30 minutes`:
-   - Alert to nurse on duty: "PRN follow-up overdue for [Resident] — [Medication] given at [time]"
+   - Alert to the Med-Tech on duty: "PRN follow-up overdue for [Resident] — [Medication] given at [time]"
    - The existing `prn-effectiveness-check` Edge Function (Phase 1) handles this cron
 
 ### Medication Error Capture & Classification
 
-1. **Reporting.** Any clinical staff (caregiver, nurse, admin) can report an error via a structured form:
+1. **Reporting.** Any clinical staff (Med-Tech, admin) can report an error via a structured form:
    - Select resident, error type (from enum), severity
    - Link to specific eMAR record if applicable
    - Describe what happened, immediate actions taken
    - Select contributing factors (multi-select from predefined list)
    - If severity is `moderate_harm` or `severe_harm`: physician notification is required (checkbox + timestamp)
 
-2. **Review.** Nurse reviews the error:
+2. **Review.** A Med-Tech or administrator reviews the error:
    - Adds root cause analysis
    - Documents corrective actions
    - Marks as reviewed (`reviewed_by`, `reviewed_at`)
@@ -358,7 +360,7 @@ Phase 1 defined the rule; Phase 2 adds the caregiver-facing prompt.
    - Severity distribution
    - Filter by facility, date range
 
-4. **No-blame culture note.** Error reports are for quality improvement. Individual caregiver names are visible to nurse + admin for follow-up but are NOT displayed on trending dashboards. The trending view shows aggregate patterns only.
+4. **No-blame culture note.** Error reports are for quality improvement. Individual staff names are visible to Med-Techs + admin for follow-up but are NOT displayed on trending dashboards. The trending view shows aggregate patterns only.
 
 ### Controlled Substance Count Workflow
 
@@ -379,8 +381,8 @@ This is the highest-complexity workflow in this module. See PHASE2-SCOPE.md "hid
 
 3. **Discrepancy handling.**
    - If `discrepancy = 0` for all meds: count completes normally
-   - If `discrepancy != 0`: `discrepancy_resolved = false`. Level 3 alert to facility_admin + nurse
-   - Resolution: facility_admin or nurse investigates, documents `resolution_notes`, sets `discrepancy_resolved = true`
+   - If `discrepancy != 0`: `discrepancy_resolved = false`. Level 3 alert to facility_admin + Med-Tech
+   - Resolution: facility_admin or Med-Tech investigates, documents `resolution_notes`, sets `discrepancy_resolved = true`
    - Common resolutions: "Dose given but not documented — eMAR updated", "Pill dropped — witnessed destruction", "Count error — recount confirmed balance"
 
 4. **UX constraint.** This must work on mobile (med cart tablet). The dual-signature step is the tricky part — incoming staff must be able to authenticate without logging out the outgoing staff. Implementation: a modal that collects email + password, validates via a service-role RPC that returns the authenticated user_id without creating a session.
@@ -392,7 +394,7 @@ The controlled-substance dual-signature flow requires a second user to authentic
 **What the RPC endpoint MUST do:**
 1. Accept email + password
 2. Call `supabase.auth.signInWithPassword()` server-side (Edge Function or service-role RPC)
-3. Verify the returned user has `app_role IN ('nurse', 'caregiver')` and has facility access for the current facility
+3. Verify the returned user has `app_role IN ('med_tech')` and has facility access for the current facility
 4. Return ONLY: `{ verified: true, user_id: uuid, display_name: text }` on success, or `{ verified: false }` on failure
 5. Do NOT return a session token, JWT, or refresh token to the client
 
@@ -400,7 +402,7 @@ The controlled-substance dual-signature flow requires a second user to authentic
 - Store the incoming user's password anywhere (not in logs, not in the request body beyond the auth call)
 - Create a persistent session for the incoming user
 - Return any auth token to the client
-- Allow roles other than nurse/caregiver to co-sign (admin can resolve discrepancies, not perform counts)
+- Allow roles other than med_tech to co-sign (admin can resolve discrepancies, not perform counts)
 - Accept the outgoing user's own credentials as the incoming co-sign
 
 **Client-side constraints:**
@@ -444,25 +446,25 @@ expired → signed          (late co-signature received — allowed, but flagged
 ```
 
 **Implementation status is independent of co-signature status:**
-- An order can be `implemented = true` while `cosignature_status = 'pending'` (nurse implements the order immediately, physician co-signs later)
-- An order can be `cosignature_status = 'signed'` while `implemented = false` (physician signed but nurse hasn't updated the medication list yet — should be rare)
+- An order can be `implemented = true` while `cosignature_status = 'pending'` (Med-Tech implements the order immediately, physician co-signs later)
+- An order can be `cosignature_status = 'signed'` while `implemented = false` (physician signed but the Med-Tech hasn't updated the medication list yet — should be rare)
 - Both `implemented` and `cosigned` are required for the order to be fully resolved
 
 ### Medication Error Reporter Visibility
 
-- **Reporters (caregiver) can see their own submitted errors** — enforced by `reporter_see_own_medication_errors` RLS policy using `discovered_by = auth.uid()`
-- **Reporters cannot edit after submission** — no UPDATE policy for caregiver role on medication_errors
-- **Reporters can provide follow-up context** by messaging the reviewing nurse (via existing family-messages or direct communication — no new messaging channel needed)
-- **Nurse review is the edit point** — root cause, corrective actions, and classification are nurse+ only
+- **Reporters (Med-Tech) can see their own submitted errors** — enforced by `reporter_see_own_medication_errors` RLS policy using `discovered_by = auth.uid()`
+- **Reporters cannot edit after submission** — no UPDATE policy for the reporter on medication_errors (only the reviewing Med-Tech / admin path edits)
+- **Reporters can provide follow-up context** by messaging the reviewer (via existing family-messages or direct communication — no new messaging channel needed)
+- **Review is the edit point** — root cause, corrective actions, and classification are med_tech+ only
 
 ### Cross-Module Event Triggers (per PHASE2-SCOPE Appendix B)
 
 | Event | Source | Action |
 |-------|--------|--------|
 | PRN eMAR record created (`is_prn = true`, `status = 'given'`) | This module | Schedule follow-up prompt at `actual_time + prn_effectiveness_check_minutes` |
-| PRN effectiveness = 'not_effective' (2nd occurrence, same resident + medication, within 24hr) | This module | Alert to nurse (Enhanced tier) |
+| PRN effectiveness = 'not_effective' (2nd occurrence, same resident + medication, within 24hr) | This module | Alert to the Med-Tech on duty (Enhanced tier) |
 | Verbal order created | This module | Start 48-hour co-signature countdown; alert at 24hr and 48hr |
-| Controlled substance count discrepancy (`discrepancy != 0`) | This module | Level 3 alert to facility_admin + nurse |
+| Controlled substance count discrepancy (`discrepancy != 0`) | This module | Level 3 alert to facility_admin + Med-Tech |
 | Medication error with `severity IN ('moderate_harm', 'severe_harm')` | This module | Increment error count on compliance dashboard (Module 08) |
 
 ---
@@ -492,8 +494,8 @@ Phase 1 already defines these cron functions — Phase 2 does not add new Edge F
 - Tabs: Active | Discontinued | All
 - Table columns: Medication, Strength/Form, Route, Frequency, Scheduled Times, Controlled (badge), Prescriber, Start Date
 - Row click → detail view with order history
-- "Add Verbal Order" button → opens verbal order form (nurse+ only)
-- "Discontinue" action on each row (nurse+ only)
+- "Add Verbal Order" button → opens verbal order form (med_tech+ only)
+- "Discontinue" action on each row (med_tech+ only)
 
 #### Verbal Orders Queue (`/admin/medications/verbal-orders`)
 
@@ -516,7 +518,7 @@ Phase 1 already defines these cron functions — Phase 2 does not add new Edge F
 - Charts: Errors per month (bar), errors by shift (pie), contributing factors (horizontal bar)
 - Table: Recent errors with filters (date range, type, severity, facility)
 - Click row → error detail with review status
-- **No individual caregiver names on trending views** — aggregate only
+- **No individual staff names on trending views** — aggregate only
 
 #### Controlled Substance Report (`/admin/medications/controlled`)
 
@@ -525,7 +527,7 @@ Phase 1 already defines these cron functions — Phase 2 does not add new Edge F
 - Highlights discrepancies in red
 - Click → count detail with signatures and resolution
 
-### Caregiver Shell
+### Floor app (`/caregiver`, Med-Tech)
 
 #### PRN Follow-Up Queue (`/caregiver/prn-followup`)
 
@@ -567,7 +569,7 @@ Phase 1 already defines these cron functions — Phase 2 does not add new Edge F
 ### PRN Ineffectiveness Escalation
 
 - When `prn_effectiveness_result = 'not_effective'` is recorded for the same resident + medication for a second time within 24 hours:
-  - Auto-generate alert to nurse: "PRN [medication] ineffective for second time in 24hr for [Resident] — consider physician notification"
+  - Auto-generate alert to the Med-Tech on duty: "PRN [medication] ineffective for second time in 24hr for [Resident] — consider physician notification"
 - Application-level logic: query recent eMAR records on effectiveness save
 
 ### Med-Pass Exception Handling
@@ -599,7 +601,7 @@ Phase 1 already defines these cron functions — Phase 2 does not add new Edge F
 - **No drug-drug interaction checking** — no drug database, no contraindication screening
 - **No barcode scanning** — no medication packaging barcode infrastructure
 - **No dosing validation** — no age/weight/renal function-based dose checking
-- **No electronic prescribing** — physicians do not log into Haven; orders are captured by nurses
+- **No electronic prescribing** — physicians do not log into Haven; orders are captured by Med-Techs
 
 ---
 
