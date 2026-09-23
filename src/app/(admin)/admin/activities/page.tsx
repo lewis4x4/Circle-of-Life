@@ -12,6 +12,7 @@ import {
   type AdminActivitySession,
 } from "@/lib/admin/activity-sessions-data";
 import { formatActivitySessionTimeRange } from "@/lib/activities/activities-session-time-copy";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 function formatStamp(iso: string | null): string {
   if (!iso) return "Unconfirmed";
@@ -108,85 +109,87 @@ export default function AdminActivitiesPage() {
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-[13px] text-destructive">{error}</div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="min-w-full text-[13px]">
-          <thead className="border-b border-border bg-card/60 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-[13px] py-2">Date</th>
-              <th className="px-[13px] py-2">Activity</th>
-              <th className="px-[13px] py-2">Facility</th>
-              <th className="px-[13px] py-2">Confirmation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((session) => {
-              const isSaving = savingSessionId === session.id;
-              const isConfirmed = Boolean(session.confirmedAt);
-              return (
-                <tr key={session.id} className="border-t border-border align-top hover:bg-muted/40 transition-colors duration-[var(--motion-duration-micro)]">
-                  <td className="px-[13px] py-2 whitespace-nowrap tabular-nums">{session.sessionDate}</td>
-                  <td className="px-[13px] py-2">
-                    <div className="font-medium text-foreground">{session.activityName}</div>
-                    <div className="text-[12px] text-muted-foreground tabular-nums">{formatActivitySessionTimeRange(session.startTime, session.endTime)}</div>
-                    {session.cancelled ? <div className="mt-1 text-[12px] font-medium text-warning">Cancelled</div> : null}
-                  </td>
-                  <td className="px-[13px] py-2">{session.facilityName}</td>
-                  <td className="px-[13px] py-2">
-                    <div className="space-y-2 max-w-sm">
-                      <div className="text-[12px] text-muted-foreground tabular-nums">Confirmed at: {formatStamp(session.confirmedAt)}</div>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                        <select
-                          className="rounded-lg border border-border bg-background px-2 py-2 text-[12px]"
-                          value={providerBySession[session.id] ?? session.providerType ?? "facility_staff"}
-                          onChange={(event) => {
-                            setProviderBySession((prev) => ({ ...prev, [session.id]: event.target.value as ActivityProviderMethod }));
-                          }}
-                          disabled={session.cancelled}
-                        >
-                          {activityProviderMethodOptions.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                        <input
-                          className="rounded-lg border border-border bg-background px-2 py-2 text-[12px]"
-                          placeholder="Provider"
-                          value={providerNameBySession[session.id] ?? session.providerName ?? ""}
-                          onChange={(event) => {
-                            setProviderNameBySession((prev) => ({ ...prev, [session.id]: event.target.value }));
-                          }}
-                          disabled={session.cancelled}
-                        />
-                        <input
-                          className="rounded-lg border border-border bg-background px-2 py-2 text-[12px] uppercase"
-                          placeholder="Initials"
-                          maxLength={8}
-                          value={initialsBySession[session.id] ?? session.confirmedByInitials ?? ""}
-                          onChange={(event) => {
-                            setInitialsBySession((prev) => ({ ...prev, [session.id]: event.target.value.toUpperCase() }));
-                          }}
-                          disabled={session.cancelled}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => void onConfirm(session)}
-                        disabled={isSaving || session.cancelled}
-                      >
-                        {isSaving ? "Saving..." : isConfirmed ? "Update confirmation" : "Confirm session"}
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {sessions.length === 0 ? (
+      <div className="rounded-lg border border-border bg-card">
+        <HorizontalScroll label="Activity sessions">
+          <table className="min-w-full text-[13px]">
+            <thead className="border-b border-border bg-card/60 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
-                <td colSpan={4} className="px-[13px] py-8 text-center text-[13px] text-muted-foreground">No recent sessions found.</td>
+                <th className="px-[13px] py-2">Date</th>
+                <th className="px-[13px] py-2">Activity</th>
+                <th className="px-[13px] py-2">Facility</th>
+                <th className="px-[13px] py-2">Confirmation</th>
               </tr>
-            ) : null}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sessions.map((session) => {
+                const isSaving = savingSessionId === session.id;
+                const isConfirmed = Boolean(session.confirmedAt);
+                return (
+                  <tr key={session.id} className="border-t border-border align-top hover:bg-muted/40 transition-colors duration-[var(--motion-duration-micro)]">
+                    <td className="px-[13px] py-2 whitespace-nowrap tabular-nums">{session.sessionDate}</td>
+                    <td className="px-[13px] py-2">
+                      <div className="font-medium text-foreground">{session.activityName}</div>
+                      <div className="text-[12px] text-muted-foreground tabular-nums">{formatActivitySessionTimeRange(session.startTime, session.endTime)}</div>
+                      {session.cancelled ? <div className="mt-1 text-[12px] font-medium text-warning">Cancelled</div> : null}
+                    </td>
+                    <td className="px-[13px] py-2">{session.facilityName}</td>
+                    <td className="px-[13px] py-2">
+                      <div className="space-y-2 max-w-sm">
+                        <div className="text-[12px] text-muted-foreground tabular-nums">Confirmed at: {formatStamp(session.confirmedAt)}</div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          <select
+                            className="rounded-lg border border-border bg-background px-2 py-2 text-[12px]"
+                            value={providerBySession[session.id] ?? session.providerType ?? "facility_staff"}
+                            onChange={(event) => {
+                              setProviderBySession((prev) => ({ ...prev, [session.id]: event.target.value as ActivityProviderMethod }));
+                            }}
+                            disabled={session.cancelled}
+                          >
+                            {activityProviderMethodOptions.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                          <input
+                            className="rounded-lg border border-border bg-background px-2 py-2 text-[12px]"
+                            placeholder="Provider"
+                            value={providerNameBySession[session.id] ?? session.providerName ?? ""}
+                            onChange={(event) => {
+                              setProviderNameBySession((prev) => ({ ...prev, [session.id]: event.target.value }));
+                            }}
+                            disabled={session.cancelled}
+                          />
+                          <input
+                            className="rounded-lg border border-border bg-background px-2 py-2 text-[12px] uppercase"
+                            placeholder="Initials"
+                            maxLength={8}
+                            value={initialsBySession[session.id] ?? session.confirmedByInitials ?? ""}
+                            onChange={(event) => {
+                              setInitialsBySession((prev) => ({ ...prev, [session.id]: event.target.value.toUpperCase() }));
+                            }}
+                            disabled={session.cancelled}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => void onConfirm(session)}
+                          disabled={isSaving || session.cancelled}
+                        >
+                          {isSaving ? "Saving..." : isConfirmed ? "Update confirmation" : "Confirm session"}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {sessions.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-[13px] py-8 text-center text-[13px] text-muted-foreground">No recent sessions found.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </HorizontalScroll>
       </div>
     </div>
   );

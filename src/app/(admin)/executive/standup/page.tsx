@@ -35,6 +35,7 @@ import {
   resolveExecutiveStandupOrganizationGapMessage,
 } from "@/lib/executive/standup-page-state";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 function sourceBadgeClass(metric: StandupMetricRow): string {
   if (metric.sourceMode === "forecast") return "border-primary/20 bg-primary/5 text-primary";
@@ -389,50 +390,52 @@ export default function ExecutiveStandupPage() {
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white">{section.sectionLabel}</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="min-w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-white/10">
-                      <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Metric</th>
-                      {(live?.facilities ?? []).map((facility) => (
-                        <th key={`${section.sectionKey}-${facility.facilityName}`} className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">
-                          {facility.facilityName}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {section.metrics.map((definition) => (
-                      <tr key={definition.key} className="border-b border-slate-100 dark:border-white/5">
-                        <td className="px-3 py-3 align-top text-slate-900 dark:text-white">
-                          <div className="font-medium">{definition.label}</div>
-                          <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{definition.description}</div>
-                        </td>
-                        {(live?.facilities ?? []).map((facility) => {
-                          const metric = facility.metrics[definition.key];
-                          return (
-                            <td key={`${facility.facilityName}-${definition.key}`} className="px-3 py-3 align-top">
-                              {metric ? (
-                                <div className="space-y-2">
-                                  <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(metric)}</div>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    <Badge variant="outline" className={sourceBadgeClass(metric)}>{metric.sourceMode}</Badge>
-                                    <Badge variant="outline" className={confidenceBadgeClass(metric)}>{metric.confidenceBand}</Badge>
-                                  </div>
-                                  {standupMetricNote(metric) ? (
-                                    <div className="text-xs text-slate-500 dark:text-zinc-400">{standupMetricNote(metric)}</div>
-                                  ) : null}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400">{formatStandupMetricValue(undefined, definition.label)}</span>
-                              )}
-                            </td>
-                          );
-                        })}
+              <CardContent>
+                <HorizontalScroll label="Stand Up pack">
+                  <table className="min-w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-white/10">
+                        <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Metric</th>
+                        {(live?.facilities ?? []).map((facility) => (
+                          <th key={`${section.sectionKey}-${facility.facilityName}`} className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">
+                            {facility.facilityName}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {section.metrics.map((definition) => (
+                        <tr key={definition.key} className="border-b border-slate-100 dark:border-white/5">
+                          <td className="px-3 py-3 align-top text-slate-900 dark:text-white">
+                            <div className="font-medium">{definition.label}</div>
+                            <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{definition.description}</div>
+                          </td>
+                          {(live?.facilities ?? []).map((facility) => {
+                            const metric = facility.metrics[definition.key];
+                            return (
+                              <td key={`${facility.facilityName}-${definition.key}`} className="px-3 py-3 align-top">
+                                {metric ? (
+                                  <div className="space-y-2">
+                                    <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(metric)}</div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <Badge variant="outline" className={sourceBadgeClass(metric)}>{metric.sourceMode}</Badge>
+                                      <Badge variant="outline" className={confidenceBadgeClass(metric)}>{metric.confidenceBand}</Badge>
+                                    </div>
+                                    {standupMetricNote(metric) ? (
+                                      <div className="text-xs text-slate-500 dark:text-zinc-400">{standupMetricNote(metric)}</div>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400">{formatStandupMetricValue(undefined, definition.label)}</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </HorizontalScroll>
               </CardContent>
             </Card>
           ))}

@@ -1,11 +1,18 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi, beforeAll } from "vitest";
 import { ExecutiveOverviewPageClient } from "./ExecutiveOverviewPageClient";
 import type { ExecutiveOverviewData } from "@/lib/executive/load-executive-overview";
 import { EMPTY_PRESENCE_CENSUS } from "@/lib/executive/presence-census";
 
 const mocks = vi.hoisted(() => ({ organizationId: "org-old", load: vi.fn(), client: {} as Record<string, unknown> }));
+// The overview's below-the-fold sections are next/dynamic chunks (COL-703).
+vi.mock("next/dynamic", async () => (await import("@/test-utils/sync-next-dynamic")).nextDynamicMock);
+beforeAll(async () => {
+  const { dynamicModulesReady } = await import("@/test-utils/sync-next-dynamic");
+  await dynamicModulesReady();
+});
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/admin/executive",

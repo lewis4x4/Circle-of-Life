@@ -359,3 +359,20 @@ describe("rentRollToCsv", () => {
     expect(lines[2]).toBe(',,"Totals",3009.00,1409.00,1409.00,1600.00,0.00,1600.00,,,');
   });
 });
+
+describe("rent roll counts both invoices of a Medicaid month (COL-678)", () => {
+  it("adds the Medicaid invoice and the resident share, and leaves voided invoices out", () => {
+    const roll = buildRentRoll({
+      period: { year: 2026, month: 10 },
+      residents: [resident({ id: "r" })],
+      payers: [],
+      payments: [],
+      invoices: [
+        invoice({ residentId: "r", periodStart: "2026-10-01", invoiceDate: "2026-10-01", payerType: "medicaid_oss", totalCents: 160000, balanceDueCents: 160000 }),
+        invoice({ residentId: "r", periodStart: "2026-10-01", invoiceDate: "2026-10-01", payerType: "private_pay", totalCents: 83700, balanceDueCents: 83700 }),
+        invoice({ residentId: "r", periodStart: "2026-10-01", invoiceDate: "2026-09-30", payerType: "private_pay", status: "void", totalCents: 999, balanceDueCents: 999 }),
+      ],
+    } as never);
+    expect(roll.rows[0].invoice).toEqual({ status: "draft", totalCents: 243700, balanceDueCents: 243700 });
+  });
+});

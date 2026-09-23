@@ -94,6 +94,7 @@ import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 export type ResidentOverviewWorkspace = "admin" | "clinical";
 
@@ -340,6 +341,8 @@ export function ResidentDetailOverviewClient({
 
   const skipNextLoadRef = useRef(bootstrapped && initialError == null);
 
+  const beginLoad = useLatestLoad();
+
   const [loading, setLoading] = useState(!bootstrapped);
   const [error, setError] = useState<string | null>(initialError);
   const [notFound, setNotFound] = useState(bootstrapped && !initialDetail && !initialError);
@@ -379,6 +382,7 @@ export function ResidentDetailOverviewClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     // A silent refresh (after a quick-entry save) keeps the current page and
     // any open dialog mounted; a full load blanks the page into its loading state.
@@ -400,19 +404,21 @@ export function ResidentDetailOverviewClient({
       const row = await loadResidentOverviewDetail(residentId, selectedFacilityId, undefined, {
         activityDays: options?.activityDays ?? activityDaysRef.current,
       });
+      if (!isCurrent()) return;
       if (!row) {
         setNotFound(true);
       } else {
         setDetail(row);
       }
     } catch (err) {
+      if (!isCurrent()) return;
       setError(
         formatLiveDataLoadError(err, "Live resident profile is unavailable right now."),
       );
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [residentId, selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, residentId, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

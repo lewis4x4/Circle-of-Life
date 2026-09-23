@@ -56,6 +56,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /**
  * Risk-level tone. The chip keeps its label in `text-foreground` (AA contrast
@@ -523,47 +524,49 @@ export default function AssessmentEntryPage() {
             </div>
           </dl>
 
-          <table className="w-full max-w-3xl text-sm">
-            <caption className="sr-only">Answers for {template.name}</caption>
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th scope="col" className="py-2 pr-3 font-medium">
-                  Section
-                </th>
-                <th scope="col" className="py-2 pr-3 font-medium">
-                  Answer
-                </th>
-                <th scope="col" className="py-2 text-right font-medium">
-                  Points
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {entry.sections.map((s) => (
-                <tr key={s.key} className="border-b border-border/60">
-                  <td className="py-2 pr-3 text-foreground">
-                    {s.position}. {s.label}
-                  </td>
-                  <td className="py-2 pr-3 text-foreground">{s.selectedLabel ?? "Unanswered"}</td>
-                  <td className="py-2 text-right tabular-nums text-foreground">
-                    {s.selectedValue ?? "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            {completed && (
-              <tfoot>
-                <tr>
-                  <th scope="row" colSpan={2} className="py-2 pr-3 text-left font-semibold text-foreground">
-                    Total
+          <HorizontalScroll label={`Answers for ${template.name}`}>
+            <table className="w-full max-w-3xl text-sm">
+              <caption className="sr-only">Answers for {template.name}</caption>
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Section
                   </th>
-                  <td className="py-2 text-right tabular-nums font-semibold text-foreground">
-                    {formatScoreOfMax(completed.totalScore, template.score_range_max)}
-                  </td>
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Answer
+                  </th>
+                  <th scope="col" className="py-2 text-right font-medium">
+                    Points
+                  </th>
                 </tr>
-              </tfoot>
-            )}
-          </table>
+              </thead>
+              <tbody>
+                {entry.sections.map((s) => (
+                  <tr key={s.key} className="border-b border-border/60">
+                    <td className="py-2 pr-3 text-foreground">
+                      {s.position}. {s.label}
+                    </td>
+                    <td className="py-2 pr-3 text-foreground">{s.selectedLabel ?? "Unanswered"}</td>
+                    <td className="py-2 text-right tabular-nums text-foreground">
+                      {s.selectedValue ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {completed && (
+                <tfoot>
+                  <tr>
+                    <th scope="row" colSpan={2} className="py-2 pr-3 text-left font-semibold text-foreground">
+                      Total
+                    </th>
+                    <td className="py-2 text-right tabular-nums font-semibold text-foreground">
+                      {formatScoreOfMax(completed.totalScore, template.score_range_max)}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </HorizontalScroll>
 
           {completed && (
             <div

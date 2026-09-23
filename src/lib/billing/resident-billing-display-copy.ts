@@ -55,8 +55,9 @@ export function formatResidentBillingMedicaidProviderCurrent(
 /**
  * How a Medicaid resident's monthly terms split between Medicaid and the
  * resident, and what the monthly invoices cover today. Monthly invoice
- * generation bills the Medicaid portion only (COL-678), so the resident share
- * is named as not invoiced rather than left to look like a wrong draft.
+ * generation bills the resident share on its own invoice from October 2026
+ * (COL-678 ruling; earlier months were not back-filled), so the card says which
+ * invoice carries which part.
  */
 export function residentBillingMedicaidSplitLine(
   medicaidRateCents: number | null | undefined,
@@ -67,7 +68,7 @@ export function residentBillingMedicaidSplitLine(
   const share = residentShareCents == null ? "no resident share posted" : `resident share ${formatUsdFromCents(residentShareCents)}`;
   const invoiced =
     residentShareCents != null && residentShareCents > 0
-      ? " Monthly invoices bill the Medicaid portion only; the resident share is not on any Haven invoice yet."
+      ? " From October 2026 the resident share is billed on its own invoice to the resident or responsible party; earlier invoices carry the Medicaid portion only."
       : "";
   return `${medicaid} · ${share} a month.${invoiced}`;
 }

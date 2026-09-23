@@ -48,6 +48,7 @@ import {
   type WatchlistSignalRow,
 } from "@/lib/rounding/watchlist-fetch";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const LOAD_FAILED = "This resident's Watchlist record could not be loaded. Try again in a moment.";
 
@@ -282,34 +283,36 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
           </div>
         ) : (
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2.5">Signal</th>
-                  <th className="px-3 py-2.5">Opened</th>
-                  <th className="px-3 py-2.5">Closed</th>
-                  <th className="px-3 py-2.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {history.map((row) => (
-                  <tr key={row.id} className="h-9">
-                    <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_label}<ObservationEvidence evidence={row.evidence} observations={observations} /></td>
-                    <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                      {new Date(row.first_detected_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                      {row.cleared_at ? new Date(row.cleared_at).toLocaleDateString() : "Open"}
-                    </td>
-                    <td className="px-3 py-2">
-                      <StatusPill tone={signalStatusTone(row.status)}>
-                        {signalStatusLabel(row.status)}
-                      </StatusPill>
-                    </td>
+            <HorizontalScroll label="Watchlist history">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2.5">Signal</th>
+                    <th className="px-3 py-2.5">Opened</th>
+                    <th className="px-3 py-2.5">Closed</th>
+                    <th className="px-3 py-2.5">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {history.map((row) => (
+                    <tr key={row.id} className="h-9">
+                      <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_label}<ObservationEvidence evidence={row.evidence} observations={observations} /></td>
+                      <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
+                        {new Date(row.first_detected_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
+                        {row.cleared_at ? new Date(row.cleared_at).toLocaleDateString() : "Open"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <StatusPill tone={signalStatusTone(row.status)}>
+                          {signalStatusLabel(row.status)}
+                        </StatusPill>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
         )}
       </section>
