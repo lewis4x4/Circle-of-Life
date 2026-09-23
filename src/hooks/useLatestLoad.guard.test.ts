@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
  * COL-682: a cookie-bootstrapped client (it skips its first load because the
  * server already rendered the cookie's facility) reloads when the facility store
  * hydrates, so two reads can overlap. Every such client must let only the latest
- * read write state, or a stale unscoped read ("Select a facility.") lands under
+ * read write state, or a stale unscoped read (its no-facility error) lands under
  * the selected facility (COL-673). Accepted guards: useLatestLoad (the shared
  * hook), the roster's loadSequenceRef, a request generation counter, or an
  * isCurrent callback passed by an effect that cancels on cleanup.

@@ -9,7 +9,7 @@ import { useCallback, useRef } from "react";
  * During hydration the store first reads its pre-hydration `null`, then the
  * persisted facility, and both load effects can flush in the same task. An
  * earlier read that settles later (typically the unscoped one, which fails at
- * once with "Select a facility.") must not overwrite what the newer read shows.
+ * once asking for a facility) must not overwrite what the newer read shows.
  *
  * Call `beginLoad()` at the start of each read; after every `await`, and in
  * `catch`/`finally`, write state only while the returned `isCurrent()` is true.
