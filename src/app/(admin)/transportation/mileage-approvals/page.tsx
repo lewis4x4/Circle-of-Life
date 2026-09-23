@@ -357,7 +357,7 @@ export default function MileageApprovalsPage() {
             {!canApprove && appRole !== null && (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
                 Your role ({appRole.replace(/_/g, " ")}) can view this list; approval is limited to owner, org admin,
-                facility admin, and nurse.
+                administrator, and Med-Tech.
               </p>
             )}
 
