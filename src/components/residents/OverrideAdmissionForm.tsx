@@ -8,6 +8,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { Loader2 } from "lucide-react";
 
 import { QuietDatePicker } from "@/components/ui/quiet-date-picker";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -220,7 +221,7 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
     setError(null);
     try {
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-        setError("Select a facility in the header before adding a resident.");
+        setError("No facility is in scope for this admission.");
         return;
       }
       const orgId = await loadFacilityOrg();
@@ -291,6 +292,16 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
       ? "Unassigned"
       : formatAdmissionDetailBedLabel(beds.find((b) => b.id === bedId)?.bed_label);
 
+  // COL-651: a resident is admitted to one building; no form until one is in scope.
+  if (!facilityReady) {
+    return (
+      <FacilityGateNotice
+        title="Override admission"
+        reason="A resident is admitted to one building, against its beds."
+      />
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -325,12 +336,6 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
           </p>
         </div>
       </div>
-
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200" role="status">
-          Choose a facility from the header selector to enable this form.
-        </p>
-      )}
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">

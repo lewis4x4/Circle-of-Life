@@ -19,11 +19,6 @@ export function adminIncidentsGlobalEmptyNotice(): string {
   return "No live incident records for this scope. Fallback incident cards are not shown.";
 }
 
-/** When the header facility selector has no valid site — avoids a broken-looking board. */
-export function adminIncidentsNoFacilityNotice(): string {
-  return "Select a facility in the header to load incident records for that site.";
-}
-
 /**
  * Label for a follow-up due badge. Returns null when there is no due date to show
  * (omit the badge). Never returns the load-layer dash sentinel.
