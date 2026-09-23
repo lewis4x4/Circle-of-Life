@@ -79,7 +79,7 @@ export function ResidentRail({
           </Link>
           <button
             onClick={onIncidentClick}
-            className="rounded-xl hover: hover: active:scale-95 text-white text-sm font-semibold py-3 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] active:scale-95 text-sm font-semibold py-3 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition"
           >
             <Camera className="w-4 h-4" /> Capture Incident
           </button>

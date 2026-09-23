@@ -377,7 +377,7 @@ function AdminIncidentFormInner() {
         )}
 
         <div className="pt-4">
-          <button type="submit" disabled={submitting || !facilityId} className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-lg text-white hover: hover: disabled:opacity-50 disabled:grayscale text-lg">
+          <button type="submit" disabled={submitting || !facilityId} className="w-full h-16 rounded-lg flex items-center justify-center font-bold tracking-wider uppercase transition-all shadow-lg bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:grayscale text-lg">
             {submitting ? (<><Loader2 className="mr-3 h-6 w-6 animate-spin" />Submitting Report...</>) : "Submit Official Record"}
           </button>
         </div>
