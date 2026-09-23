@@ -78,6 +78,13 @@ describe("computeTimesheet", () => {
   const dstWeekStart = facilityDayStart("2026-11-02");
   const dstWeekEnd = facilityDayStart("2026-11-09");
 
+  it("keeps missing clock out unresolved even when a legacy acknowledgement exists", () => {
+    const clockIn = punch("2026-11-03 07:00", "in");
+    const sheet = computeTimesheet({ staffId: STAFF, punches: [clockIn], corrections: [correction({ correction_type: "acknowledge", reason: "manager_verified_time", exception_key: `missing_out:${clockIn.id}` })], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: et("2026-11-10 07:00") });
+    expect(sheet.periodWorkedMinutes).toBe(0);
+    expect(sheet.exceptions).toEqual([expect.objectContaining({ type: "missing_out", acknowledged: false })]);
+  });
+
   it("DST week: five 8 hour shifts with unpaid meals total 2,400 minutes and no overtime", () => {
     const punches: RawPunch[] = [];
     for (const day of ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"]) {

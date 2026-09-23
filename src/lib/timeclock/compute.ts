@@ -38,6 +38,7 @@ export type RawPunch = {
 export type RawCorrection = {
   id: string;
   staff_id: string;
+  facility_id?: string;
   correction_type: CorrectionType;
   target_punch_id: string | null;
   target_correction_id: string | null;
@@ -53,6 +54,7 @@ export type RawCorrection = {
 export type RawSyncRejection = {
   id: string;
   staff_id: string | null;
+  facility_id?: string;
   punch_type: string;
   device_time: string | null;
   reason: string;
@@ -391,7 +393,8 @@ export function computeTimesheet(input: ComputeTimesheetInput): Timesheet {
 
   const acknowledgedKeys = new Set(corrections.filter((c) => c.correction_type === "acknowledge" && c.exception_key).map((c) => c.exception_key as string));
 
-  const exceptions: TimesheetException[] = walked.map((e) => ({ ...e, staffId: input.staffId, acknowledged: acknowledgedKeys.has(e.key) }));
+  // A missing clock out has no verified end time. Acknowledgement cannot make its omitted hours exportable.
+  const exceptions: TimesheetException[] = walked.map((e) => ({ ...e, staffId: input.staffId, acknowledged: e.type !== "missing_out" && acknowledgedKeys.has(e.key) }));
   for (const p of effective) {
     for (const flag of p.flags) {
       if (flag === "clock_skew" || flag === "offline_capture") {
