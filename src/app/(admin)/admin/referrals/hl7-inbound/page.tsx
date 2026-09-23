@@ -548,7 +548,7 @@ export default function AdminReferralsHl7InboundPage() {
             Linking is manual — referrals do not auto-create pipeline leads.{` `}
             <Link
               href="/admin/referrals/sources"
-              className="text-primary underline-offset-4 hover:underline"
+              className="text-primary underline underline-offset-4 hover:decoration-2"
             >
               Learn more about sources &amp; connections
             </Link>
@@ -722,7 +722,7 @@ export default function AdminReferralsHl7InboundPage() {
                             <p>
                               <Link
                                 href="/admin/referrals/sources"
-                                className="text-primary underline-offset-4 hover:underline"
+                                className="text-primary underline underline-offset-4 hover:decoration-2"
                               >
                                 Check inbound integration status on sources →
                               </Link>
@@ -822,7 +822,7 @@ export default function AdminReferralsHl7InboundPage() {
                             {row.linked_referral_lead_id ? (
                               <Link
                                 href={`/admin/referrals/${row.linked_referral_lead_id}`}
-                                className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                                className="text-sm font-semibold text-primary underline underline-offset-4 hover:decoration-2"
                               >
                                 Open lead
                               </Link>
