@@ -16,13 +16,14 @@
  * query.
  */
 
+import { formatDisplayTime, formatRelativeTime } from "@/lib/format/datetime";
+
 export const LIVE_ROUNDING_NO_DUE_DATE_COPY = "No date posted";
 
 export const LIVE_ROUNDING_NO_TIME_COPY = "No time posted";
 
 const LIVE_ROUNDING_LEGACY_UNKNOWN_DUE = "Unknown";
 const LIVE_ROUNDING_EM_DASH = "—";
-const LIVE_ROUNDING_NEW_YORK_TZ = "America/New_York";
 
 /** Due-at cell on a live rounding task row — relative time or named gap when unposted. */
 export function formatLiveRoundingDueLabel(
@@ -38,14 +39,8 @@ export function formatLiveRoundingDueLabel(
     return LIVE_ROUNDING_NO_DUE_DATE_COPY;
   }
 
-  const dueAt = new Date(trimmed);
-  if (Number.isNaN(dueAt.getTime())) return LIVE_ROUNDING_NO_DUE_DATE_COPY;
-
-  const diff = dueAt.getTime() - now;
-  const mins = Math.round(Math.abs(diff) / 60000);
-  if (mins < 1) return "Now";
-  if (diff > 0) return `in ${mins}m`;
-  return `${mins}m ago`;
+  // Hours and days past the first hour: a missed check read "2462m ago" (COL-659).
+  return formatRelativeTime(trimmed, now, { fallback: LIVE_ROUNDING_NO_DUE_DATE_COPY });
 }
 
 /** Clock-time cell — hour:minute in Eastern, or the named gap when unposted. */
@@ -59,16 +54,5 @@ export function formatLiveRoundingTimeOfDay(value: string | null | undefined): s
     return LIVE_ROUNDING_NO_TIME_COPY;
   }
 
-  const date = new Date(trimmed);
-  if (Number.isNaN(date.getTime())) return LIVE_ROUNDING_NO_TIME_COPY;
-
-  try {
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: LIVE_ROUNDING_NEW_YORK_TZ,
-    }).format(date);
-  } catch {
-    return LIVE_ROUNDING_NO_TIME_COPY;
-  }
+  return formatDisplayTime(trimmed, { fallback: LIVE_ROUNDING_NO_TIME_COPY });
 }
