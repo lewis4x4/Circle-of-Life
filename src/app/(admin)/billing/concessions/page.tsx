@@ -23,6 +23,7 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ResidentRow = {
   id: string;
@@ -272,7 +273,7 @@ export default function BillingConcessionsPage() {
                         <div className="rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"><UserCircle className="h-5 w-5" /></div>
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">{row.residentName}</p>
-                          <p className="text-xs text-slate-500">{formatConcessionsDateDisplay(row.effectiveDate)} · {row.roomClass.replace(/_/g, " ")}</p>
+                          <p className="text-xs text-slate-500">{formatConcessionsDateDisplay(row.effectiveDate)} · {enumLabel(row.roomClass)}</p>
                         </div>
                       </div>
                       <Badge variant="outline" className="w-fit capitalize">{row.source === "agreement" ? "Confirmed" : "Imported"}</Badge>

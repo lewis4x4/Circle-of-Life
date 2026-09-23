@@ -122,7 +122,7 @@ export function W3AnalyticsClient({ load }: { load: V2AnalyticsLoad }) {
         {
           label: "Facilities in scope",
           value: load.rollup.length,
-          info: "Number of facilities the caller can read under RLS",
+          info: "Number of facilities you have access to",
         },
         {
           label: "Open incidents",

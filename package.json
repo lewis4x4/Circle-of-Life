@@ -40,6 +40,7 @@
     "migrations:verify:ledger": "node scripts/check-migration-ledger.mjs",
     "migrations:verify:remote": "node scripts/verify-remote-schema.mjs",
     "a11y:routes": "node scripts/a11y-axe-routes.mjs",
+    "perf:routes": "node scripts/perf/route-load-budget.mjs",
     "benefits:browser-smoke": "node scripts/benefits/browser-smoke.mjs",
     "benefits:staging-smoke": "node scripts/benefits/staging-smoke.mjs",
     "print:smoke": "node scripts/print-smoke.mjs",

@@ -6,7 +6,6 @@
 export const ADMISSIONS_HUB_MISSING_DATE_COPY = "No date posted";
 
 export type AdmissionsHubMetricContext = {
-  noFacility: boolean;
   loading: boolean;
 };
 
@@ -30,11 +29,6 @@ export function formatAdmissionsHubRelativeDate(
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/** Metric strip when the header facility selector has no valid site. */
-export function admissionsHubMetricNoFacilityCopy(): string {
-  return "Select a facility";
-}
-
 /** Metric strip while hub bootstrap is in flight. */
 export function admissionsHubMetricLoadingCopy(): string {
   return "Loading…";
@@ -45,7 +39,6 @@ export function admissionsHubMetricValue(
   value: number,
   ctx: AdmissionsHubMetricContext,
 ): string | number {
-  if (ctx.noFacility) return admissionsHubMetricNoFacilityCopy();
   if (ctx.loading) return admissionsHubMetricLoadingCopy();
   return value;
 }
@@ -122,11 +115,6 @@ export function formatAdmissionsHubResidentName(
   }
 
   return combined;
-}
-
-/** Notice when the header facility selector has no valid site. */
-export function admissionsHubNoFacilityNotice(): string {
-  return "Select a facility in the header to load intake and discharge metrics.";
 }
 
 export type AdmissionsHubScopeLabel = "today" | "this week" | "this month";

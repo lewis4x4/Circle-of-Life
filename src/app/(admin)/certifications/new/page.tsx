@@ -237,8 +237,8 @@ export default function AdminNewCertificationPage() {
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        RLS: only <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can add
-        certification rows (nurses can view the register).
+        Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can add
+        certifications; med-techs can view the register.
       </p>
 
       {!facilityReady && (

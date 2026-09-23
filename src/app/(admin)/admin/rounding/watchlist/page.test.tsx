@@ -80,3 +80,10 @@ it("does not read resident records without a selected facility", async () => {
   expect(mocks.history).not.toHaveBeenCalled(); expect(mocks.ledger).not.toHaveBeenCalled();
   expect(screen.getByText("Facility gate")).toBeTruthy();
 });
+it("does not print Open Acute signals 0 for a building the portfolio never evaluated (COL-649)", async () => {
+  mocks.portfolio.mockResolvedValue([{ facility_id: "facility-b", open_acute_signal_count: 4, residents_on_watchlist: 1, data_quality_signal_count: 0 }]);
+  render(<WatchlistPage />);
+  const summary = await screen.findByLabelText("Watchlist summary");
+  expect(screen.getByRole("article", { name: "Open Acute signals: Not evaluated" })).toBeTruthy();
+  expect(summary).not.toHaveTextContent(/signals0|signals: 0/);
+});

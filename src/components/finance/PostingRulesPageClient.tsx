@@ -168,7 +168,7 @@ export default function GlPostingRulesPageClient({
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">GL posting rules</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Map billing event types to debit and credit GL accounts per legal entity (Module 17 Enhanced). Posting an
+          Map billing event types to debit and credit GL accounts per legal entity. Posting an
           invoice or payment to the GL uses an <strong>active</strong> rule for this entity when present; otherwise
           Finance → GL Settings (AR, revenue, cash).
         </p>
@@ -179,7 +179,7 @@ export default function GlPostingRulesPageClient({
           <CardHeader>
             <CardTitle className="text-base">Restricted</CardTitle>
             <CardDescription>
-              Posting rules are visible only to owner and org admin accounts (RLS). Facility finance users should use
+              Posting rules are visible only to owner and org admin accounts. Facility finance users should use
               chart of accounts and ledger in read-only mode.
             </CardDescription>
           </CardHeader>

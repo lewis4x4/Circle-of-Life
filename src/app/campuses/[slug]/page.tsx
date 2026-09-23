@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   CheckCircle2
 } from "lucide-react";
-import { FACILITIES } from "@/lib/data/facilities-data";
+import { FACILITIES, PUBLIC_AVAILABILITY_COPY } from "@/lib/data/facilities-data";
 import Image from "next/image";
 
 export default function DynamicCampusPage() {
@@ -59,7 +59,7 @@ export default function DynamicCampusPage() {
                 {facility.address.county} • {facility.address.city}, FL
               </span>
               <span className="px-3.5 py-1 rounded-full bg-emerald-500/30 text-emerald-300 text-xs font-bold border border-emerald-400/40">
-                {facility.availableBeds} Suites Available for Move-In
+                {PUBLIC_AVAILABILITY_COPY}
               </span>
               <span className="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-mono">
                 AHCA License #{facility.licenseNumber}

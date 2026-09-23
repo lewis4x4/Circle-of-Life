@@ -97,7 +97,7 @@ export default function AdminVendorsHubPage() {
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-border shadow-sm mt-4 relative z-10 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/20">
           <div className="space-y-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-4">
-              Vendors & Contracts
+              Vendors & AP
             </h1>
             <p className="mt-2 font-medium tracking-wide text-muted-foreground max-w-2xl">
               Manage the vendor master, execute contracts, handle POs, and analyze real-time spend records.

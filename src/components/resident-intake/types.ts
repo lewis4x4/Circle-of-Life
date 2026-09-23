@@ -1,4 +1,5 @@
 import { RESIDENT_DOCUMENT_TYPES } from "./ui-labels";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type ResidentIntakePrimaryState =
   | "idle"
@@ -203,7 +204,7 @@ function operatorLabel(value: unknown, fallback: string): string {
   const raw = text(value).trim();
   if (!raw) return fallback;
   const finalToken = raw.includes(".") ? raw.split(".").at(-1) ?? raw : raw;
-  return finalToken.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return enumLabel(finalToken, { case: "title" });
 }
 
 function normalizedSourceClass(value: unknown): string | null {

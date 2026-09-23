@@ -228,7 +228,7 @@ function OnboardingQuestionsContent() {
         </div>
         <p className="text-sm text-slate-400">
           {activeTier === "core"
-            ? "These questions shape the pilot build. Answer them first."
+            ? "These questions shape your first rollout. Answer them first."
             : "Deeper discovery for long-term product, integrations, and rollout planning."}
         </p>
       </div>

@@ -33,6 +33,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type AccountRow = Database["public"]["Tables"]["reputation_accounts"]["Row"];
 type ReplyRow = Database["public"]["Tables"]["reputation_replies"]["Row"] & {
@@ -48,7 +49,7 @@ const REPLIES_CSV_STATUS_FILTERS: { value: "all" | ReputationReplyStatus; label:
 ];
 
 function formatPlatform(p: string) {
-  return p.replace(/_/g, " ");
+  return enumLabel(p);
 }
 
 function buildReputationAccountsCsv(rows: AccountRow[]): string {
@@ -351,9 +352,9 @@ export default function AdminReputationHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Reputation Control
-            </h2>
+            </h1>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0 self-start">
               <Link

@@ -56,6 +56,7 @@ import {
   formatDischargeMedRecHubKpiValue,
   formatDischargeMedRecResidentName,
 } from "@/lib/discharge/discharge-med-rec-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const NEW_MED_REC_PATH = "/admin/discharge/new";
 
@@ -71,7 +72,7 @@ type DischargePhase =
 type PhaseFilter = "all" | DischargePhase;
 
 function formatStatusSentence(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function describeDischargePhase(row: RowT): {
@@ -504,7 +505,8 @@ export function DischargeMedRecHubClient({
             role="status"
             className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
           >
-            Select a facility in the header to load medication reconciliation for that site.
+            {/* COL-651: the list already loads every accessible facility under All facilities. */}
+            Showing medication reconciliation for all your facilities.
           </div>
         ) : null}
 

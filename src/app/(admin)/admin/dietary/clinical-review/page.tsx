@@ -14,6 +14,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { liquidFormVsThickenedFluidsHint, solidOralFormVsTextureModifiedFoodHint } from "@/lib/dietary/med-fluid-diet-hints";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
   residents: { first_name: string; last_name: string; id: string } | null;
@@ -22,7 +23,7 @@ type DietRow = Database["public"]["Tables"]["diet_orders"]["Row"] & {
 type MedRow = Database["public"]["Tables"]["resident_medications"]["Row"];
 
 function formatEnumLabel(s: string): string {
-  return String(s ?? "not assessed").replace(/_/g, " ");
+  return enumLabel(String(s ?? "not assessed"));
 }
 
 function pickPrimaryDietOrder(orders: DietRow[]): DietRow | null {
@@ -383,7 +384,7 @@ export default function DietaryClinicalReviewPage() {
                               }
                               className="shrink-0"
                             >
-                              {m.status.replace(/_/g, " ")}
+                              {enumLabel(m.status)}
                             </StatusPill>
                           </div>
                         </li>

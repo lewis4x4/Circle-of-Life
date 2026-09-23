@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import {
@@ -9,14 +8,12 @@ import {
   AdminLiveDataFallbackNotice,
   AdminOperationalListPanel,
 } from "@/components/common/admin-list-patterns";
-import { ExecutiveNavV2 } from "@/components/executive/executive-nav-v2";
+import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import {
-  HavenInsightPanel,
   OfficerHeader,
   OfficerKpiStrip,
   OfficerKpiTile,
   OfficerLanes,
-  OfficerLinkOutPanel,
   officerAlarmTone,
   officerAlertsEmptyDescription,
   officerRegisterKpi,
@@ -43,7 +40,6 @@ import {
 import type { CeoAlertDisplay } from "@/lib/executive/load-ceo-dashboard-data";
 import type { ExecKpiPayload } from "@/lib/exec-kpi-snapshot";
 
-const CEO_TABS = ["CEO View", "Alerts", "Reports", "Benchmarks", "Haven Insight"];
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -116,7 +112,6 @@ export default function CeoDashboardPageClient({
   initialAlerts,
   initialError,
 }: CeoDashboardPageClientProps) {
-  const [tab, setTab] = useState("CEO View");
   const { organizationId, loading: authLoading } = useHavenAuth();
   const kpis = initialKpis;
   const displayAlerts = initialAlerts;
@@ -177,14 +172,8 @@ export default function CeoDashboardPageClient({
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full">
-      <div className="border-b border-border">
-        <ExecutiveNavV2
-          showTopNav={false}
-          activeTopNav="command"
-          activePillMenu={tab}
-          onPillMenuChange={setTab}
-          customPillTabs={CEO_TABS}
-        />
+      <div className="border-b border-border px-6 py-3 sm:px-12">
+        <ExecutiveHubNav />
       </div>
 
       <OfficerHeader title="Chief Executive Officer" subtitle="Enterprise growth & risk — all facilities." />
@@ -221,29 +210,11 @@ export default function CeoDashboardPageClient({
           </div>
         )}
 
-        {!showKpiSkeleton && tab === "CEO View" ? (
+        {!showKpiSkeleton ? (
           <>
             <OfficerLanes lanes={lanes} subheading="Leadership decisions and portfolio drill-ins." />
             <CeoAlertsWatchlist alerts={displayAlerts} openRoundingEscalations={kpis?.registers?.openRoundingEscalations} />
           </>
-        ) : !showKpiSkeleton && tab === "Alerts" ? (
-          <CeoAlertsWatchlist alerts={displayAlerts} openRoundingEscalations={kpis?.registers?.openRoundingEscalations} />
-        ) : !showKpiSkeleton && tab === "Reports" ? (
-          <OfficerLinkOutPanel
-            title="Executive reports"
-            description="Portfolio KPI exports (CSV / print) and the board-packet archive."
-            href="/admin/executive/reports"
-            cta="Open reports"
-          />
-        ) : !showKpiSkeleton && tab === "Benchmarks" ? (
-          <OfficerLinkOutPanel
-            title="Portfolio benchmarks"
-            description="Facility-vs-facility comparison across occupancy, labor, incidents, and survey readiness."
-            href="/admin/executive/benchmarks"
-            cta="Open benchmarks"
-          />
-        ) : !showKpiSkeleton ? (
-          <HavenInsightPanel domain="portfolio" />
         ) : null}
       </div>
     </div>

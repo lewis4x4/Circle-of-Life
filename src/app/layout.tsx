@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { DocumentTitleFromHeading } from "@/components/a11y/DocumentTitleFromHeading";
+import { SITE_TITLE } from "@/lib/a11y/document-title";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -22,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Haven — Circle of Life",
+  title: SITE_TITLE,
   description:
     "Unified operations for assisted living, home health, and community-based care.",
   icons: {
@@ -71,6 +73,7 @@ export default function RootLayout({
               Skip to main content
             </a>
             <div id="main-content">{children}</div>
+            <DocumentTitleFromHeading />
           </div>
         </ThemeProvider>
       </body>

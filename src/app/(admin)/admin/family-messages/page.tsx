@@ -47,6 +47,7 @@ import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { FamilyPortalUpdateLog } from "@/components/family-portal/FamilyPortalUpdateLog";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { StaffFamilyBulletinSection } from "@/components/family-portal/StaffFamilyBulletinSection";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
   return [...messages]
@@ -438,7 +439,7 @@ export default function StaffFamilyMessagesPage() {
                             : "border-border bg-muted text-muted-foreground",
                     )}
                   >
-                    Triage: {selectedThread.triageStatus.replace(/_/g, " ")}
+                    Triage: {enumLabel(selectedThread.triageStatus)}
                   </span>
                   {selectedThread.triageKeywords.map((keyword) => (
                     <span

@@ -44,8 +44,9 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   complianceRate,
-  formatComplianceRate,
   onTimeRate,
+  complianceRateMetric,
+  formatCompliancePercent,
   type ComplianceSummary,
 } from "@/lib/rounding/observation-compliance-summary";
 import {
@@ -225,15 +226,15 @@ function ScopedAdminRoundingReportsPage() {
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                   <MetricCard
                     label="Compliance"
-                    value={formatComplianceRate(complianceRate(totals))}
-                    numericValue={(complianceRate(totals) ?? 0) * 100}
+                    state={complianceRateMetric(complianceRate(totals))}
+                    format={formatCompliancePercent}
                     thresholds={{ type: "rate-percent" }}
                     hint={`${totals.satisfied} of ${totals.expected} expected windows recorded`}
                   />
                   <MetricCard
                     label="On time"
-                    value={formatComplianceRate(onTimeRate(totals))}
-                    numericValue={(onTimeRate(totals) ?? 0) * 100}
+                    state={complianceRateMetric(onTimeRate(totals))}
+                    format={formatCompliancePercent}
                     thresholds={{ type: "rate-percent" }}
                     hint={`${totals.onTime} of ${totals.withTask} scheduled checks inside the grace window`}
                   />

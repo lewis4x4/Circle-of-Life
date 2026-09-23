@@ -25,6 +25,7 @@ import {
   officialDischargeReceipt,
   type DischargeReason,
 } from "@/lib/residents/official-discharge";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: {
@@ -45,7 +46,7 @@ const HOSPICE_OPTIONS: Array<Database["public"]["Enums"]["hospice_status"]> = [
 ];
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 export default function AdminDischargeDetailPage() {

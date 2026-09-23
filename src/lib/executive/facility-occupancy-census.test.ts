@@ -23,14 +23,14 @@ describe("facility occupancy census honesty", () => {
     expect(computeFacilityOccupancyPct(siteBeta, undefined)).toBeNull();
   });
 
-  it("keeps loaded empty facilities at 0%", () => {
+  it("treats a bed grid with nobody in it as no census, not 0% (COL-649)", () => {
     const census = aggregateBedCensusByFacility([
       { facility_id: "site-alpha", current_resident_id: null },
       { facility_id: "site-alpha", current_resident_id: null },
     ]);
 
-    expect(isFacilityOccupancyCensusLoaded(siteAlpha, census.get("site-alpha"))).toBe(true);
-    expect(computeFacilityOccupancyPct(siteAlpha, census.get("site-alpha"))).toBe(0);
+    expect(isFacilityOccupancyCensusLoaded(siteAlpha, census.get("site-alpha"))).toBe(false);
+    expect(computeFacilityOccupancyPct(siteAlpha, census.get("site-alpha"))).toBeNull();
   });
 
   it("computes occupied facility percent from bed grid", () => {

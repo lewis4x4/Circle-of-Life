@@ -25,3 +25,16 @@ it("explains an empty range only after a successful read with zero windows", asy
   await act(async () => { render(<IntegrityCompliancePanel facilityId="building-a" />); });
   expect(screen.getByText(NO_RESIDENTS_COPY)).toBeTruthy();
 });
+
+it("does not paint an on-time rate with no scheduled checks as a red 0% (COL-649)", async () => {
+  // Every window was absorbed by a Monitoring Order: expected > 0, withTask 0.
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+    from: "2026-09-16", to: "2026-09-22",
+    totals: { ...emptyTotals, expected: 12, satisfied: 12, absorbed: 12 },
+    byShift: [], byHall: [], byStaff: [],
+  }))));
+  await act(async () => { render(<IntegrityCompliancePanel facilityId="building-a" />); });
+  const onTime = screen.getByRole("article", { name: "On time: No data posted" });
+  expect(onTime.getAttribute("data-metric-state")).toBe("no_data");
+  expect(onTime.className).not.toMatch(/destructive/);
+});

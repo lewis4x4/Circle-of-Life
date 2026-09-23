@@ -252,7 +252,7 @@ export default function RenewalPackageDetailPage() {
 
       <RecordDetailSection
         title="Narrative"
-        description="Generate a draft from package metrics (optional OpenAI when configured). Human review is required before external use. Only owner / org admin may generate or edit (RLS)."
+        description="Generate a draft from package metrics (optional OpenAI when configured). Human review is required before external use. Only an owner or org admin can generate or edit it."
       >
         <div className="space-y-4">
           <div className="space-y-2">
@@ -270,7 +270,7 @@ export default function RenewalPackageDetailPage() {
           </div>
           {lastSource ? (
             <p className="text-xs text-muted-foreground" role="status">
-              Last generation: {lastSource === "openai" ? "model-assisted" : "template (set OPENAI_API_KEY for model draft)"}.
+              Last generation: {lastSource === "openai" ? "model-assisted" : "template (model drafting is not set up)"}.
             </p>
           ) : null}
           {canMutate ? (
