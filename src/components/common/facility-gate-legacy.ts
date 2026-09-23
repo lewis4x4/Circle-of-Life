@@ -33,20 +33,7 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
     "src/lib/billing/load-rent-roll.ts",
   ],
 
-  "b3-operations": [
-    "src/app/(admin)/admin/operations/history/page.tsx",
-    "src/app/(admin)/admin/operations/profile/page.tsx",
-    "src/app/(admin)/admin/operations/templates/page.tsx",
-    "src/app/(admin)/transportation/calendar/page.tsx",
-    "src/app/(admin)/transportation/drivers/new/page.tsx",
-    "src/app/(admin)/transportation/inspections/new/page.tsx",
-    "src/app/(admin)/transportation/mileage-approvals/page.tsx",
-    "src/app/(admin)/transportation/page.tsx",
-    "src/app/(admin)/transportation/requests/[id]/page.tsx",
-    "src/app/(admin)/transportation/requests/new/page.tsx",
-    "src/app/(admin)/transportation/vehicles/new/page.tsx",
-    "src/lib/transportation/vehicle-new-display-copy.ts",
-  ],
+  "b3-operations": [],
 
   "b4-clinical": [
     "src/app/(admin)/admin/dietary/clinical-review/page.tsx",
@@ -97,49 +84,26 @@ export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
     "src/lib/reputation/reputation-reply-new-display-copy.ts",
   ],
 
-  "b6-office": [
-    "src/app/(admin)/admin/acknowledgments/my/page.tsx",
-    "src/app/(admin)/admin/acknowledgments/page.tsx",
-    "src/app/(admin)/admin/contacts/page.tsx",
-    "src/app/(admin)/admin/drive-cutover/page.tsx",
-    "src/app/(admin)/admin/drive-import/page.tsx",
-    "src/app/(admin)/admin/forms/page.tsx",
-    "src/app/(admin)/admin/forms/submit/page.tsx",
-    "src/app/(admin)/admin/front-desk/page.tsx",
-    "src/app/(admin)/admin/handoff/page.tsx",
-    "src/app/(admin)/admin/meetings/new/page.tsx",
-    "src/app/(admin)/admin/meetings/page.tsx",
-    "src/components/care-events/print/TaxonomyPacketPageClient.tsx",
-  ],
+  "b6-office": [],
 
   "b7-workforce": [
-    "src/app/(admin)/certifications/new/page.tsx",
-    "src/app/(admin)/schedules/new/page.tsx",
-    "src/app/(admin)/staff/new/page.tsx",
-    "src/app/(admin)/staffing/new/page.tsx",
-    "src/app/(admin)/time-records/new/page.tsx",
-    "src/app/(admin)/time-records/page.tsx",
-    "src/app/(admin)/training/completions/new/page.tsx",
-    "src/app/(admin)/training/inservice/new/page.tsx",
-    "src/app/(admin)/training/new/page.tsx",
-    "src/app/(admin)/training/page.tsx",
-    "src/components/schedules/AdminSchedulesPageClient.tsx",
-    "src/components/staffing/AdminStaffingConsolePageClient.tsx",
-    "src/components/timeclock/TimeclockOverview.tsx",
-    "src/components/timeclock/UpunchCompare.tsx",
-    "src/lib/timeclock/display-copy.ts",
   ],
 };
 
 export const NOT_A_GATE: Record<string, string> = {
+  "src/app/(admin)/admin/operations/templates/page.tsx":
+    "Validation for a template's own facility field: org-wide templates need none, facility-scoped ones pick one in the form.",
   "src/app/(admin)/admin/rounding/reports/page.tsx":
     "The report builder asks for a building alongside its date range; it is a form input, not a page gate.",
   "src/components/layout/AppShell.tsx":
     "The survey-visit tools in the shell menu, which sits beside the header selector itself.",
   "src/lib/v2-forms.ts": "Validation message for a form's own required facility field.",
   // COL-649 MetricState: a KPI tile's "no scope" state, not a page gate. Pages still gate with <FacilityGate>.
-  "src/lib/metrics/metric-state.ts": "Defines the KPI tile label for the no-facility-scope metric state (COL-649).",
-  "src/components/ui/kpi-card.tsx": "Doc comment listing MetricState phrases the card renders (COL-649).",
-  "src/components/ui/stat-card.tsx": "Doc comment listing MetricState phrases the card renders (COL-649).",
-  "src/design-system/components/KPITile/KPITile.tsx": "Doc comment listing MetricState phrases the tile renders (COL-649).",
+  "src/lib/assessments/overdue-assessments-display-copy.ts":
+    "Empty-queue copy for the Clinical Desk's needs-facility state; the page's gate is the source notice.",
+  "src/lib/clinical/clinical-queue-state.ts": "Doc comment on the needs_facility queue state.",
+  "src/lib/metrics/metric-state.ts": "Defines the KPI tile label for the no-facility-scope metric state.",
+  "src/components/ui/kpi-card.tsx": "Doc comment listing MetricState phrases the card renders.",
+  "src/components/ui/stat-card.tsx": "Doc comment listing MetricState phrases the card renders.",
+  "src/design-system/components/KPITile/KPITile.tsx": "Doc comment listing MetricState phrases the tile renders.",
 };

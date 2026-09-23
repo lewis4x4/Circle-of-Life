@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import axe from "axe-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "./page";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 
 const env = vi.hoisted(() => ({
   query: "facility_id=facility&activity_id=activity",
@@ -10,7 +11,7 @@ const env = vi.hoisted(() => ({
   replace: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: env.replace }),
+  useRouter: () => ({ replace: env.replace, refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams(env.query),
   usePathname: () => "/admin/operations/history",
 }));
@@ -63,6 +64,7 @@ function reply(extra = {}) {
 }
 const ok = (body = reply()) => ({ ok: true, json: async () => body });
 beforeEach(() => {
+  useFacilityStore.setState({ selectedFacilityId: null, availableFacilities: [], facilitiesCacheUserId: null });
   env.query = "facility_id=facility&activity_id=activity";
   env.actor = "person";
   env.role = "owner";
@@ -89,16 +91,26 @@ describe("Corporate activity history", () => {
       { scroll: false },
     );
   });
-  it("clears activity and cursor when the facility changes", async () => {
+  it("follows the header: a URL facility becomes the header scope, and a header change clears activity and cursor (COL-651)", async () => {
     env.query += "&cursor=old";
     render(<Page />);
-    fireEvent.change(await screen.findByLabelText("Facility"), {
-      target: { value: "other" },
+    await screen.findByText("Total occurrences: 1101");
+    expect(useFacilityStore.getState().selectedFacilityId).toBe("facility");
+    expect(screen.queryByLabelText("Facility")).not.toBeInTheDocument();
+    act(() => {
+      useFacilityStore.setState({ selectedFacilityId: "other" });
     });
     expect(env.replace).toHaveBeenCalledWith(
       "/admin/operations/history?facility_id=other",
       { scroll: false },
     );
+  });
+  it("gates on a facility instead of its own dropdown under All facilities (COL-651)", async () => {
+    env.query = "";
+    render(<Page />);
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Other facility" })).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
   });
   it("does not display a stale response after a facility switch", async () => {
     let resolveOld!: (value: ReturnType<typeof ok>) => void;

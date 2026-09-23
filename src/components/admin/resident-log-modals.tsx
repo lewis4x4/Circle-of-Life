@@ -6,7 +6,7 @@ import { Brain, Stethoscope, FileText, CheckCircle2, Loader2 } from "lucide-reac
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { requestEvaluateVitals } from "@/lib/infection-control/request-evaluate-vitals";
 import { formatResidentDailyNotesDisplay } from "@/lib/residents/resident-log-display-copy";
 import { createClient } from "@/lib/supabase/client";
@@ -270,6 +270,7 @@ export function BehaviorLogModal({
     facilityId: string;
     organizationId: string;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [rows, setRows] = useState<BehaviorRow[]>([]);
 
@@ -311,6 +312,7 @@ export function BehaviorLogModal({
       facilityId: resolved.ctx.facilityId,
       organizationId: resolved.ctx.organizationId,
       timeZone: resolved.ctx.timeZone,
+      shifts: resolved.ctx.shifts,
     });
   }, [supabase]);
 
@@ -339,7 +341,7 @@ export function BehaviorLogModal({
     setError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId,
         facilityId: ctx.facilityId,
@@ -650,6 +652,7 @@ export function ConditionLogModal({
     facilityId: string;
     organizationId: string;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [rows, setRows] = useState<ConditionRow[]>([]);
 
@@ -685,6 +688,7 @@ export function ConditionLogModal({
       facilityId: resolved.ctx.facilityId,
       organizationId: resolved.ctx.organizationId,
       timeZone: resolved.ctx.timeZone,
+      shifts: resolved.ctx.shifts,
     });
   }, [supabase]);
 
@@ -712,7 +716,7 @@ export function ConditionLogModal({
     setSubmitting(true);
     setError(null);
     try {
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const nowIso = new Date().toISOString();
       const row: Database["public"]["Tables"]["condition_changes"]["Insert"] = {
         resident_id: residentId,
@@ -921,6 +925,7 @@ export function GeneralNoteModal({
     organizationId: string;
     facilityName: string | null;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [dailyHistory, setDailyHistory] = useState<DailyRow[]>([]);
 
@@ -958,6 +963,7 @@ export function GeneralNoteModal({
       organizationId: resolved.ctx.organizationId,
       facilityName: resolved.ctx.facilityName,
       timeZone: resolved.ctx.timeZone,
+      shifts: resolved.ctx.shifts,
     });
   }, [supabase]);
 
@@ -986,7 +992,7 @@ export function GeneralNoteModal({
     setError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const stamp = zonedTimeShort(new Date(), ctx.timeZone);
       const line = `[${stamp}] ${noteDraft.trim()}`;
 
@@ -1046,7 +1052,7 @@ export function GeneralNoteModal({
     setError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       let dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId,
         facilityId: ctx.facilityId,
@@ -1132,7 +1138,7 @@ export function GeneralNoteModal({
             {ctx ? (
               <>
                 {" "}
-                · {zonedYmd(new Date(), ctx.timeZone)} · {currentShiftForTimezone(ctx.timeZone)} shift
+                · {zonedYmd(new Date(), ctx.timeZone)} · {currentShiftFor(ctx).label.toLowerCase()} shift
               </>
             ) : null}
             . Vitals are optional and save separately below.

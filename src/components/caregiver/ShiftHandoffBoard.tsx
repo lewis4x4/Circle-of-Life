@@ -2,8 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
-import { zonedYmd } from "@/lib/caregiver/emar-queue";
+import { currentShiftFor } from "@/lib/caregiver/shift";
 import { Button } from "@/components/ui/button";
 type Note = {
     id: string;
@@ -50,7 +49,8 @@ export function ShiftHandoffBoard() {
                 throw new Error(scope.error);
             if (!draft.trim())
                 throw new Error("Enter a handoff note.");
-            const result = await client.from("shift_handoff_notes" as never).insert({ facility_id: scope.ctx.facilityId, organization_id: scope.ctx.organizationId, shift_date: zonedYmd(new Date(), scope.ctx.timeZone), shift: currentShiftForTimezone(scope.ctx.timeZone), note: draft.trim(), priority: "normal", category: "other", created_by: user.id } as never).select("id").single();
+            const current = currentShiftFor(scope.ctx);
+            const result = await client.from("shift_handoff_notes" as never).insert({ facility_id: scope.ctx.facilityId, organization_id: scope.ctx.organizationId, shift_date: current.serviceDate, shift: current.shiftType, note: draft.trim(), priority: "normal", category: "other", created_by: user.id } as never).select("id").single();
             if (result.error)
                 throw result.error;
             setDraft("");

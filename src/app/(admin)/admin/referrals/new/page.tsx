@@ -7,7 +7,6 @@ import { formatInTimeZone } from "date-fns-tz";
 import { Building2, ChevronDown, Loader2, Lock, Settings, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { digitsOnly, formatPhoneUsParenthetical } from "@/components/common/phone-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
@@ -525,8 +524,6 @@ export default function AdminReferralsNewPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <ReferralsHubNav />
 
       {noFacility ? (
         <p

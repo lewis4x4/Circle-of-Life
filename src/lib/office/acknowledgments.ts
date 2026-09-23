@@ -1,5 +1,7 @@
 export type AckRequirementRow = {
   id: string;
+  /** Selected by the personal list, which spans every facility the reader can see. */
+  facility_id?: string;
   document_id: string;
   document_title: string;
   document_content_snapshot?: string | null;
