@@ -311,11 +311,12 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
       </div>
 
       <div
-        className="flex min-h-8 items-center gap-2 border-l-4 border-amber-500 bg-amber-50/90 px-3 py-2 text-[13px] text-amber-950 dark:bg-amber-950/40 dark:text-amber-50"
+        className="flex min-h-8 items-start gap-2 border-l-4 border-amber-500 bg-amber-50/90 px-3 py-2 text-[13px] text-amber-950 dark:bg-amber-950/40 dark:text-amber-50"
         role="note"
       >
         <span aria-hidden>⚠</span>
-        <span className="min-w-0 flex-1 truncate">
+        {/* Wraps rather than truncates: the warning is the point (COL-687). */}
+        <span className="min-w-0 flex-1">
           This form bypasses standard intake. Use only for emergency admissions or historical data migration.{" "}
           <Link href={admissionsHref} className="font-medium text-amber-900 underline underline-offset-2 dark:text-amber-200">
             Go to Admissions

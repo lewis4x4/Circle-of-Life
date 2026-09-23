@@ -522,7 +522,7 @@ export function AdminReferralsPageClient({
 
       {!noFacility ? (
         <section aria-label="Referral KPIs">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
             <KpiCard
               value={referralsHubKpiTileValue("new_leads", kpiMetrics?.newLeads, kpiCtx)}
               label={kpiScope === "all" ? "Open new-status leads" : "Leads created in scope"}
