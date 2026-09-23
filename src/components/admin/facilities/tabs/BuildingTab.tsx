@@ -293,7 +293,7 @@ export function BuildingTab({
                 }))
               }
             >
-              <SelectTrigger className={cn(inputCls, "h-auto py-2")}>
+              <SelectTrigger aria-label="Construction type" className={cn(inputCls, "h-auto py-2")}>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
@@ -372,7 +372,7 @@ export function BuildingTab({
                 }))
               }
             >
-              <SelectTrigger className={cn(inputCls, "h-auto py-2")}>
+              <SelectTrigger aria-label="Fire suppression type" className={cn(inputCls, "h-auto py-2")}>
                 <SelectValue placeholder="Select suppression" />
               </SelectTrigger>
               <SelectContent>
@@ -482,7 +482,7 @@ export function BuildingTab({
                   }))
                 }
               >
-                <SelectTrigger className={cn(inputCls, "h-auto py-2")}>
+                <SelectTrigger aria-label="Generator fuel type" className={cn(inputCls, "h-auto py-2")}>
                   <SelectValue placeholder="Select fuel" />
                 </SelectTrigger>
                 <SelectContent>

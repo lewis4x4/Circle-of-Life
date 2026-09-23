@@ -78,12 +78,29 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>["size"]>
+type IconButtonSize = Extract<ButtonSize, `icon${string}`>
+
+/**
+ * Icon-only sizes render no text, so the button has no accessible name unless
+ * the caller gives one (axe `button-name`, critical — COL-658). The type
+ * requires `aria-label` or `aria-labelledby` whenever `size` is an icon size.
+ */
+type ButtonNameProps =
+  | { size?: Exclude<ButtonSize, IconButtonSize> | null }
+  | { size: IconButtonSize; "aria-label": string }
+  | { size: IconButtonSize; "aria-labelledby": string }
+
+export type ButtonProps = ButtonPrimitive.Props &
+  Omit<VariantProps<typeof buttonVariants>, "size"> &
+  ButtonNameProps
+
 function Button({
   className,
   variant = "default",
   size = "default",
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonProps) {
   return (
     <ButtonPrimitive
       data-slot="button"

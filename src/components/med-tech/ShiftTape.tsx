@@ -90,6 +90,8 @@ export function ShiftTape({
                 <span className="text-xs font-mono text-slate-400">{expanded.t}</span>
               </div>
               <button
+                type="button"
+                aria-label="Close"
                 onClick={() => setExpanded(null)}
                 className="text-slate-400 hover:text-white transition"
               >

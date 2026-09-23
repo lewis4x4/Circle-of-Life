@@ -138,14 +138,14 @@ export function OperationsTaskRangePage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "prev"))}>
-            <ChevronLeft className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label={`Previous ${view}`} onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "prev"))}>
+            <ChevronLeft className="h-4 w-4" aria-hidden />
           </Button>
           <div className="min-w-[180px] rounded-lg bg-muted/50 px-4 py-2 text-center">
             <span className="font-medium">{range.label}</span>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "next"))}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label={`Next ${view}`} onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "next"))}>
+            <ChevronRight className="h-4 w-4" aria-hidden />
           </Button>
           <Link href="/admin/operations">
             <Button variant="outline" size="sm" className="ml-2">
