@@ -16,7 +16,7 @@ import {
   LogIn,
   Compass,
 } from "lucide-react";
-import { FACILITIES } from "@/lib/data/facilities-data";
+import { FACILITIES, PUBLIC_AVAILABILITY_COPY, TOTAL_NETWORK_BEDS } from "@/lib/data/facilities-data";
 import Image from "next/image";
 
 interface WebHeaderProps {
@@ -208,7 +208,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                 >
                   <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-[#3D5A4C] border-b border-stone-200 flex items-center justify-between">
                     <span>5 North Florida Sanctuaries</span>
-                    <span className="text-emerald-700 font-bold">258 Licensed Beds</span>
+                    <span className="text-emerald-700 font-bold">{TOTAL_NETWORK_BEDS} Licensed Beds</span>
                   </div>
 
                   {FACILITIES.map((facility) => (
@@ -230,7 +230,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
                         <div className="text-[11px] text-stone-500 flex items-center gap-1.5 mt-0.5">
                           <span>{facility.address.city}, FL</span>
                           <span>•</span>
-                          <span className="text-emerald-700 font-semibold">{facility.availableBeds} Suites Available</span>
+                          <span className="text-emerald-700 font-semibold">{PUBLIC_AVAILABILITY_COPY}</span>
                         </div>
                       </div>
                     </Link>

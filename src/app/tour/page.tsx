@@ -9,7 +9,7 @@ import {
   Utensils,
   CheckCircle2
 } from "lucide-react";
-import { FACILITIES } from "@/lib/data/facilities-data";
+import { FACILITIES, PUBLIC_AVAILABILITY_COPY } from "@/lib/data/facilities-data";
 import Image from "next/image";
 
 export default function TourPage() {
@@ -95,7 +95,7 @@ export default function TourPage() {
                             selectedFacility === f.id ? "text-[#E5A952] font-semibold" : "text-stone-500"
                           }`}
                         >
-                          {f.address.city}, FL • {f.availableBeds} Suites Available
+                          {f.address.city}, FL • {PUBLIC_AVAILABILITY_COPY}
                         </div>
                       </button>
                     ))}
