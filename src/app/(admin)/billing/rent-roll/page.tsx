@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -71,9 +72,9 @@ function RowNotes({ row }: { row: RentRollRow }) {
     <div className="space-y-0.5">
       {row.collectionNote ? (
         <p className="text-foreground">
-          <span className="tabular-nums text-muted-foreground">{row.collectionNote.date}</span> {row.collectionNote.text}
+          <span className="tabular-nums text-muted-foreground">{formatDisplayDate(row.collectionNote.date)}</span> {row.collectionNote.text}
           {row.collectionNote.followUpDate ? (
-            <span className="text-muted-foreground"> · follow up {row.collectionNote.followUpDate}</span>
+            <span className="text-muted-foreground"> · follow up {formatDisplayDate(row.collectionNote.followUpDate)}</span>
           ) : null}
         </p>
       ) : null}
@@ -269,7 +270,7 @@ function RentRollPageContent() {
                         <td className="px-3 py-2 tabular-nums text-foreground">
                           {row.roomLabel ?? <span className="text-muted-foreground">{RENT_ROLL_NO_BED_COPY}</span>}
                         </td>
-                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{row.admissionDate ?? "—"}</td>
+                        <td className="px-3 py-2 tabular-nums whitespace-nowrap text-muted-foreground">{row.admissionDate ? formatDisplayDate(row.admissionDate) : "—"}</td>
                         <td className="px-3 py-2 font-medium text-foreground">
                           <Link href={`/admin/residents/${row.residentId}/billing`} className="hover:underline">
                             {row.residentName}

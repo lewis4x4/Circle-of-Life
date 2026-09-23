@@ -84,7 +84,7 @@ describe("AdminRevenuePage", () => {
     render(<AdminRevenuePage />);
 
     expect(
-      await screen.findByText("Includes payments dated on or after 2025-06-20 Eastern."),
+      await screen.findByText("Includes payments dated on or after Jun 20, 2025."),
     ).toBeInTheDocument();
   });
 });
