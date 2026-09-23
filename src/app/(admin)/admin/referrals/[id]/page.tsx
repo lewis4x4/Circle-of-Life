@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -226,8 +225,6 @@ export default function AdminReferralLeadDetailPage() {
         backLink={{ label: "Referrals", href: "/admin/referrals" }}
         actions={leadActions}
       />
-
-      <ReferralsHubNav />
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
