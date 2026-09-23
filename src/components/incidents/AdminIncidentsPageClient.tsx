@@ -13,7 +13,6 @@ import {
   adminIncidentsGlobalEmptyNotice,
   adminIncidentsKanbanColumnEmptyHelper,
   adminIncidentsKanbanColumnEmptyTitle,
-  adminIncidentsNoFacilityNotice,
   incidentFollowupDueBadgeText,
 } from "@/lib/incidents/incidents-board-copy";
 import {
@@ -29,6 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 type BoardScope = "all" | "active" | "open";
 
 type AdminIncidentsPageClientProps = {
@@ -224,12 +224,12 @@ export function AdminIncidentsPageClient({
   return (
     <div className="relative flex flex-col h-[calc(100vh-6rem)] space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-[var(--motion-duration)] pb-6">
       <></>
-      <header className="relative z-10 shrink-0 flex items-end justify-between px-1">
+      <header className="relative z-10 shrink-0 flex flex-wrap items-end justify-between gap-3 px-1">
         <div>
            
-           <h2 className="text-4xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+           <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-3 md:text-4xl">
              Safety Operations Kanban {visibleRows.filter(r => r.status === "new").length > 0 && <></>}
-           </h2>
+           </h1>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/admin/incidents/reports-log" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 text-xs")}>
@@ -322,11 +322,9 @@ export function AdminIncidentsPageClient({
           </Link>
         </div>
       ) : null}
-      {!facilityReady ? (
-        <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
-          {adminIncidentsNoFacilityNotice()}
-        </div>
-      ) : rows.length === 0 ? (
+      {/* COL-651: under All facilities this board is already the cross-facility
+          rollup (the load drops the facility filter), so it never gates. */}
+      {rows.length === 0 ? (
         <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
           {adminIncidentsGlobalEmptyNotice()}
         </div>
@@ -443,11 +441,11 @@ export function AdminIncidentsPageClient({
       )}
 
       {/* Kanban Board Container */}
-      <div className="relative z-10 flex-1 min-h-0 flex gap-6 overflow-x-auto pb-4 px-1 scrollbar-hide">
+      <div className="relative z-10 flex-1 min-h-0 flex gap-6 overflow-x-auto pb-4 px-1">
         {columns.map((col) => {
           const colRows = visibleRows.filter(r => r.status === col.id);
           return (
-            <div key={col.id} className="flex-1 min-w-[340px] flex flex-col rounded-[var(--radius)] border border-border overflow-hidden bg-card/40">
+            <div key={col.id} className="flex-1 min-w-[min(340px,85vw)] flex flex-col rounded-[var(--radius)] border border-border overflow-hidden bg-card/40">
                <div className="shrink-0 p-4 border-b border-border flex items-center justify-between bg-card">
                  <div className="flex items-center gap-3">
                    <div className={cn("w-3 h-3 rounded-full shrink-0", col.dot)}></div>
@@ -580,7 +578,7 @@ function KanbanCard({ incident, now }: { incident: IncidentRow; now: number }) {
         <div className="grid grid-cols-2 gap-3 text-xs bg-muted/40 p-3 rounded-[var(--radius)] border border-border">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Class</span>
-            <span className="font-medium capitalize text-foreground">{incident.category.replace(/_/g, ' ')}</span>
+            <span className="font-medium text-foreground">{enumLabel(incident.category)}</span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Reported</span>

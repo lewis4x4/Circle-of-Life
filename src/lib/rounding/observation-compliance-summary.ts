@@ -25,6 +25,8 @@
  * layer.
  */
 
+import { metricNoData, metricValue, type MetricState } from "@/lib/metrics/metric-state";
+
 /** One row of `observation_compliance_for_range`, as the route reads it. */
 export type ComplianceRow = {
   resident_id: string;
@@ -190,4 +192,17 @@ export function onTimeRate(totals: ComplianceTotals): number | null {
 export function formatComplianceRate(rate: number | null): string {
   if (rate == null) return "No data posted";
   return `${Math.round(rate * 100)}%`;
+}
+
+/**
+ * A compliance or on-time rate as a MetricState in percent (COL-649). With no
+ * denominator the tile says "No data posted" and takes no threshold tone; it
+ * used to feed `(rate ?? 0) * 100` to the thresholds, painting the gap red.
+ */
+export function complianceRateMetric(rate: number | null): MetricState<number> {
+  return rate == null ? metricNoData("No data posted") : metricValue(rate * 100);
+}
+
+export function formatCompliancePercent(percent: number): string {
+  return `${Math.round(percent)}%`;
 }

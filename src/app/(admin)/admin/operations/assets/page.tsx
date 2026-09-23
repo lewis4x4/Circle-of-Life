@@ -12,7 +12,10 @@ import { Input } from "@/components/ui/input";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatOperationsAssetsCardDescription } from "@/lib/operations/operations-display-copy";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
+import { assetSummaryStates } from "@/lib/operations/operations-metric-states";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type AssetRow = {
   id: string;
@@ -28,6 +31,9 @@ type AssetRow = {
   last_service_vendor_name: string | null;
   linked_template_count: number;
 };
+
+/** "Due in 30 days" window on the register tiles (unchanged from the original tile). */
+const ASSET_DUE_SOON_DAYS = 30;
 
 type VendorOption = {
   id: string;
@@ -45,6 +51,7 @@ export default function OperationsAssetsPage() {
   const [vendors, setVendors] = useState<VendorOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newAsset, setNewAsset] = useState({
     name: "",
@@ -65,6 +72,7 @@ export default function OperationsAssetsPage() {
     }
     setLoading(true);
     setError(null);
+    setLoadFailed(false);
     try {
       const [assetResponse, vendorResponse] = await Promise.all([
         fetch(`/api/admin/operations/assets?facility_id=${encodeURIComponent(selectedFacilityId)}`),
@@ -78,6 +86,7 @@ export default function OperationsAssetsPage() {
       setVendors((vendorJson.vendors || []).map((vendor: { id: string; name: string }) => ({ id: vendor.id, name: vendor.name })));
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Failed to load asset register.");
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -87,22 +96,17 @@ export default function OperationsAssetsPage() {
     void load();
   }, [load]);
 
-  const summary = useMemo(() => {
-    const today = new Date();
-    const overdue = assets.filter((asset) => asset.next_service_due_at && new Date(asset.next_service_due_at) < today).length;
-    const dueSoon = assets.filter((asset) => {
-      if (!asset.next_service_due_at) return false;
-      const due = new Date(asset.next_service_due_at);
-      const diffDays = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-      return diffDays >= 0 && diffDays <= 30;
-    }).length;
-    return {
-      total: assets.length,
-      overdue,
-      dueSoon,
-      templated: assets.filter((asset) => asset.linked_template_count > 0).length,
-    };
-  }, [assets]);
+  const summary = useMemo(
+    () =>
+      assetSummaryStates({
+        facilitySelected: Boolean(selectedFacilityId),
+        loading,
+        error: loadFailed,
+        assets,
+        dueSoonDays: ASSET_DUE_SOON_DAYS,
+      }),
+    [assets, loadFailed, loading, selectedFacilityId],
+  );
 
   async function createAsset() {
     if (!selectedFacilityId || !newAsset.name.trim()) return;
@@ -150,7 +154,7 @@ export default function OperationsAssetsPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations Cadence Engine</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Asset Register</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Track physical plant assets, upcoming service windows, and the maintenance templates tied to them.
@@ -160,10 +164,10 @@ export default function OperationsAssetsPage() {
       <OperationsViewNav />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <SummaryCard label="Tracked assets" value={String(summary.total)} icon={Cog} />
-        <SummaryCard label="Overdue service" value={String(summary.overdue)} icon={AlertTriangle} tone="red" />
-        <SummaryCard label="Due in 30 days" value={String(summary.dueSoon)} icon={CalendarClock} tone="amber" />
-        <SummaryCard label="Templated assets" value={String(summary.templated)} icon={Hammer} tone="emerald" />
+        <SummaryCard label="Tracked assets" state={summary.total} icon={Cog} />
+        <SummaryCard label="Overdue service" state={summary.overdue} icon={AlertTriangle} tone="red" />
+        <SummaryCard label={`Due in ${ASSET_DUE_SOON_DAYS} days`} state={summary.dueSoon} icon={CalendarClock} tone="amber" />
+        <SummaryCard label="Templated assets" state={summary.templated} icon={Hammer} tone="emerald" />
       </div>
 
       {error && (
@@ -188,7 +192,7 @@ export default function OperationsAssetsPage() {
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               {["generator", "aed", "fire_extinguisher", "sprinkler_system", "hood_suppression", "ac_unit", "elevator", "kitchen_equipment", "laundry_equipment", "furniture", "vehicle", "other"].map((option) => (
-                <option key={option} value={option}>{option.replace(/_/g, " ")}</option>
+                <option key={option} value={option}>{enumLabel(option)}</option>
               ))}
             </select>
           </Field>
@@ -238,7 +242,7 @@ export default function OperationsAssetsPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{asset.name}</h3>
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-600">
-                      {asset.asset_type.replace(/_/g, " ")}
+                      {enumLabel(asset.asset_type)}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -287,15 +291,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function SummaryCard({
   label,
-  value,
+  state,
   icon: Icon,
-  tone = "slate",
+  tone: declaredTone = "slate",
 }: {
   label: string;
-  value: string;
+  state: MetricState<number>;
   icon: typeof Cog;
   tone?: "slate" | "red" | "amber" | "emerald";
 }) {
+  // Colour only a real, non-zero count; placeholders and zeros stay neutral.
+  const tone = state.status === "value" && state.value > 0 ? declaredTone : "slate";
+  const value = formatMetric(state);
   const toneClass =
     tone === "red"
       ? "border-red-200 bg-red-50 text-red-700"
@@ -309,7 +316,12 @@ function SummaryCard({
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide">{label}</div>
-          <div className="mt-1 text-2xl font-semibold">{value}</div>
+          <div
+            data-metric-state={state.status}
+            className={state.status === "value" ? "mt-1 text-2xl font-semibold" : "mt-1 text-base font-medium"}
+          >
+            {value}
+          </div>
         </div>
         <Icon className="h-5 w-5" />
       </div>

@@ -25,11 +25,15 @@ import {
  * Primary links render in a segmented control. Secondary links live in a
  * "More ▾" dropdown anchored to the right edge of the strip. Mobile collapses
  * everything into a Sheet-driven nav drawer. Total strip height: h-9.
+ *
+ * This is the one executive strip (COL-655): the CEO / CFO / COO boards,
+ * scenarios, entities and settings render it instead of their own tab rows,
+ * and Stand Up has one primary entry — the weekly form — with the executive
+ * pack, history and compare views under More.
  */
 const PRIMARY = [
   { href: "/admin/executive", label: "Overview" },
   { href: "/admin/stand-up", label: "Weekly Stand Up" },
-  { href: "/admin/executive/standup", label: "Standup" },
   { href: "/admin/executive/reports", label: "Reports" },
   { href: "/admin/executive/nlq", label: "Haven Insight" },
 ] as const;
@@ -40,10 +44,19 @@ const SECONDARY = [
   { href: "/admin/executive/coo", label: "COO" },
   { href: "/admin/executive/alerts", label: "Alerts" },
   { href: "/admin/executive/league", label: "League" },
-  { href: "/admin/executive/standup/history", label: "Standup history" },
-  { href: "/admin/executive/standup/compare", label: "Standup compare" },
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
+  { href: "/admin/executive/scenarios", label: "Scenarios" },
+  { href: "/admin/executive/entity", label: "Entities" },
+  { href: "/admin/executive/standup", label: "Stand Up pack" },
+  { href: "/admin/executive/standup/history", label: "Stand Up history" },
+  { href: "/admin/executive/standup/compare", label: "Stand Up compare" },
+  { href: "/admin/executive/settings", label: "Executive settings" },
 ] as const;
+
+/** Stand Up destinations shown while auth resolves (every executive-hub role can open them). */
+function isStandUpHref(href: string) {
+  return href === "/admin/stand-up" || href === "/admin/executive/standup" || href.startsWith("/admin/executive/standup/");
+}
 
 function isHrefActive(pathname: string, href: string) {
   if (href === "/admin/executive") return pathname === "/admin/executive";
@@ -51,20 +64,21 @@ function isHrefActive(pathname: string, href: string) {
 }
 
 export function ExecutiveHubNav() {
-  const pathname = usePathname();
+  // V2 routes render under /admin/v2/…; the strip's destinations are the canonical URLs.
+  const pathname = (usePathname() ?? "").replace(/^\/admin\/v2(?=\/|$)/, "/admin");
   const { appRole, loading: authLoading } = useHavenAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const primaryItems = useMemo(() => {
     if (authLoading || !appRole) {
-      return PRIMARY.filter((item) => item.href === "/admin/executive/standup");
+      return PRIMARY.filter((item) => isStandUpHref(item.href));
     }
     return PRIMARY.filter((item) => canOpenExecutiveHubHref(appRole, item.href));
   }, [appRole, authLoading]);
 
   const secondaryItems = useMemo(() => {
     if (authLoading || !appRole) {
-      return SECONDARY.filter((item) => item.href.startsWith("/admin/executive/standup/"));
+      return SECONDARY.filter((item) => isStandUpHref(item.href));
     }
     return SECONDARY.filter((item) => canOpenExecutiveHubHref(appRole, item.href));
   }, [appRole, authLoading]);
@@ -84,7 +98,7 @@ export function ExecutiveHubNav() {
       <nav
         aria-label="Executive intelligence sections"
         className={cn(
-          "hidden md:inline-flex h-9 items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-1",
+          "hidden md:inline-flex h-9 items-center gap-0.5 whitespace-nowrap rounded-lg border border-border bg-muted/50 p-1",
         )}
       >
         {primaryItems.map((item) => {

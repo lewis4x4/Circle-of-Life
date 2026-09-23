@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
-import { ReferralsHubNav } from "../referrals-hub-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +29,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const SOURCE_TYPES = [
   { value: "hospital", label: "Hospital" },
@@ -211,7 +211,7 @@ export default function AdminReferralSourcesPage() {
     let facilityScoped: string | null = null;
     if (limitOneFacility) {
       if (!targetFacilityId || !isValidFacilityIdForQuery(targetFacilityId)) {
-        setFormError("Select a facility.");
+        setFormError("Choose the facility this source is limited to.");
         return;
       }
       facilityScoped = targetFacilityId;
@@ -280,10 +280,6 @@ export default function AdminReferralSourcesPage() {
         <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           Master list of attribution sources used across the org.
         </p>
-
-        <div className="mt-4">
-          <ReferralsHubNav />
-        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
@@ -498,7 +494,7 @@ export default function AdminReferralSourcesPage() {
                         )}
                       >
                         <TableCell className="max-w-[14rem] text-[13px] font-medium text-foreground">{r.name}</TableCell>
-                        <TableCell className="capitalize text-[13px] text-muted-foreground">{r.source_type.replace(/_/g, " ")}</TableCell>
+                        <TableCell className="capitalize text-[13px] text-muted-foreground">{enumLabel(r.source_type)}</TableCell>
                         <TableCell className="text-[13px] text-muted-foreground">{facilityLabel(r.facility_id)}</TableCell>
                         <TableCell>
                           {r.is_active ? <StatusPill tone="muted">Active</StatusPill> : <StatusPill tone="warning">Inactive</StatusPill>}

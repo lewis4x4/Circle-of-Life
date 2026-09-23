@@ -12,6 +12,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { canManageVendorMaster } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
+import { formatVendorCategoryLabel, vendorStatusUiLabel } from "@/lib/vendors/vendor-category-ui";
 
 type VendorRow = Database["public"]["Tables"]["vendors"]["Row"];
 type FacilityMini = { id: string; name: string };
@@ -138,7 +139,7 @@ export default function VendorDetailPage() {
         <>
           <RecordDetailHeader
             title={vendor.name}
-            subtitle={`${vendor.category} · ${vendor.status}`}
+            subtitle={`${formatVendorCategoryLabel(vendor.category, vendor.name)} · ${vendorStatusUiLabel(vendor.status)}`}
             backLink={{ label: "Vendors", href: "/admin/vendors" }}
           />
 

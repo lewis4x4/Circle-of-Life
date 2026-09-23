@@ -344,7 +344,7 @@ export default function JournalEntryDetailPage() {
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
-                    <Label>Entity</Label>
+                    <p className="text-sm leading-none font-medium">Entity</p>
                     <p className="text-sm text-foreground">{entityName || header.entity_id}</p>
                   </div>
                   <div className="space-y-2">
@@ -389,14 +389,14 @@ export default function JournalEntryDetailPage() {
 
               <RecordDetailSection
                 title="Lines"
-                description="Each line is debit XOR credit (USD). Minimum two lines."
+                description="Each line is either a debit or a credit, in dollars. At least two lines."
               >
                 <div className="space-y-4">
                   {formLines.map((line, i) => (
                     <div key={line._key} className="grid gap-2 md:grid-cols-5 md:items-end">
                       <div className="space-y-1 md:col-span-2">
-                        <Label>Account</Label>
-                        <select
+                        <Label htmlFor="journal-entry-account">Account</Label>
+                        <select id="journal-entry-account"
                           className={selectCls}
                           aria-label={`Account, line ${i + 1}`}
                   value={line.gl_account_id}
@@ -411,8 +411,8 @@ export default function JournalEntryDetailPage() {
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <Label>Debit $</Label>
-                        <Input
+                        <Label htmlFor="journal-entry-debit">Debit $</Label>
+                        <Input id="journal-entry-debit"
                           inputMode="decimal"
                           aria-label={`Debit dollars, line ${i + 1}`}
                   value={line.debit}
@@ -420,8 +420,8 @@ export default function JournalEntryDetailPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Credit $</Label>
-                        <Input
+                        <Label htmlFor="journal-entry-credit">Credit $</Label>
+                        <Input id="journal-entry-credit"
                           inputMode="decimal"
                           aria-label={`Credit dollars, line ${i + 1}`}
                   value={line.credit}

@@ -13,6 +13,7 @@ import { useDocuments } from "../hooks/useDocuments";
 import { useKnowledgeGaps } from "../hooks/useKnowledgeGaps";
 import { useKBHealth } from "../hooks/useKBHealth";
 import { useKbWorkspaceId } from "../hooks/useKbWorkspaceId";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const TABS = [
   { key: "documents", label: "Documents", icon: FileText },
@@ -32,7 +33,8 @@ export function KnowledgeAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 bg-slate-100 dark:bg-zinc-800/50 rounded-xl p-1">
+      <HorizontalScroll label="Knowledge base admin sections" className="rounded-xl">
+      <div className="flex w-max min-w-full gap-1 bg-slate-100 dark:bg-zinc-800/50 rounded-xl p-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -52,6 +54,7 @@ export function KnowledgeAdminPage() {
           );
         })}
       </div>
+      </HorizontalScroll>
 
       {activeTab === "documents" && (
         <div className="space-y-6">

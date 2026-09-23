@@ -20,6 +20,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const TYPE_LABELS: Record<string, string> = {
   katz_adl: "Katz ADL",
@@ -29,7 +30,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function formatType(t: string): string {
-  return TYPE_LABELS[t] ?? t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return TYPE_LABELS[t] ?? enumLabel(t, { case: "title" });
 }
 
 const RISK_COLORS: Record<string, string> = {
@@ -195,7 +196,7 @@ export default function ResidentAssessmentHistoryPage() {
                           <span className="lg:hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Risk level</span>
                           {isPostedAssessmentRiskLevel(r.riskLevel) ? (
                             <Badge className={cn("px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider shadow-none", RISK_COLORS[r.riskLevel] ?? "bg-muted text-muted-foreground border-border")}>
-                              {r.riskLevel.replace(/_/g, " ")}
+                              {enumLabel(r.riskLevel)}
                             </Badge>
                           ) : (
                             <span className="text-muted-foreground">{ASSESSMENT_NEW_NO_RISK_COPY}</span>

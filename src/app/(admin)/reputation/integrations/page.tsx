@@ -31,7 +31,7 @@ const ERROR_LABELS: Record<string, string> = {
   session_mismatch: "Your session changed during sign-in. Try Connect again.",
   token_exchange_failed: "Google rejected the token exchange. Check client ID, secret, and redirect URI.",
   no_refresh_token_retry_consent: "No refresh token returned. Revoke app access in Google Account and connect again with consent.",
-  server_misconfigured: "Server is missing Supabase service role configuration.",
+  server_misconfigured: "Google review import is not set up for Haven yet. Ask support to finish the setup.",
   save_failed: "Could not save credentials. Try again or contact support.",
   access_denied: "Google sign-in was cancelled.",
 };

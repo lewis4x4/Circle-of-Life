@@ -17,6 +17,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { centsToDollarsInput, dollarsToCents } from "@/lib/money/dollars-to-cents";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import {
   RecordDetailHeader,
@@ -424,22 +425,23 @@ export default function AdminAdmissionCaseDetailPage() {
         : rateCareLevelDraft === "2"
           ? selectedRateSchedule.care_surcharge_level_2
           : selectedRateSchedule.care_surcharge_level_3;
-    setQuotedBaseDraft(String(base));
-    setQuotedCareDraft(String(care));
+    setQuotedBaseDraft(centsToDollarsInput(base));
+    setQuotedCareDraft(centsToDollarsInput(care));
     setEffectiveDateDraft((current) => current || selectedRateSchedule.effective_date || "");
   }
 
   async function addRateTerm() {
     if (!row) return;
-    const base = Number.parseInt(quotedBaseDraft, 10);
-    const care = Number.parseInt(quotedCareDraft || "0", 10);
-    if (Number.isNaN(base)) {
-      setActionError("Quoted base rate must be a whole-number cents value.");
+    // Staff type dollars and the column holds cents; cents inputs invited 100x errors (COL-653).
+    const base = dollarsToCents(quotedBaseDraft);
+    const care = quotedCareDraft.trim() ? dollarsToCents(quotedCareDraft) : 0;
+    if (base === null) {
+      setActionError("Enter the quoted base rate in dollars.");
       setActionMessage(null);
       return;
     }
-    if (Number.isNaN(care)) {
-      setActionError("Quoted care surcharge must be a whole-number cents value.");
+    if (care === null) {
+      setActionError("Enter the quoted care surcharge in dollars, or leave it empty.");
       setActionMessage(null);
       return;
     }
@@ -497,8 +499,8 @@ export default function AdminAdmissionCaseDetailPage() {
     setEditingRateTermId(term.id);
     setRateScheduleDraft(term.rate_schedule_id ?? "");
     setRateAccommodationDraft(term.accommodation_type);
-    setQuotedBaseDraft(String(term.quoted_base_rate_cents));
-    setQuotedCareDraft(String(term.quoted_care_surcharge_cents));
+    setQuotedBaseDraft(centsToDollarsInput(term.quoted_base_rate_cents));
+    setQuotedCareDraft(centsToDollarsInput(term.quoted_care_surcharge_cents));
     setEffectiveDateDraft(term.effective_date ?? row?.target_move_in_date ?? "");
     setRateNotesDraft(term.notes ?? "");
   }
@@ -954,8 +956,8 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Rate schedule</label>
-                      <select
+                      <label htmlFor="admission-rate-schedule" className="text-xs uppercase tracking-wider text-muted-foreground">Rate schedule</label>
+                      <select id="admission-rate-schedule"
                         value={rateScheduleDraft}
                         onChange={(event) => setRateScheduleDraft(event.target.value)}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -969,8 +971,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Accommodation</label>
-                      <select
+                      <label htmlFor="admission-accommodation" className="text-xs uppercase tracking-wider text-muted-foreground">Accommodation</label>
+                      <select id="admission-accommodation"
                         value={rateAccommodationDraft}
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -980,8 +982,8 @@ export default function AdminAdmissionCaseDetailPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Care level helper</label>
-                      <select
+                      <label htmlFor="admission-care-level-helper" className="text-xs uppercase tracking-wider text-muted-foreground">Care level helper</label>
+                      <select id="admission-care-level-helper"
                         value={rateCareLevelDraft}
                         onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1002,28 +1004,28 @@ export default function AdminAdmissionCaseDetailPage() {
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Quoted base rate (cents)</label>
-                      <input
-                        type="number"
-                        min="0"
+                      <label htmlFor="admission-quoted-base-rate" className="text-xs uppercase tracking-wider text-muted-foreground">Quoted base rate ($)</label>
+                      <input id="admission-quoted-base-rate"
+                        inputMode="decimal"
+                        placeholder="Monthly amount in dollars"
                         value={quotedBaseDraft}
                         onChange={(event) => setQuotedBaseDraft(event.target.value)}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Quoted care surcharge (cents)</label>
-                      <input
-                        type="number"
-                        min="0"
+                      <label htmlFor="admission-quoted-care-surcharge" className="text-xs uppercase tracking-wider text-muted-foreground">Quoted care surcharge ($)</label>
+                      <input id="admission-quoted-care-surcharge"
+                        inputMode="decimal"
+                        placeholder="Monthly amount in dollars, if any"
                         value={quotedCareDraft}
                         onChange={(event) => setQuotedCareDraft(event.target.value)}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-wider text-muted-foreground">Effective date</label>
-                      <input
+                      <label htmlFor="admission-effective-date" className="text-xs uppercase tracking-wider text-muted-foreground">Effective date</label>
+                      <input id="admission-effective-date"
                         type="date"
                         value={effectiveDateDraft}
                         onChange={(event) => setEffectiveDateDraft(event.target.value)}
@@ -1042,8 +1044,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     </div>
                   ) : null}
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-wider text-muted-foreground">Notes</label>
-                    <textarea
+                    <label htmlFor="admission-notes" className="text-xs uppercase tracking-wider text-muted-foreground">Notes</label>
+                    <textarea id="admission-notes"
                       value={rateNotesDraft}
                       onChange={(event) => setRateNotesDraft(event.target.value)}
                       rows={3}

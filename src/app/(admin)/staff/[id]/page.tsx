@@ -39,10 +39,15 @@ import {
 } from "@/lib/staff/staff-profile-edit";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
+import {
+  CERT_STATUS_LABEL,
+  aggregateCertStatus,
+  type CertificationStatus,
+} from "@/lib/staff/certification-aggregate";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
 type StaffStatusUi = StaffStatus;
-type CertificationStatus = "current" | "expiring_soon" | "expired";
 
 type SupabaseStaff = StaffProfileRow;
 
@@ -302,7 +307,7 @@ export default function AdminStaffDetailPage() {
                       <span>Issued: {formatStaffDetailCertIssueDate(c.issue_date)}</span>
                       <span>Exp: {formatStaffDetailCertExpirationDate(c.expiration_date)}</span>
                       <Badge variant="outline" className="text-[9px]">
-                        {c.status.replace(/_/g, " ")}
+                        {enumLabel(c.status)}
                       </Badge>
                     </div>
                   </li>
@@ -378,32 +383,8 @@ function mapDbStaffRoleToUi(role: string): StaffRoleUi {
 }
 
 
-function aggregateCertStatus(
-  certs: Array<{ status: string; expiration_date: string | null }>,
-): CertificationStatus {
-  if (certs.length === 0) return "current";
-  const now = new Date();
-  const soon = new Date();
-  soon.setDate(soon.getDate() + 60);
-  let worst: CertificationStatus = "current";
-  for (const c of certs) {
-    if (c.status === "expired" || c.status === "revoked") {
-      return "expired";
-    }
-    if (c.expiration_date) {
-      const exp = new Date(`${c.expiration_date}T23:59:59`);
-      if (exp < now) return "expired";
-      if (exp <= soon) worst = "expiring_soon";
-    }
-    if (c.status === "pending_renewal") {
-      worst = "expiring_soon";
-    }
-  }
-  return worst;
-}
-
 function formatSnake(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatShiftLabel(shiftDate: string, shiftType: string): string {
@@ -463,23 +444,31 @@ function StatusBadge({ status }: { status: StaffStatusUi }) {
 }
 
 function CertificationBadge({ certifications }: { certifications: CertificationStatus }) {
+  const label = CERT_STATUS_LABEL[certifications];
   if (certifications === "current") {
     return (
       <Badge variant="default" tone="success" className={RECORD_HEADER_CHIP}>
-        Certs OK
+        {label}
+      </Badge>
+    );
+  }
+  if (certifications === "none_on_file") {
+    return (
+      <Badge variant="outline" tone="none" className={RECORD_HEADER_CHIP}>
+        {label}
       </Badge>
     );
   }
   if (certifications === "expiring_soon") {
     return (
       <Badge variant="default" tone="warning" className={RECORD_HEADER_CHIP}>
-        Expiring soon
+        {label}
       </Badge>
     );
   }
   return (
     <Badge variant="destructive" className={RECORD_HEADER_CHIP}>
-      Cert issue
+      {label}
     </Badge>
   );
 }

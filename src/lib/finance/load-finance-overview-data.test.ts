@@ -39,3 +39,35 @@ describe("loadFinanceOverviewData", () => {
     expect(snapshot.postedLookbackStart).toBe("2026-07-20");
   });
 });
+
+describe("loadFinanceOverviewData failed counts (COL-649)", () => {
+  function supabaseWith(results: object[]) {
+    const queries = results.map((result) => createQuery(result, () => undefined));
+    let queryIndex = 0;
+    return { from: vi.fn(() => queries[queryIndex++]) };
+  }
+
+  it("returns null counts, not 0, when the count reads fail", async () => {
+    const snapshot = await loadFinanceOverviewData(
+      supabaseWith([
+        { count: null, error: { message: "column does not exist" } },
+        { count: null, error: { message: "permission denied" } },
+        { data: [], error: null },
+      ]) as never,
+      "00000000-0000-4000-8000-000000000001",
+    );
+    expect(snapshot.postedCount).toBeNull();
+    expect(snapshot.unpostedInvoices).toBeNull();
+    expect(snapshot.sentInvoices).toBeNull();
+  });
+
+  it("keeps real zeros when the reads succeed", async () => {
+    const snapshot = await loadFinanceOverviewData(
+      supabaseWith([{ count: 0, error: null }, { count: 0, error: null }, { data: [], error: null }]) as never,
+      "00000000-0000-4000-8000-000000000001",
+    );
+    expect(snapshot.postedCount).toBe(0);
+    expect(snapshot.unpostedInvoices).toBe(0);
+    expect(snapshot.sentInvoices).toBe(0);
+  });
+});

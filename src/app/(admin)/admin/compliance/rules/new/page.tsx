@@ -69,13 +69,15 @@ export default function NewComplianceRulePage() {
 
   const [usePreset, setUsePreset] = useState(true);
   const [selectedPreset, setSelectedPreset] = useState(0);
-  const [tagNumber, setTagNumber] = useState("220");
-  const [tagTitle, setTagTitle] = useState("");
-  const [ruleDescription, setRuleDescription] = useState("");
-  const [severity, setSeverity] = useState<"minor" | "standard" | "serious" | "immediate_jeopardy">("serious");
-  const [checkQuery, setCheckQuery] = useState("");
+  // The preset shown in the dropdown fills every field it names on first load, not only
+  // after the dropdown changes (COL-653).
+  const [tagNumber, setTagNumber] = useState<string>(PREDEFINED_RULES[0].tag_number);
+  const [tagTitle, setTagTitle] = useState<string>(PREDEFINED_RULES[0].tag_title);
+  const [ruleDescription, setRuleDescription] = useState<string>(PREDEFINED_RULES[0].rule_description);
+  const [severity, setSeverity] = useState<"minor" | "standard" | "serious" | "immediate_jeopardy">(
+    PREDEFINED_RULES[0].severity,
+  );
   const [facilityScoped, setFacilityScoped] = useState(true);
-  const [enabled, setEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -89,9 +91,6 @@ export default function NewComplianceRulePage() {
     setTagTitle(preset.tag_title);
     setRuleDescription(preset.rule_description);
     setSeverity(preset.severity);
-    // Note: check_query would need to be provided for each preset
-    setCheckQuery("");
-    setEnabled(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,10 +101,6 @@ export default function NewComplianceRulePage() {
       return;
     }
 
-    if (enabled && !/^\s*(select|with)\b/i.test(checkQuery.replace(/--[^\n]*/g, ""))) {
-      setError("An enabled rule needs a validated read-only check query. Save this preset as a disabled draft until its check is configured.");
-      return;
-    }
     setSaving(true);
     setError(null);
     setSuccess(false);
@@ -129,9 +124,9 @@ export default function NewComplianceRulePage() {
         tag_number: tagNumber,
         tag_title: tagTitle,
         rule_description: ruleDescription,
-        check_query: checkQuery,
+        check_query: "",
         severity,
-        enabled,
+        enabled: false,
       } as never);
 
       if (insertError) {
@@ -308,34 +303,10 @@ export default function NewComplianceRulePage() {
               </Label>
             </div>
 
-            {/* Enabled */}
-            <div className="flex items-center gap-2">
-              <Switch
-                id="enabled"
-                checked={enabled}
-                onCheckedChange={setEnabled}
-              />
-              <Label htmlFor="enabled" className="text-base">
-                Enable rule for scanning
-              </Label>
-            </div>
-
-            {/* Check Query (Advanced) */}
-            <div className="space-y-2">
-              <Label htmlFor="checkQuery">Check Query (SQL)</Label>
-              <Textarea
-                id="checkQuery"
-                value={checkQuery}
-                onChange={(e) => setCheckQuery(e.target.value)}
-                placeholder="SQL query that returns pass/fail result..."
-                rows={6}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-slate-500">
-                This query should return a single row with a boolean result indicating compliance.
-                For production use, configure this via Supabase SQL editor directly.
-              </p>
-            </div>
+            {/* The automated check behind a rule is set up by Haven support, never typed here (COL-652). */}
+            <p className="text-xs text-slate-500">
+              New rules save as drafts. Haven support sets up the automated check for each rule and turns it on.
+            </p>
 
             {/* Submit */}
             <div className="flex justify-end pt-4 border-t">

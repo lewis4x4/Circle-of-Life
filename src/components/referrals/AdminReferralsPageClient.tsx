@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { format, subDays, startOfQuarter } from "date-fns";
 import { ClipboardList, Download, Search, Loader2, Mic } from "lucide-react";
 
-import { ReferralsHubNav } from "@/app/(admin)/admin/referrals/referrals-hub-nav";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +53,7 @@ import {
   type ReferralsOutreachRow,
   type ReferralLeadStatus,
 } from "@/lib/referrals/referrals-hub-bootstrap";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LeadRow = ReferralsHubLeadRow;
 type UpcomingTourRow = ReferralsHubUpcomingTourRow;
@@ -166,7 +167,7 @@ function buildReferralLeadsCsv(rows: LeadExportRow[]): string {
 }
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function leadPriority(status: ReferralLeadStatus, handoffPhase: HandoffPhase | null): number {
@@ -499,16 +500,10 @@ export function AdminReferralsPageClient({
             )}
           </div>
         </div>
-        <ReferralsHubNav />
       </header>
 
       {noFacility ? (
-        <div
-          role="status"
-          className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
-        >
-          Select a facility in the header to load referral leads and KPIs for that site.
-        </div>
+        <FacilityGateNotice reason="Referral leads and their KPIs are kept per building." />
       ) : null}
 
       {leadListTruncated ? (
@@ -575,7 +570,7 @@ export function AdminReferralsPageClient({
                 Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours from lead records for the standup forecast.
               </p>
             </div>
-            <Badge className="border-none bg-primary/10 text-primary">Standup source</Badge>
+            <Badge className="border-none bg-primary/10 text-primary">Stand Up source</Badge>
           </div>
 
           {upcomingTours.length === 0 ? (
@@ -613,7 +608,7 @@ export function AdminReferralsPageClient({
                 Log outreach so weekly stand-ups reference the same ledger instead of rewriting work in chat.
               </p>
             </div>
-            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand-up source</Badge>
+            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand Up source</Badge>
           </div>
 
           <div className="grid gap-8 p-5 lg:grid-cols-[1fr_1fr]">
@@ -740,10 +735,10 @@ export function AdminReferralsPageClient({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium text-foreground">
-                            {row.external_partner_name ?? row.activity_type.replace(/_/g, " ")}
+                            {row.external_partner_name ?? enumLabel(row.activity_type)}
                           </p>
                           <p className="mt-0.5 text-[12px] capitalize text-muted-foreground">
-                            {row.activity_type.replace(/_/g, " ")} · {row.status}
+                            {enumLabel(row.activity_type)} · {row.status}
                           </p>
                         </div>
                         <p className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
@@ -858,6 +853,7 @@ export function AdminReferralsPageClient({
       ) : null}
 
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
+      {!noFacility ? (
       <div className="space-y-6">
         <div className="flex flex-col gap-3 border-b border-border pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -879,7 +875,7 @@ export function AdminReferralsPageClient({
               title={
                 (statusFilter === "all"
                   ? "Export up to 500 leads (all statuses), most recently updated first."
-                  : `Export up to 500 ${statusFilter.replace(/_/g, " ")} leads, most recently updated first.`) +
+                  : `Export up to 500 ${enumLabel(statusFilter, { case: "lower" })} leads, most recently updated first.`) +
                 " Search does not narrow the CSV."
               }
               onClick={() => void exportReferralLeadsCsv()}
@@ -951,11 +947,7 @@ export function AdminReferralsPageClient({
            </div>
 
            <div className="space-y-4 mt-4">
-             {noFacility ? (
-               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
-                 Select a facility to view leads.
-               </div>
-             ) : loading ? (
+             {loading ? (
                <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Loading pipeline...
                </div>
@@ -1072,6 +1064,7 @@ export function AdminReferralsPageClient({
            </div>
         </div>
       </div>
+      ) : null}
 
     </div>
   );

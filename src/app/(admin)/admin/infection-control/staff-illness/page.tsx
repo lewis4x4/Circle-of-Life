@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { format, parseISO } from "date-fns";
@@ -124,7 +124,7 @@ export default function StaffIllnessListPage() {
                <p className="text-[12px] text-muted-foreground mt-1">No staff illnesses logged at this facility.</p>
              </div>
            ) : (
-             <>
+             <TableRowList label="Staff illnesses">
                <TableRowHeader>
                  <span className="w-[220px] shrink-0">Status</span>
                  <span className="flex-[2] min-w-0">Staff</span>
@@ -176,7 +176,7 @@ export default function StaffIllnessListPage() {
                    );
                  })}
                </MotionList>
-             </>
+             </TableRowList>
            )}
         </div>
       </div>

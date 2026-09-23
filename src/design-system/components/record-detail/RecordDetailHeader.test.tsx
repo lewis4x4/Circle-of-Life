@@ -13,6 +13,13 @@ describe("<RecordDetailHeader />", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps the heading column readable so actions wrap below it on a phone (COL-657)", () => {
+    render(<RecordDetailHeader title="Root cause workspace" subtitle="Structured RCA" actions={<button type="button">Save draft</button>} />);
+    const column = screen.getByRole("heading", { level: 1 }).parentElement?.parentElement;
+    expect(column?.className).toContain("min-w-72");
+    expect(column?.className).not.toMatch(/(^|\s)min-w-0(\s|$)/);
+  });
+
   // ── Optional props ──────────────────────────────────────────────────────────
 
   it("renders subtitle when supplied", () => {

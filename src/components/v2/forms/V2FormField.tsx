@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -27,16 +27,25 @@ export function V2FormField({
 }: V2FormFieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
+  const describedBy = errorId ?? hintId;
+  // The control carries `id`; describe it directly (COL-658). A describedby on
+  // a wrapper div is never announced.
+  const control =
+    describedBy && isValidElement(children)
+      ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
+          "aria-describedby":
+            (children as ReactElement<{ "aria-describedby"?: string }>).props["aria-describedby"] ?? describedBy,
+        })
+      : children;
 
+  // A <div>, not a wrapping <label>: children may bring their own label (a
+  // checkbox row), and nested labels are invalid and name the control twice.
   return (
-    <label
-      htmlFor={id}
-      className={cn("flex flex-col gap-1", className)}
-    >
-      <span className="text-xs font-semibold uppercase tracking-caps text-text-muted">
+    <div className={cn("flex flex-col gap-1", className)}>
+      <label htmlFor={id} className="text-xs font-semibold uppercase tracking-caps text-text-muted">
         {label}
-      </span>
-      <div aria-describedby={errorId ?? hintId}>{children}</div>
+      </label>
+      {control}
       {hint && !error && (
         <span id={hintId} className="text-xs text-text-muted">
           {hint}
@@ -47,6 +56,6 @@ export function V2FormField({
           {error}
         </span>
       )}
-    </label>
+    </div>
   );
 }

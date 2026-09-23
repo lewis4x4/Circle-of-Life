@@ -220,7 +220,7 @@ export default function CaregiverTasksPage() {
           <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="muted" />
           <MetricPill label="No ADL yet today" value={String(metrics.noPass)} tone="danger" />
           <MetricPill label="ADL entries today" value={String(metrics.totalAdl)} tone="success" />
-          <MetricPill label="Shift bucket" value={formatCaregiverTasksShiftBucket(ctx?.timeZone)} tone="muted" />
+          <MetricPill label="Shift" value={formatCaregiverTasksShiftBucket(ctx?.timeZone)} tone="muted" />
         </div>
       </div>
 

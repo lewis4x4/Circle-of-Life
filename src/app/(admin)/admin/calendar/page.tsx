@@ -21,6 +21,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -154,14 +155,14 @@ export default function AdminMasterCalendarPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <CalendarDays className="h-8 w-8 text-info shrink-0" aria-hidden />
               Facility master calendar
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               One calendar layering transportation, meetings, in-services, drills and emergency
               checks, document expirations (license/insurance vault), and survey history.
-              Per-facility, RLS-scoped, exportable as .ics.
+              Per facility, limited to the facilities you have access to, and exportable to your calendar app (.ics).
             </p>
           </div>
           <Button
@@ -177,9 +178,7 @@ export default function AdminMasterCalendarPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — the master calendar is per-facility.
-          </p>
+          <FacilityGateNotice reason="The master calendar is kept per building: its trips, meetings, drills and expirations belong to one facility." />
         ) : null}
 
         {facilityReady ? (

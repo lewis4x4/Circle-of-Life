@@ -8,6 +8,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -32,6 +33,7 @@ import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const ET_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -257,31 +259,31 @@ export default function AdminInternalFormsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <ClipboardList className="h-8 w-8 text-info shrink-0" aria-hidden />
               Internal forms
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Admin-built forms — maintenance requests, supply requests, grievance intake, refund
               requests. Submissions route to this status-tracked queue.
               {openCount > 0 ? ` ${openCount} open.` : ""}
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
-            onClick={() => setShowBuilder((v) => !v)}
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            {showBuilder ? "Close builder" : "New form"}
-          </Button>
+          {facilityReady ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
+              onClick={() => setShowBuilder((v) => !v)}
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              {showBuilder ? "Close builder" : "New form"}
+            </Button>
+          ) : null}
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — forms and their queues are per-facility.
-          </p>
+          <FacilityGateNotice reason="Internal forms and their submission queues are kept per building." />
         ) : null}
 
         {notice ? (
@@ -519,7 +521,7 @@ export default function AdminInternalFormsPage() {
                     const expanded = expandedId === s.id;
                     const template = templateById.get(s.template_id);
                     const fieldLabel = (key: string) =>
-                      template?.fields.find((f) => f.key === key)?.label ?? key.replace(/_/g, " ");
+                      template?.fields.find((f) => f.key === key)?.label ?? enumLabel(key);
                     return (
                       <li
                         key={s.id}
@@ -544,7 +546,7 @@ export default function AdminInternalFormsPage() {
                             </span>
                           </div>
                           <StatusPill tone={submissionStatusTone(s.status)}>
-                            {s.status.replace(/_/g, " ")}
+                            {enumLabel(s.status)}
                           </StatusPill>
                         </button>
 

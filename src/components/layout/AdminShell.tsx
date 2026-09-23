@@ -468,7 +468,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "finance", href: "/admin/finance", label: "Finance hub", enabled: true, icon: Landmark },
           { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", enabled: true, icon: Truck },
           { key: "insurance", href: "/admin/insurance", label: "Insurance", enabled: true, icon: Umbrella },
-          { key: "feedback", href: "/admin/feedback", label: "Pilot feedback", enabled: true, icon: MessageSquare },
+          { key: "feedback", href: "/admin/feedback", label: "Feedback", enabled: true, icon: MessageSquare },
           { key: "notifications", href: "/admin/settings/notifications", label: "Settings", enabled: true, icon: Smartphone },
         ],
       },

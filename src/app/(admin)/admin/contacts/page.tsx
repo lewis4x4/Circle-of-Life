@@ -7,6 +7,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -229,10 +230,10 @@ export default function AdminContactsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <Contact className="h-8 w-8 text-info shrink-0" aria-hidden />
               Contacts & on-call
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Per-facility rolodex — pharmacy, hospice, physicians, AHCA field office, MCO case
               managers — plus the after-hours on-call schedule.
@@ -241,9 +242,9 @@ export default function AdminContactsPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — contacts and on-call are per-facility.
-          </p>
+
+          <FacilityGateNotice reason="Contacts and the on-call schedule are kept per building: each facility has its own pharmacy, physicians and after-hours rota." />
+
         ) : null}
 
         {notice ? (

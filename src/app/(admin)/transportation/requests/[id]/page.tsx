@@ -533,13 +533,13 @@ export default function EditResidentTransportRequestPage() {
 
       <RecordDetailSection
         title="Schedule & assignment"
-        description="Assign vehicle/driver on site; license and wheelchair rules validated on save (spec 15)."
+        description="Assign the vehicle and driver. Saving checks the driver's license and the vehicle's wheelchair access."
       >
         <form className="space-y-4" onSubmit={(e) => void save(e)}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Appointment date (ET)</Label>
-              <Input
+              <Label htmlFor="trip-appointment-date-et">Appointment date (ET)</Label>
+              <Input id="trip-appointment-date-et"
                 type="date"
                 required
                 value={appointmentDate}
@@ -547,8 +547,8 @@ export default function EditResidentTransportRequestPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Appointment time</Label>
-              <Input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
+              <Label htmlFor="trip-appointment-time">Appointment time</Label>
+              <Input id="trip-appointment-time" type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} />
             </div>
           </div>
           {/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate) ? (
@@ -649,8 +649,8 @@ export default function EditResidentTransportRequestPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Vehicle</Label>
-              <select className={selectClass} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+              <Label htmlFor="trip-vehicle">Vehicle</Label>
+              <select id="trip-vehicle" className={selectClass} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
                 <option value="">— None —</option>
                 {(wheelchairRequired ? fleetOptions.filter((v) => v.wheelchair_accessible) : fleetOptions).map(
                   (v) => (
@@ -666,8 +666,8 @@ export default function EditResidentTransportRequestPage() {
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label>Driver (staff)</Label>
-              <select
+              <Label htmlFor="trip-driver-staff">Driver (staff)</Label>
+              <select id="trip-driver-staff"
                 className={selectClass}
                 value={driverStaffId}
                 onChange={(e) => setDriverStaffId(e.target.value)}
@@ -688,8 +688,8 @@ export default function EditResidentTransportRequestPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Escort (optional)</Label>
-            <select className={selectClass} value={escortStaffId} onChange={(e) => setEscortStaffId(e.target.value)}>
+            <Label htmlFor="trip-escort-optional">Escort (optional)</Label>
+            <select id="trip-escort-optional" className={selectClass} value={escortStaffId} onChange={(e) => setEscortStaffId(e.target.value)}>
               <option value="">— None —</option>
               {staffOptions.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -701,18 +701,18 @@ export default function EditResidentTransportRequestPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Pickup time</Label>
-              <Input type="time" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} />
+              <Label htmlFor="trip-pickup-time">Pickup time</Label>
+              <Input id="trip-pickup-time" type="time" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Return time</Label>
-              <Input type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} />
+              <Label htmlFor="trip-return-time">Return time</Label>
+              <Input id="trip-return-time" type="time" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Status</Label>
-            <select
+            <Label htmlFor="trip-status">Status</Label>
+            <select id="trip-status"
               className={selectClass}
               value={status}
               onChange={(e) => setStatus(e.target.value as TransportStatus)}
@@ -727,14 +727,14 @@ export default function EditResidentTransportRequestPage() {
 
           {status === "cancelled" ? (
             <div className="space-y-2">
-              <Label>Cancellation reason</Label>
-              <Input value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+              <Label htmlFor="trip-cancellation-reason">Cancellation reason</Label>
+              <Input id="trip-cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
             </div>
           ) : null}
 
           <div className="space-y-2">
-            <Label>Notes</Label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Label htmlFor="trip-notes">Notes</Label>
+            <Input id="trip-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
 
           {showMileageHint ? (
@@ -752,18 +752,18 @@ export default function EditResidentTransportRequestPage() {
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs">Trip origin</Label>
-                  <Input value={mileageOrigin} onChange={(e) => setMileageOrigin(e.target.value)} />
+                  <Label htmlFor="trip-trip-origin" className="text-xs">Trip origin</Label>
+                  <Input id="trip-trip-origin" value={mileageOrigin} onChange={(e) => setMileageOrigin(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Trip destination label</Label>
-                  <Input value={mileageDestination} onChange={(e) => setMileageDestination(e.target.value)} />
+                  <Label htmlFor="trip-trip-destination-label" className="text-xs">Trip destination label</Label>
+                  <Input id="trip-trip-destination-label" value={mileageDestination} onChange={(e) => setMileageDestination(e.target.value)} />
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap items-end gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">Miles (one-way)</Label>
-                  <Input
+                  <Label htmlFor="trip-miles-one-way" className="text-xs">Miles (one-way)</Label>
+                  <Input id="trip-miles-one-way"
                     inputMode="decimal"
                     value={mileageMiles}
                     onChange={(e) => setMileageMiles(e.target.value)}

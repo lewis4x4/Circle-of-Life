@@ -218,14 +218,14 @@ export default function NewJournalEntryPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Lines</CardTitle>
-          <CardDescription>Each line is debit XOR credit (USD). Minimum two lines.</CardDescription>
+          <CardDescription>Each line is either a debit or a credit, in dollars. At least two lines.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {lines.map((line, i) => (
             <div key={i} className="grid gap-2 md:grid-cols-4 md:items-end">
               <div className="space-y-1 md:col-span-2">
-                <Label>Account</Label>
-                <select
+                <Label htmlFor="journal-entry-account">Account</Label>
+                <select id="journal-entry-account"
                   className={cn(
                     "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950",
                   )}
@@ -242,8 +242,8 @@ export default function NewJournalEntryPage() {
                 </select>
               </div>
               <div className="space-y-1">
-                <Label>Debit $</Label>
-                <Input
+                <Label htmlFor="journal-entry-debit">Debit $</Label>
+                <Input id="journal-entry-debit"
                   inputMode="decimal"
                   aria-label={`Debit dollars, line ${i + 1}`}
                   value={line.debit}
@@ -251,8 +251,8 @@ export default function NewJournalEntryPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>Credit $</Label>
-                <Input
+                <Label htmlFor="journal-entry-credit">Credit $</Label>
+                <Input id="journal-entry-credit"
                   inputMode="decimal"
                   aria-label={`Credit dollars, line ${i + 1}`}
                   value={line.credit}

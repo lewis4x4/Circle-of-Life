@@ -46,6 +46,7 @@ import {
 
 import { BillingHubNav } from "../billing-hub-nav";
 import { billingCurrency } from "../billing-invoice-ledger";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export type ArBucketUrlKey = "current" | "31-60" | "61-90" | "91-plus";
 
@@ -898,7 +899,7 @@ function AdminArAgingPageContent() {
         ) : null}
 
         {!isLoading && hasOpenAr && rollupMode === "resident" && filteredResidentRows.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <HorizontalScroll label="A/R aging by resident" className="rounded-lg border border-border">
             <table className="w-full min-w-[820px] border-collapse text-[13px]">
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-left text-[12px] font-medium text-muted-foreground">
@@ -988,11 +989,11 @@ function AdminArAgingPageContent() {
                 })}
               </tbody>
             </table>
-          </div>
+          </HorizontalScroll>
         ) : null}
 
         {!isLoading && hasOpenAr && rollupMode === "invoice" && filteredInvoiceRows.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <HorizontalScroll label="A/R aging by invoice" className="rounded-lg border border-border">
             <table className="w-full min-w-[720px] border-collapse text-[13px]">
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-left text-[12px] font-medium text-muted-foreground">
@@ -1040,7 +1041,7 @@ function AdminArAgingPageContent() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </HorizontalScroll>
         ) : null}
 
         <section className="space-y-3 rounded-lg border border-border bg-muted/5 p-5">

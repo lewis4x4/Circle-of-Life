@@ -128,6 +128,13 @@ describe("recording a result", () => {
 });
 
 describe("what the row shows", () => {
+  it("lets the result buttons wrap on a phone instead of forcing a 640px table (COL-657)", () => {
+    renderCheck([row({})]);
+    const table = screen.getByRole("table");
+    expect(table.className).not.toMatch(/(^|\s)min-w-\[640px\]/);
+    expect(table.className).toContain("sm:min-w-[640px]");
+  });
+
   it("names a bed hold rather than showing an empty bed", () => {
     renderCheck([
       row({ haven_resident_status: "hospital_hold", haven_resident_id: "r1", residentName: "Test Resident A" }),

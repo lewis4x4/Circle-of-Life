@@ -5,6 +5,7 @@ import { Building2, Search } from "lucide-react";
 
 import type { ReportResident } from "@/lib/care-events/report-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { emptyRosterCopy } from "@/lib/residents/empty-roster-copy";
 import { cn } from "@/lib/utils";
 
 import { TapButton } from "./TapButton";
@@ -53,7 +54,9 @@ export function ReportWhoStep({
   loading,
   onPickResident,
   onNoResident,
+  facilityName = null,
 }: {
+  facilityName?: string | null;
   myResidents: ReportResident[];
   everyone: ReportResident[];
   loading: boolean;
@@ -128,7 +131,7 @@ export function ReportWhoStep({
             <h3 className="text-base font-semibold text-foreground">Everyone</h3>
             {filteredEveryone.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {everyone.length === 0 ? "No active residents at this facility." : "No resident matches that search."}
+                {everyone.length === 0 ? emptyRosterCopy(facilityName) : "No resident matches that search."}
               </p>
             ) : (
               <ul className="space-y-2">

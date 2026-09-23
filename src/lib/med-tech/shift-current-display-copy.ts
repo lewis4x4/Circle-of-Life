@@ -81,3 +81,14 @@ export function formatShiftCurrentRoomLabel(room: string | null | undefined): st
   if (isBlankOrPlaceholder(room)) return SHIFT_CURRENT_NO_ROOM_COPY;
   return room!.trim();
 }
+
+/** Shift window for the shift bar. A shift opened with no facility shift times has no end yet. */
+export function formatShiftCurrentWindowLabel(
+  shiftStart: string,
+  shiftEnd: string | null,
+  formatTime: (iso: string) => string,
+): string {
+  const half = new Date(shiftStart).getHours() >= 12 ? "PM" : "AM";
+  const end = shiftEnd ? formatTime(shiftEnd) : "open";
+  return `${half} · ${formatTime(shiftStart)} - ${end}`;
+}

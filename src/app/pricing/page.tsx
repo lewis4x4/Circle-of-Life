@@ -29,7 +29,7 @@ export default function PricingPage() {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
-              <DollarSign className="w-3.5 h-3.5 text-[#C85A32]" />
+              <DollarSign className="w-3.5 h-3.5 text-[#B04F2C]" />
               <span>100% Transparent Financial Guidance</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
@@ -68,7 +68,7 @@ export default function PricingPage() {
                   className="p-7 rounded-3xl bg-[#FAF7F2] border-2 border-stone-200 shadow-sm space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-2">
-                    <div className="text-3xl font-bold font-serif text-[#C85A32]">
+                    <div className="text-3xl font-bold font-serif text-[#B04F2C]">
                       ${offset.monthlySavings.toLocaleString()}
                       <span className="text-xs text-stone-500 font-sans font-normal"> / mo</span>
                     </div>
@@ -92,7 +92,7 @@ export default function PricingPage() {
               </div>
               <a
                 href="tel:3864060887"
-                className="px-6 py-3.5 rounded-xl bg-[#C85A32] hover:bg-[#B34E28] text-white font-bold text-xs shrink-0 transition-colors shadow-md"
+                className="px-6 py-3.5 rounded-xl bg-[#B04F2C] hover:bg-[#B34E28] text-white font-bold text-xs shrink-0 transition-colors shadow-md"
               >
                 Call for VA Guidance: (386) 406-0887
               </a>

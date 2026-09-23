@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { operationsQueueEmptyCopy } from "@/lib/operations/operations-metric-states";
 
 type TaskInstance = {
   id: string;
@@ -40,6 +41,8 @@ export default function OverdueTasksPage() {
   const [selectedPriority, setSelectedPriority] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** Tasks in the same scope and window with no queue filter; null when that read failed. */
+  const [scopeTaskCount, setScopeTaskCount] = useState<number | null>(null);
 
   const loadOverdueTasks = useCallback(async () => {
     if (authLoading) return;
@@ -54,7 +57,18 @@ export default function OverdueTasksPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/operations/tasks?${params.toString()}`);
+      const scopeParams = new URLSearchParams({ limit: "1" });
+      if (selectedFacilityId) scopeParams.set("facility_id", selectedFacilityId);
+      const [response, scopeResponse] = await Promise.all([
+        fetch(`/api/admin/operations/tasks?${params.toString()}`),
+        fetch(`/api/admin/operations/tasks?${scopeParams.toString()}`),
+      ]);
+      if (scopeResponse.ok) {
+        const scopeData = (await scopeResponse.json()) as { tasks?: unknown[] };
+        setScopeTaskCount(scopeData.tasks?.length ?? null);
+      } else {
+        setScopeTaskCount(null);
+      }
       if (!response.ok) throw new Error("Failed to load overdue tasks");
       const data = await response.json();
       setTasks(data.tasks || []);
@@ -116,6 +130,8 @@ export default function OverdueTasksPage() {
 
   const criticalTasks = tasks.filter((t) => t.license_threatening);
   const nonCriticalTasks = tasks.filter((t) => !t.license_threatening);
+
+  const emptyCopy = operationsQueueEmptyCopy({ queue: "overdue", scopeTaskCount });
 
   if (isLoading) {
     return (
@@ -329,9 +345,9 @@ export default function OverdueTasksPage() {
       {tasks.length === 0 && !isLoading && !error && (
         <div className="text-center py-16">
           <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-semibold mb-2">No overdue tasks</h3>
+          <h3 className="text-xl font-semibold mb-2">{emptyCopy.title}</h3>
           <p className="text-muted-foreground max-w-md mx-auto">
-            All tasks are on schedule. Great work keeping operations running on time.
+            {emptyCopy.body}
           </p>
         </div>
       )}

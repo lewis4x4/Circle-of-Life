@@ -22,3 +22,19 @@ export function formatCompliancePolicyPublishedDate(
 
   return format(date, "MMM d, yyyy");
 }
+
+/**
+ * Count beside "Active Policies". Nothing is shown until a facility's policies
+ * have actually loaded: "0 shown" with no facility, or after a failed read
+ * that the page used to render as "No policies", is not a count (COL-649).
+ */
+export function compliancePolicyListCountLabel(input: {
+  facilityReady: boolean;
+  loading: boolean;
+  error: string | null;
+  count: number;
+}): string | null {
+  if (!input.facilityReady || input.error) return null;
+  if (input.loading) return "Loading…";
+  return `${input.count} shown`;
+}

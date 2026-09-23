@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   REPUTATION_NO_LISTING_COPY,
   formatReputationHubCardSubtitle,
+  reputationDraftQueueEmptyKind,
+  reputationHubCountState,
   formatReputationListingLabel,
 } from "./reputation-display-copy";
 
@@ -64,5 +66,33 @@ describe("formatReputationHubCardSubtitle", () => {
       "Connected listings and reply workflow for this facility.",
     );
     expect(formatReputationHubCardSubtitle(null)).not.toContain("selected facility");
+  });
+});
+
+describe("reputation hub honest counts (COL-649)", () => {
+  it("shows Select a facility, not 0, with no facility", () => {
+    expect(reputationHubCountState({ facilityReady: false, loading: false, error: null, count: 0 })).toEqual({
+      status: "not_configured",
+      reason: "Select a facility",
+    });
+  });
+
+  it("shows Unavailable after a failed read and keeps a loaded zero", () => {
+    expect(reputationHubCountState({ facilityReady: true, loading: false, error: new Error("x"), count: 0 }).status).toBe(
+      "unavailable",
+    );
+    expect(reputationHubCountState({ facilityReady: true, loading: false, error: null, count: 0 })).toEqual({
+      status: "value",
+      value: 0,
+    });
+  });
+
+  it("does not call a facility with no listings Inbox Zero", () => {
+    const base = { facilityReady: true, loading: false, error: null, draftCount: 0 };
+    expect(reputationDraftQueueEmptyKind({ ...base, accountCount: 0 })).toBe("no_listings");
+    expect(reputationDraftQueueEmptyKind({ ...base, accountCount: 2 })).toBe("clear");
+    expect(reputationDraftQueueEmptyKind({ ...base, accountCount: 2, error: new Error("x") })).toBeNull();
+    expect(reputationDraftQueueEmptyKind({ ...base, accountCount: 2, facilityReady: false })).toBeNull();
+    expect(reputationDraftQueueEmptyKind({ ...base, accountCount: 2, draftCount: 1 })).toBeNull();
   });
 });

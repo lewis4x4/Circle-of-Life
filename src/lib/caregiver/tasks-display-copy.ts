@@ -1,4 +1,5 @@
 import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * Quiet Operator copy for caregiver task queue shift bucket.
@@ -11,5 +12,5 @@ export const CAREGIVER_TASKS_NO_SHIFT_COPY = "No shift posted";
 export function formatCaregiverTasksShiftBucket(timeZone: string | null | undefined): string {
   const trimmed = timeZone?.trim();
   if (!trimmed) return CAREGIVER_TASKS_NO_SHIFT_COPY;
-  return currentShiftForTimezone(trimmed);
+  return enumLabel(currentShiftForTimezone(trimmed));
 }

@@ -13,6 +13,7 @@ import {
   formatUsd,
   type FamilyBillingContext,
 } from "@/lib/family/family-billing-data";
+import { describeFamilyBillingSummary } from "@/lib/family/family-billing-status";
 import {
   FAMILY_BILLING_EMPTY_INVOICES_DESCRIPTION,
   FAMILY_BILLING_EMPTY_INVOICES_TITLE,
@@ -119,21 +120,7 @@ export default function FamilyBillingSummaryPage() {
   if (!data) return null;
 
   const recent = data.invoices.slice(0, 4);
-  const balanceTone: "neutral" | "warning" | "success" = data.hasOverdue
-    ? "warning"
-    : data.totalBalanceDue > 0
-      ? "warning"
-      : "success";
-  const accountStatus = data.hasOverdue
-    ? "Overdue balance"
-    : data.totalBalanceDue > 0
-      ? "Balance due"
-      : "In good standing";
-  const accountTone: "neutral" | "warning" | "success" = data.hasOverdue
-    ? "warning"
-    : data.totalBalanceDue > 0
-      ? "warning"
-      : "success";
+  const { openBalance, balanceTone, accountStatus, accountTone } = describeFamilyBillingSummary(data);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 pb-8 pt-12 md:pt-20">
@@ -147,7 +134,7 @@ export default function FamilyBillingSummaryPage() {
       <div className="w-full space-y-12">
         {/* Financial Overview Blocks */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <SummaryBlock label="Open balance" value={formatUsd(data.totalBalanceDue)} tone={balanceTone} />
+          <SummaryBlock label="Open balance" value={openBalance} tone={balanceTone} />
           <SummaryBlock label="Account status" value={accountStatus} tone={accountTone} />
           <SummaryBlock
             label="Last payment"

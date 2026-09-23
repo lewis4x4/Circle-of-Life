@@ -14,6 +14,7 @@ import {
   caregiverIncidentShiftValues,
   type CaregiverIncidentFormData,
 } from "@/lib/validation/caregiver-incident";
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -56,12 +57,24 @@ function toDatetimeLocalValue(d: Date): string {
 
 type ResidentOption = { id: string; label: string };
 
-const defaultFormValues = (): CaregiverIncidentFormData => ({
+/**
+ * Category, severity and shift start unchosen: a preset on a regulatory record
+ * biases it, and a "Day" shift preset stayed "Day" on the evening shift (COL-653).
+ * The empty value is not a valid enum, so the schema refuses the record until the
+ * reporter picks each one.
+ */
+type IncidentFormDraft = Omit<CaregiverIncidentFormData, "category" | "severity" | "shift"> & {
+  category: CaregiverIncidentFormData["category"] | "";
+  severity: CaregiverIncidentFormData["severity"] | "";
+  shift: CaregiverIncidentFormData["shift"] | "";
+};
+
+const defaultIncidentFormValues = (): IncidentFormDraft => ({
   residentId: "",
-  category: "fall_without_injury",
-  severity: "level_2",
+  category: "",
+  severity: "",
   occurredAtLocal: toDatetimeLocalValue(new Date()),
-  shift: "day",
+  shift: "",
   locationDescription: "",
   description: "",
   immediateActions: "",
@@ -85,9 +98,9 @@ function AdminIncidentFormInner() {
   const [submittedNumber, setSubmittedNumber] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<CaregiverIncidentFormData>({
-    resolver: zodResolver(caregiverIncidentFormSchema),
-    defaultValues: defaultFormValues(),
+  const form = useForm<IncidentFormDraft, unknown, CaregiverIncidentFormData>({
+    resolver: zodResolver(caregiverIncidentFormSchema) as never,
+    defaultValues: defaultIncidentFormValues(),
   });
 
   const loadContext = useCallback(async () => {
@@ -117,24 +130,12 @@ function AdminIncidentFormInner() {
         return;
       }
 
-      let resolvedFacilityId: string | null = selectedFacilityId;
-      let resolvedOrgId = authOrganizationId;
-
-      if (!resolvedFacilityId) {
-        const facResult = await supabase
-          .from("facilities" as never)
-          .select("id, name, organization_id")
-          .eq("organization_id", resolvedOrgId)
-          .is("deleted_at", null)
-          .order("name")
-          .limit(1)
-          .maybeSingle();
-        const row = facResult.data as { id: string; name: string; organization_id: string } | null;
-        if (facResult.error) throw facResult.error;
-        if (row) { resolvedFacilityId = row.id; resolvedOrgId = row.organization_id; }
-      }
-
-      if (!resolvedFacilityId) { setLoadError("No facility found."); setLoadingContext(false); return; }
+      // COL-651: the page is gated on the header's facility. It used to fall
+      // back to the organization's first facility, filing under a building
+      // nobody chose.
+      const resolvedFacilityId = selectedFacilityId;
+      const resolvedOrgId = authOrganizationId;
+      if (!resolvedFacilityId) { setLoadingContext(false); return; }
 
       setFacilityId(resolvedFacilityId);
       setOrganizationId(resolvedOrgId);
@@ -166,8 +167,13 @@ function AdminIncidentFormInner() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const values = form.getValues();
     setSubmitError(null);
+    const parsed = caregiverIncidentFormSchema.safeParse(form.getValues());
+    if (!parsed.success) {
+      setSubmitError(parsed.error.issues[0]?.message ?? "Complete every required field.");
+      return;
+    }
+    const values = parsed.data;
     if (!facilityId || !organizationId) { setSubmitError("Facility context not ready."); return; }
 
     setSubmitting(true);
@@ -251,7 +257,7 @@ function AdminIncidentFormInner() {
             <button
               type="button"
               className="h-14 px-8 rounded-2xl flex items-center justify-center font-bold tracking-wide border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 transition-all"
-              onClick={() => { setSubmittedNumber(null); form.reset(defaultFormValues()); }}
+              onClick={() => { setSubmittedNumber(null); form.reset(defaultIncidentFormValues()); }}
             >
               FILE ANOTHER
             </button>
@@ -290,9 +296,9 @@ function AdminIncidentFormInner() {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Resident <span className="font-normal opacity-70">(Optional)</span></label>
+              <label htmlFor="incident-resident-optional" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Resident <span className="font-normal opacity-70">(Optional)</span></label>
               <div className="relative">
-                <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("residentId")}>
+                <select id="incident-resident-optional" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("residentId")}>
                   <option value="">Not resident-specific</option>
                   {residents.map((r) => (<option key={r.id} value={r.id}>{r.label}</option>))}
                 </select>
@@ -302,18 +308,20 @@ function AdminIncidentFormInner() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Category</label>
+                <label htmlFor="incident-category" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Category</label>
                 <div className="relative">
-                  <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("category")}>
+                  <select id="incident-category" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" required {...form.register("category")}>
+                    <option value="" disabled>Select category…</option>
                     {caregiverIncidentCategoryValues.map((v) => (<option key={v} value={v}>{CATEGORY_LABELS[v]}</option>))}
                   </select>
                   <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Severity</label>
+                <label htmlFor="incident-severity" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Severity</label>
                 <div className="relative">
-                  <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("severity")}>
+                  <select id="incident-severity" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" required {...form.register("severity")}>
+                    <option value="" disabled>Select severity…</option>
                     {caregiverIncidentSeverityValues.map((v) => (<option key={v} value={v}>{SEVERITY_LABELS[v]}</option>))}
                   </select>
                   <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
@@ -323,13 +331,14 @@ function AdminIncidentFormInner() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Date & Time</label>
-                <input type="datetime-local" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("occurredAtLocal")} />
+                <label htmlFor="incident-date-time" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Date & Time</label>
+                <input id="incident-date-time" type="datetime-local" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("occurredAtLocal")} />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Shift</label>
+                <label htmlFor="incident-shift" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Shift</label>
                 <div className="relative">
-                  <select className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" {...form.register("shift")}>
+                  <select id="incident-shift" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50" required {...form.register("shift")}>
+                    <option value="" disabled>Select shift…</option>
                     {caregiverIncidentShiftValues.map((v) => (<option key={v} value={v}>{SHIFT_LABELS[v]}</option>))}
                   </select>
                   <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
@@ -347,16 +356,16 @@ function AdminIncidentFormInner() {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Specific Location</label>
-              <input type="text" placeholder="e.g. Room 114, east hall near nurses' station" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("locationDescription")} />
+              <label htmlFor="incident-specific-location" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Specific Location</label>
+              <input id="incident-specific-location" type="text" placeholder="e.g. Room 114, east hall near nurses' station" className="w-full h-14 appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 px-5 text-[15px] font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("locationDescription")} />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Factual Description</label>
-              <textarea rows={4} placeholder="Objective facts: what you saw, heard, or verified." className="w-full resize-none appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("description")} />
+              <label htmlFor="incident-factual-description" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Factual Description</label>
+              <textarea id="incident-factual-description" rows={4} placeholder="Objective facts: what you saw, heard, or verified." className="w-full resize-none appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("description")} />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Immediate Actions Taken</label>
-              <textarea rows={3} placeholder="First aid given, supervision adjusted, area secured..." className="w-full resize-none appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("immediateActions")} />
+              <label htmlFor="incident-immediate-actions-taken" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">Immediate Actions Taken</label>
+              <textarea id="incident-immediate-actions-taken" rows={3} placeholder="First aid given, supervision adjusted, area secured..." className="w-full resize-none appearance-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/50 placeholder:text-slate-400 dark:placeholder:text-zinc-600" {...form.register("immediateActions")} />
             </div>
             <div className="pt-2">
               <label className="flex items-center gap-4 cursor-pointer w-fit border border-slate-200 dark:border-white/5 bg-white hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors pr-6 pl-4 py-4 rounded-2xl">
@@ -389,7 +398,9 @@ function AdminIncidentFormInner() {
 export default function AdminIncidentNewPage() {
   return (
     <Suspense fallback={<div className="flex h-[40vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-      <AdminIncidentFormInner />
+      <FacilityGate title="Report incident" reason="An incident is filed under one building, and its resident list is that building's.">
+        <AdminIncidentFormInner />
+      </FacilityGate>
     </Suspense>
   );
 }

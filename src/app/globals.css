@@ -161,11 +161,11 @@
   --muted-foreground: 30 8% 38%;
   --accent: 205 27% 42%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 8 56% 48%;
+  --destructive: 8 56% 41%;
   --destructive-foreground: 0 0% 100%;
-  --success: 88 25% 38%;
+  --success: 88 25% 32%;
   --warning: 30 70% 32%;
-  --info: 204 26% 45%;
+  --info: 204 26% 37%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
   --ring: 205 27% 42%;
@@ -181,10 +181,10 @@
 
   /* Charts — deepened for AA contrast on warm paper */
   --chart-1: 205 27% 42%;
-  --chart-2: 88 25% 38%;
+  --chart-2: 88 25% 32%;
   --chart-3: 30 70% 32%;
-  --chart-4: 8 56% 48%;
-  --chart-5: 204 26% 45%;
+  --chart-4: 8 56% 41%;
+  --chart-5: 204 26% 37%;
 
   /* Sidebar — warm paper surfaces, deeper accent for cream contrast */
   --sidebar: 0 0% 100%;
@@ -279,11 +279,11 @@
   --muted-foreground: 30 8% 38%;
   --accent: 205 27% 42%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 8 56% 48%;
+  --destructive: 8 56% 41%;
   --destructive-foreground: 0 0% 100%;
-  --success: 88 25% 38%;
+  --success: 88 25% 32%;
   --warning: 30 70% 32%;
-  --info: 204 26% 45%;
+  --info: 204 26% 37%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
   --ring: 205 27% 42%;
@@ -295,10 +295,10 @@
   --chrome-active: 215 14% 20%;
 
   --chart-1: 205 27% 42%;
-  --chart-2: 88 25% 38%;
+  --chart-2: 88 25% 32%;
   --chart-3: 30 70% 32%;
-  --chart-4: 8 56% 48%;
-  --chart-5: 204 26% 45%;
+  --chart-4: 8 56% 41%;
+  --chart-5: 204 26% 37%;
 
   --sidebar: 0 0% 100%;
   --sidebar-foreground: 30 14% 12%;
@@ -369,14 +369,14 @@
   --secondary: 42 6% 10%;
   --secondary-foreground: 42 35% 94%;
   --muted: 42 6% 10%;
-  --muted-foreground: 40 6% 55%;
+  --muted-foreground: 40 6% 57%;
   --accent: 42 6% 14%;
   --accent-foreground: 42 35% 94%;
-  --destructive: 8 48% 54%;
-  --destructive-foreground: 42 35% 94%;
-  --success: 92 25% 49%;
+  --destructive: 8 48% 63%;
+  --destructive-foreground: 23 53% 7%;
+  --success: 92 25% 50%;
   --warning: 32 60% 50%;
-  --info: 204 26% 54%;
+  --info: 204 26% 58%;
   --border: 36 6% 14%;
   --input: 36 6% 14%;
   --ring: 205 27% 54%;
@@ -389,10 +389,10 @@
   --chrome-active: 215 12% 28%;
 
   --chart-1: 205 27% 54%;
-  --chart-2: 92 25% 49%;
+  --chart-2: 92 25% 50%;
   --chart-3: 32 60% 50%;
-  --chart-4: 8 48% 54%;
-  --chart-5: 204 26% 54%;
+  --chart-4: 8 48% 63%;
+  --chart-5: 204 26% 58%;
 
   --sidebar: 30 9% 4%;
   --sidebar-foreground: 42 35% 94%;

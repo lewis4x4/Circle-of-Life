@@ -81,14 +81,14 @@ describe("Watchlist vocabulary", () => {
         resident_last_name: "Last",
         resident_preferred_name: "Preferred",
       }),
-    ).toBe("Last, Preferred");
+    ).toBe("Preferred Last");
     expect(
       residentDisplayName({
         resident_first_name: "First",
         resident_last_name: "Last",
         resident_preferred_name: null,
       }),
-    ).toBe("Last, First");
+    ).toBe("First Last");
     expect(
       residentDisplayName({
         resident_first_name: null,
