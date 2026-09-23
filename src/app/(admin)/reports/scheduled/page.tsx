@@ -11,6 +11,7 @@ import { formatReportScheduleNextRunAt } from "@/lib/reports/reports-display-cop
 import { deriveReportScheduleState } from "@/lib/reports/report-status";
 import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
 import { computeNextRunUtc, decodeScheduleRule, encodeScheduleRule } from "@/lib/reports/schedule-preview";
+import { formatTimeZoneLabel } from "@/lib/facility-wall-clock";
 import type { ScheduleFrequency } from "@/lib/reports/pack-ui-metadata";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
 import { createClient } from "@/lib/supabase/client";
@@ -172,7 +173,7 @@ export default function ScheduledReportsPage() {
                 <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option>
               </select>
             </label>
-            <label className="grid gap-1 text-sm">Local time ({timezone})<input type="time" value={timeLocal} onChange={event=>setTimeLocal(event.target.value)} className="rounded border bg-card p-3" /></label>
+            <label className="grid gap-1 text-sm">Local time ({formatTimeZoneLabel(timezone)})<input type="time" value={timeLocal} onChange={event=>setTimeLocal(event.target.value)} className="rounded border bg-card p-3" /></label>
             {recurrence==="weekly" ? <label className="grid gap-1 text-sm">Day<select value={weekday} onChange={event=>setWeekday(Number(event.target.value))} className="rounded border bg-card p-3">{["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map((day,index)=><option key={day} value={index}>{day}</option>)}</select></label> : null}
             {recurrence==="monthly" || recurrence==="quarterly" ? <label className="grid gap-1 text-sm">Day of month<input type="number" min={1} max={31} value={monthDay} onChange={event=>setMonthDay(Number(event.target.value))} className="rounded border bg-card p-3" /></label> : null}
             <p className="lg:col-span-4 text-sm">Next runs: {nextRuns.length ? nextRuns.join(" · ") : "Choose valid timing"}. Short months use their final day.</p>
@@ -211,7 +212,7 @@ export default function ScheduledReportsPage() {
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Repeats</p>
                         <p className="text-foreground">{state.recurrenceLabel}</p>
-                        <p className="text-xs text-muted-foreground">{schedule.timezone} · {state.outputLabel}</p>
+                        <p className="text-xs text-muted-foreground">{formatTimeZoneLabel(schedule.timezone)} · {state.outputLabel}</p>
                       </div>
                       <div className="tabular-nums">
                         <p className="text-xs text-muted-foreground">{state.kind === "overdue" ? "Was due" : "Next run"}</p>

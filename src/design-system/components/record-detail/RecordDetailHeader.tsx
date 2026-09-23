@@ -102,9 +102,12 @@ export function RecordDetailHeader({
         </a>
       )}
 
-      {/* Title row: [heading + chips] and [actions] */}
+      {/* Title row: [heading + chips] and [actions]. The heading column keeps
+          a readable minimum width, so on a phone the actions wrap below it
+          instead of squeezing the subtitle to one word per line and sliding
+          over the title (COL-657). */}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex min-w-72 flex-1 flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
               {title}

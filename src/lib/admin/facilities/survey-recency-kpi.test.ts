@@ -22,4 +22,12 @@ describe("surveyRecencyTileCopy", () => {
     expect(surveyRecencyTileCopy(FIXTURE_OVERDUE_DAYS).valueLine).toBe(`${FIXTURE_OVERDUE_DAYS} days`);
     expect(surveyRecencyTileCopy(FIXTURE_OVERDUE_DAYS).valueLine).not.toBe(SURVEY_RECENCY_NO_SURVEY_COPY);
   });
+
+  it("does not call days since the last survey 'Survey overdue' (COL-649)", () => {
+    const copy = surveyRecencyTileCopy(700);
+    expect(copy.title).toBe("Days since last survey");
+    expect(copy.title).not.toMatch(/overdue/i);
+    expect(copy.valueLine).toBe("700 days");
+    expect(copy.footnote).toMatch(/survey cycle/);
+  });
 });

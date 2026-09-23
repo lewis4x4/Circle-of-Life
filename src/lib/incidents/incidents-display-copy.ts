@@ -3,6 +3,8 @@
  * Missing or unparseable dates name the gap — never invent timestamps or silent em dashes.
  */
 
+import { formatShortDateTime } from "@/lib/format/datetime";
+
 export const INCIDENTS_NO_DATE_POSTED_COPY = "No date posted";
 export const INCIDENTS_NO_RESIDENT_POSTED_COPY = "No resident posted";
 export const INCIDENTS_NO_NAME_POSTED_COPY = "No name posted";
@@ -13,23 +15,15 @@ export type IncidentResidentNameParts = {
   last_name: string | null;
 };
 
-const INCIDENTS_LIST_TIMESTAMP_FORMAT: Intl.DateTimeFormatOptions = {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-};
-
 function isMissingIncidentDateInput(value: string | null | undefined): boolean {
   if (value == null) return true;
   const trimmed = value.trim();
   return trimmed.length === 0 || trimmed === "—" || trimmed === "Unknown";
 }
 
+/** Always in the facility zone, so server and client renders agree (COL-659). */
 function formatPostedIncidentListTimestamp(value: string): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return INCIDENTS_NO_DATE_POSTED_COPY;
-  return new Intl.DateTimeFormat("en-US", INCIDENTS_LIST_TIMESTAMP_FORMAT).format(parsed);
+  return formatShortDateTime(value, { fallback: INCIDENTS_NO_DATE_POSTED_COPY });
 }
 
 /** Occurred-at on the incidents board when missing, blank, em dash, legacy Unknown, or unparseable. */

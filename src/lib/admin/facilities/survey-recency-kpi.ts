@@ -41,11 +41,13 @@ export function surveyRecencyTileCopy(days: number | null): {
 
   const band = surveyRecencyBand(days);
   if (band === "overdue") {
+    // Days since the last survey, not days past a deadline: AHCA sets the
+    // survey date, so nothing here is "overdue" by that count (COL-649).
     return {
-      title: "Survey overdue",
+      title: "Days since last survey",
       valueLine: `${days} days`,
       valueClass: "text-amber-600 dark:text-amber-400",
-      footnote: null,
+      footnote: "Past the usual ~15-month AHCA survey cycle",
     };
   }
 

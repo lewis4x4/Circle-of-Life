@@ -7,11 +7,11 @@ afterEach(cleanup);
 describe('Pilot feedback launcher', () => {
   it('preserves the existing uncontrolled launcher behavior', async () => {
     render(<PilotFeedbackLauncher shellKind="admin" compact />);
-    fireEvent.click(screen.getByRole('button', { name: 'Pilot feedback' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Pilot Feedback' });
+    fireEvent.click(screen.getByRole('button', { name: 'Send feedback' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Send feedback' });
     fireEvent.click(within(dialog).getAllByRole('button', { name: /^Close$/ })[0]);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Pilot feedback' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send feedback' })).toBeInTheDocument();
   });
   it('supports an external trigger without losing its dialog when that trigger disappears', async () => {
     const returnFocus = createRef<HTMLButtonElement>();
@@ -21,7 +21,7 @@ describe('Pilot feedback launcher', () => {
     }
     render(<Controlled />); fireEvent.click(screen.getByRole('button', { name: 'Feedback from popover' }));
     expect(screen.queryByRole('button', { name: 'Feedback from popover' })).not.toBeInTheDocument();
-    const dialog = await screen.findByRole('dialog', { name: 'Pilot Feedback' });
+    const dialog = await screen.findByRole('dialog', { name: 'Send feedback' });
     expect(within(dialog).getByLabelText('Category')).toBeInTheDocument();
     fireEvent.keyDown(dialog, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

@@ -1,8 +1,11 @@
 "use client";
 
+import type * as React from "react";
+
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { cn } from "@/lib/utils";
 
 /**
@@ -110,4 +113,39 @@ export function TableRowHeader({
       slot: "table-row-header",
     },
   });
+}
+
+/**
+ * TableRowList — the scroll box every TableRowHeader + TableRow list sits in
+ * (COL-657). Flex rows squeeze their `flex-[N]` columns to whatever width the
+ * card has, so on a phone names truncate to a few characters and trailing
+ * columns vanish behind the card's `overflow-hidden`. The list keeps a
+ * minimum width that fits its columns and scrolls sideways inside the card
+ * instead; on wider screens it simply fills the card.
+ *
+ *   <TableRowList label="Staff roster">
+ *     <TableRowHeader>…</TableRowHeader>
+ *     <MotionList>…rows…</MotionList>
+ *   </TableRowList>
+ */
+export function TableRowList({
+  label,
+  minWidthClassName = "min-w-[44rem]",
+  className,
+  children,
+}: {
+  /** Accessible name for the scroll region, e.g. "Staff roster". */
+  label: string;
+  /** Narrowest width at which every column still reads; override per list. */
+  minWidthClassName?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <HorizontalScroll label={label} className={className}>
+      <div data-slot="table-row-list" className={minWidthClassName}>
+        {children}
+      </div>
+    </HorizontalScroll>
+  );
 }

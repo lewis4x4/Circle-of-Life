@@ -184,11 +184,11 @@ export function CarePlanReviewsDuePageClient({
       {queueState === "nothing_on_file" ? (
         <div
           data-queue-state={queueState}
-          className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]"
+          className="rounded-lg border border-dashed border-border bg-muted/40 px-8 py-20 text-center"
         >
-          <ClipboardList className="mx-auto mb-4 h-14 w-14 text-slate-300 dark:text-slate-600" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">No active care plans</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-400">
+          <ClipboardList className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">No active care plans</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             No resident in this scope has an active care plan, so no review can be due. Plans start from the
             Form 1823 alignment queue.
           </p>

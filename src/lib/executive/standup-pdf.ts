@@ -185,7 +185,7 @@ export function buildStandupBoardPrintHtml(
       const whyRed =
         action.whyRed.length > 0
           ? action.whyRed
-          : ["No active red flags beyond the summary concern."];
+          : ["Nothing flagged."];
       const flags =
         action.varianceFlags.length > 0
           ? action.varianceFlags

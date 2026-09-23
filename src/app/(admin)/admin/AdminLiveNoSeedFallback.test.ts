@@ -70,6 +70,6 @@ describe("admin live surfaces seeded fallback removal", () => {
     expect(clinicalDeskClient).toContain("clinicalDeskEmptyCopy(");
     expect(clinicalDeskEmptyCopy("assessments", "clear").body).toBe("No overdue assessments.");
     expect(clinicalDeskEmptyCopy("carePlans", "clear").body).toBe("No drafts awaiting review.");
-    expect(NO_FACILITY_SOURCE_NOTICE).toContain("No cross-facility fallback query is run.");
+    expect(NO_FACILITY_SOURCE_NOTICE).toBe("Select a facility to see its assessments and care plans that are due.");
   });
 });
