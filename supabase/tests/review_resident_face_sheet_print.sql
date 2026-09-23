@@ -19,8 +19,8 @@ CREATE TEMP TABLE fs AS SELECT gen_random_uuid() org,gen_random_uuid() other_org
 CREATE TEMP TABLE fs_actors(name text PRIMARY KEY,app_role text NOT NULL,home text NOT NULL,has_access boolean NOT NULL,
   id uuid DEFAULT gen_random_uuid(),session uuid DEFAULT gen_random_uuid());
 INSERT INTO fs_actors(name,app_role,home,has_access) VALUES
-  ('owner','owner','org',true),('med_tech','med_tech','org',true),('caregiver','caregiver','org',true),
-  ('no_access','caregiver','org',false),('stranger','owner','other_org',true);
+  ('owner','owner','org',true),('med_tech','med_tech','org',true),('cook','cook','org',true),
+  ('no_access','cook','org',false),('stranger','owner','other_org',true);
 INSERT INTO organizations(id,name) SELECT org,'Face sheet review' FROM fs UNION ALL SELECT other_org,'Face sheet elsewhere' FROM fs;
 INSERT INTO entities(id,organization_id,name) SELECT ent,org,'Review' FROM fs UNION ALL SELECT other_ent,other_org,'Elsewhere' FROM fs;
 INSERT INTO facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
@@ -71,14 +71,14 @@ CREATE FUNCTION pg_temp.fs_prints() RETURNS bigint LANGUAGE sql SECURITY DEFINER
 GRANT EXECUTE ON FUNCTION pg_temp.fs_version(uuid),pg_temp.fs_prints() TO authenticated;
 
 -- 1. A reader with facility access: one row, ids and a kind, nothing else.
-SELECT pg_temp.fs_login('caregiver');
+SELECT pg_temp.fs_login('cook');
 SET LOCAL ROLE authenticated;
 INSERT INTO fs_out SELECT 'print',to_jsonb(record_resident_face_sheet_print((SELECT resident FROM fs)));
 RESET ROLE;
 SELECT pg_temp.fs_assert((SELECT count(*)=1 FROM audit_log a JOIN fs_out p ON p.k='print' AND (p.h#>>'{}')::uuid=a.id
   WHERE a.table_name='resident_face_sheet_print' AND a.action='INSERT'
     AND a.record_id=(SELECT resident FROM fs) AND a.facility_id=(SELECT fac FROM fs) AND a.organization_id=(SELECT org FROM fs)
-    AND a.user_id=(SELECT id FROM fs_actors WHERE name='caregiver') AND a.old_data IS NULL),
+    AND a.user_id=(SELECT id FROM fs_actors WHERE name='cook') AND a.old_data IS NULL),
   'print row missing or mis-attributed');
 SELECT pg_temp.fs_assert((SELECT a.new_data='{"event":"resident_face_sheet_printed","print_kind":"face_sheet"}'::jsonb
   FROM audit_log a JOIN fs_out p ON p.k='print' AND (p.h#>>'{}')::uuid=a.id),'print row carries more than an event and a kind');
@@ -158,8 +158,8 @@ SELECT pg_temp.fs_assert((SELECT jsonb_array_length(h->'stale')=1 AND h->'stale'
 SELECT pg_temp.fs_assert((SELECT jsonb_array_length(h->'entries')=1 AND (h->>'truncated')='true' FROM fs_out WHERE k='capped'),
   'the limit did not cap the history or report truncation');
 
--- A caregiver sees the history but not intake detail.
-SELECT pg_temp.fs_login('caregiver');
+-- A cook sees the history but not intake detail.
+SELECT pg_temp.fs_login('cook');
 SET LOCAL ROLE authenticated;
 INSERT INTO fs_out SELECT 'floor',resident_record_field_history((SELECT resident FROM fs));
 RESET ROLE;
