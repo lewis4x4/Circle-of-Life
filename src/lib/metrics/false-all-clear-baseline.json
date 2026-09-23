@@ -121,9 +121,6 @@
   "src/components/rounding/IntegrityCompliancePanel.tsx": {
     "silent-zero": 2
   },
-  "src/components/staffing/AdminStaffingConsolePageClient.tsx": {
-    "all-clear-copy": 2
-  },
   "src/components/stand-up/editor.tsx": {
     "silent-zero": 1
   },
