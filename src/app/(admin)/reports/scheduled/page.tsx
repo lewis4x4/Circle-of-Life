@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { StatusPill } from "@/components/ui/status-pill";
 import { canManageReports, loadReportsRoleContext } from "@/lib/reports/auth";
 import { formatReportScheduleNextRunAt } from "@/lib/reports/reports-display-copy";
+import { deriveReportScheduleState } from "@/lib/reports/report-status";
 import { resolveReportTemplateIdBySlug } from "@/lib/reports/resolve-template-id";
 import { computeNextRunUtc, decodeScheduleRule, encodeScheduleRule } from "@/lib/reports/schedule-preview";
 import type { ScheduleFrequency } from "@/lib/reports/pack-ui-metadata";
@@ -26,6 +26,7 @@ type Schedule = {
   output_format: string;
   next_run_at: string | null;
   last_run_at: string | null;
+  last_error: string | null;
 };
 
 export default function ScheduledReportsPage() {
@@ -63,7 +64,7 @@ export default function ScheduledReportsPage() {
 
       const { data, error: queryErr } = await supabase
         .from("report_schedules")
-        .select("id, source_type, source_id, timezone, recurrence_rule, status, output_format, next_run_at, last_run_at")
+        .select("id, source_type, source_id, timezone, recurrence_rule, status, output_format, next_run_at, last_run_at, last_error")
         .eq("organization_id", ctx.ctx.organizationId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -182,71 +183,60 @@ export default function ScheduledReportsPage() {
         </div>
       )}
 
-      <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible z-10 w-full transition-all">
-          <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Active Configurations</h3>
-          </div>
+      <section aria-labelledby="schedules-heading" className="w-full rounded-lg border border-border bg-card">
+          <h2 id="schedules-heading" className="border-b border-border px-4 py-3 text-[15px] font-semibold text-foreground">
+            Schedules
+          </h2>
           {loading ? (
-            <div className="p-16 text-center text-slate-500">
-               <p className="text-sm font-mono tracking-wider uppercase">Loading Schedules…</p>
-            </div>
+            <p className="px-4 py-10 text-sm text-muted-foreground">Loading schedules…</p>
           ) : schedules.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
-                <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Schedules Configured</p>
-               <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Set up recurring reports with saved in-app results.</p>
-             </div>
+            <div className="px-4 py-10 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">No schedules yet</p>
+              <p className="mt-1">Set up a recurring report; each run is saved in the app with CSV download.</p>
+            </div>
           ) : (
-            <MotionList className="space-y-4">
-                {schedules.map((schedule) => (
-                  <MotionItem key={schedule.id}>
-                    <div className={cn("p-6 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-default border w-full flex flex-col xl:flex-row xl:items-center justify-between gap-6 shadow-sm hover:shadow-md", schedule.status === "paused" ? "border-amber-500/20 bg-amber-50 dark:bg-amber-900/10 hover:border-amber-500/40" : "border-slate-200 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/20")}>
-                        <div className="absolute top-0 left-0 w-1 h-full rounded-l-full bg-emerald-500/0 transition-colors" />
-                        <div className="flex flex-col min-w-[200px] gap-1 shrink-0">
-                           <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Source configuration</span>
-                           <span className="font-bold text-slate-900 dark:text-slate-100 text-sm tracking-wide capitalize">
-                              {sourceNames[schedule.source_id] ?? "Unavailable report"}
-                           </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full items-center">
-                           <div className="flex flex-col gap-2">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
-                              <div>
-                                <Badge className={cn("uppercase tracking-wider font-mono text-[9px] font-bold border-0 shadow-sm px-2.5 py-1 rounded-full", schedule.status === "active" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 ring-1 ring-emerald-500/20" : "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 ring-1 ring-amber-500/20")}>
-                                  {schedule.status}
-                                </Badge>
-                              </div>
-                           </div>
-                           <div className="flex flex-col gap-2 align-left md:text-left">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Recurrence</span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-slate-700 dark:text-slate-300">{(() => { try { const rule=decodeScheduleRule(schedule.recurrence_rule); return `${rule.frequency} at ${rule.timeLocal}`; } catch { return "Timing needs review"; } })()}</span>
-                                <Badge className="bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2 py-0.5 rounded-full shrink-0">
-                                   {schedule.output_format}
-                                </Badge>
-                              </div>
-                           </div>
-                           <div className="flex flex-col gap-2 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Timezone</span>
-                              <span className="font-mono text-[11px] font-medium tracking-wide text-slate-600 dark:text-slate-300">{schedule.timezone}</span>
-                           </div>
-                           <div className="flex flex-col gap-2 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Scheduled Dispatch</span>
-                              <span className="font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200">{formatReportScheduleNextRunAt(schedule.next_run_at)}</span>
-                           </div>
-                        </div>
-
-                        <div className="flex shrink-0 xl:ml-4 gap-3 mt-4 xl:mt-0">
-                           <Button variant="outline" size="sm" onClick={() => void onToggleStatus(schedule)} className={cn("font-mono text-[10px] h-10 rounded-xl font-bold bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 w-full sm:w-auto hover:bg-slate-50 dark:hover:bg-white/10 shadow-sm transition-colors px-6 w-full lg:w-auto", schedule.status === "paused" ? "bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-100 dark:hover:bg-amber-900/50" : "")}>
-                             {schedule.status === "active" ? "Pause" : "Resume"}
-                           </Button>
-                        </div>
+            <ul className="divide-y divide-border">
+              {schedules.map((schedule) => {
+                const state = deriveReportScheduleState(schedule);
+                return (
+                  <li key={schedule.id} className="space-y-2 px-4 py-4 text-sm">
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_auto_minmax(0,1.5fr)_minmax(0,1fr)_auto] md:items-center md:gap-6">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">{schedule.source_type === "pack" ? "Report pack" : "Report"}</p>
+                        <p className="truncate font-medium text-foreground">{sourceNames[schedule.source_id] ?? "Report not available"}</p>
+                      </div>
+                      <div>
+                        <StatusPill tone={state.tone}>{state.label}</StatusPill>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Repeats</p>
+                        <p className="text-foreground">{state.recurrenceLabel}</p>
+                        <p className="text-xs text-muted-foreground">{schedule.timezone} · {state.outputLabel}</p>
+                      </div>
+                      <div className="tabular-nums">
+                        <p className="text-xs text-muted-foreground">{state.kind === "overdue" ? "Was due" : "Next run"}</p>
+                        <p className={cn(state.kind === "overdue" ? "text-destructive" : "text-foreground")}>
+                          {formatReportScheduleNextRunAt(schedule.next_run_at)}
+                        </p>
+                      </div>
+                      <div className="flex md:justify-end">
+                        <Button variant="outline" size="sm" onClick={() => void onToggleStatus(schedule)} disabled={!canManage}>
+                          {schedule.status === "active" ? "Pause" : "Resume"}
+                        </Button>
+                      </div>
                     </div>
-                  </MotionItem>
-                ))}
-            </MotionList>
+                    {state.problem ? (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">What is wrong: </span>
+                        {state.problem}
+                      </p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
           )}
-      </div>
+      </section>
       </div>
     </div>
   );
