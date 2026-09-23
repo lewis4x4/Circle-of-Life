@@ -157,7 +157,6 @@ export default function AdminNewScheduleWeekPage() {
         </div>
       </div>
 
-
       {facilityReady ? (
         <Card>
           <CardHeader>

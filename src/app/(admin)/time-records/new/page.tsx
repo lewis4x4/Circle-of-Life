@@ -226,7 +226,6 @@ export default function AdminNewTimeRecordPage() {
         </div>
       </div>
 
-
       {facilityReady ? (
         <Card>
           <CardHeader>

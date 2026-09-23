@@ -295,7 +295,6 @@ export default function AdminNewTrainingCompletionPage() {
         completion rows.
       </p>
 
-
       {facilityReady ? (
         <Card>
           <CardHeader>

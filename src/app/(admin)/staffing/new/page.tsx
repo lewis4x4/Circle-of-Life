@@ -48,10 +48,13 @@ export default function AdminNewStaffingSnapshotPage() {
   const router = useRouter();
   const { selectedFacilityId } = useFacilityStore();
 
-  const [shift, setShift] = useState<ShiftType>("day");
-  const [residentsPresent, setResidentsPresent] = useState("8");
-  const [staffOnDuty, setStaffOnDuty] = useState("4");
-  const [requiredRatio, setRequiredRatio] = useState("5");
+  // Every count starts empty: "8 residents / 4 staff / ratio 5" saved a fake census in one
+  // click, and the required ratio is the facility's rule, not a number this page may hold
+  // (COL-653). No facility has a ratio rule set yet; until one does, the operator enters it.
+  const [shift, setShift] = useState<ShiftType | "">("");
+  const [residentsPresent, setResidentsPresent] = useState("");
+  const [staffOnDuty, setStaffOnDuty] = useState("");
+  const [requiredRatio, setRequiredRatio] = useState("");
   const [snapshotLocal, setSnapshotLocal] = useState(() => toLocalDatetimeValue(new Date()));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,11 @@ export default function AdminNewStaffingSnapshotPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      return;
+    }
+
+    if (!shift) {
+      setError("Choose the shift.");
       return;
     }
 
@@ -177,7 +185,6 @@ export default function AdminNewStaffingSnapshotPage() {
         </div>
       </div>
 
-
       {facilityReady ? (
         <Card>
           <CardHeader>
@@ -222,8 +229,12 @@ export default function AdminNewStaffingSnapshotPage() {
                   id="shift"
                   value={shift}
                   onChange={(e) => setShift(e.target.value as ShiftType)}
+                  required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
+                  <option value="" disabled>
+                    Select shift…
+                  </option>
                   {SHIFT_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
@@ -244,6 +255,7 @@ export default function AdminNewStaffingSnapshotPage() {
                   step={1}
                   value={residentsPresent}
                   onChange={(e) => setResidentsPresent(e.target.value)}
+                  placeholder="Count at snapshot time"
                   required
                 />
               </div>
@@ -260,6 +272,7 @@ export default function AdminNewStaffingSnapshotPage() {
                   step={1}
                   value={staffOnDuty}
                   onChange={(e) => setStaffOnDuty(e.target.value)}
+                  placeholder="Count at snapshot time"
                   required
                 />
               </div>
@@ -276,6 +289,7 @@ export default function AdminNewStaffingSnapshotPage() {
                   step={0.01}
                   value={requiredRatio}
                   onChange={(e) => setRequiredRatio(e.target.value)}
+                  placeholder="From your facility's staffing rule"
                   required
                 />
               </div>

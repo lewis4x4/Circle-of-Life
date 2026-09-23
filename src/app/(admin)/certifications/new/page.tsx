@@ -241,7 +241,6 @@ export default function AdminNewCertificationPage() {
         certification rows (nurses can view the register).
       </p>
 
-
       {facilityReady ? (
         <Card>
           <CardHeader>

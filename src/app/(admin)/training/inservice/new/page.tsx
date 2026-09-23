@@ -230,7 +230,6 @@ export default function AdminNewInserviceSessionPage() {
         sessions.
       </p>
 
-
       {facilityReady ? (
         <Card>
           <CardHeader>

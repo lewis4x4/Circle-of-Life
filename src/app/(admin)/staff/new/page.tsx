@@ -181,7 +181,6 @@ export default function AdminNewStaffPage() {
         </div>
       </div>
 
-
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Requires admin role: owner, org admin, or facility admin (per RLS). Nurses can view roster but cannot
         insert staff records.
