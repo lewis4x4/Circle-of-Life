@@ -9,6 +9,15 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
 import { knowledgeReviewDueLabel, knowledgeReviewOwnerLabel } from "@/lib/knowledge/review-queue-display-copy";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type ReviewFilter = "all" | "ready" | "assigned_to_me" | "unassigned" | "overdue";
 
@@ -33,6 +42,30 @@ const STATUS_HELP: Record<DocumentStatus, string> = {
   ingest_failed: "Indexing failed. Use Re-index after the source issue is fixed.",
 };
 
+const STATUS_LABELS: Record<DocumentStatus, string> = {
+  draft: "Draft",
+  pending_review: "Pending Review",
+  published: "Published",
+  archived: "Archived",
+  ingest_failed: "Ingest Failed",
+};
+
+/**
+ * A status or audience change decides who can read a document (staff search and
+ * Grace), so a select never applies it on its own: the change waits for an
+ * explicit confirmation (COL-662).
+ */
+type PendingDocumentChange =
+  | { kind: "status"; docId: string; title: string; from: DocumentStatus; to: DocumentStatus }
+  | { kind: "audience"; docId: string; title: string; from: DocumentAudience; to: DocumentAudience };
+
+function pendingChangeDescription(change: PendingDocumentChange): string {
+  if (change.kind === "status") {
+    return `${STATUS_LABELS[change.from] ?? change.from} → ${STATUS_LABELS[change.to] ?? change.to}. ${STATUS_HELP[change.to] ?? ""}`.trim();
+  }
+  return `${AUDIENCE_LABELS[change.from] ?? change.from} → ${AUDIENCE_LABELS[change.to] ?? change.to}. This changes who can find it in knowledge search and Grace.`;
+}
+
 const AUDIENCE_LABELS: Record<string, string> = {
   company_wide: "All Staff",
   department_specific: "Department",
@@ -48,6 +81,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [pendingChange, setPendingChange] = useState<PendingDocumentChange | null>(null);
 
   const today = useMemo(() => {
     const value = new Date();
@@ -303,7 +337,11 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                       <select
                         aria-label={`Status for ${doc.title}`}
                         value={doc.status}
-                        onChange={(e) => void handleStatusChange(doc.id, e.target.value as DocumentStatus)}
+                        onChange={(e) => {
+                          const to = e.target.value as DocumentStatus;
+                          if (to === doc.status) return;
+                          setPendingChange({ kind: "status", docId: doc.id, title: doc.title, from: doc.status as DocumentStatus, to });
+                        }}
                         className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer ${STATUS_COLORS[doc.status] ?? STATUS_COLORS.draft}`}
                       >
                         <option value="draft">Draft</option>
@@ -329,7 +367,11 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                     <select
                       aria-label={`Audience for ${doc.title}`}
                       value={doc.audience}
-                      onChange={(e) => void handleAudienceChange(doc.id, e.target.value as DocumentAudience)}
+                      onChange={(e) => {
+                        const to = e.target.value as DocumentAudience;
+                        if (to === doc.audience) return;
+                        setPendingChange({ kind: "audience", docId: doc.id, title: doc.title, from: doc.audience as DocumentAudience, to });
+                      }}
                       className="text-xs rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1 cursor-pointer"
                     >
                       {Object.entries(AUDIENCE_LABELS).map(([val, label]) => (
@@ -393,6 +435,43 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
           </table>
         </HorizontalScroll>
       </div>
+
+      <Dialog
+        open={pendingChange !== null}
+        onOpenChange={(open) => {
+          if (!open && actionLoading === null) setPendingChange(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {pendingChange ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {pendingChange.kind === "status" ? "Change status" : "Change audience"} for {pendingChange.title}?
+                </DialogTitle>
+                <DialogDescription>{pendingChangeDescription(pendingChange)}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setPendingChange(null)} disabled={actionLoading !== null}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={actionLoading !== null}
+                  onClick={async () => {
+                    const change = pendingChange;
+                    if (change.kind === "status") await handleStatusChange(change.docId, change.to);
+                    else await handleAudienceChange(change.docId, change.to);
+                    setPendingChange(null);
+                  }}
+                >
+                  {pendingChange.kind === "status" ? `Set to ${STATUS_LABELS[pendingChange.to] ?? pendingChange.to}` : "Change audience"}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
