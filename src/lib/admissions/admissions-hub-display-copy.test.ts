@@ -5,9 +5,7 @@ import {
   ADMISSIONS_HUB_NO_NAME_COPY,
   ADMISSIONS_HUB_NO_RESIDENT_COPY,
   admissionsHubMetricLoadingCopy,
-  admissionsHubMetricNoFacilityCopy,
   admissionsHubMetricValue,
-  admissionsHubNoFacilityNotice,
   admissionsHubScopedEmptyNotice,
   admissionsHubScopeLabel,
   formatAdmissionsHubConferenceScheduledDate,
@@ -51,20 +49,14 @@ describe("formatAdmissionsHubRelativeDate", () => {
 });
 
 describe("admissionsHubMetricValue", () => {
-  it("names the facility gap before loading or counts", () => {
-    expect(admissionsHubMetricValue(4, { noFacility: true, loading: false })).toBe(
-      admissionsHubMetricNoFacilityCopy(),
-    );
-  });
-
   it("names a loading gap before showing counts", () => {
-    expect(admissionsHubMetricValue(4, { noFacility: false, loading: true })).toBe(
+    expect(admissionsHubMetricValue(4, { loading: true })).toBe(
       admissionsHubMetricLoadingCopy(),
     );
   });
 
   it("keeps real zeros once loaded", () => {
-    expect(admissionsHubMetricValue(0, { noFacility: false, loading: false })).toBe(0);
+    expect(admissionsHubMetricValue(0, { loading: false })).toBe(0);
   });
 });
 
@@ -197,11 +189,5 @@ describe("admissionsHubScopeLabel", () => {
     expect(admissionsHubScopeLabel("today")).toBe("today");
     expect(admissionsHubScopeLabel("week")).toBe("this week");
     expect(admissionsHubScopeLabel("month")).toBe("this month");
-  });
-});
-
-describe("admissionsHubNoFacilityNotice", () => {
-  it("tells trainers to pick a facility in the header", () => {
-    expect(admissionsHubNoFacilityNotice()).toContain("Select a facility");
   });
 });
