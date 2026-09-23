@@ -38,6 +38,15 @@ describe("require-kpi-info ESLint rule", () => {
     expect(messages[0]!.message).toMatch(/info tooltip/i);
   });
 
+  it("treats a MetricState as computed and requires info (COL-649)", () => {
+    const messages = lint(
+      `import { KPITile } from "./KPITile";
+       const s = { status: "no_data" };
+       export const X = () => <KPITile label="x" state={s} />;`,
+    );
+    expect(messages).toHaveLength(1);
+  });
+
   it("allows computed value when info is provided", () => {
     const messages = lint(
       `import { KPITile } from "./KPITile";
