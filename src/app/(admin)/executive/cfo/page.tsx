@@ -26,6 +26,9 @@ import {
 import { useExecRoleKpis } from "@/hooks/useExecRoleKpis";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
+  EXECUTIVE_AR_TILE_LABEL,
+  EXECUTIVE_OPEN_INVOICES_TILE_LABEL,
+  executiveArDraftsCaption,
   formatExecutiveArOutstandingCents,
   formatExecutiveCertsExpiringCount,
   formatExecutiveOccupancyPctWithSuffix,
@@ -78,10 +81,11 @@ export default function CfoDashboardPage() {
   const occupancyFootnote = executivePortfolioOccupancyFootnote(occupancyScope);
   const invoicesValue = loading ? "…" : formatExecutiveOpenInvoiceCount(openInvoices);
   const certsValue = loading ? "…" : formatExecutiveCertsExpiringCount(certsExpiring);
+  const draftsCaption = loading ? null : executiveArDraftsCaption(kpis?.financial);
 
   const lanes: OfficerLane[] = [
     {
-      stat: openInvoices == null ? formatExecutiveOpenInvoiceCount(null) : `${openInvoices} open invoices`,
+      stat: openInvoices == null ? formatExecutiveOpenInvoiceCount(null) : `${openInvoices} open sent invoices`,
       title: "Finance hub",
       description: "Billed revenue, labor pressure, and monthly financials.",
       href: "/admin/finance",
@@ -135,9 +139,9 @@ export default function CfoDashboardPage() {
 
         <div className="flex flex-col gap-2">
           <OfficerKpiStrip>
-            <OfficerKpiTile label="Total AR outstanding" value={arValue} />
+            <OfficerKpiTile label={EXECUTIVE_AR_TILE_LABEL} value={arValue} caption={draftsCaption} />
             <OfficerKpiTile label={occupancyLabel} value={occValue} />
-            <OfficerKpiTile label="Open invoices" value={invoicesValue} />
+            <OfficerKpiTile label={EXECUTIVE_OPEN_INVOICES_TILE_LABEL} value={invoicesValue} />
             <OfficerKpiTile label="Certs expiring 30d" value={certsValue} tone={officerAlarmTone(certsExpiring, "warning")} />
           </OfficerKpiStrip>
           {occupancyFootnote ? (

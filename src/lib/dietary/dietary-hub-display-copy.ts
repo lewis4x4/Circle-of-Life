@@ -4,6 +4,7 @@
  */
 
 import { DIET_ORDERS_HUB_LIMIT } from "@/lib/dietary/load-dietary-hub-bootstrap";
+import { canClaimAllClear, metricFromRead, type MetricState } from "@/lib/metrics/metric-state";
 
 export const DIETARY_HUB_NO_RESIDENT_COPY = "No resident posted";
 
@@ -28,4 +29,41 @@ export function formatDietaryHubResidentDisplay(
     return DIETARY_HUB_NO_RESIDENT_COPY;
   }
   return combined;
+}
+
+/**
+ * "Active diet orders" tile (COL-649): a count only once a facility's orders
+ * were actually read; otherwise the missing facility, the load or the failure.
+ * The attention queue's "All Clear" is gated separately by
+ * dietaryAttentionQueueIsClear (canClaimAllClear over loaded orders).
+ */
+export function dietaryActiveOrdersMetric(input: {
+  facilityReady: boolean;
+  loading: boolean;
+  error: string | null;
+  count: number;
+}): MetricState<number> {
+  return metricFromRead({
+    scopeReady: input.facilityReady,
+    loading: input.loading,
+    error: input.error,
+    value: input.count,
+  });
+}
+
+/** "All Clear" on the attention queue: orders were read and none need attention. */
+export function dietaryAttentionQueueIsClear(input: {
+  facilityReady: boolean;
+  loading: boolean;
+  error: string | null;
+  ordersInView: number;
+  attentionCount: number;
+}): boolean {
+  return canClaimAllClear({
+    scopeReady: input.facilityReady,
+    loading: input.loading,
+    error: input.error,
+    scopeSize: input.ordersInView,
+    issueCount: input.attentionCount,
+  });
 }

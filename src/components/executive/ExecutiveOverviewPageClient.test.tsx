@@ -469,10 +469,10 @@ describe("ExecutiveOverviewPageClient evidence claims", () => {
     );
 
     expect(screen.getByText("$0")).toBeInTheDocument();
-    expect(screen.getAllByText(/Invoices dated 2026-09-01 through 2026-09-15\./).length)
+    expect(screen.getAllByText(/Sent invoices dated 2026-09-01 through 2026-09-15\./).length)
       .toBeGreaterThanOrEqual(1);
     expect(
-      screen.getAllByText(/Draft and voided invoices are not included\./).length,
+      screen.getAllByText(/Billed means sent.*Drafts are not billed until they are sent/).length,
     ).toBeGreaterThanOrEqual(1);
   });
 

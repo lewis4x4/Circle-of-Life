@@ -144,8 +144,30 @@ describe("live standup behavior", () => {
     vi.setSystemTime(new Date("2026-09-05T16:00:00Z"));
     expect(summary(await fetchExecutiveStandupLive(client({}).supabase, organizationId, null))).toMatchSnapshot();
     const result = await fetchExecutiveStandupLive(client({ facilities: [{ id: facilityId(1), name: "Empty facility", total_licensed_beds: 10, organization_id: organizationId, deleted_at: null }] }).supabase, organizationId, null);
-    expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBe(10);
-    expect(result.facilities[0].metrics.average_rent_cents.valueNumeric).toBeNull();
+    // COL-649: an empty roster is not "Census 0 · high" or "10 beds open".
+    const empty = result.facilities[0];
+    expect(empty.metrics.current_total_census.valueNumeric).toBeNull();
+    expect(empty.metrics.current_total_census.confidenceBand).toBe("low");
+    expect(empty.metrics.total_beds_open.valueNumeric).toBeNull();
+    expect(empty.metrics.overtime_hours.valueNumeric).toBeNull();
+    expect(empty.topConcern).toBe("Not enough recorded to judge pressure");
+    expect(empty.metrics.average_rent_cents.valueNumeric).toBeNull();
+  });
+
+  it("marks a total over some facilities as partial, never high confidence (COL-649)", async () => {
+    const now = new Date("2026-09-05T16:00:00Z");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    const tables = fixture(now);
+    // Facility 2 has no residents on the roster.
+    tables.residents = (tables.residents ?? []).filter((row) => row.facility_id !== facilityId(2));
+    const result = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
+    const totals = result.facilities.find((f) => f.facilityName === "Totals")!;
+    expect(totals.metrics.current_total_census.confidenceBand).toBe("low");
+    expect(totals.metrics.current_total_census.overrideNote).toBe("4 of 5 facilities reporting.");
+    const empty = result.facilities.find((f) => f.facilityId === facilityId(2))!;
+    expect(empty.metrics.current_total_census.valueNumeric).toBeNull();
+    expect(empty.topConcern).toBe("Not enough recorded to judge pressure");
   });
 
   it.each(["facilities", "invoices", "residents", "staff", "time_records", "beds", "staff_attendance_events", "staff_requisitions", "admission_cases", "referral_outreach_activities", "referral_leads"])("continues to reject %s query errors", async (table) => {
