@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 
 /**
@@ -57,6 +58,14 @@ import { cn } from "@/lib/utils";
  *     value={openClaimsCount}
  *     attentionTone="danger"
  *   />
+ *
+ * Honest states (COL-649):
+ *   Pass `state` (a `MetricState`) instead of `value` when the count comes from
+ *   a read that can fail, needs a facility, or can have nothing to count. A
+ *   non-value state renders its phrase ("Unavailable", "Select a facility",
+ *   "No data") in muted text and never carries attention chrome.
+ *
+ *   <StatCard label="Open claims" state={metricFromCount({ count, error })} attentionTone="danger" />
  */
 
 export type StatCardAttentionTone = "warning" | "danger";
@@ -64,8 +73,12 @@ export type StatCardAttentionTone = "warning" | "danger";
 export type StatCardProps = {
   /** Caption-style label sitting above the value (11px uppercase). */
   label: string;
-  /** The number / string the tile is reporting. */
-  value: number | string;
+  /** The number / string the tile is reporting. Prefer `state` for read-backed figures. */
+  value?: number | string;
+  /** What the read actually knows; a non-value state renders its phrase instead of a number. */
+  state?: MetricState<number | string>;
+  /** Formats `state.value`. Defaults to `String`. */
+  format?: (value: number | string) => string;
   /** Optional inline icon — rendered at `size-3.5` inside the label row. */
   icon?: React.ReactNode;
   /**
@@ -93,7 +106,7 @@ export type StatCardProps = {
 };
 
 function shouldApplyAttention(
-  value: StatCardProps["value"],
+  value: number | string,
   attentionWhen: boolean | undefined,
   attentionTone: StatCardAttentionTone | undefined,
 ): boolean {
@@ -121,13 +134,19 @@ const VALUE_TEXT_BY_TONE: Record<StatCardAttentionTone, string> = {
 export function StatCard({
   label,
   value,
+  state,
+  format,
   icon,
   attentionTone,
   attentionWhen,
   description,
   className,
 }: StatCardProps) {
-  const isAttention = shouldApplyAttention(value, attentionWhen, attentionTone);
+  const placeholder = state && state.status !== "value" ? formatMetric(state) : null;
+  const shownValue: number | string =
+    state?.status === "value" ? (format ? format(state.value) : state.value) : (value ?? "—");
+  const rawValue = state?.status === "value" ? state.value : shownValue;
+  const isAttention = placeholder === null && shouldApplyAttention(rawValue, attentionWhen, attentionTone);
   const tone = isAttention ? attentionTone : undefined;
 
   return (
@@ -138,6 +157,7 @@ export function StatCard({
         className,
       )}
       data-attention={isAttention ? "true" : "false"}
+      data-metric-state={state?.status}
     >
       <span
         className={cn(
@@ -152,14 +172,18 @@ export function StatCard({
         ) : null}
         {label}
       </span>
-      <span
-        className={cn(
-          "text-2xl font-semibold tabular-nums tracking-tight",
-          tone ? VALUE_TEXT_BY_TONE[tone] : "text-foreground",
-        )}
-      >
-        {value}
-      </span>
+      {placeholder !== null ? (
+        <span className="text-base font-medium leading-8 text-muted-foreground">{placeholder}</span>
+      ) : (
+        <span
+          className={cn(
+            "text-2xl font-semibold tabular-nums tracking-tight",
+            tone ? VALUE_TEXT_BY_TONE[tone] : "text-foreground",
+          )}
+        >
+          {shownValue}
+        </span>
+      )}
       {description ? (
         <span className="text-[12px] text-muted-foreground">{description}</span>
       ) : null}

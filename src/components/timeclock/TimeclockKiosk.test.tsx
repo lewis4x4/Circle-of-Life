@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { KIOSK_COPY } from "@/lib/timeclock/kiosk-contract";
@@ -28,6 +29,23 @@ beforeEach(() => {
 });
 
 describe("TimeclockKiosk", () => {
+  it("renders the same first HTML whatever the clock says, so hydration cannot mismatch (COL-659)", () => {
+    const fetchImpl = vi.fn();
+    const server = renderToString(
+      <TimeclockKiosk store={store} fetchImpl={fetchImpl as unknown as typeof fetch} now={() => new Date("2026-09-16T11:02:00.000Z")} />,
+    );
+    const client = renderToString(
+      <TimeclockKiosk store={store} fetchImpl={fetchImpl as unknown as typeof fetch} now={() => new Date("2026-09-16T11:03:30.000Z")} />,
+    );
+    expect(client).toBe(server);
+  });
+
+  it("shows the live clock once mounted", async () => {
+    const fetchImpl = vi.fn();
+    render(<TimeclockKiosk store={store} fetchImpl={fetchImpl as unknown as typeof fetch} now={NOW} online />);
+    await waitFor(() => expect(screen.getByTestId("kiosk-clock")).toHaveTextContent("7:02 a.m."));
+  });
+
   it("shows the enrollment screen without a device token and confirms the facility after enrolling", async () => {
     const empty = createMemoryKioskStore({ device: null });
     const fetchImpl = vi.fn(async () => json(200, { device_id: "d", token: "new-token", facility_id: "f1", facility_name: "Synthetic facility 0001" }));

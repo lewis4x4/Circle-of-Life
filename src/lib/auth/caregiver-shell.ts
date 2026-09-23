@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole, isOnboardingAppRole, type AuthClaimUser } from "@/lib/auth/app-role";
+import { getAppRoleFromClaims, isAdminEligibleAppRole, isMedTechRole, isOnboardingAppRole, type AuthClaimUser, isDietaryRole } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath } from "@/lib/auth/caregiver-route-access";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 
@@ -93,6 +93,11 @@ export function caregiverShellAccessRedirect(request: NextRequest, user: AuthCla
     return null;
   }
   if (isAdminEligibleAppRole(role)) {
+    return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
+  }
+
+  // A signed-in cook goes to its own app, not to login (COL-627 matrix).
+  if (isDietaryRole(role)) {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }
 

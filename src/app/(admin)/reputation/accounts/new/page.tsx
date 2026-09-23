@@ -24,10 +24,17 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Platform = Database["public"]["Enums"]["reputation_platform"];
 
 const PLATFORMS: Platform[] = ["google_business", "yelp", "facebook", "caring_com", "other"];
+
+const PLATFORM_LABELS: Record<string, string> = {
+  google_business: "Google Business Profile",
+  caring_com: "Caring.com",
+  other: "Other",
+};
 
 export default function AdminReputationAccountNewPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -35,7 +42,7 @@ export default function AdminReputationAccountNewPage() {
   const { user, organizationId, loading: authLoading } = useHavenAuth();
   const { selectedFacilityId } = useFacilityStore();
   const [label, setLabel] = useState("");
-  const [platform, setPlatform] = useState<Platform>("other");
+  const [platform, setPlatform] = useState<Platform | "">("");
   const [externalPlaceId, setExternalPlaceId] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,6 +72,10 @@ export default function AdminReputationAccountNewPage() {
     e.preventDefault();
     if (submitBlocked) return;
     if (!user || !organizationId || !selectedFacilityId) return;
+    if (!platform) {
+      setFetchError("Choose the platform.");
+      return;
+    }
 
     setSaving(true);
     setFetchError(null);
@@ -154,11 +165,15 @@ export default function AdminReputationAccountNewPage() {
                 className={selectClass}
                 value={platform}
                 onChange={(e) => setPlatform(e.target.value as Platform)}
+                required
                 disabled={Boolean(organizationGapMessage) || authLoading}
               >
+                <option value="" disabled>
+                  Select platform…
+                </option>
                 {PLATFORMS.map((p) => (
                   <option key={p} value={p}>
-                    {p.replace(/_/g, " ")}
+                    {enumLabel(p, { overrides: PLATFORM_LABELS })}
                   </option>
                 ))}
               </select>

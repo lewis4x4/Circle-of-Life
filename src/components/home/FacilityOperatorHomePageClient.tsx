@@ -379,6 +379,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
             available={data.presenceAvailable}
             licensedBeds={data.snapshot?.licensedBeds ?? null}
             standUpCensus={data.standUpCensus}
+            facilityName={feed.facilityName}
           />
           <FacilityRoundingCard facilityId={facilityId} facilityName={feed.facilityName} timeZone={feed.timezone} rounding={data.rounding} />
           {notesLive ? <NotesPanel facilityId={facilityId} currentUserId={currentUserId} onTap={data.notesOnTap} onChanged={refresh} /> : null}

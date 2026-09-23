@@ -99,7 +99,7 @@ function formatMetricDelta(left: StandupMetricRow | undefined, right: StandupMet
 
 function methodologyNotes(): string[] {
   return [
-    "Current AR and uncollected AR totals come from open invoice balances in the selected organization scope.",
+    "Current AR is everything owed if every resident pays: sent invoices with a balance plus drafts not yet sent. Billing's Outstanding AR counts sent invoices only, so the two differ by the drafts. Uncollected AR is the part of Current AR past its due date. Weeks published before 2026-09-23 used the same statuses, so week-over-week AR deltas compare like with like.",
     "Average rent is derived from current-month invoices, with resident monthly rate fallback when invoice coverage is incomplete.",
     "Bed availability uses standup bed classifications plus temporary block status so open-bed math reflects real placement constraints.",
     "Forecast rows represent planned commitments for the week and should not be read as live census or discharge facts.",

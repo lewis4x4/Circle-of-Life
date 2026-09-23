@@ -28,13 +28,32 @@ export const BILLED_INVOICE_STATUSES = [...RECEIVABLE_INVOICE_STATUSES, "paid"] 
 
 /**
  * Not yet settled: drafts plus receivables. Used where work can still happen on
- * an invoice (recording a payment against it, ordering the ledger), not for any
- * money total.
+ * an invoice (recording a payment against it, ordering the ledger). The one
+ * money total it feeds is Stand Up Current AR, by ruling (below).
  */
 export const UNSETTLED_INVOICE_STATUSES = [
   ...NOT_YET_SENT_INVOICE_STATUSES,
   ...RECEIVABLE_INVOICE_STATUSES,
 ] as const;
+
+/**
+ * Stand Up "Current AR" (COL-374 / COL-665). Brian's ruling, 2026-09-23:
+ * "CURRENT AR IS THE AMOUNT WE SHOULD OBTAIN 'IF' EVERYONE PAYS." So it is every
+ * open charge, sent or not: the receivable plus the drafts. Billing's
+ * "Outstanding AR" stays sent-only with the drafts beside it; the two add up to
+ * this figure, so they differ by definition and each label says so.
+ */
+export const CURRENT_AR_INVOICE_STATUSES = UNSETTLED_INVOICE_STATUSES;
+
+/** What Stand Up Current AR counts, in words. */
+export const CURRENT_AR_DEFINITION_COPY =
+  "Everything owed if every resident pays: sent invoices with a balance plus drafts not yet sent. Billing's Outstanding AR counts sent invoices only.";
+
+/** Per-scope note for a Current AR figure: how much of it has not been sent yet. */
+export function currentArNotYetSentNote(count: number, formattedCents: string): string {
+  if (count <= 0) return "Includes no drafts; every invoice in it has been sent.";
+  return `Includes ${formattedCents} in ${count} draft${count === 1 ? "" : "s"} not yet sent.`;
+}
 
 export type ReceivableInvoiceStatus = (typeof RECEIVABLE_INVOICE_STATUSES)[number];
 

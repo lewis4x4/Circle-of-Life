@@ -210,7 +210,7 @@ export default function AdminTrainingHubPage() {
   const [attestationFormSuccess, setAttestationFormSuccess] = useState<string | null>(null);
   const [attestationSubmitting, setAttestationSubmitting] = useState(false);
   const [attestationStaffId, setAttestationStaffId] = useState("");
-  const [attestationType, setAttestationType] = useState("med_tech_self");
+  const [attestationType, setAttestationType] = useState("");
   const [attestationText, setAttestationText] = useState("");
   const [attestationEffectiveDate, setAttestationEffectiveDate] = useState(
     format(new Date(), "yyyy-MM-dd"),
@@ -407,7 +407,11 @@ export default function AdminTrainingHubPage() {
       setAttestationFormError("Selected staff member is not available.");
       return;
     }
-    if (!attestationType || !/^[a-z0-9_]+$/.test(attestationType)) {
+    if (!attestationType) {
+      setAttestationFormError("Choose the attestation type.");
+      return;
+    }
+    if (!/^[a-z0-9_]+$/.test(attestationType)) {
       setAttestationFormError("Attestation type must use lowercase letters, numbers, and underscores.");
       return;
     }
@@ -850,6 +854,9 @@ export default function AdminTrainingHubPage() {
                     disabled={attestationSubmitting}
                     className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
                   >
+                    <option value="" disabled>
+                      Select type…
+                    </option>
                     <option value="med_tech_self">Medication Tech self-attestation</option>
                     <option value="general_staff">General staff attestation</option>
                   </select>
@@ -895,7 +902,7 @@ export default function AdminTrainingHubPage() {
                     onChange={(e) => setAttestationSignerName(e.target.value)}
                     disabled={attestationSubmitting}
                     className="w-full rounded-md border border-input bg-background px-2 py-2 text-xs text-foreground"
-                    placeholder="Jane Supervisor"
+                    placeholder="Name of the person signing"
                   />
                 </label>
               </div>

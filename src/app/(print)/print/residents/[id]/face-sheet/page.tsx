@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 
 import {
   ResidentFallRiskPresentation,
+  hasFallRiskAssessment,
   hospiceElectionPhrase,
   polstMolstFriendly,
   resolveCodeStatusPresentation,
@@ -308,7 +309,7 @@ export default function ResidentFaceSheetPage() {
             </Field>
             <Field label="Diet order">{diagnosisDisplayTitle(detail.dietOrder ?? "") || "Not recorded"}</Field>
             <Field label="Fall risk">
-              <ResidentFallRiskPresentation raw={detail.fallRiskRaw} />
+              <ResidentFallRiskPresentation raw={detail.fallRiskRaw} assessed={hasFallRiskAssessment(detail.assessmentsUpcomingJson)} />
             </Field>
           </dl>
         </section>

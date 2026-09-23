@@ -249,7 +249,7 @@ describe("AssessmentEntryPage instrument picker", () => {
     render(<AssessmentEntryPage />);
     const katz = await screen.findByRole("button", { name: /Katz ADL Index/i });
     expect(katz).toHaveTextContent("Score range 0–2");
-    expect(katz).toHaveTextContent("Every 90 days (Haven default interval)");
+    expect(katz).toHaveTextContent("Every 90 days (standard schedule)");
     expect(screen.getByText(/not facility-configured schedules/i)).toBeInTheDocument();
   });
 

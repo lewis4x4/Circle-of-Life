@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
@@ -306,6 +306,7 @@ export default function AdminPayrollHubPage() {
            <p className="text-sm text-muted-foreground">No batches match this search.</p>
         ) : (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <TableRowList label="Payroll batches">
             <TableRowHeader>
               <span className="flex-[2] min-w-0">Period</span>
               <span className="flex-1 min-w-0">Provider</span>
@@ -332,6 +333,7 @@ export default function AdminPayrollHubPage() {
                 </MotionItem>
               ))}
             </MotionList>
+            </TableRowList>
           </div>
         )}
       </div>
