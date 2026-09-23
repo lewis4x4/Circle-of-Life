@@ -169,6 +169,7 @@ function ScopedLiveBoard() {
           <LiveBoardSummary
             counts={counts}
             rosterCount={data.roster.length}
+            loadState={data.loadState}
             filter={filter}
             onFilterChange={setFilter}
           />

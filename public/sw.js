@@ -1,6 +1,5 @@
 /* Minimal PWA service worker with caregiver rounds queue, care event queue, and background sync. */
 
-const STATIC_CACHE = "haven-static-v5";
 const DB_NAME = "haven-offline";
 const DB_VERSION = 2;
 const STORE_NAME = "roundingQueue";
@@ -8,15 +7,9 @@ const CARE_EVENT_STORE_NAME = "careEventQueue";
 const SYNC_TAG = "haven-rounding-sync";
 const CARE_EVENT_SYNC_TAG = "haven-care-event-sync";
 const CARE_EVENT_SUBMIT_ENDPOINT = "/api/care-events/submit";
-const STATIC_ASSETS = ["/manifest.webmanifest", "/icon.svg", "/apple-icon.svg"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .catch(() => undefined)
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
@@ -24,7 +17,7 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => ["haven-static-v3", "haven-runtime-v3", "haven-rounding-v3", "haven-static-v4"].includes(key))
+        .filter((key) => ["haven-static-v3", "haven-runtime-v3", "haven-rounding-v3", "haven-static-v4", "haven-static-v5"].includes(key))
         .map((key) => caches.delete(key)),
     );
     await self.clients.claim();
@@ -56,21 +49,9 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(self.clients.openWindow(url));
 });
 
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  if (request.method !== "GET") return;
-
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-
-  if (STATIC_ASSETS.includes(url.pathname)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
-    return;
-  }
-
-  // Authenticated HTML and API responses must not survive an operator change.
-
-});
+// No fetch handler, on purpose (COL-674). A handler that answers nothing still
+// makes the browser start this worker and route every page, RSC and API request
+// through it. Authenticated HTML and API responses must never be cached here.
 
 self.addEventListener("sync", (event) => {
   if (event.tag === SYNC_TAG) {
@@ -165,17 +146,6 @@ self.addEventListener("message", (event) => {
     })());
   }
 });
-
-async function cacheFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response && response.ok) {
-    cache.put(request, response.clone());
-  }
-  return response;
-}
 
 function openQueueDb() {
   return new Promise((resolve, reject) => {

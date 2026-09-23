@@ -97,6 +97,7 @@ export function TaxonomyPacketPageClient() {
   if (loadError) {
     return (
       <div className="space-y-4 p-6">
+        <h1 className="text-lg font-semibold text-foreground">Care Events: taxonomy review</h1>
         <p role="alert" className="text-base font-medium text-destructive">
           {loadError}
         </p>
@@ -110,10 +111,13 @@ export function TaxonomyPacketPageClient() {
   return (
     <PrintGate supabase={supabase} kind="taxonomy_packet" facilityId={selectedFacilityId}>
       {facility === null || effects === null ? (
-        <p role="status" className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
-          Building the packet
-        </p>
+        <>
+          <h1 className="sr-only">Care Events: taxonomy review</h1>
+          <p role="status" className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+            Building the packet
+          </p>
+        </>
       ) : (
         <TaxonomyPacketSheet facility={facility} effects={effects} />
       )}

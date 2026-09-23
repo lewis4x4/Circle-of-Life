@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils"
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
+    // The rule is enforced where <Label> is used (it is a configured
+    // labelComponent); the primitive only forwards htmlFor / children.
+    // eslint-disable-next-line jsx-a11y/label-has-associated-control
     <label
       data-slot="label"
       className={cn(

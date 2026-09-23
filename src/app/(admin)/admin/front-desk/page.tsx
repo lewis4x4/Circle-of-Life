@@ -28,6 +28,7 @@ import { VISITABLE_RESIDENT_STATUSES, type VisitorSignInDraft } from "@/lib/regi
 import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { frontDeskSummaryLine } from "@/lib/registers/log-summary-lines";
 import { cn } from "@/lib/utils";
 
 const ET_FMT = new Intl.DateTimeFormat("en-US", {
@@ -53,7 +54,7 @@ export default function AdminFrontDeskPage() {
 
   const [tab, setTab] = useState<Tab>("visitors");
   const [residents, setResidents] = useState<ResidentMini[]>([]);
-  const [onSiteCount, setOnSiteCount] = useState(0);
+  const [onSiteCount, setOnSiteCount] = useState<number | null>(null);
   const [organizationId, setOrganizationId] = useState("");
   const [packages, setPackages] = useState<PackageEntryRow[]>([]);
   const [calls, setCalls] = useState<FamilyCallEntryRow[]>([]);
@@ -80,6 +81,7 @@ export default function AdminFrontDeskPage() {
   const [savingCall, setSavingCall] = useState(false);
 
   const load = useCallback(async () => {
+    setOnSiteCount(null);
     if (!facilityReady) {
       setPackages([]);
       setCalls([]);
@@ -271,6 +273,14 @@ export default function AdminFrontDeskPage() {
     [packages],
   );
 
+  const summaryLine = frontDeskSummaryLine({
+    facilityReady,
+    loading: isLoading,
+    error: loadError,
+    onSiteCount,
+    pendingPackages,
+  });
+
   const inputCls =
     "rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground";
 
@@ -278,13 +288,13 @@ export default function AdminFrontDeskPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-2">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <Users className="h-8 w-8 text-info shrink-0" aria-hidden />
             Front desk
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Visitor sign-in with health screening, package &amp; mail custody, and the family
-            phone-call log.{facilityReady ? ` ${onSiteCount} on site · ${pendingPackages} packages awaiting pickup.` : null}
+            phone-call log.{summaryLine ? ` ${summaryLine}` : ""}
           </p>
         </header>
 

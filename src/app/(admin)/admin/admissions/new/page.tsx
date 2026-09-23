@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { QuietDatePicker, formatQuietIsoForDisplay } from "@/components/ui/quiet-date-picker";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { loadAuthorizedReferralLeads } from "@/lib/referrals/referral-authority";
@@ -227,7 +228,7 @@ const ANTICIPATED_PAYER_OPTIONS: { value: AnticipatedPayerDb; label: string }[] 
 type ReferralSourceOpt = { id: string; name: string };
 
 function roomTypeShortLabel(rt: string | null): string {
-  if (rt === "semi_private") return "Semi-private";
+  if (rt === "semi_private") return "Companion";
   if (rt === "shared") return "Shared";
   return "Private";
 }
@@ -941,7 +942,7 @@ function AdmissionsNewInner() {
       return;
     }
     if (!actionFacilityId || !isValidFacilityIdForQuery(actionFacilityId)) {
-      setModalError("Choose a facility in the header.");
+      setModalError("No facility is in scope for this intake.");
       return;
     }
     const { data: fac, error: facErr } = await supabase
@@ -1032,7 +1033,7 @@ function AdmissionsNewInner() {
   async function finalize(intent: "draft" | "submit") {
     setError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header.");
+      setError("No facility is in scope for this intake.");
       return;
     }
     if (duplicateBlocked) {
@@ -1323,15 +1324,13 @@ function AdmissionsNewInner() {
               Start the intake workflow for a resident at <span className="text-foreground">{facilityDisplayName}</span>.
             </>
           ) : (
-            "Start the intake workflow for a resident. Choose a facility in the header to continue."
+            "Start the intake workflow for a resident."
           )
         }
       />
 
       {noFacility ? (
-        <p className="text-sm text-amber-800 dark:text-amber-200" role="status">
-          Select a facility in the header to continue.
-        </p>
+        <FacilityGateNotice reason="An admission case opens at one building, against its beds and rates." />
       ) : (
         <form
           onSubmit={(e) => void handleCreateCaseSubmit(e)}

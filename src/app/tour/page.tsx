@@ -9,7 +9,7 @@ import {
   Utensils,
   CheckCircle2
 } from "lucide-react";
-import { FACILITIES } from "@/lib/data/facilities-data";
+import { FACILITIES, PUBLIC_AVAILABILITY_COPY } from "@/lib/data/facilities-data";
 import Image from "next/image";
 
 export default function TourPage() {
@@ -45,7 +45,7 @@ export default function TourPage() {
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-widest border border-amber-300/30">
-              <Calendar className="w-3.5 h-3.5 text-[#C85A32]" />
+              <Calendar className="w-3.5 h-3.5 text-[#B04F2C]" />
               <span>Complimentary VIP Family Visit</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
@@ -95,7 +95,7 @@ export default function TourPage() {
                             selectedFacility === f.id ? "text-[#E5A952] font-semibold" : "text-stone-500"
                           }`}
                         >
-                          {f.address.city}, FL • {f.availableBeds} Suites Available
+                          {f.address.city}, FL • {PUBLIC_AVAILABILITY_COPY}
                         </div>
                       </button>
                     ))}
@@ -138,7 +138,7 @@ export default function TourPage() {
                 {/* Lunch Option */}
                 <div className="p-5 rounded-2xl bg-[#FAF7F2] border border-stone-200 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-[#1C2822]">
-                    <Utensils className="w-4 h-4 text-[#C85A32]" />
+                    <Utensils className="w-4 h-4 text-[#B04F2C]" />
                     <span>Complimentary Chef-Prepared Lunch:</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-xs">
@@ -147,7 +147,7 @@ export default function TourPage() {
                       onClick={() => setLunchOption("yes-2")}
                       className={`py-3 px-2 rounded-xl font-bold text-center border transition-all ${
                         lunchOption === "yes-2"
-                          ? "bg-[#C85A32] text-white border-[#C85A32] shadow-sm"
+                          ? "bg-[#B04F2C] text-white border-[#C85A32] shadow-sm"
                           : "bg-white border-stone-300 text-stone-700"
                       }`}
                     >
@@ -158,7 +158,7 @@ export default function TourPage() {
                       onClick={() => setLunchOption("coffee")}
                       className={`py-3 px-2 rounded-xl font-bold text-center border transition-all ${
                         lunchOption === "coffee"
-                          ? "bg-[#C85A32] text-white border-[#C85A32] shadow-sm"
+                          ? "bg-[#B04F2C] text-white border-[#C85A32] shadow-sm"
                           : "bg-white border-stone-300 text-stone-700"
                       }`}
                     >
@@ -169,7 +169,7 @@ export default function TourPage() {
                       onClick={() => setLunchOption("tour-only")}
                       className={`py-3 px-2 rounded-xl font-bold text-center border transition-all ${
                         lunchOption === "tour-only"
-                          ? "bg-[#C85A32] text-white border-[#C85A32] shadow-sm"
+                          ? "bg-[#B04F2C] text-white border-[#C85A32] shadow-sm"
                           : "bg-white border-stone-300 text-stone-700"
                       }`}
                     >
@@ -255,7 +255,7 @@ export default function TourPage() {
                   </div>
                   <div className="flex justify-between text-stone-600">
                     <span>Direct Phone:</span>
-                    <span className="font-bold text-[#C85A32]">{targetFacility.phone}</span>
+                    <span className="font-bold text-[#B04F2C]">{targetFacility.phone}</span>
                   </div>
                 </div>
 

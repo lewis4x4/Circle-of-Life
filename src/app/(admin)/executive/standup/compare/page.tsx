@@ -135,9 +135,9 @@ export default function ExecutiveStandupComparePage() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <ArrowRightLeft className="h-3.5 w-3.5" />
-                Standup compare
+                Stand Up compare
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Executive Standup Comparison</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Stand Up compare</h1>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
                 Compare any two weekly standup packets without going back to spreadsheet side-by-side review.
               </p>

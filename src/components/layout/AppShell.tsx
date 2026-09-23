@@ -80,14 +80,17 @@ import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboa
 import {
   AUXILIARY_ROUTES,
   applyFacilityOperatorNav,
+  PILLARS,
   pillarsForRole,
   REPORT_INCIDENT_HREF,
-  findActivePillar,
+  resolveNavAnchor,
   type Pillar,
   type PillarItem,
 } from "@/lib/navigation/pillars";
+import { isStaffLaunchHiddenKey } from "@/lib/navigation/staff-launch-hidden";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
 const WORKSPACE_WELL =
@@ -224,8 +227,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [sectionsJumpListSearch, setSectionsJumpListSearch] = useState("");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const mobilePillarStripRef = useRef<HTMLElement>(null);
 
-  const catalogActivePillar = useMemo(() => findActivePillar(pathname), [pathname]);
+  const navAnchor = useMemo(() => resolveNavAnchor(pathname), [pathname]);
   // Route-dependent client-only survey chrome must have the same empty SSR
   // and first-hydration shape. Redirected owner entry can resolve a different
   // pathname on the client; its Suspense boundary must not shift the following
@@ -430,18 +434,23 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       ? "All facilities"
       : (currentFacility?.name ?? "Select facility");
 
-  const isItemActive = useCallback(
-    (href: string) => {
-      const resolved = resolveRouteHref(href);
-      if (href === "/admin") return pathname === resolved;
-      // When a role's home aliases an existing destination (for example an
-      // owner landing on Executive), give the role-home item sole ownership
-      // of the active state instead of highlighting both links.
-      if (roleConfig.route !== "/admin" && href === roleConfig.route) return false;
-      return pathname === resolved || pathname.startsWith(`${resolved}/`);
-    },
-    [pathname, resolveRouteHref, roleConfig.route],
-  );
+  // One lit item per route (COL-655): the catalog entry that owns the path.
+  // When a role's home aliases an existing destination (for example an owner
+  // landing on Executive), the role-home item owns that whole tree instead of
+  // lighting both links — or neither on its sub-pages.
+  const activeItemKey = useMemo(() => {
+    if (!navAnchor) return null;
+    if (
+      roleConfig.route !== "/admin" &&
+      navAnchor.pillarId === PILLARS[0].id &&
+      navAnchor.item.href === roleConfig.route
+    ) {
+      return "owner-home";
+    }
+    return navAnchor.item.key;
+  }, [navAnchor, roleConfig.route]);
+
+  const isItemActive = useCallback((item: PillarItem) => item.key === activeItemKey, [activeItemKey]);
 
   const openPillarSheetIfMobile = useCallback((pillarId: Pillar["id"]) => {
     // On mobile, tapping any pillar opens its sub-routes in a sheet instead
@@ -745,7 +754,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
   const renderRailItem = (item: PillarItem) => {
     const Icon = item.icon;
-    const active = isItemActive(item.href);
+    const active = isItemActive(item);
     return (
       <HavenNavLink
         key={item.key}
@@ -788,14 +797,31 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     !roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(item.key) || item.key === "pilot-feedback" || item.key === "settings-notifications"
   ), [roleConfig]);
 
-  const activePillar = useMemo(
-    () =>
-      catalogActivePillar
-        ? (visiblePillars.find((pillar) => pillar.id === catalogActivePillar.id) ??
-          null)
-        : null,
-    [catalogActivePillar, visiblePillars],
-  );
+  const activePillar = useMemo(() => {
+    const pillar = navAnchor?.pillarId
+      ? (visiblePillars.find((candidate) => candidate.id === navAnchor.pillarId) ?? null)
+      : null;
+    if (!pillar || !navAnchor || !activeItemKey) return pillar;
+    if (pillar.items.some((item) => item.key === activeItemKey)) return pillar;
+    if (activeItemKey === "owner-home" && pillar.items.some((item) => item.href === "/admin")) return pillar;
+    // The route's owner is off the menus (⌘K-only, anchor-only, or a
+    // staff-launch hold). Show it in the rail while the operator is on it so
+    // the page they are looking at is always the lit item. Items a role is
+    // denied (Executive for facility operators, keys outside the role's
+    // allowlist) are never added back.
+    const isCatalogItem = PILLARS.some((candidate) => candidate.items.some((item) => item.key === activeItemKey));
+    const heldForLaunch =
+      isStaffLaunchHiddenKey(activeItemKey) &&
+      (!roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(activeItemKey));
+    if (isCatalogItem && !heldForLaunch) return pillar;
+    return { ...pillar, items: [...pillar.items, navAnchor.item] };
+  }, [activeItemKey, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
+
+  // Keep the current pillar visible in the phone strip (COL-657).
+  useEffect(() => {
+    const current = mobilePillarStripRef.current?.querySelector<HTMLElement>('a[aria-current="page"]');
+    current?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [activePillar?.id]);
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground antialiased">
@@ -858,7 +884,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               <PopoverTitle className="px-2 pb-2">More actions</PopoverTitle>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); window.dispatchEvent(new CustomEvent("grace:open")); }}><MessageSquare className="size-4" aria-hidden />Ask Grace</button>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); window.dispatchEvent(new CustomEvent("haven-insight:open")); }}><LineChart className="size-4" aria-hidden />Haven Insight</button>
-              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); setMobileFeedbackOpen(true); }}><MessageSquareWarning className="size-4" aria-hidden />Pilot feedback</button>
+              <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { mobileOverlayOpening.current = true; setMobileMoreOpen(false); setMobileFeedbackOpen(true); }}><MessageSquareWarning className="size-4" aria-hidden />Send feedback</button>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setMobileMoreOpen(false); navigate("/admin/settings/notifications"); }}><Bell className="size-4" aria-hidden />Notification settings</button>
               <button className="flex min-h-11 w-full items-center gap-3 rounded px-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setMobileMoreOpen(false); setTheme(theme === "dark" ? "light" : "dark"); }}>{theme === "dark" ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}Switch to {theme === "dark" ? "light" : "dark"} theme</button>
               {!suppressSurveyVisitChrome && <div className="mt-2 space-y-2 border-t border-border px-2 pt-3"><p className="text-xs font-medium">Survey visit tools</p>{safeSelectedFacilityId ? <SurveyVisitShellToggle survey={surveyVisit} /> : <p className="text-xs text-muted-foreground">Select a facility to use survey visit tools.</p>}</div>}
@@ -899,50 +925,58 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       {mounted && !suppressSurveyVisitChrome ? <SurveyVisitWorkspaceDock survey={surveyVisit} /> : null}
 
       {/* ── Mobile pillar scroll strip ──────────────────────────── */}
+      {/* The strip is wider than a phone: it scrolls sideways with an edge
+          shade on the side that has more, and the current pillar is scrolled
+          into view, so no pillar sits clipped at the edge (COL-657). */}
       <nav
-        className={cn(
-          "lg:hidden sticky top-14 z-20 flex shrink-0 items-stretch gap-0.5 overflow-x-auto",
-          "bg-background text-foreground border-b border-border px-2",
-          "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-        )}
+        ref={mobilePillarStripRef}
+        className="lg:hidden sticky top-14 z-20 shrink-0 bg-background text-foreground border-b border-border"
         aria-label="Primary"
       >
-        {visiblePillars.map((pillar) => {
-          const active = activePillar?.id === pillar.id;
-          const Icon = pillar.icon;
-          const first = pillar.items[0];
-          if (!first) return null;
-          return (
-            <HavenNavLink
-              key={pillar.id}
-              href={resolveRouteHref(first.href)}
-              aria-current={active ? "page" : undefined}
-              aria-haspopup="menu"
-              onClick={(event) => {
-                if (openPillarSheetIfMobile(pillar.id)) {
-                  event.preventDefault();
-                }
-              }}
-              className={cn(
-                "relative flex h-9 shrink-0 items-center gap-1.5 px-3 text-[12px]",
-                "transition-colors duration-[var(--motion-duration-micro)]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active
-                  ? "font-medium text-foreground"
-                  : "text-foreground/80 hover:text-foreground",
-              )}
-            >
-              <Icon className="size-3.5" aria-hidden />
-              <span className="whitespace-nowrap">{pillar.label}</span>
-              {active && (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
-                />
-              )}
-            </HavenNavLink>
-          );
-        })}
+        <HorizontalScroll
+          label="Sections"
+          viewportClassName={cn(
+            "flex items-stretch gap-0.5 px-2",
+            "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          )}
+        >
+          {visiblePillars.map((pillar) => {
+            const active = activePillar?.id === pillar.id;
+            const Icon = pillar.icon;
+            const first = pillar.items[0];
+            if (!first) return null;
+            return (
+              <HavenNavLink
+                key={pillar.id}
+                href={resolveRouteHref(first.href)}
+                aria-current={active ? "page" : undefined}
+                aria-haspopup="menu"
+                onClick={(event) => {
+                  if (openPillarSheetIfMobile(pillar.id)) {
+                    event.preventDefault();
+                  }
+                }}
+                className={cn(
+                  "relative flex h-9 shrink-0 items-center gap-1.5 px-3 text-[12px]",
+                  "transition-colors duration-[var(--motion-duration-micro)]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  active
+                    ? "font-medium text-foreground"
+                    : "text-foreground/80 hover:text-foreground",
+                )}
+              >
+                <Icon className="size-3.5" aria-hidden />
+                <span className="whitespace-nowrap">{pillar.label}</span>
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary"
+                  />
+                )}
+              </HavenNavLink>
+            );
+          })}
+        </HorizontalScroll>
       </nav>
 
       {/* ── Layout row: contextual rail + main ─────────────────── */}
@@ -1055,7 +1089,7 @@ function PillarTabWithDropdown({
   pillar: Pillar;
   active: boolean;
   firstHref: string;
-  isItemActive: (href: string) => boolean;
+  isItemActive: (item: PillarItem) => boolean;
   resolveHref: (href: string) => string;
   onActivePillarTap: (pillarId: Pillar["id"]) => boolean;
 }) {
@@ -1147,7 +1181,7 @@ function PillarTabWithDropdown({
         <div className="rounded-md border border-border bg-popover p-1.5 shadow-lg ring-1 ring-foreground/10">
           {pillar.items.map((item) => {
             const Icon = item.icon;
-            const itemActive = isItemActive(item.href);
+            const itemActive = isItemActive(item);
             return (
               <HavenNavLink
                 key={item.key}

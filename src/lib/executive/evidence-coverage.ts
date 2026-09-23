@@ -567,13 +567,42 @@ export function coverageGapLine(rows: CoverageRow[]): string {
  * The watchlist can only speak for the records it queried. This is the line it
  * uses instead of asserting that nothing needs attention.
  */
-export function noAlertsCopy(rows: CoverageRow[]): { headline: string; body: string } {
+export function noAlertsCopy(
+  rows: CoverageRow[],
+  openSignals: { roundingEscalations?: number; criticalFacilities?: number } = {},
+): { headline: string; body: string } {
   const gaps = rows.filter(isCoverageGap).length;
+  const escalations = openSignals.roundingEscalations ?? 0;
+  const critical = openSignals.criticalFacilities ?? 0;
+  // Open rounding escalations or a critical band elsewhere on the page are not
+  // executive alerts, but "no critical alerts" beside them reads as a
+  // contradiction (COL-649). Say what the empty list does not cover.
+  if (escalations > 0 || critical > 0) {
+    const parts = [
+      escalations > 0 ? `${escalations} open rounding ${escalations === 1 ? "escalation" : "escalations"}` : null,
+      critical > 0 ? `${critical} ${critical === 1 ? "facility" : "facilities"} in the critical rounding band` : null,
+    ].filter(Boolean);
+    return {
+      headline: "No executive alerts raised. This is not an all-clear.",
+      body: `Rounding assurance shows ${parts.join(" and ")}. Those are not raised as executive alerts, so this list does not cover them.`,
+    };
+  }
   return {
     headline: "No critical alerts recorded in the available data.",
     body:
       gaps === 0
         ? "Every measure on this page is reported, so this reflects the full portfolio."
         : `Recorded alerts only — ${gaps} of ${rows.length} measures are not fully reported.`,
+  };
+}
+
+/** Open rounding signals the executive alert list does not include. Unobserved facilities count nothing. */
+export function openRoundingSignals(
+  heatMap: ReadonlyArray<{ observed: boolean; openEscalations: number; heatBand: string }>,
+): { roundingEscalations: number; criticalFacilities: number } {
+  const observed = heatMap.filter((row) => row.observed);
+  return {
+    roundingEscalations: observed.reduce((sum, row) => sum + row.openEscalations, 0),
+    criticalFacilities: observed.filter((row) => row.heatBand === "critical").length,
   };
 }

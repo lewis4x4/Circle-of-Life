@@ -10,6 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { EntityCombobox, type EntityComboboxOption } from "@/components/ui/entity-combobox";
 import { FormCancelLink } from "@/components/ui/form-cancel-link";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { logSupabasePostgrestError } from "@/lib/supabase/client-query-log";
 import { createClient } from "@/lib/supabase/client";
@@ -103,7 +103,6 @@ export default function AdminDischargeNewPage() {
   const { user } = useHavenAuth();
   const selectedFacilityId = useFacilityStore((s) => s.selectedFacilityId);
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
-  const setSelectedFacility = useFacilityStore((s) => s.setSelectedFacility);
 
   const [residentId, setResidentId] = useState("");
   const [residents, setResidents] = useState<ResidentPickerRow[]>([]);
@@ -135,16 +134,6 @@ export default function AdminDischargeNewPage() {
     if (!scopedFacilityId) return null;
     return availableFacilities.find((f) => f.id === scopedFacilityId)?.name ?? null;
   }, [availableFacilities, scopedFacilityId]);
-
-  /** Auto-scope when only one accessible facility exists. */
-  useEffect(() => {
-    if (selectedFacilityId != null) return;
-    if (availableFacilities.length !== 1) return;
-    const id = availableFacilities[0]!.id;
-    if (!isValidFacilityIdForQuery(id)) return;
-    setSelectedFacility(id);
-    syncSelectedFacilityCookie(id);
-  }, [availableFacilities, selectedFacilityId, setSelectedFacility]);
 
   const loadResidentsAndDrafts = useCallback(async () => {
     if (!scopedFacilityId) {
@@ -268,7 +257,7 @@ export default function AdminDischargeNewPage() {
 
     const fid = scopedFacilityId;
     if (!fid) {
-      setError("Choose a facility to continue.");
+      setError("No facility is in scope for this draft.");
       return;
     }
     if (!residentId) {
@@ -373,8 +362,6 @@ export default function AdminDischargeNewPage() {
     selectedFacilityId === undefined ||
     !isValidFacilityIdForQuery(selectedFacilityId ?? "");
 
-  const manualFacilityBarrier = gateBlocking && availableFacilities.length > 1;
-
   const canSubmitForm =
     Boolean(scopedFacilityId) &&
     Boolean(residentId) &&
@@ -386,17 +373,7 @@ export default function AdminDischargeNewPage() {
   const subtitle =
     scopedFacilityId && facilityName
       ? `Start a medication reconciliation (med rec) draft for a resident at ${facilityName}.`
-      : "Start a medication reconciliation (med rec) draft after choosing a facility.";
-
-  const awaitingSingletonFacility =
-    (selectedFacilityId == null || !isValidFacilityIdForQuery(selectedFacilityId ?? "")) &&
-    availableFacilities.length === 1;
-
-  function onFacilityPicked(id: string) {
-    if (!isValidFacilityIdForQuery(id)) return;
-    setSelectedFacility(id);
-    syncSelectedFacilityCookie(id);
-  }
+      : "Start a medication reconciliation (med rec) draft for a resident.";
 
   const visibleDrafts = draftRows.slice(0, 5);
 
@@ -417,44 +394,11 @@ export default function AdminDischargeNewPage() {
         <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">{subtitle}</p>
       </div>
 
-      {awaitingSingletonFacility ? (
-        <p className="flex items-center gap-2 text-[13px] text-muted-foreground" role="status">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-          Selecting facility…
-        </p>
+      {gateBlocking ? (
+        <FacilityGateNotice reason="Medication reconciliation drafts are tracked per building, against its residents." />
       ) : null}
 
-      {manualFacilityBarrier ? (
-        <div className="max-w-xl space-y-3 rounded-lg border border-border bg-muted/20 p-6 text-[13px] text-foreground">
-          <p className="font-medium">Choose a facility</p>
-          <p className="text-muted-foreground">
-            Medication reconciliation drafts are tracked per facility. Select one facility before continuing.
-          </p>
-          <div className="space-y-1.5">
-            <Label htmlFor="facility-scope" className="text-[13px] font-semibold text-muted-foreground">
-              Facility
-            </Label>
-            <Select onValueChange={onFacilityPicked}>
-              <SelectTrigger id="facility-scope" className="h-10 w-full max-w-md text-[13px] shadow-none">
-                <SelectValue placeholder="Select a facility…" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableFacilities.map((f) => (
-                  <SelectItem key={f.id} value={f.id} className="text-[13px]">
-                    {f.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      ) : null}
-
-      {!manualFacilityBarrier && !scopedFacilityId && availableFacilities.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground">No facilities are available for this profile.</p>
-      ) : null}
-
-      {!manualFacilityBarrier && scopedFacilityId && !awaitingSingletonFacility ? (
+      {!gateBlocking && scopedFacilityId ? (
         <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6 lg:flex-row lg:gap-6">
           <div className="min-w-0 max-w-[640px] flex-1 border-t border-border pt-8">
             <form onSubmit={(e) => void handleSubmit(e)} className="space-y-8">

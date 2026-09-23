@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
+import { CoverageLapseBanner } from "@/components/insurance/coverage-lapse-banner";
 import { InsuranceHubNav } from "../insurance-hub-nav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import {
   INSURANCE_RENEWALS_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["insurance_renewals"]["Row"] & {
   insurance_policies: { policy_number: string; carrier_name: string; policy_type: string } | null;
@@ -77,6 +79,7 @@ export default function InsuranceRenewalsPage() {
       
       <div className="relative z-10 space-y-6 w-full">
         <InsuranceHubNav />
+        <CoverageLapseBanner />
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
@@ -148,7 +151,7 @@ export default function InsuranceRenewalsPage() {
                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" 
                              : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-400 dark:border-white/10"
                          )}>
-                           {r.status.replace(/_/g, " ")}
+                           {enumLabel(r.status)}
                          </span>
                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                            Effective {formattedDate}

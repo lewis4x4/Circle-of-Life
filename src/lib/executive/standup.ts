@@ -9,6 +9,12 @@ import {
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import {
+  CURRENT_AR_DEFINITION_COPY,
+  CURRENT_AR_INVOICE_STATUSES,
+  currentArNotYetSentNote,
+  isNotYetSentStatus,
+} from "@/lib/billing/receivables";
 
 export type StandupSourceMode = "auto" | "manual" | "hybrid" | "forecast";
 export type StandupValueType = "currency" | "count" | "percent" | "hours" | "text";
@@ -305,7 +311,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Current AR",
     valueType: "currency",
     sourceMode: "auto",
-    description: "Current open invoice balances for the selected scope.",
+    description: CURRENT_AR_DEFINITION_COPY,
   },
   {
     key: "current_total_census",
@@ -329,7 +335,7 @@ export const STANDUP_METRIC_DEFINITIONS: StandupMetricDefinition[] = [
     label: "Uncollected AR Total",
     valueType: "currency",
     sourceMode: "auto",
-    description: "Open overdue balances for the selected scope.",
+    description: "The part of Current AR whose due date has passed, drafts included like Current AR.",
   },
   {
     key: "sp_female_beds_open",
@@ -547,7 +553,19 @@ function sum(numbers: number[]): number {
   return numbers.reduce((acc, value) => acc + value, 0);
 }
 
+export const STANDUP_NO_ROSTER_NOTE =
+  "No residents are on the roster yet, so census and bed figures are not computed. Enter them in Weekly Stand Up.";
+export const STANDUP_NO_TIME_RECORDS_NOTE = "No time records for last week, so overtime is not computed.";
+
+/** What a facility with no census says instead of "Stable operating picture" (COL-649). */
+export const STANDUP_PRESSURE_NOT_JUDGED = "Not enough recorded to judge pressure";
+
 function computePressureScore(metrics: Record<string, StandupMetricRow>): { score: number; topConcern: string } {
+  // Without a census the other signals cannot be read against anything, and a
+  // facility with nothing recorded used to read "Stable operating picture".
+  if (metrics.current_total_census?.valueNumeric == null) {
+    return { score: 0, topConcern: STANDUP_PRESSURE_NOT_JUDGED };
+  }
   const currentAr = metrics.current_ar_cents.valueNumeric ?? 0;
   const totalBedsOpen = metrics.total_beds_open.valueNumeric ?? 0;
   const hospitalAndRehab = metrics.hospital_and_rehab_total.valueNumeric ?? 0;
@@ -1190,7 +1208,7 @@ export async function fetchExecutiveStandupLive(
     .select("facility_id, balance_due, due_date, total, period_start, deleted_at, status")
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
-    .in("status", ["draft", "sent", "partial", "overdue"])
+    .in("status", [...CURRENT_AR_INVOICE_STATUSES])
     .limit(5000);
 
   let residentsQ = supabase
@@ -1336,12 +1354,18 @@ export async function fetchExecutiveStandupLive(
     const facilityTours = toursByFacility.get(facility.id) ?? [];
 
     const currentArCents = sum(facilityInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
+    const notYetSentInvoices = facilityInvoices.filter((row) => isNotYetSentStatus(row.status));
+    const notYetSentCents = sum(notYetSentInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
     const overdueArCents = sum(
       facilityInvoices
         .filter((row) => row.due_date && row.due_date < todayIso)
         .map((row) => Math.max(0, row.balance_due ?? 0)),
     );
     const currentTotalCensus = facilityResidents.filter((row) => ["active", "hospital_hold", "loa"].includes(row.status ?? "")).length;
+    // A roster with nobody on it is an unloaded roster, not a census of 0 at
+    // "high confidence" (COL-649). Census-derived cells stay empty until then.
+    const rosterLoaded = currentTotalCensus > 0;
+    const timeRecordsLastWeek = facilityTime.filter((row) => inCompletedLastWeek(row.clock_in));
     const openBeds = facilityBeds.filter((row) => row.current_resident_id == null && !row.is_temporarily_blocked && (row.status ?? "available") === "available");
     const totalBedsOpen = facilityBeds.length > 0 ? openBeds.length : Math.max(0, (facility.total_licensed_beds ?? 0) - currentTotalCensus);
     const spFemaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_female").length;
@@ -1371,9 +1395,7 @@ export async function fetchExecutiveStandupLive(
     }).length;
     const currentOpenPositions = facilityRequisitions.filter((row) => ["open", "interviewing", "offered"].includes(row.status)).length;
     const overtimeHours = Math.round(
-      facilityTime
-        .filter((row) => inCompletedLastWeek(row.clock_in))
-        .reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
+      timeRecordsLastWeek.reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
     ) / 100;
     const toursExpected = facilityTours.filter((row) => {
       if (!row.tour_scheduled_for || ["lost", "merged"].includes(row.status)) return false;
@@ -1413,12 +1435,25 @@ export async function fetchExecutiveStandupLive(
     metrics.current_ar_cents = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_ar_cents")!,
       currentArCents,
-      { sourceRefJson: [{ table: "invoices", mode: "open_balance" }] },
+      {
+        sourceRefJson: [
+          {
+            table: "invoices",
+            mode: "open_balance",
+            statuses: [...CURRENT_AR_INVOICE_STATUSES],
+            not_yet_sent_count: notYetSentInvoices.length,
+            not_yet_sent_cents: notYetSentCents,
+          },
+        ],
+        overrideNote: currentArNotYetSentNote(notYetSentInvoices.length, formatCurrencyFromCents(notYetSentCents)),
+      },
     );
     metrics.current_total_census = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_total_census")!,
-      currentTotalCensus,
-      { sourceRefJson: [{ table: "residents", statuses: ["active", "hospital_hold", "loa"] }] },
+      rosterLoaded ? currentTotalCensus : null,
+      rosterLoaded
+        ? { sourceRefJson: [{ table: "residents", statuses: ["active", "hospital_hold", "loa"] }] }
+        : { overrideNote: STANDUP_NO_ROSTER_NOTE },
     );
     metrics.average_rent_cents = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "average_rent_cents")!,
@@ -1444,33 +1479,33 @@ export async function fetchExecutiveStandupLive(
     );
     metrics.total_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "total_beds_open")!,
-      totalBedsOpen,
-      { sourceRefJson: facilityBeds.length > 0 ? [{ table: "beds", field: "standup_availability_class" }] : [{ table: "facilities", field: "total_licensed_beds" }, { table: "residents", field: "status" }] },
+      rosterLoaded ? totalBedsOpen : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: facilityBeds.length > 0 ? [{ table: "beds", field: "standup_availability_class" }] : [{ table: "facilities", field: "total_licensed_beds" }, { table: "residents", field: "status" }] },
     );
     metrics.sp_female_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_female_beds_open")!,
-      spFemaleBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      rosterLoaded ? spFemaleBedsOpen : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
     );
     metrics.sp_male_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_male_beds_open")!,
-      spMaleBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      rosterLoaded ? spMaleBedsOpen : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
     );
     metrics.sp_flexible_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_flexible_beds_open")!,
-      spFlexibleBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      rosterLoaded ? spFlexibleBedsOpen : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
     );
     metrics.private_beds_open = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "private_beds_open")!,
-      privateBedsOpen,
-      { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
+      rosterLoaded ? privateBedsOpen : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
     );
     metrics.hospital_and_rehab_total = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "hospital_and_rehab_total")!,
-      hospitalAndRehab,
-      {
+      rosterLoaded ? hospitalAndRehab : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : {
         confidenceBand: "medium",
         sourceRefJson: [{ table: "residents", statuses: ["hospital_hold", "loa"] }],
         overrideNote: "Counts hospital hold and LOA. Rehab-specific distinction still needs a dedicated status model.",
@@ -1478,8 +1513,8 @@ export async function fetchExecutiveStandupLive(
     );
     metrics.expected_discharges = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "expected_discharges")!,
-      expectedDischarges,
-      {
+      rosterLoaded ? expectedDischarges : null,
+      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : {
         confidenceBand: "medium",
         sourceRefJson: [{ table: "residents", field: "discharge_target_date" }],
         overrideNote: expectedDischarges > 0 ? "Derived from resident discharge target dates for the standup week." : "No discharge targets recorded for this week.",
@@ -1511,8 +1546,8 @@ export async function fetchExecutiveStandupLive(
     );
     metrics.overtime_hours = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "overtime_hours")!,
-      overtimeHours,
-      { sourceRefJson: [{ table: "time_records", field: "overtime_hours" }] },
+      timeRecordsLastWeek.length > 0 ? overtimeHours : null,
+      timeRecordsLastWeek.length === 0 ? { overrideNote: STANDUP_NO_TIME_RECORDS_NOTE } : { sourceRefJson: [{ table: "time_records", field: "overtime_hours" }] },
     );
     metrics.tours_expected = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "tours_expected")!,
@@ -1571,11 +1606,30 @@ export async function fetchExecutiveStandupLive(
               : null
           : sum(numericValues);
 
+    // A total over some facilities is not a portfolio total: say how many
+    // reported and never mark it high confidence (COL-649).
+    const partial = aggregateValue != null && numericValues.length < liveFacilities.length;
     totalMetrics[definition.key] = metricTemplate(definition, aggregateValue, {
-      confidenceBand: aggregateValue == null ? "low" : definition.sourceMode === "auto" ? "high" : "medium",
-      sourceRefJson: aggregateValue == null ? [] : [{ mode: "facility_rollup", facility_count: liveFacilities.length }],
-      overrideNote: aggregateValue == null ? "Needs manual or future system capture." : null,
+      confidenceBand:
+        aggregateValue == null || partial ? "low" : definition.sourceMode === "auto" ? "high" : "medium",
+      sourceRefJson:
+        aggregateValue == null
+          ? []
+          : [{ mode: "facility_rollup", facility_count: numericValues.length, facilities_in_scope: liveFacilities.length }],
+      overrideNote:
+        aggregateValue == null
+          ? "Needs manual or future system capture."
+          : partial
+            ? `${numericValues.length} of ${liveFacilities.length} facilities reporting.`
+            : null,
     });
+  }
+  if (totalMetrics.current_ar_cents.valueNumeric != null) {
+    const totalNotYetSent = invoiceRows.filter((row) => isNotYetSentStatus(row.status));
+    totalMetrics.current_ar_cents.overrideNote = currentArNotYetSentNote(
+      totalNotYetSent.length,
+      formatCurrencyFromCents(sum(totalNotYetSent.map((row) => Math.max(0, row.balance_due ?? 0)))),
+    );
   }
 
   const { score, topConcern } = computePressureScore(totalMetrics);

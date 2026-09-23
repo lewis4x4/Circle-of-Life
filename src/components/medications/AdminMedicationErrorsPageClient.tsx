@@ -20,6 +20,7 @@ import {
   type MedicationErrorRow,
 } from "@/lib/medications/load-medication-errors";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type ReviewFilter = "all" | "unreviewed" | "reviewed";
 
@@ -42,6 +43,7 @@ export function AdminMedicationErrorsPageClient({
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
 
   const skipNextLoadRef = useRef(initialError == null);
+  const loadSequenceRef = useRef(0);
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -50,16 +52,24 @@ export function AdminMedicationErrorsPageClient({
     }
     skipNextLoadRef.current = false;
 
+    // Reads overlap when the facility store hydrates just after the mount load
+    // starts (the hydration render reads the store's pre-hydration null). Only
+    // the most recent read may write state, or the unscoped read's "Select a
+    // facility." lands after the facility's read began and stays on screen
+    // under the selected facility (COL-673; the roster's COL-406 guard).
+    const sequence = ++loadSequenceRef.current;
     setLoading(true);
     setError(null);
     try {
       const list = await fetchMedicationErrors(selectedFacilityId);
+      if (sequence !== loadSequenceRef.current) return;
       setRows(list);
     } catch (e: unknown) {
+      if (sequence !== loadSequenceRef.current) return;
       setError(e instanceof Error ? e.message : "Load failed");
       setRows([]);
     } finally {
-      setLoading(false);
+      if (sequence === loadSequenceRef.current) setLoading(false);
     }
   }, [selectedFacilityId, initialFacilityId]);
 
@@ -194,7 +204,7 @@ export function AdminMedicationErrorsPageClient({
                     <div className="flex flex-col min-w-0 pr-4">
                       <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Type</span>
                       <span className="font-semibold text-lg text-foreground capitalize tracking-tight">
-                        {r.error_type.replace(/_/g, " ")}
+                        {enumLabel(r.error_type)}
                       </span>
                     </div>
 
@@ -205,7 +215,7 @@ export function AdminMedicationErrorsPageClient({
                         r.severity === "high" ? "bg-warning/10 text-warning border-warning/20" :
                         "bg-muted text-muted-foreground border-border"
                       )}>
-                        {r.severity.replace(/_/g, " ")}
+                        {enumLabel(r.severity)}
                       </Badge>
                     </div>
 

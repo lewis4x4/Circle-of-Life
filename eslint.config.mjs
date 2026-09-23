@@ -6,6 +6,7 @@ import noRawSpacing from "./eslint-rules/no-raw-spacing.mjs";
 import requireKpiInfo from "./eslint-rules/require-kpi-info.mjs";
 import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.mjs";
 import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
+import requireTimeZone from "./eslint-rules/require-time-zone.mjs";
 
 const uiV2Plugin = {
   rules: {
@@ -19,6 +20,12 @@ const uiV2Plugin = {
 const quietOperatorPrimitivesPlugin = {
   rules: {
     "enforce-route-markup-quiet-operator": primitiveEnforcementRoute,
+  },
+};
+
+const havenTimePlugin = {
+  rules: {
+    "require-time-zone": requireTimeZone,
   },
 };
 
@@ -124,12 +131,54 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // COL-659: display dates must name their time zone. Pre-existing call sites
+    // are baselined in `eslint-suppressions.json`; convert them to
+    // `@/lib/format/datetime` and prune.
+    files: ["src/**/*.{ts,tsx,js,jsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    plugins: {
+      "haven-time": havenTimePlugin,
+    },
+    rules: {
+      "haven-time/require-time-zone": "error",
+    },
+  },
+  {
     // React Compiler is not enabled in this app. `incompatible-library` only
     // warns that React Hook Form's `watch()` could not be auto-memoized by the
     // compiler; with no compiler there is nothing to act on, and warnings fail
     // `--max-warnings 0`. Revisit when the compiler is switched on.
     rules: {
       "react-hooks/incompatible-library": "off",
+    },
+  },
+  {
+    // COL-658: a visible <label> must name its control — either `htmlFor` the
+    // control's `id`, or wrap the control. A sibling label with neither leaves
+    // the select/input unnamed for screen readers (axe `label` / `select-name`,
+    // critical). Pre-existing violations are recorded in eslint-suppressions.json
+    // and are being fixed route by route; new ones fail lint.
+    files: ["src/**/*.{tsx,jsx}"],
+    rules: {
+      "jsx-a11y/label-has-associated-control": [
+        "error",
+        {
+          labelComponents: ["Label", "FormLabel"],
+          controlComponents: [
+            "Input",
+            "Textarea",
+            "Select",
+            "SelectTrigger",
+            "Checkbox",
+            "Switch",
+            "NumberInput",
+            "DateInput",
+            "Combobox",
+          ],
+          assert: "either",
+          depth: 4,
+        },
+      ],
     },
   },
 ]);

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   COMPLIANCE_POLICY_NO_PUBLISHED_DATE_COPY,
+  compliancePolicyListCountLabel,
   formatCompliancePolicyPublishedDate,
 } from "./policies-display-copy";
 
@@ -39,5 +40,20 @@ describe("formatCompliancePolicyPublishedDate", () => {
     expect(formatCompliancePolicyPublishedDate("2026-03-15T18:45:00.000Z")).toBe(
       "Mar 15, 2026",
     );
+  });
+});
+
+describe("compliancePolicyListCountLabel (COL-649)", () => {
+  const base = { facilityReady: true, loading: false, error: null, count: 0 };
+
+  it("shows no count without a facility or after a failed read", () => {
+    expect(compliancePolicyListCountLabel({ ...base, facilityReady: false })).toBeNull();
+    expect(compliancePolicyListCountLabel({ ...base, error: "403" })).toBeNull();
+  });
+
+  it("counts loaded policies", () => {
+    expect(compliancePolicyListCountLabel(base)).toBe("0 shown");
+    expect(compliancePolicyListCountLabel({ ...base, count: 3 })).toBe("3 shown");
+    expect(compliancePolicyListCountLabel({ ...base, loading: true })).toBe("Loading…");
   });
 });

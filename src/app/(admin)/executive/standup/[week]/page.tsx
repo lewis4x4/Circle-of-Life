@@ -34,7 +34,7 @@ import {
   type StandupSectionKey,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
-import { formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
+import { formatStandupMetricValue, standupMetricNote } from "@/lib/executive/executive-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import {
   EXECUTIVE_STANDUP_WEEK_LOADING_MESSAGE,
@@ -44,6 +44,7 @@ import {
 } from "@/lib/executive/standup-page-state";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function editable(metric: StandupMetricRow, snapshot: StandupSnapshotDetail["snapshot"]): boolean {
   return snapshot.status === "draft" && metric.sourceMode !== "auto";
@@ -453,7 +454,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                     </div>
                     <div className="mt-4 space-y-3">
                       {[
-                        { label: "Why red", items: action.whyRed.length > 0 ? action.whyRed : ["No active red flags beyond the headline concern."] },
+                        { label: "What is flagged", items: action.whyRed.length > 0 ? action.whyRed : ["Nothing flagged."] },
                         { label: "Variance flags", items: action.varianceFlags.length > 0 ? action.varianceFlags : ["No material deltas versus the prior published week."] },
                         { label: "Recommended actions", items: action.interventions },
                       ].map(({ label, items }) => (
@@ -502,7 +503,7 @@ export default function ExecutiveStandupWeekDetailPage() {
                         {section.totalRows} rows · {section.autoRows} auto · {section.manualRows} manual · {section.forecastRows} forecast
                       </div>
                     </div>
-                    <Badge variant="outline" className="shrink-0">{section.status.replace(/_/g, " ")}</Badge>
+                    <Badge variant="outline" className="shrink-0">{enumLabel(section.status)}</Badge>
                   </div>
                   <div className="mt-3 text-sm text-foreground">
                     {section.unresolvedRows > 0 ? `${section.unresolvedRows} unresolved rows.` : "No unresolved rows."}
@@ -630,6 +631,9 @@ export default function ExecutiveStandupWeekDetailPage() {
                                         <Badge variant="outline">{metric.sourceMode}</Badge>
                                         <Badge variant="outline">{metric.confidenceBand}</Badge>
                                       </div>
+                                      {standupMetricNote(metric) ? (
+                                        <div className="text-xs text-muted-foreground">{standupMetricNote(metric)}</div>
+                                      ) : null}
                                     </div>
                                   )}
                                 </td>
@@ -643,6 +647,9 @@ export default function ExecutiveStandupWeekDetailPage() {
                                     <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
                                     <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>
                                   </div>
+                                  {standupMetricNote(totals.metrics[metricKey]) ? (
+                                    <div className="text-xs text-muted-foreground">{standupMetricNote(totals.metrics[metricKey])}</div>
+                                  ) : null}
                                 </div>
                               </td>
                             ) : null}

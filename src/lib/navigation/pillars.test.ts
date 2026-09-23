@@ -80,6 +80,7 @@ describe("role navigation", () => {
       "Reports hub",
       "My facility",
       "Billing & AR",
+      "Transportation",
     ]);
     const myFacility = command?.items.find((item) => item.key === "facilities");
     expect(myFacility?.href).toBe("/admin/facilities/00000000-0000-0000-0002-000000000003");

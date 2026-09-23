@@ -1,3 +1,4 @@
+import { formatLeagueScore } from "@/lib/executive/league";
 import type { ExecutiveLeagueData } from "@/lib/executive/load-league-data";
 import {
   formatLeaguePrintConfidenceBand,
@@ -20,8 +21,8 @@ export function buildExecutiveLeaguePrintHtml(data: ExecutiveLeagueData) {
         <tr>
           <td>${escapeHtml(row.facilityName)}</td>
           <td>${escapeHtml(row.entityName)}</td>
-          <td>${row.leagueScore}/100</td>
-          <td>${escapeHtml(row.leagueLabel)}</td>
+          <td>${formatLeagueScore(row.leagueScore)}</td>
+          <td>${row.leagueScore == null ? "" : escapeHtml(row.leagueLabel)}</td>
           <td>${formatLeaguePrintRiskScore(row.riskScore)}</td>
           <td>${formatLeaguePrintOccupancyPct(row.occupancyPct)}</td>
           <td>${escapeHtml(row.primaryConcern)}</td>

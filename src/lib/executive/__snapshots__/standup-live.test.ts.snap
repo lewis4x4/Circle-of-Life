@@ -531,7 +531,7 @@ exports[`live standup behavior > preserves null datasets and the no-facilities p
     "score": 0,
   },
   {
-    "concern": "No bed availability",
+    "concern": "Not enough recorded to judge pressure",
     "metrics": {
       "admissions_expected": "null (low)",
       "ar_goal_cents": "null (low)",
@@ -555,7 +555,7 @@ exports[`live standup behavior > preserves null datasets and the no-facilities p
       "uncollected_ar_total_cents": "null (low)",
     },
     "name": "Totals",
-    "score": 2,
+    "score": 0,
   },
 ]
 `;

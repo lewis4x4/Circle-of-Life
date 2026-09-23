@@ -172,10 +172,10 @@ export default function MyAcknowledgmentsPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
             Policy acknowledgments
           </Link>
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <FileCheck2 className="h-8 w-8 text-info shrink-0" aria-hidden />
             My acknowledgments
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground">
             Policies and SOPs assigned to your role. Read the document, then sign by typing your
             full legal name — the signature is permanent.

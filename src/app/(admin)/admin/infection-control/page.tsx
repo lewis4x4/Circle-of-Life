@@ -88,9 +88,9 @@ export default function AdminInfectionControlHubPage() {
         <header className="mb-8 flex items-start justify-between">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Infection Control {activeOut > 0 && <></>}
-            </h2>
+            </h1>
           </div>
         </header>
 

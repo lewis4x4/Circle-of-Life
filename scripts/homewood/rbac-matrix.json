@@ -1,0 +1,485 @@
+{
+  "roles": [
+    "owner",
+    "facility_admin",
+    "med_tech",
+    "cook",
+    "housekeeper",
+    "recruiter",
+    "family"
+  ],
+  "matrix": {
+    "/admin": {
+      "owner": {
+        "outcome": "redirect",
+        "location": "/admin/executive"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "redirect",
+        "location": "/med-tech"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/residents": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/incidents": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/staff": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "redirect",
+        "location": "/med-tech"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/finance": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "redirect",
+        "location": "/med-tech"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/payroll": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "redirect",
+        "location": "/med-tech"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/training": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/transportation": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/reputation": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "allow"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/referrals": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "allow"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/admin/executive": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "redirect",
+        "location": "/admin"
+      },
+      "med_tech": {
+        "outcome": "redirect",
+        "location": "/med-tech"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/caregiver": {
+      "owner": {
+        "outcome": "redirect",
+        "location": "/admin/executive"
+      },
+      "facility_admin": {
+        "outcome": "redirect",
+        "location": "/admin"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/caregiver/tasks": {
+      "owner": {
+        "outcome": "redirect",
+        "location": "/admin/executive"
+      },
+      "facility_admin": {
+        "outcome": "redirect",
+        "location": "/admin"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/caregiver/housekeeper": {
+      "owner": {
+        "outcome": "redirect",
+        "location": "/admin/executive"
+      },
+      "facility_admin": {
+        "outcome": "redirect",
+        "location": "/admin"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "allow"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/med-tech": {
+      "owner": {
+        "outcome": "redirect",
+        "location": "/admin/executive"
+      },
+      "facility_admin": {
+        "outcome": "redirect",
+        "location": "/admin"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/dietary": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "allow"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/family": {
+      "owner": {
+        "outcome": "redirect",
+        "location": "/admin/executive"
+      },
+      "facility_admin": {
+        "outcome": "redirect",
+        "location": "/admin"
+      },
+      "med_tech": {
+        "outcome": "redirect",
+        "location": "/med-tech"
+      },
+      "cook": {
+        "outcome": "redirect",
+        "location": "/dietary"
+      },
+      "housekeeper": {
+        "outcome": "redirect",
+        "location": "/caregiver/housekeeper"
+      },
+      "recruiter": {
+        "outcome": "redirect",
+        "location": "/admin/referrals"
+      },
+      "family": {
+        "outcome": "allow"
+      }
+    }
+  }
+}

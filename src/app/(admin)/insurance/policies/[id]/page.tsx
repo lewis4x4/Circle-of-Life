@@ -28,6 +28,7 @@ import {
 } from "@/lib/insurance/insurance-policy-detail-page-state";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Policy = Database["public"]["Tables"]["insurance_policies"]["Row"];
 type Renewal = Database["public"]["Tables"]["insurance_renewals"]["Row"];
@@ -217,7 +218,7 @@ export default function InsurancePolicyDetailPage() {
       <InsuranceHubNav />
       <RecordDetailHeader
         title={policy.carrier_name}
-        subtitle={`${entityName} · ${policy.policy_type.replace(/_/g, " ")} · ${policy.policy_number}`}
+        subtitle={`${entityName} · ${enumLabel(policy.policy_type)} · ${policy.policy_number}`}
         backLink={{ label: "Back to policies", href: "/admin/insurance/policies" }}
       />
 
@@ -229,7 +230,7 @@ export default function InsurancePolicyDetailPage() {
       >
         <div className="grid gap-2 text-sm md:grid-cols-2">
           <p>
-            <span className="text-muted-foreground">Status:</span> {policy.status.replace(/_/g, " ")}
+            <span className="text-muted-foreground">Status:</span> {enumLabel(policy.status)}
           </p>
           <p>
             <span className="text-muted-foreground">Premium:</span>{" "}
@@ -269,7 +270,7 @@ export default function InsurancePolicyDetailPage() {
                 {renewals.map((r) => (
                   <tr key={r.id} className="border-b border-border/50">
                     <td className="py-2 pr-4">{formatInsuranceRenewalTargetDate(r.target_effective_date)}</td>
-                    <td className="py-2 pr-4">{r.status.replace(/_/g, " ")}</td>
+                    <td className="py-2 pr-4">{enumLabel(r.status)}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.quoted_premium_cents)}</td>
                     <td className="py-2 tabular-nums">{formatUsdFromCents(r.bound_premium_cents)}</td>
                   </tr>
@@ -303,7 +304,7 @@ export default function InsurancePolicyDetailPage() {
                       {formatInsurancePolicyDetailPeriodDate(a.period_start)} –{" "}
                       {formatInsurancePolicyDetailPeriodDate(a.period_end)}
                     </td>
-                    <td className="py-2 pr-4">{a.allocation_method.replace(/_/g, " ")}</td>
+                    <td className="py-2 pr-4">{enumLabel(a.allocation_method)}</td>
                     <td className="py-2 tabular-nums">{formatUsdFromCents(a.allocated_premium_cents)}</td>
                   </tr>
                 ))}
@@ -335,7 +336,7 @@ export default function InsurancePolicyDetailPage() {
                 {claims.map((c) => (
                   <tr key={c.id} className="border-b border-border/50">
                     <td className="py-2 pr-4">{formatInsuranceClaimDateOfLoss(c.date_of_loss)}</td>
-                    <td className="py-2 pr-4">{c.status.replace(/_/g, " ")}</td>
+                    <td className="py-2 pr-4">{enumLabel(c.status)}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.reserve_cents)}</td>
                     <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.paid_cents)}</td>
                     <td className="py-2">

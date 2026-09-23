@@ -12,6 +12,8 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { getRangeForView, shiftRangeAnchor, type OperationRangeView } from "@/lib/operations/dates";
 import { OPERATION_CATEGORY_LABELS, OPERATION_SHIFT_LABELS } from "@/lib/operations/constants";
 import type { OperationTask, OperationTaskResponse, OperationTaskSummary } from "@/lib/operations/types";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
+import { rangeEmptyCopy, taskCompletionState, taskSummaryTileStates } from "@/lib/operations/operations-metric-states";
 import { cn } from "@/lib/utils";
 
 type OperationsTaskRangePageProps = {
@@ -96,9 +98,16 @@ export function OperationsTaskRangePage({
     void loadTasks();
   }, [loadTasks]);
 
+  const tiles = taskSummaryTileStates(summary, { error });
+  const completion = taskCompletionState(summary, { error });
   const completionCard = summary?.missed
-    ? { label: "Missed", value: String(summary.missed), className: "bg-red-100/50 border-red-200 text-red-800" }
-    : { label: "Completion", value: `${summary?.completion_rate ?? 0}%`, className: "bg-green-100/50 border-green-200 text-green-800" };
+    ? { label: "Missed", state: tiles.missed, className: "bg-red-100/50 border-red-200 text-red-800" }
+    : {
+        label: "Completion",
+        state: completion,
+        className: completion.status === "value" ? "bg-green-100/50 border-green-200 text-green-800" : undefined,
+      };
+  const emptyCopy = rangeEmptyCopy(OPERATION_CATEGORY_LABELS[category] || category);
 
   if (isLoading) {
     return (
@@ -150,11 +159,16 @@ export function OperationsTaskRangePage({
 
       {summary && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <SummaryCard label="Total" value={String(summary.total_tasks)} />
-          <SummaryCard label="Completed" value={String(summary.completed)} className="bg-green-100/50 border-green-200 text-green-800" />
-          <SummaryCard label="In Progress" value={String(summary.in_progress)} className="bg-blue-100/50 border-blue-200 text-blue-800" />
-          <SummaryCard label="Pending" value={String(summary.pending)} className="bg-slate-100/50 border-slate-200 text-slate-800" />
-          <SummaryCard label={completionCard.label} value={completionCard.value} className={completionCard.className} />
+          <SummaryCard label="Total" state={tiles.total} />
+          <SummaryCard label="Completed" state={tiles.completed} className="bg-green-100/50 border-green-200 text-green-800" />
+          <SummaryCard label="In Progress" state={tiles.in_progress} className="bg-blue-100/50 border-blue-200 text-blue-800" />
+          <SummaryCard label="Pending" state={tiles.pending} className="bg-slate-100/50 border-slate-200 text-slate-800" />
+          <SummaryCard
+            label={completionCard.label}
+            state={completionCard.state}
+            format={completionCard.label === "Completion" ? (v) => `${v}%` : undefined}
+            className={completionCard.className}
+          />
         </div>
       )}
 
@@ -185,10 +199,8 @@ export function OperationsTaskRangePage({
 
       {tasks.length === 0 && !error && (
         <div className="rounded-xl border bg-muted/20 p-10 text-center">
-          <h2 className="text-lg font-semibold">No tasks in this range</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {OPERATION_CATEGORY_LABELS[category] || category} is clear for the selected period.
-          </p>
+          <h2 className="text-lg font-semibold">{emptyCopy.title}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{emptyCopy.body}</p>
         </div>
       )}
 
@@ -245,17 +257,22 @@ export function OperationsTaskRangePage({
 
 function SummaryCard({
   label,
-  value,
+  state,
+  format,
   className,
 }: {
   label: string;
-  value: string;
+  state: MetricState<number>;
+  format?: (value: number) => string;
   className?: string;
 }) {
+  const hasValue = state.status === "value";
   return (
-    <div className={cn("rounded-lg border bg-muted/30 p-4", className)}>
+    <div data-metric-state={state.status} className={cn("rounded-lg border bg-muted/30 p-4", hasValue && className)}>
       <div className="text-sm text-muted-foreground">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className={hasValue ? "text-2xl font-bold" : "text-base font-medium leading-8 text-muted-foreground"}>
+        {formatMetric(state, format)}
+      </div>
     </div>
   );
 }

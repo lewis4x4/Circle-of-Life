@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type SwapRow = Database["public"]["Tables"]["shift_swap_requests"]["Row"];
 type TimeRecordRow = Database["public"]["Tables"]["time_records"]["Row"];
@@ -397,14 +398,14 @@ export default function AdminApprovalsInboxPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-6">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <ListChecks className="h-8 w-8 text-primary shrink-0" aria-hidden />
             Approvals inbox
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Everything waiting on an approver, in one queue: shift swaps, completed time punches,
             mileage reimbursements, and knowledge-base publish reviews. Actions here write the same
-            records as the source hubs (RLS-scoped).
+            records as the source hubs, and you see only the facilities you have access to.
             {facilityScoped
               ? " Staff queues follow your facility selector; KB reviews are organization-wide."
               : " Showing all facilities your role can access."}
@@ -595,7 +596,7 @@ export default function AdminApprovalsInboxPage() {
             </div>
             {!canApproveMileage && appRole !== null ? (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
-                Your role ({appRole.replace(/_/g, " ")}) can view mileage rows; approval is limited to
+                Your role ({enumLabel(appRole)}) can view mileage rows; approval is limited to
                 owner, org admin, facility admin, and nurse.
               </p>
             ) : null}

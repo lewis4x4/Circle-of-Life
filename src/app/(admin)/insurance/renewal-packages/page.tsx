@@ -171,7 +171,7 @@ export default function InsuranceRenewalPackagesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Renewal data packages</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Structured underwriting metrics and narrative workflow (Module 18 Enhanced). AI drafts are internal until reviewed
+          Structured underwriting metrics and narrative workflow. AI drafts are internal until reviewed
           and published.
         </p>
       </div>

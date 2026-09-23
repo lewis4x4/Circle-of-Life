@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
+import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
+import { templateSummaryStates } from "@/lib/operations/operations-metric-states";
 import {
   canAuthorOperationsTemplates,
   OCE_CADENCE_TYPES,
@@ -92,6 +94,7 @@ export default function OperationsTemplatesPage() {
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [templatesLoadFailed, setTemplatesLoadFailed] = useState(false);
   const [editorTemplateId, setEditorTemplateId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<keyof typeof OPERATION_CATEGORY_LABELS | "all">("all");
   const [cadenceFilter, setCadenceFilter] = useState<(typeof OCE_CADENCE_TYPES)[number] | "all">("all");
@@ -139,6 +142,7 @@ export default function OperationsTemplatesPage() {
 
     setLoading(true);
     setError(null);
+    setTemplatesLoadFailed(false);
     try {
       const params = new URLSearchParams();
       if (selectedFacilityId) params.set("facility_id", selectedFacilityId);
@@ -158,6 +162,7 @@ export default function OperationsTemplatesPage() {
       }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Failed to load templates.");
+      setTemplatesLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -179,13 +184,10 @@ export default function OperationsTemplatesPage() {
     });
   }, [editorTemplateId, selectedFacilityId]);
 
-  const summary = useMemo(() => {
-    const active = templates.filter((template) => template.is_active).length;
-    const orgWide = templates.filter((template) => !template.facility_id).length;
-    const licenseThreatening = templates.filter((template) => template.license_threatening).length;
-    const inactive = templates.filter((template) => !template.is_active).length;
-    return { active, orgWide, licenseThreatening, inactive };
-  }, [templates]);
+  const summary = useMemo(
+    () => templateSummaryStates({ loading, error: templatesLoadFailed, templates, statusFilter }),
+    [loading, statusFilter, templates, templatesLoadFailed],
+  );
 
   const facilityOptions = useMemo(() => {
     if (!selectedFacilityId) return facilities;
@@ -218,7 +220,7 @@ export default function OperationsTemplatesPage() {
 
     const ladderText = form.escalation_ladder.trim();
     if (ladderText && ladderText !== "[]" && normalizeEscalationLadder(ladderText).length === 0) {
-      setError("Escalation ladder JSON is invalid.");
+      setError("The escalation steps could not be read. Check the format, or leave the field empty.");
       return;
     }
 
@@ -329,7 +331,7 @@ export default function OperationsTemplatesPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations Cadence Engine</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Template Authoring</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Version and govern the recurring operations templates that feed Today, Pager, calendar, escalation, and scheduler runs.
@@ -339,10 +341,10 @@ export default function OperationsTemplatesPage() {
       <OperationsViewNav />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <SummaryCard label="Active templates" value={String(summary.active)} icon={ClipboardList} />
-        <SummaryCard label="Org-wide" value={String(summary.orgWide)} icon={Layers3} tone="sky" />
-        <SummaryCard label="License threatening" value={String(summary.licenseThreatening)} icon={FileWarning} tone="red" />
-        <SummaryCard label="Inactive history" value={String(summary.inactive)} icon={Clock3} tone="amber" />
+        <SummaryCard label="Active templates" state={summary.active} icon={ClipboardList} />
+        <SummaryCard label="Org-wide" state={summary.orgWide} icon={Layers3} tone="sky" />
+        <SummaryCard label="License threatening" state={summary.licenseThreatening} icon={FileWarning} tone="red" />
+        <SummaryCard label="Inactive history" state={summary.inactive} icon={Clock3} tone="amber" />
       </div>
 
       {error && (
@@ -587,7 +589,7 @@ export default function OperationsTemplatesPage() {
               />
             </Field>
 
-            <Field label="Escalation ladder JSON">
+            <Field label="Escalation steps (advanced; leave empty if unsure)">
               <Textarea
                 value={form.escalation_ladder}
                 onChange={(event) => setForm((current) => ({ ...current, escalation_ladder: event.target.value }))}
@@ -808,15 +810,16 @@ function createEmptyForm(selectedFacilityId: string): TemplateFormState {
 
 function SummaryCard({
   label,
-  value,
+  state,
   icon: Icon,
-  tone = "default",
+  tone: declaredTone = "default",
 }: {
   label: string;
-  value: string;
+  state: MetricState<number>;
   icon: typeof ClipboardList;
   tone?: "default" | "sky" | "amber" | "red";
 }) {
+  const tone = state.status === "value" ? declaredTone : "default";
   const toneClass =
     tone === "sky"
       ? "border-sky-200 bg-sky-50"
@@ -830,7 +833,12 @@ function SummaryCard({
       <CardContent className="flex items-center justify-between gap-3 p-5">
         <div>
           <div className="text-sm text-muted-foreground">{label}</div>
-          <div className="mt-1 text-3xl font-semibold">{value}</div>
+          <div
+            data-metric-state={state.status}
+            className={state.status === "value" ? "mt-1 text-3xl font-semibold" : "mt-1 text-base font-medium text-muted-foreground"}
+          >
+            {formatMetric(state)}
+          </div>
         </div>
         <Icon className="h-7 w-7 text-muted-foreground" />
       </CardContent>

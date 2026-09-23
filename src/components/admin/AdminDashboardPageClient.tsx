@@ -8,6 +8,7 @@ import { AlertCircle, Clock, ShieldAlert, Pill, FileWarning, CheckCircle2, UserC
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchAdminDashboardSnapshot, type AdminDashboardSnapshot } from "@/lib/admin-dashboard-snapshot";
+import { triageInboxEmptyCopy } from "@/lib/admin/triage-inbox-empty-copy";
 import { formatRoleHomeSubtitle, getRoleDashboardConfig } from "@/lib/auth/dashboard-routing";
 import {
   isExecutiveOrganizationGapError,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { MotionCard } from "@/components/ui/motion-card";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LocalInboxItem = {
   id: string;
@@ -240,6 +242,11 @@ export function AdminDashboardPageClient({
   ].filter((item): item is LocalInboxItem => item !== null);
   const workflows = snapshot.workflowQueues;
   const assurance = snapshot.residentAssurance;
+  const inboxEmpty = triageInboxEmptyCopy({
+    residentCount: snapshot.residentCount,
+    openEscalations: assurance.openEscalations,
+    pendingWatchApprovals: assurance.pendingWatchApprovals,
+  });
   const topStripActionable = staffingGaps + medExceptions + complianceAlerts;
   const incidentLifecycleBacklog =
     workflows.incidentOpenObligations + workflows.incidentRootCausePending + workflows.incidentCarePlanPending;
@@ -432,9 +439,9 @@ export function AdminDashboardPageClient({
             <div className="p-3 md:p-4">
               {snapshot.workflowInbox.length === 0 && triageInboxItems.length === 0 && snapshot.activity.length === 0 && openIncidents === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/80 p-10 text-center">
-                  <CheckCircle2 className="mb-3 size-8 text-success/60" />
-                  <p className="text-[14px] font-medium text-foreground">Inbox zero</p>
-                  <p className="mt-0.5 text-[12px] text-muted-foreground">All operational exceptions resolved.</p>
+                  <CheckCircle2 className={cn("mb-3 size-8", inboxEmpty.clear ? "text-success/60" : "text-muted-foreground/60")} />
+                  <p className="text-[14px] font-medium text-foreground">{inboxEmpty.headline}</p>
+                  <p className="mt-0.5 text-[12px] text-muted-foreground">{inboxEmpty.body}</p>
                 </div>
               ) : (
                 <MotionList className="flex flex-col">
@@ -617,7 +624,7 @@ export function AdminDashboardPageClient({
             Facility priorities
           </p>
           <h2 className="mt-0.5 truncate text-[13px] font-medium text-foreground">
-            {adminConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+            {enumLabel(adminConfig.firstScreenPriority.join(" · "))}
           </h2>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -626,7 +633,7 @@ export function AdminDashboardPageClient({
               key={lane}
               className="inline-flex h-6 items-center rounded border border-border/60 bg-secondary/60 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
             >
-              {lane.replace(/_/g, " ")}
+              {enumLabel(lane)}
             </span>
           ))}
         </div>

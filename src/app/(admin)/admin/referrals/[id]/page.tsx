@@ -33,6 +33,7 @@ import {
   type ReferralEpisodeModel,
   type ReferralLeadUpdatePatch,
 } from "@/lib/referrals/referral-authority";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LeadDetail = AuthorizedReferralLeadRow;
 
@@ -72,7 +73,7 @@ const STATUS_OPTIONS: Array<{ value: EditableLeadStatus; label: string }> = [
 ];
 
 function formatStatus(s: string) {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function syncTourStatus(

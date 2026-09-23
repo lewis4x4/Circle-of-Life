@@ -51,14 +51,25 @@ function packsActive(pathname: string) {
 }
 
 function historyActive(pathname: string) {
-  return (
-    pathname === "/admin/reports/history" ||
-    pathname.startsWith("/admin/reports/history/") ||
-    pathname.startsWith("/admin/reports/run/")
-  );
+  return pathname === "/admin/reports/history" || pathname.startsWith("/admin/reports/history/");
+}
+
+/**
+ * A run page (/admin/reports/run/[sourceType]/[id]) belongs to the tab its
+ * source lives on — a template run lights Templates, not History (COL-655).
+ * Unknown source types run as templates (classifyReportRunSource).
+ */
+function runSourceHref(pathname: string): string | null {
+  const match = /^\/admin\/reports\/run\/([^/]+)/.exec(pathname);
+  if (!match) return null;
+  const type = match[1].toLowerCase();
+  if (type === "pack") return "/admin/reports/packs";
+  if (type === "saved_view") return "/admin/reports/saved";
+  return "/admin/reports/templates";
 }
 
 function isPrimaryHrefActive(pathname: string, href: string) {
+  if (runSourceHref(pathname) === href) return true;
   if (href === "/admin/reports") return overviewActive(pathname);
   if (href === "/admin/reports/templates") return templatesActive(pathname);
   if (href === "/admin/reports/scheduled") return scheduledActive(pathname);
@@ -68,6 +79,7 @@ function isPrimaryHrefActive(pathname: string, href: string) {
 }
 
 function isSecondaryHrefActive(pathname: string, href: string) {
+  if (runSourceHref(pathname) === href) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

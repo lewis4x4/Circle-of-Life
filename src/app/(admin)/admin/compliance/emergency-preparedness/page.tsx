@@ -616,8 +616,8 @@ export default function EmergencyPreparednessPage() {
                   }`}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
                         <div
                           className={`p-3 rounded-lg ${
                             isOverdue
@@ -748,7 +748,7 @@ export default function EmergencyPreparednessPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Flame className="h-4 w-4" /> Drill Log (Slice 9F)</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Flame className="h-4 w-4" /> Drill log</CardTitle>
           <CardDescription>
             Records a fire, elopement or tornado drill as a <strong>draft</strong>. A draft satisfies no requirement. An authorized person finalizes it on the site work surface, which records who finalized it and delivers it once.
           </CardDescription>
@@ -787,7 +787,7 @@ export default function EmergencyPreparednessPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Wrench className="h-4 w-4" /> Maintenance Tickets</CardTitle>
-          <CardDescription>Create and view work orders from `maintenance_tickets`.</CardDescription>
+          <CardDescription>Create and view maintenance work orders.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
@@ -807,7 +807,7 @@ export default function EmergencyPreparednessPage() {
       <Card>
         <CardHeader>
           <CardTitle>Maintenance Completion Log</CardTitle>
-          <CardDescription>Log evidence entries in `maintenance_task_completions`.</CardDescription>
+          <CardDescription>Log completed maintenance tasks with evidence.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">

@@ -28,6 +28,7 @@ import {
 import { fetchActorContext } from "@/lib/office/meetings";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { handoffSummaryLine } from "@/lib/registers/log-summary-lines";
 import { cn } from "@/lib/utils";
 
 const TIME_FMT = new Intl.DateTimeFormat("en-US", {
@@ -169,6 +170,7 @@ export default function AdminHandoffPage() {
   );
 
   const openCount = useMemo(() => notes.filter((n) => !n.acknowledged_at).length, [notes]);
+  const summaryLine = handoffSummaryLine({ facilityReady, loading: isLoading, error: loadError, openCount });
 
   const inputCls = "rounded-[9px] border border-border bg-background px-3 py-2 text-sm text-foreground";
 
@@ -176,19 +178,17 @@ export default function AdminHandoffPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-2">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <ClipboardCheck className="h-8 w-8 text-info shrink-0" aria-hidden />
             Shift handoff
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            What the incoming shift needs to know.{facilityReady ? ` ${openCount} unacknowledged on this shift.` : null}
+            What the incoming shift needs to know.{summaryLine ? ` ${summaryLine}` : ""}
           </p>
         </header>
 
         {!facilityReady ? (
-
           <FacilityGateNotice reason="The handoff board is per building and per shift." />
-
         ) : null}
 
         {notice ? (

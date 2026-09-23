@@ -8,6 +8,7 @@ import { getServerSelectedFacilityId } from "@/lib/facilities/selected-facility-
 import { loadFinanceRoleContextServer } from "@/lib/finance/load-finance-context.server";
 import { formatTrustLastEntryDate } from "@/lib/finance/trust-display-copy";
 import { loadFinanceTrustData, type ResidentTrustRow } from "@/lib/finance/load-trust-data";
+import { describeTrustSummary } from "@/lib/finance/trust-summary-display";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function FinanceTrustPage() {
@@ -42,11 +43,7 @@ export default async function FinanceTrustPage() {
         : "Failed to load trust reconciliation.";
   }
 
-  const summary = {
-    totalTrust: rows.reduce((sum, row) => sum + (row.currentBalanceCents ?? 0), 0),
-    legacyReview: rows.filter(row => row.legacyReviewRequired).length,
-    ledgerDifferences: rows.filter(row => !row.ledgerMatchesBalance).length,
-  };
+  const summary = describeTrustSummary(rows, error);
 
   return (
     <div className="space-y-6">
@@ -69,18 +66,18 @@ export default async function FinanceTrustPage() {
         <TrustMetricCard
           icon={Wallet}
           label="Recorded resident funds"
-          value={error ? "Unavailable" : summary.legacyReview > 0 ? "Incomplete — review legacy balances" : billingCurrency.format(summary.totalTrust / 100)}
+          value={summary.recordedFunds}
         />
         <TrustMetricCard
           icon={Landmark}
           label="Legacy balances to review"
-          value={error ? "Unavailable" : String(summary.legacyReview)}
+          value={summary.legacyReview}
         />
         <TrustMetricCard
           icon={Scale}
           label="Ledger differences"
-          value={error ? "Unavailable" : String(summary.ledgerDifferences)}
-          tone={summary.ledgerDifferences > 0 ? "red" : "slate"}
+          value={summary.ledgerDifferences}
+          tone={summary.ledgerDifferencesCount !== null && summary.ledgerDifferencesCount > 0 ? "red" : "slate"}
         />
       </div>
 

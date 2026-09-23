@@ -15,6 +15,7 @@ import {
 } from "@/lib/executive/executive-auth-page-state";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const EXECUTIVE_ENTITY_LOADING_MESSAGE = "Loading entities…";
 export const EXECUTIVE_ENTITY_EMPTY_LIST_MESSAGE = "No legal entities on file.";
@@ -86,7 +87,7 @@ export default function ExecutiveEntityIndexPage() {
           Entities
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Drill down by legal entity; each page lists facilities with a KPI strip (Module 24).
+          Drill down by legal entity; each page lists its facilities with their key numbers.
         </p>
       </div>
 
@@ -113,7 +114,7 @@ export default function ExecutiveEntityIndexPage() {
               <CardHeader>
                 <CardTitle className="text-lg">{e.name}</CardTitle>
                 {e.status && (
-                  <CardDescription className="capitalize">{e.status.replace(/_/g, " ")}</CardDescription>
+                  <CardDescription className="capitalize">{enumLabel(e.status)}</CardDescription>
                 )}
               </CardHeader>
               <CardContent>

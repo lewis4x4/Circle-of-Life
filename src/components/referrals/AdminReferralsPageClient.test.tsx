@@ -22,6 +22,14 @@ vi.mock("@/hooks/useFacilityStore", () => ({
   useFacilityStore: mocks.useFacilityStoreMock,
 }));
 
+vi.mock("@/contexts/haven-auth-context", () => ({
+  useHavenAuth: () => ({ user: { id: "user-1" }, loading: false }),
+}));
+
+vi.mock("@/lib/admin-facilities", () => ({
+  fetchAdminFacilityOptions: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock("@/lib/supabase/client", () => ({
   createClient: mocks.createClientMock,
 }));
@@ -143,9 +151,10 @@ describe("<AdminReferralsPageClient />", () => {
     );
 
     expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/select a facility in the header to load referral leads and kpis for that site/i),
-    ).toBeInTheDocument();
+    // COL-651: one gate with a picker; the pipeline roster is not rendered while gated.
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(screen.queryByText(/select a facility/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Pipeline" })).not.toBeInTheDocument();
     expect(
       screen.getByText(/inquiries and pipeline before admission — attribution, follow-up, and conversion\.$/i),
     ).toBeInTheDocument();
@@ -168,9 +177,10 @@ describe("<AdminReferralsPageClient />", () => {
 
     expect(screen.queryByText(/the selected facility/i)).not.toBeInTheDocument();
     expect(screen.queryByText("not-a-uuid")).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/select a facility in the header to load referral leads and kpis for that site/i),
-    ).toBeInTheDocument();
+    // COL-651: one gate with a picker; the pipeline roster is not rendered while gated.
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(screen.queryByText(/select a facility/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Pipeline" })).not.toBeInTheDocument();
   });
 
   it("names the selected facility in the hub subheading once one is selected", () => {

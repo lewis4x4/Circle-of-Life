@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 // Types
 type TaskStatus = "pending" | "in_progress" | "completed" | "missed" | "deferred";
@@ -635,11 +636,13 @@ export default function OperationsTodayPage() {
         </div>
       )}
 
-      {/* Stats bar */}
+      {/* Stats bar. In the page flow on a phone so it never sits over
+          "Clear Filters"; on desktop it sticks to the bottom of the workspace
+          (not the window), so it stays clear of the sidebar (COL-657). */}
       {stats && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
+        <div className="border-t bg-background p-4 lg:sticky lg:bottom-0 lg:z-10 lg:shadow-lg">
+          <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Pending:</span>
                 <span className="font-semibold text-lg">{stats.pending}</span>
@@ -713,7 +716,7 @@ export default function OperationsTodayPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
-                  <p className="capitalize text-foreground">{selectedTask.status.replace(/_/g, " ")}</p>
+                  <p className="capitalize text-foreground">{enumLabel(selectedTask.status)}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Priority</p>
