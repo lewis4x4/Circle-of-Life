@@ -43,7 +43,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/billing",
 }));
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: (select?: (state: typeof store) => unknown) => (select ? select(store) : store),
+  useFacilityStore: Object.assign(
+    (select?: (state: typeof store) => unknown) => (select ? select(store) : store),
+    { getState: () => store },
+  ),
 }));
 const auth = vi.hoisted(() => ({ user: { id: "user-1" }, organizationId: "org-1", appRole: "owner", loading: false }));
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => auth }));
