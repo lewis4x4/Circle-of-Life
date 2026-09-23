@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatShiftSwapStaffLabel } from "@/lib/admin/shift-swaps/shift-swaps-display-copy";
 import { formatShiftSwapCoveringName } from "@/lib/staffing/shift-swaps-display-copy";
+import { canApproveShiftSwaps } from "@/lib/staffing/shift-swap-access";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -110,7 +111,7 @@ const DEFAULT_FILTERS = { search: "", status: "all" };
 export default function AdminShiftSwapsPage() {
   const supabase = createClient();
   const { user, appRole } = useHavenAuth();
-  const canManage = ["owner", "org_admin", "facility_admin", "med_tech"].includes(appRole ?? "");
+  const canManage = canApproveShiftSwaps(appRole);
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<SwapUiRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -325,7 +326,7 @@ export default function AdminShiftSwapsPage() {
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Oversight queue for COL’s shift swap workflow. Pending requests can be approved or denied when your role
-            allows (facility admin or nurse per RLS). Export supports audits.
+            allows (facility admin or med-tech per RLS). Export supports audits.
           </p>
         </header>
 
