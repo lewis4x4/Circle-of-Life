@@ -1,5 +1,7 @@
 # Phase 1 — checklist execution log
 
+> **Role note (2026-09-22, COL-615):** this is a historical record. The `nurse`, `caregiver`, `dietary` and `dietary_aide` login roles it names were retired by migration 468 (nurse and caregiver folded into `med_tech`, dietary and dietary_aide into `cook`). For the current role model see the Roles section in `AGENTS.md`.
+
 **Use:** Record **PASS**, **FAIL**, or **WAIVED** for each row when executing [PHASE1-ACCEPTANCE-CHECKLIST.md](./PHASE1-ACCEPTANCE-CHECKLIST.md) on the **target environment** with **real auth**.
 
 **Rule:** A repo/agent cannot set PASS without owner (or delegated tester) execution on that environment.

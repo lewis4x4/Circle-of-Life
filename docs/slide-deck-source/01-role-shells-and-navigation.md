@@ -8,28 +8,28 @@ Haven is not a single generic dashboard. It is a role-routed system with differe
 
 ### Admin shell
 
-- Primary users: owner, org admin, facility admin, manager, admin assistant, coordinator, nurse, broker, maintenance, some dietary users.
+- Primary users: owner, org admin, facility admin, manager, admin assistant, coordinator, med-tech (admin surfaces its permissions reach), broker, maintenance, recruiter (referrals, pipeline and reputation only), cook (limited).
 - Canonical prefix: `/admin/*`
 - Primary purpose: operational control, back-office workflows, analytics, and oversight.
 - Design note: most business-module slides should use the admin shell as the visual container.
 
-### Caregiver shell
+### Caregiver shell (floor app)
 
-- Primary users: caregiver, housekeeper.
+- Primary users: med-tech (floor work: tasks, ADLs, rounds), housekeeper (housekeeper paths only, never clinical). The route keeps the `/caregiver` name; there is no caregiver login role since 2026-09-22 (COL-615).
 - Canonical prefix: `/caregiver/*`
 - Primary purpose: phone-first shift execution, resident tasks, rounds, documentation, handoff.
 - Design note: show speed, urgency, and simple actions.
 
 ### Med-tech shell
 
-- Primary users: med-tech, nurse in med workflows.
+- Primary users: med-tech (their landing app).
 - Canonical prefix: `/med-tech/*`
 - Primary purpose: medication pass, controlled counts, med-related exception handling.
 - Design note: present it as a tighter, medication-specific cockpit.
 
 ### Dietary shell
 
-- Primary users: dietary lead, dietary aide.
+- Primary users: cook.
 - Canonical prefix: `/dietary`
 - Primary purpose: diet orders, meal readiness, restrictions, clinical review alignment.
 - Design note: make it feel operational and kitchen-ready rather than clinical-admin heavy.
@@ -54,8 +54,10 @@ Haven is not a single generic dashboard. It is a role-routed system with differe
 - Facility admins and managers land in facility command surfaces.
 - Admin assistants land in coordination-heavy dashboards.
 - Coordinators land in care-plan, assessment, and family workflows.
-- Nurses land in clinical risk and medication-heavy surfaces.
-- Caregivers and med-tech users land in phone-first execution shells.
+- Med-techs land in the med-tech app (`/med-tech`) and also use the floor app (`/caregiver`).
+- Housekeepers land in the floor app's housekeeper view (`/caregiver/housekeeper`).
+- Cooks land in the dietary shell (`/dietary`).
+- Recruiters land in referrals (`/admin/referrals`).
 - Families land in a stripped-down engagement portal.
 
 ## Navigation Principles To Explain In The Deck

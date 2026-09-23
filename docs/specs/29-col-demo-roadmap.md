@@ -56,7 +56,7 @@ These are not optional polish items. They are the promises implicit in the meeti
 ### Already built in the repo
 
 - Broad admin surface for residents, incidents, compliance, finance, billing, insurance, vendors, reputation, reports, transportation, training, knowledge, executive, referrals, admissions, discharge, family portal.
-- Role-specific surfaces for caregiver, family, med-tech, nurse/admin assistant/coordinator/dietary dashboards.
+- Role-specific surfaces for Med-Tech (med-tech app plus the `/caregiver` floor app), family, admin assistant, coordinator and Cook dashboards (`nurse`, `caregiver`, `dietary` retired 2026-09-22, COL-615).
 - Grace knowledge assistant with deterministic safe-mode recovery and published Obsidian-backed control plane.
 - KB upload, indexing, document admin, and local Obsidian draft bridge.
 - Multi-facility / multi-entity data model and substantial finance/compliance infrastructure.
@@ -112,7 +112,7 @@ Everything else depends on this. If Grace is unreliable, uploads feel broken, an
 - feedback capture for COL staff testing
 - “example/demo” cleanup in executive/admin surfaces
 - operator-visible workflow status for key actions
-- role landing-page simplification for owner, facility admin, caregiver, med-tech, family
+- role landing-page simplification for owner, facility admin, Med-Tech, family
 
 ### Must-answer product questions
 
@@ -397,7 +397,7 @@ Start here. These are the first execution lanes.
 
 ### Workstream 5: Role Landing Simplification
 
-- Give owner, facility admin, caregiver, med-tech, and family users a cleaner entry point with top priorities.
+- Give owner, facility admin, Med-Tech, and family users a cleaner entry point with top priorities.
 
 ---
 

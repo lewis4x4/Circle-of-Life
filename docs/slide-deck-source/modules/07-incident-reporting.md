@@ -9,8 +9,8 @@ Incident capture, investigation, workflow obligations, root-cause review, and fo
 
 ## Primary Users
 
-- Caregivers creating drafts
-- Nurses and managers investigating incidents
+- Med-Techs creating drafts on the floor app
+- Med-Techs and managers investigating incidents
 - Facility and organization leadership reviewing risk posture
 
 ## Key Workflows

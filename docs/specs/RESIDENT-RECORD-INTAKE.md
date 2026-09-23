@@ -62,10 +62,10 @@ The extraction provider returns controlled fact codes only. It cannot select tab
 
 | Work | Allowed reviewer |
 |---|---|
-| Upload, classify, match, manual proposal | Owner, org admin, facility admin, nurse |
+| Upload, classify, match, manual proposal | Owner, org admin, facility admin, Med-Tech |
 | Demographics, contacts, admission checklist | Owner, org admin, facility admin |
-| Diagnoses, allergies, code status, assessments, Form 1823, directives | Nurse |
-| Medication order | Nurse; application reuses `save_medication_order_review` |
+| Diagnoses, allergies, code status, assessments, Form 1823, directives | Med-Tech |
+| Medication order | Med-Tech; application reuses `save_medication_order_review` |
 | Payer and pharmacy benefits | Owner, org admin, facility admin |
 | Authority instruments and legal contracts | Owner, org admin, facility admin |
 | Credential override/purge | Owner or org admin with reason |
@@ -84,7 +84,7 @@ Only SSN last four may enter ordinary resident data. Full SSNs are not a support
 
 The April 2021 form representation includes representative, allergies, height/weight, history, limitations, cognitive/behavioral status, services, precautions, elopement risk, seven ADL assistance levels, diet, five exclusion-condition flags, ALF-needs determination, medication-assistance determination, and examiner certification.
 
-Classification or approval does not promote a Form 1823 source. The nurse-authorized apply command atomically creates the accepted resident document, writes the structured Form 1823 record, and updates admission checklist evidence. A failure rolls back all three.
+Classification or approval does not promote a Form 1823 source. The Med-Tech-authorized apply command atomically creates the accepted resident document, writes the structured Form 1823 record, and updates admission checklist evidence. A failure rolls back all three.
 
 ## AI and PHI boundary
 

@@ -5,12 +5,11 @@
 
 ## What It Covers
 
-The rounding and resident observation system that schedules checks, routes them to caregivers, records observations, and gives supervisors live visibility into missed or overdue assurance work.
+The rounding and resident observation system that schedules checks, routes them to Med-Techs on the floor app, records observations, and gives supervisors live visibility into missed or overdue assurance work.
 
 ## Primary Users
 
-- Caregivers
-- Nurses
+- Med-Techs (floor app)
 - Supervisors and facility operators
 
 ## Key Workflows
@@ -43,4 +42,4 @@ The rounding and resident observation system that schedules checks, routes them 
 ## Deck Framing
 
 - This is a signature Haven story because it turns policy and care needs into live safety assurance.
-- Show the supervisor board and caregiver mobile loop together.
+- Show the supervisor board and floor-app mobile loop together.
