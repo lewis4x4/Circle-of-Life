@@ -36,7 +36,10 @@ export type FilterPillProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>
   active?: boolean;
 };
 
-/** Muted at zero-count defaults; semantic color appears only for active or non-zero states. */
+/**
+ * Muted at zero-count defaults; semantic color appears only for active or non-zero states.
+ * An unknown count (undefined) renders no badge and neutral chrome — never "(0)".
+ */
 export function FilterPill({
   label,
   count,
@@ -45,8 +48,7 @@ export function FilterPill({
   className,
   ...props
 }: FilterPillProps) {
-  const countValue = count ?? 0;
-  const useSemantic = active || countValue > 0;
+  const useSemantic = active || (typeof count === "number" && count > 0);
   const classes = active
     ? toneClasses[tone].active
     : useSemantic

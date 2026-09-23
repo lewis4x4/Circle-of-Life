@@ -6,6 +6,7 @@ import {
   formatReportStaffMemberFromMap,
 } from "@/lib/reports/report-staff-display-copy";
 import { fetchResidentAssuranceFacilityTrendSeries } from "@/lib/resident-assurance/command-center-brief";
+import { requireCount } from "@/lib/metrics/require-count";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
 
@@ -551,7 +552,7 @@ async function runTrainingCertificationExpiry(params: ExecuteParams): Promise<Re
   return {
     summary: [
       { metricKey: "certificationsExpiring30d", value: kpi.workforce.certificationsExpiring30d },
-      { metricKey: "activeStaffCount", value: staffRes.count ?? 0 },
+      { metricKey: "activeStaffCount", value: requireCount(staffRes, "Active staff count") },
     ],
     rows: detailRows,
     footnotes: ["Expiry window is rolling 30 days from today for active certifications."],
@@ -578,7 +579,7 @@ async function runSurveyReadinessSummary(params: ExecuteParams): Promise<ReportE
   const { count, error } = await closedQ;
   if (error) throw new Error(error.message);
 
-  const deficienciesClosedInWindow = count ?? 0;
+  const deficienciesClosedInWindow = requireCount({ count }, "Closed survey deficiency count");
 
   return {
     // Metric keys — scanner false positive, see .gitleaksignore.

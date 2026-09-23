@@ -41,21 +41,9 @@ export async function assembleRenewalPackagePayload(
   if (fErr) return { ok: false, error: fErr.message };
   const facilityIds = (facs ?? []).map((f) => f.id);
   if (facilityIds.length === 0) {
-    return {
-      ok: true,
-      payload: {
-        version: RENEWAL_PACKAGE_PAYLOAD_VERSION,
-        period: { start: periodStart, end: periodEnd },
-        entity_id: entityId,
-        metrics: {
-          active_residents: 0,
-          incidents_in_period: 0,
-          active_staff: 0,
-          invoice_total_cents: 0,
-        },
-        assembled_at: new Date().toISOString(),
-      },
-    };
+    // Zero residents / incidents / staff here would be a fact sent to a carrier
+    // about an entity we cannot see into, not a measurement (COL-708).
+    return { ok: false, error: "This legal entity has no facilities on file, so there is nothing to put in the package." };
   }
 
   const periodStartTs = `${periodStart}T00:00:00.000Z`;
@@ -99,6 +87,18 @@ export async function assembleRenewalPackagePayload(
   if (stfC.error) return { ok: false, error: stfC.error.message };
   if (invRows.error) return { ok: false, error: invRows.error.message };
 
+  // A renewal package is sent to the carrier; a count that did not come back must
+  // not be submitted as 0 residents / incidents / staff (COL-708).
+  const missing = [
+    [resC.count, "active residents"],
+    [incC.count, "incidents in period"],
+    [stfC.count, "active staff"],
+  ].find(([n]) => typeof n !== "number");
+  if (missing) return { ok: false, error: `Could not count ${missing[1]}; the package was not assembled.` };
+  const activeResidents = resC.count as number;
+  const incidentsInPeriod = incC.count as number;
+  const activeStaff = stfC.count as number;
+
   const invoiceTotal = (invRows.data ?? []).reduce((sum, row) => sum + row.total, 0);
 
   return {
@@ -108,9 +108,9 @@ export async function assembleRenewalPackagePayload(
       period: { start: periodStart, end: periodEnd },
       entity_id: entityId,
       metrics: {
-        active_residents: resC.count ?? 0,
-        incidents_in_period: incC.count ?? 0,
-        active_staff: stfC.count ?? 0,
+        active_residents: activeResidents,
+        incidents_in_period: incidentsInPeriod,
+        active_staff: activeStaff,
         invoice_total_cents: invoiceTotal,
       },
       assembled_at: new Date().toISOString(),

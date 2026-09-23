@@ -19,7 +19,12 @@ export type StaffLaunchHiddenNavItem = {
   /** Left-rail / jump-list label */
   label: string;
   href: string;
+  /** App roles the hold has been lifted for; everyone else still has it hidden. */
+  releasedToRoles?: readonly string[];
 };
+
+/** Owner and admin roles (org and facility) — Brian's 2026-09-23 ruling on Finance and Insurance. */
+const OWNER_AND_ADMIN_ROLES = ["owner", "org_admin", "facility_admin", "manager"] as const;
 
 export const STAFF_LAUNCH_HIDDEN_NAV: readonly StaffLaunchHiddenNavItem[] = [
   // Hold med rec until staff are ready for that workflow. Recording a discharge no longer
@@ -64,21 +69,25 @@ export const STAFF_LAUNCH_HIDDEN_NAV: readonly StaffLaunchHiddenNavItem[] = [
     label: "Dietary & Nutrition",
     href: "/admin/dietary",
   },
-  // Moving finance to Front desk; keep Vendors & AP on Business.
+  // Moving finance to Front desk; keep Vendors & AP on Business. Released to
+  // owners and admins 2026-09-23 (Brian, COL-655).
   {
     key: "finance",
     pillar: "finance",
     menu: "Business",
     label: "Finance",
     href: "/admin/finance",
+    releasedToRoles: OWNER_AND_ADMIN_ROLES,
   },
-  // Moving insurance to Front desk; keep Vendors & AP on Business.
+  // Moving insurance to Front desk; keep Vendors & AP on Business. Released to
+  // owners and admins 2026-09-23 (Brian, COL-655).
   {
     key: "insurance",
     pillar: "finance",
     menu: "Business",
     label: "Insurance",
     href: "/admin/insurance",
+    releasedToRoles: OWNER_AND_ADMIN_ROLES,
   },
 ] as const;
 
@@ -88,22 +97,27 @@ export const STAFF_LAUNCH_HIDDEN_NAV_KEYS = new Set(
 
 /**
  * Hide a catalog key from staff menus unless it is the role's only
- * allowlisted item (broker → Insurance). Dedicated-role tools stay visible.
+ * allowlisted item (broker → Insurance) or the hold has been lifted for the
+ * role. Dedicated-role tools stay visible.
  */
 export function isStaffLaunchHiddenKey(
   key: string,
   visibleItemKeys?: readonly string[],
+  role?: string | null,
 ): boolean {
-  if (!STAFF_LAUNCH_HIDDEN_NAV_KEYS.has(key)) return false;
+  const hold = STAFF_LAUNCH_HIDDEN_NAV.find((item) => item.key === key);
+  if (!hold) return false;
   if (visibleItemKeys?.length === 1 && visibleItemKeys[0] === key) return false;
+  if (role && hold.releasedToRoles?.includes(role)) return false;
   return true;
 }
 
 export function filterStaffLaunchHiddenItems<T extends { key: string }>(
   items: readonly T[],
   visibleItemKeys?: readonly string[],
+  role?: string | null,
 ): T[] {
-  return items.filter((item) => !isStaffLaunchHiddenKey(item.key, visibleItemKeys));
+  return items.filter((item) => !isStaffLaunchHiddenKey(item.key, visibleItemKeys, role));
 }
 
 export function staffLaunchHiddenInventory(): StaffLaunchHiddenNavItem[] {

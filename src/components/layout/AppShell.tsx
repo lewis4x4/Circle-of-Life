@@ -785,7 +785,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   // role config doesn't list anything (e.g. owner / facility_admin). Legacy
   // role configs use group names ("Clinical Ops") — map them to pillar ids.
   const visiblePillars = useMemo(() => {
-    const pillars = applyFacilityOperatorNav(pillarsForRole(roleConfig), appRole, visibleFacilities);
+    const pillars = applyFacilityOperatorNav(pillarsForRole(roleConfig, appRole), appRole, visibleFacilities);
     return pillars.map((pillar) => ({
       ...pillar,
       items: applyExecutiveCommandNavToItems(pillar.items, appRole, authLoading),
@@ -810,11 +810,11 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     // allowlist) are never added back.
     const isCatalogItem = PILLARS.some((candidate) => candidate.items.some((item) => item.key === activeItemKey));
     const heldForLaunch =
-      isStaffLaunchHiddenKey(activeItemKey) &&
+      isStaffLaunchHiddenKey(activeItemKey, roleConfig.visibleItemKeys, appRole) &&
       (!roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(activeItemKey));
     if (isCatalogItem && !heldForLaunch) return pillar;
     return { ...pillar, items: [...pillar.items, navAnchor.item] };
-  }, [activeItemKey, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
+  }, [activeItemKey, appRole, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
 
   // Keep the current pillar visible in the phone strip (COL-657).
   useEffect(() => {
