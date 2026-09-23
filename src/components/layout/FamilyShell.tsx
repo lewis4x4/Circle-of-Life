@@ -14,6 +14,7 @@ import {
   UserCircle2,
 } from "lucide-react";
 
+import { AccountNotLinkedNotice } from "@/components/auth/AccountNotLinkedNotice";
 import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import {
@@ -25,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { hasLinkedResident } from "@/lib/auth/account-link";
 import { createClient } from "@/lib/supabase/client";
 
 export function FamilyShell({ children }: { children: React.ReactNode }) {
@@ -32,6 +34,8 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  // null until checked (or when the check failed): pages render as before.
+  const [residentLinked, setResidentLinked] = useState<boolean | null>(null);
 
   const handleSignOut = useCallback(async () => {
     setSigningOut(true);
@@ -59,6 +63,13 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
       try {
         const { data } = await supabase.auth.getSession();
         if (!cancelled) setSessionEmail(data.session?.user?.email ?? null);
+        // A family login with no linked resident saw a blank welcome, "$0.00 ·
+        // In good standing" on billing and live tabs; show one state instead (COL-661).
+        const userId = data.session?.user?.id;
+        if (userId) {
+          const linked = await hasLinkedResident(supabase, userId);
+          if (!cancelled) setResidentLinked(linked);
+        }
       } catch {
         if (!cancelled) setSessionEmail(null);
       }
@@ -159,19 +170,29 @@ export function FamilyShell({ children }: { children: React.ReactNode }) {
           </DropdownMenu>
         </div>
 
-        <main className="relative z-10 w-full flex-1">{children}</main>
+        <main className="relative z-10 w-full flex-1">
+          {residentLinked === false ? (
+            <div className="px-4 pb-8 pt-20 md:px-6">
+              <AccountNotLinkedNotice kind="family" contact={null} />
+            </div>
+          ) : (
+            children
+          )}
+        </main>
 
-        <BottomNav aria-label="Family navigation">
-          {navItems.map((item) => (
-            <BottomNavItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              label={item.label}
-              active={item.active}
-            />
-          ))}
-        </BottomNav>
+        {residentLinked === false ? null : (
+          <BottomNav aria-label="Family navigation">
+            {navItems.map((item) => (
+              <BottomNavItem
+                key={item.href}
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                active={item.active}
+              />
+            ))}
+          </BottomNav>
+        )}
     </div>
   );
 }
