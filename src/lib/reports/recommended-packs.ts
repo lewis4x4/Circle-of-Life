@@ -63,3 +63,13 @@ export function surveyVisitTemplateSlugs(seed: Phase1TemplateSeed[]): string[] {
 }
 
 export const SURVEY_VISIT_PACK_NAME = "Survey visit pack";
+
+/** Starter ids already enabled, read from the `[starter:<id>]` marker the Enable action writes into the pack description. */
+export function enabledStarterPackIds(packs: { description: string | null }[]): Set<string> {
+  const ids = new Set<string>();
+  for (const pack of packs) {
+    const match = /^\[starter:([^\]]+)\]/.exec(pack.description ?? "");
+    if (match) ids.add(match[1]);
+  }
+  return ids;
+}
