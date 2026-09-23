@@ -52,3 +52,4 @@ Shared UI primitives—including **`QuietDatePicker`**—must **not** silently i
 - Production operations: `docs/specs/PHASE1-OPS-VERIFICATION-RUNBOOK.md`
 - Linear workflow: `docs/LINEAR-WORKFLOW.md`
 - Next.js agent notes: `AGENTS.md`
+- Login roles (as of 2026-09-22, COL-615): `AGENTS.md` "Roles". `nurse`, `caregiver`, `dietary` and `dietary_aide` are retired; grant `med_tech` / `cook` in every new migration (`supabase/tests/review_role_consolidation.sql` fails the replay otherwise).

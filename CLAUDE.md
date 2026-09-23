@@ -126,6 +126,32 @@ Migrations applied outside the CLI land under a timestamp version rather than `N
 - `src/lib/` holds domain logic (billing, compliance, exec KPIs, audit export, CSV export, etc.) and is the shared seam between RSC pages and route handlers. Prefer typed Supabase `Database` helpers; avoid `as any`.
 - `src/features/`, `src/stores/` (Zustand), `src/contexts/`, `src/hooks/` follow standard Next conventions.
 
+## Roles (as of 2026-09-22, COL-615)
+
+Owner rulings by Brian, 2026-09-22. This is the login-role model (`app_role`). Specs, seeds, tests and migrations written before this date may still name the retired roles; treat those names as history, not as roles to build for.
+
+| Role (`app_role`) | Label | Lands on | Notes |
+|---|---|---|---|
+| `owner` | Owner | `/admin/executive` | |
+| `org_admin` | Org Admin | `/admin/executive` | |
+| `facility_admin` | Administrator | `/admin` | On-site authority for assigned facilities. |
+| `manager` | Manager | `/admin` | |
+| `admin_assistant` | Admin Assistant | `/admin/assistant-dashboard` | |
+| `coordinator` | Service Coordinator | `/admin/coordinator-dashboard` | |
+| `med_tech` | Med-Tech | `/med-tech` | Holds everything the retired `nurse` and `caregiver` roles held. Uses both the med-tech app (`/med-tech`) and the floor app (`/caregiver`; the route keeps its name). |
+| `cook` | Cook | `/dietary` | Holds everything the retired `dietary` and `dietary_aide` roles held. |
+| `housekeeper` | Housekeeper | `/caregiver/housekeeper` | Floor app housekeeper paths only (plus clock, schedules, me, policies, acknowledgments, shift swaps). Never clinical. Unlicensed staff who are not Med-Techs are Housekeeping. |
+| `maintenance_role` | Maintenance | `/admin/facilities` | |
+| `recruiter` | Recruiter | `/admin/referrals` | Finds residents to place. Referrals, pipeline and reputation only; the admin shell refuses it everywhere else. Briefly named `marketing` in PR #671; a follow-up migration renames the enum value. Say "Recruiter", never "marketing". |
+| `family` | Family Member | `/family` | |
+| `broker` | Broker | `/admin/insurance` | |
+
+**Retired (migration `468_role_consolidation.sql`).** `nurse` and `caregiver` ("Caregiver / Resident Aide") folded into `med_tech`; `dietary` ("Lead Cook / Dietary") and `dietary_aide` folded into `cook`. The values still exist in the Postgres enum, but nobody holds them and nothing may grant them. History (audit rows, `actor_role` columns, receipts) keeps the role that acted.
+
+**Login roles are not staff positions.** `staff_role` values (`cna`, `lpn`, `rn`, `resident_aide`, `dietary_staff`, `dietary_aide`, `medication_tech`, `housekeeping` "Housekeeper", `cook`, `marketing_consultant`, ...) are job titles on the staff record. Do not rewrite them as login roles and do not remove them.
+
+**Rule for every migration from 469 on:** grant `med_tech` / `cook`, never `nurse` / `caregiver` / `dietary` / `dietary_aide`. `supabase/tests/review_role_consolidation.sql` fails the replay otherwise (retired literals may appear only inside exclusion lists such as `NOT IN (...)`, where they exclude nobody). Generator and merge recipe: `scripts/role-sweep/generate-nurse-to-med-tech.py`. Code source of truth: `src/lib/rbac.ts` and `src/lib/auth/dashboard-routing.ts`.
+
 ## Segment discipline
 
 - **One bounded segment at a time. One atomic commit per segment.** No architecture resets or scope expansion mid-segment without owner approval.

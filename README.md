@@ -22,7 +22,7 @@ Claude Code executes migrations and builds features in this exact sequence. Do n
 | 5 | `11-staff-management.md` | Staff Management & Scheduling | 9-10 | staff, staff_certifications, schedules, shift_assignments, time_records, shift_swap_requests, staffing_ratio_snapshots |
 | 6 | `16-billing.md` | Resident Billing & Collections | 11-12 | rate_schedules, resident_payers, invoices, invoice_line_items, payments, collection_activities, invoice_sequences |
 
-**Phase 1 Milestone:** COL can run daily operations at one controlled facility. Homewood Lodge is the current acceptance and launch facility; Oakridge's earlier seeded validation remains historical evidence for its original scope. Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view the facility dashboard.
+**Phase 1 Milestone:** COL can run daily operations at one controlled facility. Homewood Lodge is the current acceptance and launch facility; Oakridge's earlier seeded validation remains historical evidence for its original scope. Med-Techs document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view the facility dashboard.
 
 ### Phase 2: Clinical Depth & Compliance (Weeks 13-20)
 

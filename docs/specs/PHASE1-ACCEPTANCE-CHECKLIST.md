@@ -1,5 +1,7 @@
 # Phase 1 — acceptance checklist (UI + sign-off)
 
+> **Role note (2026-09-22, COL-615):** this is a historical record. The `nurse`, `caregiver`, `dietary` and `dietary_aide` login roles it names were retired by migration 468 (nurse and caregiver folded into `med_tech`, dietary and dietary_aide into `cook`). For the current role model see the Roles section in `AGENTS.md`.
+
 Use this to declare **Phase 1 complete** before starting Phase 2. Phase 2 specs and builds are **not** prerequisites for this testing.
 
 **Canonical milestone** (`docs/specs/README.md`): *COL can run daily operations at one controlled facility. Homewood Lodge is the current acceptance and controlled launch facility. Oakridge's earlier seeded validation remains historical evidence for its original scope. Caregivers document care, administer medications via eMAR, report incidents, view schedules, and clock in/out. Administrators manage staff, certifications, billing, and view the facility dashboard.*

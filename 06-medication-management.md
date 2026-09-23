@@ -4,6 +4,8 @@
 **Build Week:** 15-16
 **Phase:** 2
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`, which holds everything both held. The canonical spec is `docs/specs/06-medication-management.md`; see the Roles section in `AGENTS.md`. Who may enter an override PIN now that there is no separate nurse role is an open question for the owner.
+
 Phase 1 created `resident_medications` and `emar_records` for basic medication assistance documentation. This spec adds: medication interaction database, three-way reconciliation, controlled substance full lifecycle, medication error formal reporting, physician order workflow, and pharmacy integration preparation.
 
 ---
@@ -284,39 +286,39 @@ CREATE POLICY "All authenticated users read interactions" ON medication_interact
 
 ALTER TABLE medication_interaction_alerts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see interaction alerts" ON medication_interaction_alerts FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage interaction alerts" ON medication_interaction_alerts FOR UPDATE
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE medication_reconciliations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see reconciliations" ON medication_reconciliations FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage reconciliations" ON medication_reconciliations FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE controlled_substance_counts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see CS counts" ON controlled_substance_counts FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Caregivers+ create CS counts" ON controlled_substance_counts FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE medication_errors ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin+ see medication errors" ON medication_errors FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage medication errors" ON medication_errors FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE medication_destructions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see destructions" ON medication_destructions FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ create destructions" ON medication_destructions FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  WITH CHECK (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE physician_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see orders" ON physician_orders FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage orders" ON physician_orders FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 -- Audit triggers
 CREATE TRIGGER audit_med_interaction_alerts AFTER INSERT OR UPDATE OR DELETE ON medication_interaction_alerts FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
@@ -349,8 +351,8 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON physician_orders FOR EACH ROW EXE
 4. When a medication is discontinued: check all active alerts involving that medication → set status='resolved', resolved_at=now()
 
 **Severity handling:**
-- HIGH severity interaction → immediate alert to nurse + administrator. Block eMAR documentation with a warning (override available with nurse PIN).
-- MODERATE → alert to nurse. eMAR shows warning but does not block.
+- HIGH severity interaction → immediate alert to the Med-Tech on duty + administrator. Block eMAR documentation with a warning (override available with a Med-Tech or administrator PIN).
+- MODERATE → alert to the Med-Tech on duty. eMAR shows warning but does not block.
 - LOW → informational note on medication profile. No alert generated.
 
 ### Controlled Substance Count — Shift Change Protocol
@@ -363,7 +365,7 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON physician_orders FOR EACH ROW EXE
    - Calculate expected_count: last known count - doses administered since last count (from emar_records)
    - Generate controlled_substance_counts record with status pending (expected_count filled, actual_count blank)
 3. Both outgoing and incoming staff must enter the actual_count
-4. If actual_count ≠ expected_count → is_discrepancy = true → immediate Level 3 alert to administrator and nurse
+4. If actual_count ≠ expected_count → is_discrepancy = true → immediate Level 3 alert to administrator and the Med-Tech on duty
 5. Count cannot be completed (shift handoff cannot be acknowledged) until all controlled substance counts are reconciled
 
 ### Medication Error Categorization Auto-Rules
@@ -429,25 +431,25 @@ ALTER TABLE resident_medications ADD COLUMN pharmacy_id uuid REFERENCES pharmaci
 
 | Method | Route | Auth | Roles | Description |
 |--------|-------|------|-------|-------------|
-| GET | `/residents/:id/interaction-alerts` | Required | nurse, facility_admin | Active interaction alerts for resident |
-| GET | `/facilities/:id/interaction-alerts` | Required | nurse, facility_admin | All active interaction alerts across facility |
-| PUT | `/interaction-alerts/:id/acknowledge` | Required | nurse | Acknowledge alert |
-| PUT | `/interaction-alerts/:id/override` | Required | nurse, facility_admin | Override with documented reason |
-| GET | `/residents/:id/reconciliations` | Required | nurse, facility_admin | Reconciliation history |
-| POST | `/residents/:id/reconciliations` | Required | nurse | Start reconciliation |
-| PUT | `/reconciliations/:id` | Required | nurse | Update reconciliation (add discrepancies, complete) |
-| GET | `/facilities/:id/controlled-counts/pending` | Required | caregiver, nurse | Pending controlled substance counts for current shift change |
-| POST | `/controlled-substance-counts` | Required | caregiver, nurse | Submit count |
-| GET | `/facilities/:id/controlled-counts/discrepancies` | Required | nurse, facility_admin | Unresolved discrepancies |
-| GET | `/facilities/:id/medication-errors` | Required | nurse, facility_admin | Medication error list |
-| POST | `/medication-errors` | Required | nurse, facility_admin | Report medication error |
-| PUT | `/medication-errors/:id` | Required | nurse, facility_admin | Update (add root cause, corrective actions, close) |
-| POST | `/residents/:id/medication-destructions` | Required | nurse | Document medication destruction |
-| GET | `/residents/:id/physician-orders` | Required | nurse, caregiver | Physician order history |
-| POST | `/residents/:id/physician-orders` | Required | nurse | Enter physician order |
-| PUT | `/physician-orders/:id` | Required | nurse | Update (transcribe, record co-signature) |
-| GET | `/facilities/:id/physician-orders/cosign-pending` | Required | nurse, facility_admin | Orders awaiting co-signature |
-| GET | `/facilities/:id/physician-orders/untranscribed` | Required | nurse | Orders not yet transcribed to MAR |
+| GET | `/residents/:id/interaction-alerts` | Required | med_tech, facility_admin | Active interaction alerts for resident |
+| GET | `/facilities/:id/interaction-alerts` | Required | med_tech, facility_admin | All active interaction alerts across facility |
+| PUT | `/interaction-alerts/:id/acknowledge` | Required | med_tech | Acknowledge alert |
+| PUT | `/interaction-alerts/:id/override` | Required | med_tech, facility_admin | Override with documented reason |
+| GET | `/residents/:id/reconciliations` | Required | med_tech, facility_admin | Reconciliation history |
+| POST | `/residents/:id/reconciliations` | Required | med_tech | Start reconciliation |
+| PUT | `/reconciliations/:id` | Required | med_tech | Update reconciliation (add discrepancies, complete) |
+| GET | `/facilities/:id/controlled-counts/pending` | Required | med_tech | Pending controlled substance counts for current shift change |
+| POST | `/controlled-substance-counts` | Required | med_tech | Submit count |
+| GET | `/facilities/:id/controlled-counts/discrepancies` | Required | med_tech, facility_admin | Unresolved discrepancies |
+| GET | `/facilities/:id/medication-errors` | Required | med_tech, facility_admin | Medication error list |
+| POST | `/medication-errors` | Required | med_tech, facility_admin | Report medication error |
+| PUT | `/medication-errors/:id` | Required | med_tech, facility_admin | Update (add root cause, corrective actions, close) |
+| POST | `/residents/:id/medication-destructions` | Required | med_tech | Document medication destruction |
+| GET | `/residents/:id/physician-orders` | Required | med_tech | Physician order history |
+| POST | `/residents/:id/physician-orders` | Required | med_tech | Enter physician order |
+| PUT | `/physician-orders/:id` | Required | med_tech | Update (transcribe, record co-signature) |
+| GET | `/facilities/:id/physician-orders/cosign-pending` | Required | med_tech, facility_admin | Orders awaiting co-signature |
+| GET | `/facilities/:id/physician-orders/untranscribed` | Required | med_tech | Orders not yet transcribed to MAR |
 
 ---
 
@@ -459,7 +461,7 @@ ALTER TABLE resident_medications ADD COLUMN pharmacy_id uuid REFERENCES pharmaci
 | `medication-interaction-resolve` | UPDATE on resident_medications WHERE status='discontinued' | Resolve any active interaction alerts involving this medication. |
 | `controlled-substance-count-generate` | Called by `generate-shift-handoff` (Module 4) | Generate pending count records for all controlled medications at the facility. |
 | `verbal-order-cosign-check` | Cron (8 AM ET daily) | Find physician_orders where verbal_order=true AND cosignature_required=true AND cosignature_received=false. Alert at 48h, escalate at 72h. |
-| `medication-error-escalation` | INSERT on medication_errors | Based on severity → generate notifications (nurse, administrator, physician, owner). If severity ≥ "minor_harm" → auto-create incident record (Module 7) and link. |
+| `medication-error-escalation` | INSERT on medication_errors | Based on severity → generate notifications (Med-Tech on duty, administrator, physician, owner). If severity ≥ "minor_harm" → auto-create incident record (Module 7) and link. |
 | `reconciliation-trigger` | INSERT on admissions, UPDATE on residents WHERE status changed from 'hospital_hold' to 'active', care_plan_review completed | Generate medication_reconciliation record with appropriate type and due timeframe. |
 
 ---
@@ -486,7 +488,7 @@ The medication_interactions table needs to be seeded with common drug interactio
 
 ## UI SCREENS
 
-### Web (Admin/Nurse)
+### Web (Admin/Med-Tech)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
@@ -499,9 +501,9 @@ The medication_interactions table needs to be seeded with common drug interactio
 | Physician Order Queue | `/facilities/:id/physician-orders` | Two tabs: "Untranscribed" (orders received but not yet on MAR) and "Co-Sign Pending" (verbal orders awaiting physician signature). |
 | Medication Destruction Log | `/facilities/:id/medication-destructions` | Destruction records with dual-witness signatures. Filterable by date, resident, controlled status. |
 
-### Mobile (Caregiver)
+### Mobile (floor app at `/caregiver`, Med-Tech)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
 | Controlled Substance Count | `/shift/cs-count` | List of controlled medications needing count. Enter actual count per medication. Dual-signature requirement (both outgoing and incoming staff must complete). Discrepancy flagged immediately with required explanation field. |
-| Interaction Warning (modal) | Appears in eMAR flow | When caregiver documents a medication with an active HIGH severity interaction → modal warning with interaction details and "Contact Nurse" button. Cannot dismiss without nurse override PIN for HIGH severity. |
+| Interaction Warning (modal) | Appears in eMAR flow | When a Med-Tech documents a medication with an active HIGH severity interaction → modal warning with interaction details and a "Contact administrator" button. Cannot dismiss without a Med-Tech or administrator override PIN for HIGH severity. |
