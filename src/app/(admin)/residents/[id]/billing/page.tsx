@@ -502,11 +502,11 @@ export default function ResidentBillingPage() {
               </label>
               <label className="space-y-1.5 text-sm font-medium">
                 <span className="text-xs uppercase tracking-widest text-slate-500">Negotiated base rent</span>
-                <input inputMode="decimal" value={negotiatedBase} onChange={(event) => setNegotiatedBase(event.target.value)} placeholder="4800.00" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
+                <input inputMode="decimal" value={negotiatedBase} onChange={(event) => setNegotiatedBase(event.target.value)} placeholder="Monthly amount in dollars" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
                 <span className="text-xs uppercase tracking-widest text-slate-500">Actual monthly invoice amount</span>
-                <input inputMode="decimal" value={negotiatedTotal} onChange={(event) => setNegotiatedTotal(event.target.value)} placeholder="4800.00" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
+                <input inputMode="decimal" value={negotiatedTotal} onChange={(event) => setNegotiatedTotal(event.target.value)} placeholder="Monthly amount in dollars" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
                 <span className="text-xs uppercase tracking-widest text-slate-500">Care charge mode</span>
