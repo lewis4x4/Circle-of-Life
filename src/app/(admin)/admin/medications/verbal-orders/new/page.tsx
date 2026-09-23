@@ -192,7 +192,7 @@ export default function NewVerbalOrderPage() {
               href="/admin/medications/verbal-orders"
               className={cn(
                 buttonVariants(),
-                "h-14 rounded-2xl font-bold tracking-wide bg-emerald-600 text-white hover:bg-emerald-700"
+                "h-14 rounded-2xl font-bold tracking-wide"
               )}
             >
               View in Queue
