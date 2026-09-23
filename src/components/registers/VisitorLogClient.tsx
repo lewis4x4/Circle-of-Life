@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import {
   fetchOpenVisitors,
   fetchVisitorLog,
@@ -176,7 +177,7 @@ export function VisitorLogClient({
   }
 
   if (!facilityId) {
-    return <p className="text-sm text-muted-foreground">Choose a facility to open its visitor log.</p>;
+    return <FacilityGateNotice reason="The visitor log is kept per building." />;
   }
 
   const voided = rows.filter((row) => row.voidedAt);

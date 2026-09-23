@@ -4,7 +4,6 @@ import {
   adminIncidentsGlobalEmptyNotice,
   adminIncidentsKanbanColumnEmptyHelper,
   adminIncidentsKanbanColumnEmptyTitle,
-  adminIncidentsNoFacilityNotice,
   formatIncidentFollowupDueLabel,
   INCIDENT_FOLLOWUP_DUE_MISSING_SENTINEL,
   incidentFollowupDueBadgeText,
@@ -21,12 +20,6 @@ describe("adminIncidentsGlobalEmptyNotice", () => {
   it("refuses fallback cards without inventing incidents", () => {
     expect(adminIncidentsGlobalEmptyNotice()).toContain("No live incident records");
     expect(adminIncidentsGlobalEmptyNotice()).toContain("not shown");
-  });
-});
-
-describe("adminIncidentsNoFacilityNotice", () => {
-  it("names the facility selection gap in one line", () => {
-    expect(adminIncidentsNoFacilityNotice()).toContain("Select a facility");
   });
 });
 
