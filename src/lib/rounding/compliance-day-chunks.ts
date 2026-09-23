@@ -12,13 +12,17 @@
  */
 
 /** Calendar dates from `from` to `to` inclusive (YYYY-MM-DD, no time zone arithmetic). */
+function calendarDate(isoDate: string): Date {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year ?? Number.NaN, (month ?? Number.NaN) - 1, day ?? Number.NaN));
+  if (Number.isNaN(date.getTime())) throw new Error("from and to must be calendar dates");
+  return date;
+}
+
 export function complianceServiceDates(from: string, to: string): string[] {
   const dates: string[] = [];
-  const cursor = new Date(`${from}T00:00:00.000Z`);
-  const end = new Date(`${to}T00:00:00.000Z`);
-  if (Number.isNaN(cursor.getTime()) || Number.isNaN(end.getTime())) {
-    throw new Error("from and to must be calendar dates");
-  }
+  const cursor = calendarDate(from);
+  const end = calendarDate(to);
   while (cursor.getTime() <= end.getTime()) {
     dates.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);
