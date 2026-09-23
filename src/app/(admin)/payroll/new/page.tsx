@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -103,16 +104,13 @@ export default function AdminPayrollNewBatchPage() {
         </Card>
       ) : null}
 
-      {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
-      ) : null}
-
       {fetchErrorBannerMessage ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
           {fetchErrorBannerMessage}
         </p>
       ) : null}
 
+      <FacilityGate reason="A payroll export batch covers one building's pay period.">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Draft export batch</CardTitle>
@@ -164,6 +162,7 @@ export default function AdminPayrollNewBatchPage() {
           </form>
         </CardContent>
       </Card>
+      </FacilityGate>
     </div>
   );
 }

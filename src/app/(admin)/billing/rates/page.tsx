@@ -159,7 +159,11 @@ export default function AdminBillingRatesPage() {
         {!isLoading && rows.length === 0 && !error ? (
           <AdminEmptyState
             title="No rate schedules"
-            description="Add a rate schedule for this facility or pick a facility that already has pricing configured."
+            description={
+              isValidFacilityIdForQuery(selectedFacilityId)
+                ? "This facility has no posted rate schedule yet. Add one with + Add Schedule."
+                : "No facility has a posted rate schedule yet. Add one with + Add Schedule."
+            }
           />
         ) : null}
         

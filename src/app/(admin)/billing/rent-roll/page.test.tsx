@@ -29,6 +29,10 @@ vi.mock("@/lib/billing/load-rent-roll", async () => {
   return { ...actual, fetchRentRollFromSupabase: mocks.fetchRentRoll };
 });
 
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <section data-testid="facility-gate">{reason}</section>,
+}));
+
 vi.mock("../billing-hub-nav", () => ({ BillingHubNav: () => <nav data-testid="hub-nav" /> }));
 
 import { buildRentRoll } from "@/lib/billing/rent-roll-model";
@@ -111,7 +115,7 @@ describe("AdminBillingRentRollPage", () => {
   it("asks for a facility instead of rolling the whole organization together", async () => {
     mocks.selectedFacilityId = null;
     render(<AdminBillingRentRollPage />);
-    expect(await screen.findByText(/Pick a facility in the header/)).toBeInTheDocument();
+    expect(await screen.findByTestId("facility-gate")).toHaveTextContent("kept per building");
     expect(mocks.fetchRentRoll).not.toHaveBeenCalled();
   });
 

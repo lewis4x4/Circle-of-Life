@@ -10,6 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -79,9 +80,10 @@ export default function AdminInvoiceGeneratePage() {
 
   const buildPreview = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      // Gated below: no facility is not a preview failure.
       setPreview([]);
       setLoading(false);
-      setError("Select a facility to preview invoice generation.");
+      setError(null);
       return;
     }
 
@@ -213,6 +215,10 @@ export default function AdminInvoiceGeneratePage() {
         </Link>
       </div>
 
+      <FacilityGate
+        title={`Generate invoices — ${billingLabel}`}
+        reason="Invoices are generated from one building's residents and its posted rate schedule."
+      >
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -388,6 +394,7 @@ export default function AdminInvoiceGeneratePage() {
           )}
         </CardContent>
       </Card>
+      </FacilityGate>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -88,10 +89,8 @@ export default function AdminOpeningBalancePage() {
     e.preventDefault();
     setSuccess(null);
     setError(null);
-    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header.");
-      return;
-    }
+    // The form only renders inside the facility gate.
+    if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) return;
     if (!residentId) {
       setError("Choose a resident.");
       return;
@@ -161,6 +160,10 @@ export default function AdminOpeningBalancePage() {
         </Link>
       </div>
 
+      <FacilityGate
+        title="Opening balance"
+        reason="An opening balance is a draft invoice on one building's ledger, for one of its residents."
+      >
       <Card>
         <CardHeader>
           <CardTitle>Opening balance</CardTitle>
@@ -178,11 +181,7 @@ export default function AdminOpeningBalancePage() {
           </p>
         </CardHeader>
         <CardContent>
-          {!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId) ? (
-            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              Select a facility in the header to enter an opening balance for that site.
-            </p>
-          ) : loading ? (
+          {loading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading residents…
             </div>
@@ -292,6 +291,7 @@ export default function AdminOpeningBalancePage() {
           )}
         </CardContent>
       </Card>
+      </FacilityGate>
     </div>
   );
 }
