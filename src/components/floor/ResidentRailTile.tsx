@@ -47,7 +47,7 @@ export function ResidentRailTile({
       )}
     >
       <span className="flex items-center justify-between gap-2">
-        <span className="text-xs tabular-nums text-muted-foreground">{room ?? "No room posted"}</span>
+        <span className="text-xs leading-[15px] tabular-nums text-muted-foreground">{room ?? "No room posted"}</span>
         {flag ? (
           <span className="flex items-center">
             <span aria-hidden className={cn("size-2.25 rounded-full", DOT_CLASS[flag])} />
@@ -55,8 +55,8 @@ export function ResidentRailTile({
           </span>
         ) : null}
       </span>
-      <span className="break-words text-sm font-semibold text-foreground">{name}</span>
-      {note ? <span className="truncate text-xs text-muted-foreground">{note}</span> : null}
+      <span className="break-words text-sm font-semibold leading-[18px] text-foreground">{name}</span>
+      {note ? <span className="truncate text-xs leading-[15px] text-muted-foreground">{note}</span> : null}
     </Link>
   );
 }

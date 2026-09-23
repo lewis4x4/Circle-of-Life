@@ -51,7 +51,10 @@ export function useFloorLockTriggers(input: {
         onLock.current(reason);
       }
     };
-    // iOS Safari fires pagehide, not always visibilitychange, when the web app is closed.
+    // Closing the home-screen web app can unload the page without a
+    // visibilitychange first. A reload locks too: the tablet cannot tell a
+    // reload from a close while the page is going away, and a close must not
+    // leave the unlock and its session open.
     const onPageHide = () => {
       timer.stop();
       onLock.current("sleep");

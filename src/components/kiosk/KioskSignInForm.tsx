@@ -191,9 +191,9 @@ export function KioskSignInForm({ kind }: { kind: KioskVisitorKind }) {
       <KioskHeader title={definition.title} back />
       <form ref={formRef} onSubmit={submit} noValidate aria-label={definition.title} className="flex flex-1 flex-col gap-5.5 px-10 pb-6 pt-6.5">
         <p className="text-[19px] text-muted-foreground">{definition.formSubtitle}</p>
-        <div className="flex flex-1 gap-9">
-          <div className="flex min-w-0 flex-1 basis-0 flex-col gap-5.5">{definition.fields.slice(0, split).map(field)}</div>
-          <div className="flex min-w-0 flex-1 basis-0 flex-col gap-5.5">{definition.fields.slice(split).map(field)}</div>
+        <div className="flex flex-1 flex-col gap-5.5 min-[1000px]:flex-row min-[1000px]:gap-9">
+          <div className="flex min-w-0 flex-col gap-5.5 min-[1000px]:flex-1 min-[1000px]:basis-0">{definition.fields.slice(0, split).map(field)}</div>
+          <div className="flex min-w-0 flex-col gap-5.5 min-[1000px]:flex-1 min-[1000px]:basis-0">{definition.fields.slice(split).map(field)}</div>
         </div>
         <p role="status" className="text-base font-semibold text-destructive empty:hidden">
           {status}

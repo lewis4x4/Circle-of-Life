@@ -28,25 +28,34 @@ export function forgetFloorPerson(): void {
 
 /**
  * POST the lock. `keepalive` lets the request finish while the page is being
- * hidden (the screen-sleep lock). The route answers 204 whatever state the
- * unlock was in, and clears the session cookies on that response.
+ * hidden or unloaded (screen sleep, the web app closing). Pass the device
+ * token the page already holds: the request then leaves synchronously, before
+ * the page can be torn down, instead of after an IndexedDB read. The route
+ * answers 204 whatever state the unlock was in, and clears the session
+ * cookies on that response.
  */
-export async function sendFloorLock(reason: FloorLockReason, fetchImpl: typeof fetch = fetch): Promise<void> {
-  const device = await resolveFloorDeviceStore().getDevice().catch(() => null);
-  const unlockId = currentFloorUnlockId() ?? "";
-  try {
-    await fetchImpl(FLOOR_LOCK_ENDPOINT, {
-      method: "POST",
-      keepalive: true,
-      headers: {
-        "Content-Type": "application/json",
-        ...(device ? { [FLOOR_DEVICE_HEADER]: device.token } : {}),
-      },
-      body: JSON.stringify({ unlock_id: unlockId, reason }),
-    });
-  } catch {
-    // Offline: the heartbeat and the 12-hour cap end the unlock server side.
-  }
+export function sendFloorLock(reason: FloorLockReason, fetchImpl: typeof fetch = fetch, deviceToken?: string | null): Promise<void> {
+  const post = (token: string | null) => {
+    try {
+      return fetchImpl(FLOOR_LOCK_ENDPOINT, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", ...(token ? { [FLOOR_DEVICE_HEADER]: token } : {}) },
+        body: JSON.stringify({ unlock_id: currentFloorUnlockId() ?? "", reason }),
+      }).then(
+        () => undefined,
+        // Offline: the heartbeat and the 12-hour cap end the unlock server side.
+        () => undefined,
+      );
+    } catch {
+      return Promise.resolve();
+    }
+  };
+  if (deviceToken) return post(deviceToken);
+  return resolveFloorDeviceStore()
+    .getDevice()
+    .catch(() => null)
+    .then((device) => post(device?.token ?? null));
 }
 
 /** Where the lock screen goes, carrying why it locked. */

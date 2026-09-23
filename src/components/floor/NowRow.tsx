@@ -41,7 +41,7 @@ export function NowRow({ place, title, subtitle, dueLabel, pill, bar, primaryAct
     </>
   );
   return (
-    <div data-testid="now-row" className="flex min-h-16 items-center gap-4 border-b border-border py-2 pr-4">
+    <div data-testid="now-row" className="flex min-h-16 items-center gap-4 border-b border-border py-1.5 pr-4">
       <span aria-hidden className={cn("h-10 w-0.75 shrink-0 rounded-sm", BAR_CLASS[bar])} />
       <span className="w-14 shrink-0 text-sm tabular-nums text-muted-foreground">{place}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">

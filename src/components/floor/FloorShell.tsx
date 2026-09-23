@@ -76,11 +76,13 @@ export function FloorShell({ children }: { children: ReactNode }) {
     [router, supabase],
   );
 
+  // The token the page holds lets the lock leave synchronously when the page is going away.
+  const deviceToken = useRef<string | null>(null);
   const lock = useCallback(
     (reason: FloorLockReason) => {
       if (locking.current) return;
       locking.current = true;
-      void sendFloorLock(reason).finally(() => endLocally(reason === "switch" ? null : reason));
+      void sendFloorLock(reason, fetch, deviceToken.current).finally(() => endLocally(reason === "switch" ? null : reason));
     },
     [endLocally],
   );
@@ -100,6 +102,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
       const device = await resolveFloorDeviceStore().getDevice().catch(() => null);
       if (!active) return;
       if (!device) return setState({ status: "not-a-tablet" });
+      deviceToken.current = device.token;
       const profile = currentFloorUnlockProfile();
       if (!profile || !currentFloorUnlockId()) {
         // A session with no unlock on this page (a new tab, a lost reload) is

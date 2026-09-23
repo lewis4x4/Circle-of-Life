@@ -520,6 +520,36 @@
   --floor-event-foreground: 23 53% 7%;
 }
 
+/* Shared-device apps (floor tablet, front-door kiosk) are specified in px
+   (DESIGN.md §1). The app root is `html { font-size: 14px }`, which would
+   render every rem-based Tailwind size at 87.5%, so these two scopes pin the
+   spacing unit and the type scale Tailwind's utilities read (`var(--spacing)`,
+   `var(--text-*)`) to px. Arbitrary values in these apps are already px. */
+.floor-shell,
+.kiosk-shell {
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 36px;
+  --text-4xl: 36px;
+  --text-4xl--line-height: 40px;
+  --text-5xl: 48px;
+  --text-5xl--line-height: 1;
+  --text-6xl: 60px;
+  --text-6xl--line-height: 1;
+}
+
 .family-shell {
   --background: 42 33% 97%;
   background-image:

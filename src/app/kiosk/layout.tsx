@@ -23,7 +23,7 @@ export const viewport: Viewport = {
  */
 export default function KioskLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="light min-h-dvh bg-background font-sans text-foreground">
+    <div className="light kiosk-shell min-h-dvh bg-background font-sans text-foreground">
       <KioskShell>{children}</KioskShell>
     </div>
   );
