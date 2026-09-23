@@ -27,6 +27,7 @@ import type {
   BoardCheckHistoryEntry,
   BoardCheckSession,
 } from "@/lib/facility-checks/load-board-check";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /**
  * Board Check — one tap per bed, walking the building with the census board.
@@ -262,63 +263,65 @@ export function BoardCheckClient({
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm sm:min-w-[640px]">
-          <caption className="sr-only">
-            Every bed in this facility, grouped by room, with what Haven shows and what the board shows.
-          </caption>
-          <thead>
-            <tr className="border-b border-border text-left text-xs text-muted-foreground">
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Room and bed
-              </th>
-              <th scope="col" className="py-2 pr-3 font-medium">
-                Haven shows
-              </th>
-              <th scope="col" className="py-2 font-medium">
-                Board
-              </th>
-            </tr>
-          </thead>
-          {grouped.map((group) => (
-            <tbody key={group.roomNumber}>
-              {group.beds.map((row, index) => (
-                <tr key={row.bed_id} className="border-b border-border align-top">
-                  <th scope="row" className="py-2.5 pr-3 text-left font-normal text-foreground">
-                    <span className="block font-medium">
-                      {index === 0 ? `Room ${group.roomNumber}` : ""}
-                    </span>
-                    <span className="block text-muted-foreground">Bed {row.bed_label}</span>
-                  </th>
-                  <td className="py-2.5 pr-3 text-foreground">{havenOccupancyLabel(row)}</td>
-                  <td className="py-2.5">
-                    <fieldset disabled={closed || busyBedId === row.bed_id} className="flex flex-wrap gap-1.5">
-                      <legend className="sr-only">
-                        Board result for room {group.roomNumber} bed {row.bed_label}
-                      </legend>
-                      {BOARD_CHECK_RESULTS.map((result) => {
-                        const selected = row.latest_result === result;
-                        return (
-                          <Button
-                            key={result}
-                            type="button"
-                            size="sm"
-                            variant={selected ? "default" : "outline"}
-                            aria-pressed={selected}
-                            className="text-[12px]"
-                            onClick={() => void mark(row, result)}
-                          >
-                            {boardCheckResultLabel(result)}
-                          </Button>
-                        );
-                      })}
-                    </fieldset>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          ))}
-        </table>
+      <div>
+        <HorizontalScroll label="Board check">
+          <table className="w-full border-collapse text-sm sm:min-w-[640px]">
+            <caption className="sr-only">
+              Every bed in this facility, grouped by room, with what Haven shows and what the board shows.
+            </caption>
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Room and bed
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  Haven shows
+                </th>
+                <th scope="col" className="py-2 font-medium">
+                  Board
+                </th>
+              </tr>
+            </thead>
+            {grouped.map((group) => (
+              <tbody key={group.roomNumber}>
+                {group.beds.map((row, index) => (
+                  <tr key={row.bed_id} className="border-b border-border align-top">
+                    <th scope="row" className="py-2.5 pr-3 text-left font-normal text-foreground">
+                      <span className="block font-medium">
+                        {index === 0 ? `Room ${group.roomNumber}` : ""}
+                      </span>
+                      <span className="block text-muted-foreground">Bed {row.bed_label}</span>
+                    </th>
+                    <td className="py-2.5 pr-3 text-foreground">{havenOccupancyLabel(row)}</td>
+                    <td className="py-2.5">
+                      <fieldset disabled={closed || busyBedId === row.bed_id} className="flex flex-wrap gap-1.5">
+                        <legend className="sr-only">
+                          Board result for room {group.roomNumber} bed {row.bed_label}
+                        </legend>
+                        {BOARD_CHECK_RESULTS.map((result) => {
+                          const selected = row.latest_result === result;
+                          return (
+                            <Button
+                              key={result}
+                              type="button"
+                              size="sm"
+                              variant={selected ? "default" : "outline"}
+                              aria-pressed={selected}
+                              className="text-[12px]"
+                              onClick={() => void mark(row, result)}
+                            >
+                              {boardCheckResultLabel(result)}
+                            </Button>
+                          );
+                        })}
+                      </fieldset>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </HorizontalScroll>
       </div>
 
       {openFixes.length > 0 ? (

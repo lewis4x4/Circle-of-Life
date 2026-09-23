@@ -28,6 +28,7 @@ import {
   type SurveyBundleDocument,
   type SurveyBundlePacket,
 } from "@/lib/risk/survey-bundle";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type RiskSurveyBundlePageClientProps = {
   initialPacket: SurveyBundlePacket | null;
@@ -225,38 +226,40 @@ export default function RiskSurveyBundlePageClient({
                     description="No open survey deficiencies or active plans of correction were found for this facility."
                   />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="pb-2 pr-4 font-medium">Tag</th>
-                          <th className="pb-2 pr-4 font-medium">Severity</th>
-                          <th className="pb-2 pr-4 font-medium">Status</th>
-                          <th className="pb-2 pr-4 font-medium">POC</th>
-                          <th className="pb-2 pr-4 font-medium">Submission due</th>
-                          <th className="pb-2 font-medium">Responsible party</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {packet.deficiencies.map((row) => (
-                          <tr key={row.id} className="border-b border-slate-100 dark:border-slate-900">
-                            <td className="py-3 pr-4">
-                              <div className="font-medium">{row.tagNumber}</div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">{row.tagDescription}</div>
-                            </td>
-                            <td className="py-3 pr-4">{row.severity}</td>
-                            <td className="py-3 pr-4">{row.status}</td>
-                            <td className="py-3 pr-4">{row.pocStatus ?? "Missing"}</td>
-                            <td className="py-3 pr-4">
-                              {formatSurveyBundlePocSubmissionDueDate(row.pocSubmissionDueDate)}
-                            </td>
-                            <td className="py-3">
-                              {formatSurveyBundlePocResponsibleParty(row.pocResponsibleParty)}
-                            </td>
+                  <div>
+                    <HorizontalScroll label="Survey bundle">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800">
+                            <th className="pb-2 pr-4 font-medium">Tag</th>
+                            <th className="pb-2 pr-4 font-medium">Severity</th>
+                            <th className="pb-2 pr-4 font-medium">Status</th>
+                            <th className="pb-2 pr-4 font-medium">POC</th>
+                            <th className="pb-2 pr-4 font-medium">Submission due</th>
+                            <th className="pb-2 font-medium">Responsible party</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {packet.deficiencies.map((row) => (
+                            <tr key={row.id} className="border-b border-slate-100 dark:border-slate-900">
+                              <td className="py-3 pr-4">
+                                <div className="font-medium">{row.tagNumber}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">{row.tagDescription}</div>
+                              </td>
+                              <td className="py-3 pr-4">{row.severity}</td>
+                              <td className="py-3 pr-4">{row.status}</td>
+                              <td className="py-3 pr-4">{row.pocStatus ?? "Missing"}</td>
+                              <td className="py-3 pr-4">
+                                {formatSurveyBundlePocSubmissionDueDate(row.pocSubmissionDueDate)}
+                              </td>
+                              <td className="py-3">
+                                {formatSurveyBundlePocResponsibleParty(row.pocResponsibleParty)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </HorizontalScroll>
                   </div>
                 )}
               </CardContent>
@@ -364,29 +367,31 @@ export default function RiskSurveyBundlePageClient({
                   <PacketValue label="Renewal packets" value={String(packet.renewalPackets.length)} />
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-800">
-                        <th className="pb-2 pr-4 font-medium">Policy</th>
-                        <th className="pb-2 pr-4 font-medium">Carrier</th>
-                        <th className="pb-2 pr-4 font-medium">Status</th>
-                        <th className="pb-2 pr-4 font-medium">Expires</th>
-                        <th className="pb-2 font-medium">Premium</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {packet.policies.map((policy) => (
-                        <tr key={policy.id} className="border-b border-slate-100 dark:border-slate-900">
-                          <td className="py-3 pr-4">{policy.policyNumber}</td>
-                          <td className="py-3 pr-4">{policy.carrierName}</td>
-                          <td className="py-3 pr-4">{policy.status}</td>
-                          <td className="py-3 pr-4">{policy.expirationDate}</td>
-                          <td className="py-3">{formatUsdFromCents(policy.premiumCents)}</td>
+                <div>
+                  <HorizontalScroll label="Survey bundle detail">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800">
+                          <th className="pb-2 pr-4 font-medium">Policy</th>
+                          <th className="pb-2 pr-4 font-medium">Carrier</th>
+                          <th className="pb-2 pr-4 font-medium">Status</th>
+                          <th className="pb-2 pr-4 font-medium">Expires</th>
+                          <th className="pb-2 font-medium">Premium</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {packet.policies.map((policy) => (
+                          <tr key={policy.id} className="border-b border-slate-100 dark:border-slate-900">
+                            <td className="py-3 pr-4">{policy.policyNumber}</td>
+                            <td className="py-3 pr-4">{policy.carrierName}</td>
+                            <td className="py-3 pr-4">{policy.status}</td>
+                            <td className="py-3 pr-4">{policy.expirationDate}</td>
+                            <td className="py-3">{formatUsdFromCents(policy.premiumCents)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
 
                 {packet.renewalPackets.length > 0 ? (

@@ -41,6 +41,7 @@ import {
 } from "@/lib/timeclock/display-copy";
 import { canChangeTimeclockSettings, canReviewTimeclock, loadOrganizationPayPeriod, loadTimeclockPeriod, type TimeclockPeriodData } from "@/lib/timeclock/load";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const TH = "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
 const TD = "px-3 py-2 text-sm";
@@ -269,34 +270,36 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
       ) : rows.length === 0 ? (
         <AdminEmptyState title={TIMECLOCK_NO_ROWS} description="Punches appear here as staff clock in on an enrolled tablet." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full">
-            <caption className="sr-only">Timeclock summary for {facilityName || "the selected facility"}</caption>
-            <thead className="bg-muted/40">
-              <tr>
-                <th scope="col" className={TH}>Staff</th>
-                <th scope="col" className={TH}>Status now</th>
-                <th scope="col" className={cn(TH, "text-right")}>Period minutes</th>
-                <th scope="col" className={cn(TH, "text-right")}>Overtime</th>
-                <th scope="col" className={cn(TH, "text-right")}>Exceptions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.staffId} className="border-t border-border">
-                  <td className={TD}>
-                    <Link href={`/admin/timeclock/${row.staffId}${periodQuery}`} className="font-medium underline-offset-2 hover:underline">
-                      {row.name}
-                    </Link>
-                  </td>
-                  <td className={TD}>{row.status}</td>
-                  <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.weekMinutes)}</td>
-                  <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.overtimeMinutes)}</td>
-                  <td className={cn(TD, "text-right tabular-nums")}>{row.exceptions}</td>
+        <div className="rounded-xl border border-border bg-card">
+          <HorizontalScroll label="Timeclock overview">
+            <table className="w-full">
+              <caption className="sr-only">Timeclock summary for {facilityName || "the selected facility"}</caption>
+              <thead className="bg-muted/40">
+                <tr>
+                  <th scope="col" className={TH}>Staff</th>
+                  <th scope="col" className={TH}>Status now</th>
+                  <th scope="col" className={cn(TH, "text-right")}>Period minutes</th>
+                  <th scope="col" className={cn(TH, "text-right")}>Overtime</th>
+                  <th scope="col" className={cn(TH, "text-right")}>Exceptions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.staffId} className="border-t border-border">
+                    <td className={TD}>
+                      <Link href={`/admin/timeclock/${row.staffId}${periodQuery}`} className="font-medium underline-offset-2 hover:underline">
+                        {row.name}
+                      </Link>
+                    </td>
+                    <td className={TD}>{row.status}</td>
+                    <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.weekMinutes)}</td>
+                    <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.overtimeMinutes)}</td>
+                    <td className={cn(TD, "text-right tabular-nums")}>{row.exceptions}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type PoRow = Pick<
   Database["public"]["Tables"]["purchase_orders"]["Row"],
@@ -76,38 +77,40 @@ export default function PurchaseOrdersListPage() {
           <CardTitle className="text-base">Latest POs</CardTitle>
           <CardDescription>{loading ? "Loading…" : `Showing latest ${rows.length} PO(s)`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">PO #</th>
-                <th className="pb-2 pr-4 font-medium">Status</th>
-                <th className="pb-2 pr-4 font-medium">Order date</th>
-                <th className="pb-2 font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4">
-                    <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/vendors/purchase-orders/${r.id}`}>
-                      {r.po_number}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-4 capitalize">{enumLabel(r.status)}</td>
-                  <td className="py-2 pr-4 tabular-nums">{r.order_date}</td>
-                  <td className="py-2">{formatUsdFromCents(r.total_cents)}</td>
+        <CardContent>
+          <HorizontalScroll label="Purchase orders">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="pb-2 pr-4 font-medium">PO #</th>
+                  <th className="pb-2 pr-4 font-medium">Status</th>
+                  <th className="pb-2 pr-4 font-medium">Order date</th>
+                  <th className="pb-2 font-medium">Total</th>
                 </tr>
-              ))}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-6 text-slate-500">
-                    No purchase orders yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4">
+                      <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/vendors/purchase-orders/${r.id}`}>
+                        {r.po_number}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-4 capitalize">{enumLabel(r.status)}</td>
+                    <td className="py-2 pr-4 tabular-nums">{r.order_date}</td>
+                    <td className="py-2">{formatUsdFromCents(r.total_cents)}</td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-slate-500">
+                      No purchase orders yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>
