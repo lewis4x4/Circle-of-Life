@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   coverageKpiCoveragePctValue,
+  coverageKpiCoverageSub,
   coverageKpiOpenGapsValue,
   coverageKpiReviewOverdueValue,
   coverageKpiStaleExpiredValue,
@@ -188,9 +189,7 @@ export default function CoverageDashboardRoute() {
         <KPI
           label="Seed-target coverage"
           value={coverageKpiCoveragePctValue(rollup, kpiCtx)}
-          sub={
-            rollup ? `${rollup.covered_targets}/${rollup.total_targets} topics covered` : "loading…"
-          }
+          sub={coverageKpiCoverageSub(rollup)}
           tone="default"
         />
         <KPI

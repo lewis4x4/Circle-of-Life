@@ -11,7 +11,10 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader } from "@/components/ui/table-row";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { formatCompliancePolicyPublishedDate } from "@/lib/compliance/policies-display-copy";
+import {
+  compliancePolicyListCountLabel,
+  formatCompliancePolicyPublishedDate,
+} from "@/lib/compliance/policies-display-copy";
 
 type Row = {
   id: string;
@@ -27,9 +30,11 @@ export default function PoliciesListPage() {
   const supabase = createClient();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
         setRows([]);
@@ -42,7 +47,10 @@ export default function PoliciesListPage() {
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
       if (!error && data) setRows(data as Row[]);
-      else setRows([]);
+      else {
+        setRows([]);
+        setLoadError(error?.message ?? "Policies could not be loaded.");
+      }
     } finally {
       setLoading(false);
     }
@@ -53,6 +61,12 @@ export default function PoliciesListPage() {
   }, [load]);
 
   const ready = !!(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const countLabel = compliancePolicyListCountLabel({
+    facilityReady: ready,
+    loading,
+    error: loadError,
+    count: rows.length,
+  });
 
   return (
     <div className="space-y-6 pb-12">
@@ -81,7 +95,7 @@ export default function PoliciesListPage() {
              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-foreground">
                Active Policies
              </h3>
-             <span className="text-[12px] text-muted-foreground">{loading ? "Loading…" : `${rows.length} shown`}</span>
+             {countLabel ? <span className="text-[12px] text-muted-foreground">{countLabel}</span> : null}
            </div>
 
            {!ready ? (
@@ -91,6 +105,10 @@ export default function PoliciesListPage() {
              </div>
            ) : loading ? (
              <p className="text-[13px] text-muted-foreground pl-2">Loading policies…</p>
+           ) : loadError ? (
+             <p className="text-[13px] text-destructive pl-2" role="alert">
+               Policies could not be loaded. This is not an empty library.
+             </p>
            ) : rows.length === 0 ? (
              <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
                 <p className="font-semibold text-[13px] text-foreground">No policies</p>
