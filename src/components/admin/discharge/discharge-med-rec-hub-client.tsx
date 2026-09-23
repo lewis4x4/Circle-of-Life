@@ -2,7 +2,7 @@
 
 /**
  * Shared med reconciliation pipeline hub mounted at `/admin/discharge`
- * and `/pipeline/discharge-management` (Quiet Operator).
+ * (Quiet Operator). `/pipeline/discharge-management` redirects here (COL-644).
  */
 
 import Link from "next/link";
@@ -57,7 +57,7 @@ import {
   formatDischargeMedRecResidentName,
 } from "@/lib/discharge/discharge-med-rec-display-copy";
 
-const NEW_MED_REC_PIPELINE_PATH = "/pipeline/discharge-management/new-reconciliation";
+const NEW_MED_REC_PATH = "/admin/discharge/new";
 
 type RowT = DischargeMedRecHubRow;
 
@@ -486,7 +486,7 @@ export function DischargeMedRecHubClient({
                 </Select>
               </div>
               <Link
-                href={NEW_MED_REC_PIPELINE_PATH}
+                href={NEW_MED_REC_PATH}
                 aria-label="Start new medication reconciliation"
                 className={cn(
                   buttonVariants({ variant: "default", size: "default" }),
@@ -656,7 +656,7 @@ export function DischargeMedRecHubClient({
                         >
                           No med recs yet.{" "}
                           <Link
-                            href={NEW_MED_REC_PIPELINE_PATH}
+                            href={NEW_MED_REC_PATH}
                             className="inline font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
                           >
                             + Start your first med rec
