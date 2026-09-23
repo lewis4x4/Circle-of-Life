@@ -1,5 +1,7 @@
 # Haven Homewood Launch Handoff
 
+> **Roles note (2026-09-22, COL-615):** this handoff predates the role consolidation. The `nurse`, `caregiver` and `dietary` login roles it lists are retired: Med-Tech holds what nurse and caregiver held, Cook holds what dietary held, and Housekeeper and Recruiter are login roles. See the Roles section in `AGENTS.md`.
+
 **Client:** Circle of Life Assisted Living Communities
 **Current launch facility:** Homewood Lodge ALF
 **Original readiness snapshot:** 2026-05-03

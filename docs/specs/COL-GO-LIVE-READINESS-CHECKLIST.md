@@ -28,12 +28,12 @@
 | Needed | Owner | Status | Notes |
 |---|---|---:|---|
 | Final list of production users | Brian / operations | ☐ | Name, email, phone if needed. |
-| Assign app role per user | Brian / admin | ☐ | Owner, facility admin, caregiver, family, business office, executive, etc. |
+| Assign app role per user | Brian / admin | ☐ | Owner, Administrator, Med-Tech, Cook, Housekeeper, Recruiter, family, etc. (see the Roles section of `AGENTS.md`; `nurse`, `caregiver`, `dietary` retired 2026-09-22). |
 | Assign facility access per user | Brian / admin | ☐ | Which facility/facilities each user can access. |
 | Confirm admin users | Brian | ☐ | Who can create/edit/delete operational records. |
-| Confirm caregiver users | Facility leader | ☐ | Who can use caregiver shell and resident workflows. |
+| Confirm Med-Tech and Housekeeper users | Facility leader | ☐ | Who can use the floor app (`/caregiver`) and resident workflows. |
 | Confirm family portal users, if used | Facility leader | ☐ | Resident linkage required before invite. |
-| Test wrong-role route blocking | Tester | ☐ | Caregiver/family should not open `/admin/*`. |
+| Test wrong-role route blocking | Tester | ☐ | Housekeeper/family should not open `/admin/*`. |
 | Record first production login test | Tester | ☐ | Confirm each role lands in correct shell. |
 
 ### Minimum user role template
@@ -59,7 +59,7 @@
 | User accounts | Yes | User matrix | Brian / admin | ☐ | Must match roles/access above. |
 | Admissions / move-in readiness | Recommended before go-live; required for active new admits | `operations/compliance-checklists/admin-log.md` + `operations/compliance-checklists/lmh-admin-mgr-log.md` | Administrator / Business Office | Partial — checklist source found | Covers new-admit readiness: sexual offender search, signed contract, 1823, DNR, Face Sheet, doctor assignment, Medicaid/OSS/rep-payee/SSA items when applicable, first month/payment, A/R, Drive upload, and admit/discharge log. Active CRM/inquiry pipeline source remains open. |
 | Family/responsible-party contacts | Recommended | Admission records | Facility admin | ☐ | Needed for family portal, notifications, emergency contact. |
-| Medication/MAR data | Yes for med workflows | QuickMAR export | Facility admin / nurse | Waiting | QuickMAR build pending; do not auto-write without review. |
+| Medication/MAR data | Yes for med workflows | QuickMAR export | Facility admin / Med-Tech | Waiting | QuickMAR build pending; do not auto-write without review. |
 | Vendors / emergency contacts | Recommended | Facility ops list | Facility admin | ☐ | Utilities, pharmacy, physician contacts, emergency services. |
 | Policies / compliance documents | Recommended | Facility docs | Admin / compliance | ☐ | Upload/source-of-truth later if document workflow is used. |
 
@@ -85,7 +85,7 @@
 | Walkthrough area | Route / flow | Tester | Status | Notes |
 |---|---|---|---:|---|
 | Login — owner/admin | `/login` → `/admin` |  | ☐ | Confirm correct shell. |
-| Login — caregiver | `/login` → `/caregiver` |  | ☐ | Confirm mobile usability. |
+| Login — Med-Tech | `/login` → `/med-tech` (floor app at `/caregiver`) |  | ☐ | Confirm mobile usability. |
 | Login — family, if used | `/login` → `/family` |  | ☐ | Confirm family can only see linked resident. |
 | Admin dashboard | `/admin` |  | ☐ | Metrics/empty states load correctly. |
 | Residents list/detail | `/admin/residents` |  | ☐ | Resident list and detail pages load. |
@@ -95,7 +95,7 @@
 | eMAR/medication shell | medication routes |  | ☐ | Confirm current limitation until QuickMAR import is built. |
 | Caregiver resident workflow | `/caregiver/*` |  | ☐ | Confirm daily floor workflow usability. |
 | Family messages/portal | `/family/*` |  | ☐ | Only if launch includes family access. |
-| Wrong-role access test | caregiver/family → `/admin/*` |  | ☐ | Must deny/redirect. |
+| Wrong-role access test | housekeeper/family → `/admin/*` |  | ☐ | Must deny/redirect. |
 | Mobile viewport | caregiver routes on phone/tablet |  | ☐ | Required for floor staff adoption. |
 
 ---

@@ -4,6 +4,8 @@
 **Build Week:** 13-14
 **Phase:** 2
 
+> **Roles updated 2026-09-22 (COL-615):** the retired `nurse` and `caregiver` login roles are now `med_tech`, which holds everything both held; `dietary` / `dietary_aide` are now `cook`. The canonical spec is `docs/specs/03-resident-profile-advanced.md`; see the Roles section in `AGENTS.md`.
+
 This spec extends Module 3 with features that require data from Modules 4 and 7 to exist. The core resident profile and care plan tables are already created in Phase 1. This phase adds: acuity auto-calculation, care plan task generation engine, assessment scheduling automation, decline trajectory detection, and the care plan review workflow with AI-generated draft support.
 
 ---
@@ -26,7 +28,7 @@ CREATE TABLE care_plan_tasks (
   scheduled_time time,                           -- specific time if care plan item has specific_times
   task_type text NOT NULL,                       -- mirrors care_plan_item_category: "bathing", "mobility", "medication_assistance", etc.
   description text NOT NULL,                     -- human-readable: "Assist Mrs. Johnson with ambulation using rolling walker to dining room"
-  assigned_to uuid REFERENCES auth.users(id),    -- caregiver assigned to this resident for this shift
+  assigned_to uuid REFERENCES auth.users(id),    -- Med-Tech assigned to this resident for this shift
 
   status text NOT NULL DEFAULT 'pending',        -- "pending", "completed", "refused", "skipped", "not_applicable"
   completed_at timestamptz,
@@ -61,7 +63,7 @@ CREATE TABLE assessment_schedules (
   frequency_days integer NOT NULL,               -- 90 for quarterly, 30 for monthly, 7 for weekly
   last_completed_date date,
   next_due_date date NOT NULL,
-  assigned_to uuid REFERENCES auth.users(id),    -- default assessor (usually primary nurse)
+  assigned_to uuid REFERENCES auth.users(id),    -- default assessor (usually the primary Med-Tech)
   is_active boolean NOT NULL DEFAULT true,
 
   -- Override frequency for specific residents
@@ -168,7 +170,7 @@ CREATE TABLE care_plan_reviews (
   new_care_plan_version_id uuid REFERENCES care_plans(id),  -- the care plan version created from this review
 
   -- Participants
-  participants jsonb DEFAULT '[]',               -- [{"user_id": "uuid", "role": "nurse", "name": "..."}, {"name": "Family - Daughter", "attended": true}]
+  participants jsonb DEFAULT '[]',               -- [{"user_id": "uuid", "role": "med_tech", "name": "..."}, {"name": "Family - Daughter", "attended": true}]
   family_participated boolean NOT NULL DEFAULT false,
   physician_consulted boolean NOT NULL DEFAULT false,
 
@@ -192,29 +194,29 @@ ALTER TABLE care_plan_tasks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Staff see tasks in accessible facilities" ON care_plan_tasks FOR SELECT
   USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()));
 CREATE POLICY "Caregivers complete tasks" ON care_plan_tasks FOR UPDATE
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE assessment_schedules ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see schedules" ON assessment_schedules FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse', 'caregiver'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage schedules" ON assessment_schedules FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE acuity_history ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see acuity history" ON acuity_history FOR SELECT
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('family', 'dietary', 'maintenance_role'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() NOT IN ('family', 'cook', 'maintenance_role'));
 
 ALTER TABLE decline_alerts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see decline alerts" ON decline_alerts FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage decline alerts" ON decline_alerts FOR UPDATE
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 ALTER TABLE care_plan_reviews ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinical staff see reviews" ON care_plan_reviews FOR SELECT
-  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND deleted_at IS NULL AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 CREATE POLICY "Nurse+ manage reviews" ON care_plan_reviews FOR ALL
-  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'nurse'));
+  USING (organization_id = auth.organization_id() AND facility_id IN (SELECT auth.accessible_facility_ids()) AND auth.app_role() IN ('owner', 'org_admin', 'facility_admin', 'med_tech'));
 
 -- Audit triggers
 CREATE TRIGGER audit_care_plan_tasks AFTER INSERT OR UPDATE OR DELETE ON care_plan_tasks FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
@@ -244,16 +246,16 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON care_plan_reviews FOR EACH ROW EX
    - If `frequency` = "3x daily" → generate tasks at the 3 specific_times, assigned to the shift each time falls in
    - If `frequency` = "as needed" → generate 1 reminder task per day shift (soft reminder, not required completion)
    - If `frequency` = "weekly" and today matches → generate 1 task
-3. Assign each task to the caregiver assigned to that resident for that shift (from shift_assignments.assigned_resident_ids).
+3. Assign each task to the Med-Tech assigned to that resident for that shift (from shift_assignments.assigned_resident_ids).
 4. Skip generation if a task for that item+date+shift already exists.
 
 **Task completion linking:**
-- When a caregiver completes an ADL log (Module 4) for a resident, the system auto-matches it to pending care_plan_tasks by: resident_id + adl_type matching task_type + same date + same shift. If matched → update task status to 'completed', link the adl_log_id.
+- When a Med-Tech completes an ADL log (Module 4) for a resident, the system auto-matches it to pending care_plan_tasks by: resident_id + adl_type matching task_type + same date + same shift. If matched → update task status to 'completed', link the adl_log_id.
 - When an eMAR record is documented (status='given'), match to medication_assistance care plan tasks similarly.
 - Tasks not completed by end of shift → status remains 'pending', carried forward to shift handoff as "incomplete tasks."
 
-**Caregiver shift dashboard integration:**
-- The caregiver's shift dashboard (Module 4, Shell B) shows: pending care_plan_tasks for their assigned residents, sorted by scheduled_time (if defined) or by task_type priority (medication > fall_prevention > ADL > social).
+**Floor-app shift dashboard integration:**
+- The Med-Tech's shift dashboard in the floor app (`/caregiver`) (Module 4, Shell B) shows: pending care_plan_tasks for their assigned residents, sorted by scheduled_time (if defined) or by task_type priority (medication > fall_prevention > ADL > social).
 
 ### Assessment Scheduling Automation
 
@@ -350,11 +352,11 @@ When an incident is created (Module 7):
 | Significant change of condition | `change_of_condition` | condition_change_date + 2 |
 
 **Review process:**
-1. Review created with status='pending', assigned to resident's primary nurse
-2. Nurse opens review → status='in_progress'
+1. Review created with status='pending', assigned to resident's primary Med-Tech
+2. Med-Tech opens review → status='in_progress'
 3. System presents: current care plan, all assessments since last review, all incidents since last review, all decline_alerts, daily log trends, weight/vital sign trends, medication changes, activity attendance trends
-4. Nurse modifies care plan items as needed (add, edit, deactivate)
-5. Nurse documents review: notes, participants, whether family participated, whether physician was consulted
+4. Med-Tech modifies care plan items as needed (add, edit, deactivate)
+5. Med-Tech documents review: notes, participants, whether family participated, whether physician was consulted
 6. On completion → new care_plan version created, review linked to new version, task generation engine runs for updated plan, previous version archived
 
 ---
@@ -363,23 +365,23 @@ When an incident is created (Module 7):
 
 | Method | Route | Auth | Roles | Description |
 |--------|-------|------|-------|-------------|
-| GET | `/residents/:id/tasks` | Required | caregiver, nurse, facility_admin | Get care plan tasks. Params: `date`, `shift`, `status` |
-| PUT | `/care-plan-tasks/:id/complete` | Required | caregiver, nurse | Complete a task |
-| PUT | `/care-plan-tasks/:id/skip` | Required | caregiver, nurse | Skip with reason |
-| GET | `/facilities/:id/tasks/incomplete` | Required | nurse, facility_admin | List incomplete tasks across facility for a shift |
-| GET | `/residents/:id/assessment-schedule` | Required | nurse, facility_admin | Get assessment schedule |
-| PUT | `/assessment-schedules/:id` | Required | nurse, facility_admin | Override frequency |
-| GET | `/facilities/:id/assessments/overdue` | Required | nurse, facility_admin | List all overdue assessments |
-| GET | `/facilities/:id/assessments/due-this-week` | Required | nurse, facility_admin | Assessments due in next 7 days |
-| GET | `/residents/:id/acuity-history` | Required | nurse, facility_admin | Acuity trend data for charts |
-| GET | `/residents/:id/decline-alerts` | Required | nurse, facility_admin | Active decline alerts for resident |
-| GET | `/facilities/:id/decline-alerts` | Required | nurse, facility_admin, owner | All active decline alerts across facility |
-| PUT | `/decline-alerts/:id/acknowledge` | Required | nurse, facility_admin | Acknowledge alert |
-| PUT | `/decline-alerts/:id/resolve` | Required | nurse, facility_admin | Resolve alert with notes |
-| GET | `/facilities/:id/care-plan-reviews` | Required | nurse, facility_admin | Review queue. Params: `status`, `review_type` |
-| GET | `/care-plan-reviews/:id` | Required | nurse, facility_admin | Review detail with all supporting data |
-| PUT | `/care-plan-reviews/:id/start` | Required | nurse | Begin review (status → in_progress) |
-| PUT | `/care-plan-reviews/:id/complete` | Required | nurse, facility_admin | Complete review, create new care plan version |
+| GET | `/residents/:id/tasks` | Required | med_tech, facility_admin | Get care plan tasks. Params: `date`, `shift`, `status` |
+| PUT | `/care-plan-tasks/:id/complete` | Required | med_tech | Complete a task |
+| PUT | `/care-plan-tasks/:id/skip` | Required | med_tech | Skip with reason |
+| GET | `/facilities/:id/tasks/incomplete` | Required | med_tech, facility_admin | List incomplete tasks across facility for a shift |
+| GET | `/residents/:id/assessment-schedule` | Required | med_tech, facility_admin | Get assessment schedule |
+| PUT | `/assessment-schedules/:id` | Required | med_tech, facility_admin | Override frequency |
+| GET | `/facilities/:id/assessments/overdue` | Required | med_tech, facility_admin | List all overdue assessments |
+| GET | `/facilities/:id/assessments/due-this-week` | Required | med_tech, facility_admin | Assessments due in next 7 days |
+| GET | `/residents/:id/acuity-history` | Required | med_tech, facility_admin | Acuity trend data for charts |
+| GET | `/residents/:id/decline-alerts` | Required | med_tech, facility_admin | Active decline alerts for resident |
+| GET | `/facilities/:id/decline-alerts` | Required | med_tech, facility_admin, owner | All active decline alerts across facility |
+| PUT | `/decline-alerts/:id/acknowledge` | Required | med_tech, facility_admin | Acknowledge alert |
+| PUT | `/decline-alerts/:id/resolve` | Required | med_tech, facility_admin | Resolve alert with notes |
+| GET | `/facilities/:id/care-plan-reviews` | Required | med_tech, facility_admin | Review queue. Params: `status`, `review_type` |
+| GET | `/care-plan-reviews/:id` | Required | med_tech, facility_admin | Review detail with all supporting data |
+| PUT | `/care-plan-reviews/:id/start` | Required | med_tech | Begin review (status → in_progress) |
+| PUT | `/care-plan-reviews/:id/complete` | Required | med_tech, facility_admin | Complete review, create new care plan version |
 
 ---
 
@@ -387,7 +389,7 @@ When an incident is created (Module 7):
 
 | Function | Trigger | Logic |
 |----------|---------|-------|
-| `generate-care-plan-tasks` | Cron (midnight ET daily) | For each active care plan: read items, generate tasks for next 7 days per frequency rules. Assign to shift caregivers. |
+| `generate-care-plan-tasks` | Cron (midnight ET daily) | For each active care plan: read items, generate tasks for next 7 days per frequency rules. Assign to shift Med-Techs. |
 | `auto-complete-care-plan-tasks` | INSERT on adl_logs, UPDATE on emar_records | Match to pending care_plan_tasks and auto-complete. |
 | `assessment-schedule-manager` | INSERT on assessments | Update assessment_schedule.last_completed_date and next_due_date. Adjust frequency if risk level changed. |
 | `assessment-schedule-incident-trigger` | INSERT on incidents WHERE category LIKE 'fall%' OR category = 'skin_integrity' | Force reassessment schedule for relevant assessment types. |
@@ -399,17 +401,17 @@ When an incident is created (Module 7):
 
 ## UI SCREENS
 
-### Web (Admin/Nurse)
+### Web (Admin/Med-Tech)
 
 | Screen | Route | Description |
 |--------|-------|-------------|
 | Assessment Calendar | `/facilities/:id/assessment-calendar` | Calendar view showing all assessment due dates across all residents. Color-coded: green (completed), yellow (due this week), red (overdue). Click date → list of assessments due. |
 | Decline Alert Dashboard | `/facilities/:id/decline-alerts` | Cards for each unresolved alert, sorted by severity. Each card shows: resident photo/name, alert type, severity badge, contributing data summary, recommended actions checklist, acknowledge/resolve buttons. |
-| Care Plan Review Queue | `/facilities/:id/reviews` | Table: resident, review type, due date, assigned nurse, status. Filter by: pending, in_progress, overdue. Sort by due date. |
+| Care Plan Review Queue | `/facilities/:id/reviews` | Table: resident, review type, due date, assigned Med-Tech, status. Filter by: pending, in_progress, overdue. Sort by due date. |
 | Care Plan Review Workspace | `/care-plan-reviews/:id` | Split view: left panel = current care plan with edit capability, right panel = supporting data tabs (assessments, incidents, daily logs, weight chart, activity attendance, decline alerts). Bottom bar: participants, notes, complete button. |
 | Resident Trend Dashboard | `/residents/:id/trends` | Charts: acuity score over time, weight over time, fall frequency (rolling 30-day), medication refusal rate, activity attendance rate, behavioral event frequency. Decline alert history overlay. |
 
-### Mobile (Caregiver)
+### Mobile (floor app at `/caregiver`, Med-Tech)
 
 | Screen | Route | Description |
 |--------|-------|-------------|

@@ -19,7 +19,7 @@ Standardize **stale-while-revalidate** behavior, **max ages**, and **offline wri
 | App shell / JS chunks | All | 7d versioned | Cache-bust via build id |
 | API GET (read-only lists) | Admin | 0–60s | Must not cache PHI aggressively on shared devices |
 | Static assets | All | 30d | Non-PII icons, fonts |
-| eMAR queue (IndexedDB) | Caregiver | N/A | Source of truth until sync |
+| eMAR queue (IndexedDB) | Med-Tech | N/A | Source of truth until sync |
 
 **Rule:** **No offline writes** without an **idempotency key** (see `04-daily-operations-offline.md`).
 

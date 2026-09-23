@@ -36,7 +36,7 @@ Haven is a unified operating system for assisted living, home health, and commun
 ## Recommended Deck Narrative
 
 1. Why Haven exists: the operating problem in senior care.
-2. Who it serves: owner to caregiver to family.
+2. Who it serves: owner to Med-Tech to family.
 3. Platform principles: RLS, audit log, soft deletes, UTC, money in cents, multi-entity support.
 4. Role shells: each persona lands in a different operating surface.
 5. Resident journey: referral to admission to daily care to discharge.
