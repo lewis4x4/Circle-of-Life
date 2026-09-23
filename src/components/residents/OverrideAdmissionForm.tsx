@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatOverrideAdmissionFacilityLabel } from "@/lib/admissions/override-admission-display-copy";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatAdmissionDetailBedLabel } from "@/lib/admissions/admission-detail-display-copy";
@@ -104,8 +105,10 @@ export function OverrideAdmissionForm({ cancelHref = "/admin/residents", admissi
   const availableFacilities = useFacilityStore((s) => s.availableFacilities);
 
   const facilityName = useMemo(() => {
-    if (!selectedFacilityId) return "Selected facility";
-    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? "Selected facility";
+    const posted = selectedFacilityId
+      ? availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null
+      : null;
+    return formatOverrideAdmissionFacilityLabel(selectedFacilityId, posted);
   }, [availableFacilities, selectedFacilityId]);
 
   const [firstName, setFirstName] = useState("");
