@@ -101,6 +101,32 @@ describe("live standup behavior", () => {
     }
   });
 
+  it("counts drafts in Current AR by ruling and names them (COL-665)", async () => {
+    const now = new Date("2026-09-22T16:00:00Z");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    // Homewood on 2026-09-22: $16,968.00 sent and overdue, 57 drafts carrying $117,108.16.
+    const invoice = (status: string, balance: number) => ({ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status, balance_due: balance, due_date: "2026-05-15", total: balance, period_start: null });
+    const tables: Tables = {
+      facilities: [{ id: facilityId(1), name: "Homewood", total_licensed_beds: 40, organization_id: organizationId, deleted_at: null }],
+      invoices: [
+        invoice("overdue", 1_696_800),
+        invoice("paid", 0),
+        ...Array.from({ length: 56 }, () => invoice("draft", 205_452)),
+        invoice("draft", 205_504),
+      ],
+    };
+    const mock = client(tables);
+    const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
+    const [homewood, totals] = result.facilities;
+    expect(homewood.metrics.current_ar_cents.valueNumeric).toBe(1_696_800 + 11_710_816);
+    expect(homewood.metrics.current_ar_cents.overrideNote).toBe("Includes $117,108 in 57 drafts not yet sent.");
+    expect(totals.metrics.current_ar_cents.overrideNote).toBe("Includes $117,108 in 57 drafts not yet sent.");
+    expect(homewood.metrics.current_ar_cents.description).toMatch(/if every resident pays/);
+    const invoicesQuery = mock.queries.find((query) => query.table === "invoices")!;
+    expect(invoicesQuery.operations).toContainEqual(["in", "status", ["draft", "sent", "partial", "overdue"]]);
+  });
+
   it("preserves single-facility scope, totals, and missing-bed capacity fallback", async () => {
     const now = new Date("2026-09-05T16:00:00Z");
     vi.useFakeTimers({ toFake: ["Date"] });
