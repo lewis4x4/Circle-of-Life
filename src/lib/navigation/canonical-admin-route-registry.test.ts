@@ -11,7 +11,7 @@ import { repairedRoutes, resolveRedirect } from "../../../scripts/verify-section
 vi.mock("@sentry/nextjs", () => ({ withSentryConfig: (config: unknown) => config }));
 vi.mock("@next/bundle-analyzer", () => ({ default: () => (config: unknown) => config }));
 vi.mock("@/app/(admin)/finance/forecast/page", () => ({ default: () => "forecast" }));
-vi.mock("@/app/(admin)/finance/close/page", () => ({ default: () => "close" }));
+vi.mock("@/app/(admin)/finance/period-close/page", () => ({ default: () => "period close" }));
 vi.mock("@/app/(admin)/finance/trust/page", () => ({ default: () => "trust" }));
 vi.mock("@/app/(admin)/reports/history/[id]/page", () => ({ default: () => "report" }));
 vi.mock("@/app/(admin)/training/inservice/new/page", () => ({ default: () => "inservice" }));

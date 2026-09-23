@@ -93,22 +93,6 @@ const KNOWN_DUPLICATES: Record<string, string> = {
   // Role shells deliberately share the self-service page inside their own chrome.
   "/admin/acknowledgments/my = /caregiver/acknowledgments = /dietary/acknowledgments":
     "one self-service page mounted in three role shells",
-  "/admin/finance/close = /admin/finance/period-close": "COL-654 follow-up PR: close redirects to period-close",
-  "/caregiver/clock = /clock": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/followups = /followups": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/handoff = /handoff": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/incident-draft = /incident-draft": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/me = /me": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/meds = /meds": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/prn-followup = /prn-followup": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/resident/[id] = /resident/[id]": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/resident/[id]/adl = /resident/[id]/adl": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/resident/[id]/behavior = /resident/[id]/behavior": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/resident/[id]/condition-change = /resident/[id]/condition-change":
-    "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/resident/[id]/log = /resident/[id]/log": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/resident/[id]/timeline = /resident/[id]/timeline": "COL-654 follow-up PR: caregiver short paths redirect",
-  "/caregiver/tasks = /tasks": "COL-654 follow-up PR: caregiver short paths redirect",
 };
 
 describe("duplicate URL trees (COL-654)", () => {
