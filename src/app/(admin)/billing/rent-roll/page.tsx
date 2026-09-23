@@ -18,13 +18,13 @@ import {
   type RentRollPeriod,
   type RentRollRow,
 } from "@/lib/billing/rent-roll-model";
+import { isNotYetSentStatus } from "@/lib/billing/receivables";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 import { BillingHubNav } from "../billing-hub-nav";
 
-const DRAFT_STATUSES = new Set(["draft"]);
 
 function money(cents: number | null): string {
   return cents === null ? "" : billingCurrency.format(cents / 100);
@@ -133,7 +133,7 @@ function RentRollPageContent() {
   const totals = roll?.totals ?? null;
   const showOtherSource = rows.some((r) => r.otherSourceCents !== null);
   const paymentsRecorded = rows.some((r) => r.paidPrivatelyCents !== 0 || r.medicaidPaidCents !== 0);
-  const draftInvoiceCount = rows.filter((r) => r.invoice && DRAFT_STATUSES.has(r.invoice.status)).length;
+  const draftInvoiceCount = rows.filter((r) => r.invoice && isNotYetSentStatus(r.invoice.status)).length;
   const invoicedCount = rows.filter((r) => r.invoice !== null).length;
 
   return (
