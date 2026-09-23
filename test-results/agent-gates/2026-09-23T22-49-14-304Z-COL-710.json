@@ -1,0 +1,131 @@
+{
+  "segment": "COL-710",
+  "timestamp": "2026-09-23T22:49:14.304Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.package-manager",
+      "required": true,
+      "command": "npm run check:package-manager",
+      "status": "passed",
+      "duration_ms": 308,
+      "stdout": "[check:package-manager] PASS: package-lock.json is the only JavaScript package-manager lockfile\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 32,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 671,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 873,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 16905,
+      "stdout": "[gitleaks] detector regression PASS: generic-api-key remains active\n[gitleaks] allowlist PASS: exempted files are still scanned for real credentials\n[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n\u001b[90m6:49PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1m2626 commits scanned.\u001b[0m\n\u001b[90m6:49PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mscanned ~116223967 bytes (116.22 MB) in 16.4s\u001b[0m\n\u001b[90m6:49PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mno leaks found\u001b[0m\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 83764,
+      "stdout": "Constitution lint passed for smart-rounding scope (63 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven COL-710 thresholds/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "failed",
+      "duration_ms": 124,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: gap in migration sequence: expected 483, found 489\n"
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": false,
+      "command": "npm run migrations:verify:pg",
+      "status": "skipped",
+      "duration_ms": 132,
+      "stdout": "[migrations:verify:pg] SKIP: SKIP_PG_VERIFY=1\n",
+      "stderr": ""
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 380,
+      "stdout": "[check:package-manager] PASS: package-lock.json is the only JavaScript package-manager lockfile\n",
+      "stderr": "[migrations:check] FAIL: gap in migration sequence: expected 483, found 489\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 344,
+      "stdout": "PASS\t18,000 compliance rows retained through 132 capped pages; every cut excludes configuration gaps\nPASS\tChanging or interrupted pagination fails instead of presenting partial compliance\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 3,
+    "skipped": 2,
+    "blocking_failures": [
+      "qa.migration-sequence",
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Haven COL-710 thresholds/test-results/agent-gates/2026-09-23T22-49-14-304Z-COL-710.json"
+  ]
+}

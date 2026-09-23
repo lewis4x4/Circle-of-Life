@@ -1,6 +1,6 @@
 /**
  * Nightly risk score levels from the `risk.score_bands` operating rule
- * (COL-710, migration 489). The cut-offs are data, not code: an owner or org
+ * (COL-710, migration 491). The cut-offs are data, not code: an owner or org
  * admin sets them on Settings → Threshold targets.
  *
  * The nightly scorer (`supabase/functions/risk-nightly-scorer`) imports this

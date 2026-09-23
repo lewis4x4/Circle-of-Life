@@ -1,7 +1,7 @@
 /**
  * COL-710 guard: the thresholds that became operating rules must not creep
  * back in as literals in the code that consumes them. The values live in
- * `public.operating_rules` (migration 489) and are changed on
+ * `public.operating_rules` (migration 491) and are changed on
  * Settings → Threshold targets.
  */
 import { readFileSync } from "node:fs";
