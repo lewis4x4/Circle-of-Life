@@ -7,6 +7,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { VisitorLogClient } from "@/components/registers/VisitorLogClient";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -283,17 +284,12 @@ export default function AdminFrontDeskPage() {
           </h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Visitor sign-in with health screening, package &amp; mail custody, and the family
-            phone-call log. {onSiteCount} on site · {pendingPackages} packages awaiting pickup.
+            phone-call log.{facilityReady ? ` ${onSiteCount} on site · ${pendingPackages} packages awaiting pickup.` : null}
           </p>
         </header>
 
-        {/* text-foreground, not text-warning below: warning text on a warning
-            wash fails AA contrast, and the caregiver pages already set this
-            pattern for the same banner. */}
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-foreground">
-            Select a facility first — front desk logs are per-facility.
-          </p>
+          <FacilityGateNotice reason="Visitor, package and call logs are kept per building." />
         ) : null}
 
         {notice ? (

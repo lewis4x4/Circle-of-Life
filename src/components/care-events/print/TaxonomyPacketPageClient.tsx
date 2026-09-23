@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { buildLevelEffects, type LevelEffectRow } from "@/lib/care-events/taxonomy-packet";
 import { fetchPrintFacility, type PrintFacility } from "@/lib/care-events/print-data";
@@ -29,9 +30,6 @@ export function TaxonomyPacketPageClient() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const validFacility = UUID_STRING_RE.test(selectedFacilityId ?? "");
-  const error = validFacility
-    ? loadError
-    : "Choose a building in the header before printing the packet; the levels it prints are that building's.";
 
   useEffect(() => {
     if (!validFacility || !selectedFacilityId) return;
@@ -85,11 +83,22 @@ export function TaxonomyPacketPageClient() {
     };
   }, [supabase, selectedFacilityId, validFacility]);
 
-  if (error) {
+  if (!validFacility) {
+    return (
+      <div className="p-6">
+        <FacilityGateNotice
+          title="Care event taxonomy packet"
+          reason="The packet prints one building's escalation levels and follow-up rules, so it is printed per building."
+        />
+      </div>
+    );
+  }
+
+  if (loadError) {
     return (
       <div className="space-y-4 p-6">
         <p role="alert" className="text-base font-medium text-destructive">
-          {error}
+          {loadError}
         </p>
         <Link href="/admin/incidents" className="text-sm underline-offset-4 hover:underline">
           Back to the incidents board

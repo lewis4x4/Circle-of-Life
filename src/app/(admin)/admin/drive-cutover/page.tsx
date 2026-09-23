@@ -8,6 +8,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -166,9 +167,9 @@ export default function AdminDriveCutoverPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — cutover is recorded per-facility.
-          </p>
+
+          <FacilityGateNotice reason="Drive cutover is recorded and attested per building." />
+
         ) : null}
 
         {notice ? (

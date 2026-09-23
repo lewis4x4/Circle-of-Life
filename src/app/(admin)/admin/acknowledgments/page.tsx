@@ -8,6 +8,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -213,21 +214,21 @@ export default function AdminAcknowledgmentsDashboardPage() {
             >
               My acknowledgments
             </Link>
-            <Button
-              type="button"
-              className="gap-2 font-medium text-[10px] uppercase tracking-wider"
-              onClick={() => setShowForm((v) => !v)}
-            >
-              <Plus className="h-4 w-4" aria-hidden />
-              {showForm ? "Close" : "New requirement"}
-            </Button>
+            {facilityReady ? (
+              <Button
+                type="button"
+                className="gap-2 font-medium text-[10px] uppercase tracking-wider"
+                onClick={() => setShowForm((v) => !v)}
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                {showForm ? "Close" : "New requirement"}
+              </Button>
+            ) : null}
           </div>
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — requirements are tracked per facility.
-          </p>
+          <FacilityGateNotice reason="Read-and-sign requirements are tracked per building, against that building's staff." />
         ) : null}
 
         {notice ? (

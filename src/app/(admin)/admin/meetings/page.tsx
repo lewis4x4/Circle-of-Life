@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
@@ -201,24 +202,22 @@ export default function AdminMeetingsHubPage() {
               Per-facility, RLS-scoped; minutes are audit-logged.
             </p>
           </div>
-          <Link
-            href="/admin/meetings/new"
-            className={cn(
-              buttonVariants({ size: "default" }),
-              "shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider",
-              !facilityReady && "pointer-events-none opacity-50",
-            )}
-            aria-disabled={!facilityReady}
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            New meeting
-          </Link>
+          {facilityReady ? (
+            <Link
+              href="/admin/meetings/new"
+              className={cn(
+                buttonVariants({ size: "default" }),
+                "shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider",
+              )}
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              New meeting
+            </Link>
+          ) : null}
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — meetings are per-facility records.
-          </p>
+          <FacilityGateNotice reason="Meetings, their minutes and action items are recorded per building." />
         ) : null}
 
         {notice ? (

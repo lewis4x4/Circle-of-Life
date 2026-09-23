@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, NotebookPen } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
@@ -155,9 +156,7 @@ export default function AdminNewMeetingPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — meetings are per-facility records.
-          </p>
+          <FacilityGateNotice reason="A meeting is recorded against one building." />
         ) : (
           <div className="rounded-[var(--radius)] border border-border bg-card p-5 space-y-4">
             {notice ? (
