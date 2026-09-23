@@ -80,6 +80,7 @@ type InvoiceRow = {
   balance_due: number;
   invoice_date: string;
   period_start: string | null;
+  payer_type?: string | null;
 };
 
 type PlanRateRow = {
@@ -186,7 +187,7 @@ export async function fetchRentRollFromSupabase(
 
   const invoicesQuery = supabase
     .from("invoices" as never)
-    .select("resident_id, status, total, balance_due, invoice_date, period_start")
+    .select("resident_id, status, total, balance_due, invoice_date, period_start, payer_type")
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .gte("invoice_date", bounds.startIso)
@@ -272,6 +273,7 @@ export async function fetchRentRollFromSupabase(
     balanceDueCents: row.balance_due,
     invoiceDate: row.invoice_date,
     periodStart: row.period_start,
+    payerType: row.payer_type ?? null,
   }));
 
   const collectionNotes: RentRollCollectionNoteInput[] = noteRows.map((row) => ({
