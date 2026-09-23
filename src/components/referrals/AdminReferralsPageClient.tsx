@@ -7,6 +7,7 @@ import { format, subDays, startOfQuarter } from "date-fns";
 import { ClipboardList, Download, Search, Loader2, Mic } from "lucide-react";
 
 import { ReferralsHubNav } from "@/app/(admin)/admin/referrals/referrals-hub-nav";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -504,12 +505,7 @@ export function AdminReferralsPageClient({
       </header>
 
       {noFacility ? (
-        <div
-          role="status"
-          className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-800 dark:text-amber-400"
-        >
-          Select a facility in the header to load referral leads and KPIs for that site.
-        </div>
+        <FacilityGateNotice reason="Referral leads and their KPIs are kept per building." />
       ) : null}
 
       {leadListTruncated ? (
@@ -859,6 +855,7 @@ export function AdminReferralsPageClient({
       ) : null}
 
       {/* ─── CASE ROSTER (GLASS ROWS) ─── */}
+      {!noFacility ? (
       <div className="space-y-6">
         <div className="flex flex-col gap-3 border-b border-border pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -952,11 +949,7 @@ export function AdminReferralsPageClient({
            </div>
 
            <div className="space-y-4 mt-4">
-             {noFacility ? (
-               <div className="p-8 text-center text-sm font-medium text-muted-foreground">
-                 Select a facility to view leads.
-               </div>
-             ) : loading ? (
+             {loading ? (
                <div className="p-8 text-center text-sm font-medium text-muted-foreground">
                  Loading pipeline...
                </div>
@@ -1073,6 +1066,7 @@ export function AdminReferralsPageClient({
            </div>
         </div>
       </div>
+      ) : null}
 
     </div>
   );

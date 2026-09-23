@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { ReferralsHubNav } from "../referrals-hub-nav";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
@@ -639,9 +640,7 @@ export default function AdminReferralsHl7InboundPage() {
                 Loading inbound referrals…
               </div>
             ) : noFacility ? (
-              <div className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 p-4 text-sm font-medium text-warning">
-                Select a facility in the header to load inbound referrals.
-              </div>
+              <FacilityGateNotice reason="Inbound electronic referrals are received per building." />
             ) : error ? (
               <div className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
                 {error}

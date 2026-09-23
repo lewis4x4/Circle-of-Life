@@ -13,7 +13,6 @@ import {
   adminIncidentsGlobalEmptyNotice,
   adminIncidentsKanbanColumnEmptyHelper,
   adminIncidentsKanbanColumnEmptyTitle,
-  adminIncidentsNoFacilityNotice,
   incidentFollowupDueBadgeText,
 } from "@/lib/incidents/incidents-board-copy";
 import {
@@ -315,11 +314,9 @@ export function AdminIncidentsPageClient({
           </Link>
         </div>
       ) : null}
-      {!facilityReady ? (
-        <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
-          {adminIncidentsNoFacilityNotice()}
-        </div>
-      ) : rows.length === 0 ? (
+      {/* COL-651: under All facilities this board is already the cross-facility
+          rollup (the load drops the facility filter), so it never gates. */}
+      {rows.length === 0 ? (
         <div className="relative z-10 rounded-[var(--radius)] border border-border bg-card p-4 text-sm font-medium text-muted-foreground">
           {adminIncidentsGlobalEmptyNotice()}
         </div>
