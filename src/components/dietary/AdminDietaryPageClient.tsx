@@ -55,6 +55,7 @@ import {
   type DietaryHubSnackLogRow as SnackLogRow,
 } from "@/lib/dietary/load-dietary-hub-bootstrap";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type DietOrderStatus = Database["public"]["Enums"]["diet_order_status"];
 
@@ -197,6 +198,7 @@ export function AdminDietaryPageClient({
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
+  const beginLoad = useLatestLoad();
   const snackPassSectionRef = useRef<HTMLDivElement>(null);
   const [rows, setRows] = useState<DietRow[]>(initialBootstrap.rows);
   const [loading, setLoading] = useState(false);
@@ -232,6 +234,7 @@ export function AdminDietaryPageClient({
   }, []);
 
   const load = useCallback(async () => {
+    const isCurrent = beginLoad();
     setLoading(true);
     setError(null);
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -247,8 +250,10 @@ export function AdminDietaryPageClient({
     }
     try {
       const bootstrap = await loadDietaryHubBootstrap(selectedFacilityId, supabase);
+      if (!isCurrent()) return;
       applyBootstrap(bootstrap);
     } catch (e) {
+      if (!isCurrent()) return;
       setError(formatLiveDataLoadError(e, "Failed to load dietary data."));
       applyBootstrap({
         rows: [],
@@ -258,9 +263,9 @@ export function AdminDietaryPageClient({
         snackLogs: [],
       });
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [applyBootstrap, selectedFacilityId, supabase]);
+  }, [applyBootstrap, beginLoad, selectedFacilityId, supabase]);
 
   useEffect(() => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 // Types
 type AssessmentRow = OverdueAssessmentRow;
@@ -48,6 +49,7 @@ export function AdminOverdueAssessmentsPageClient({
 }: AdminOverdueAssessmentsPageClientProps) {
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
   const [assessments, setAssessments] = useState<AssessmentRow[]>(initialAssessments);
   const [carePlans, setCarePlans] = useState<CarePlanRow[]>(initialCarePlans);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +64,7 @@ export function AdminOverdueAssessmentsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
@@ -78,17 +81,19 @@ export function AdminOverdueAssessmentsPageClient({
         fetchOverdueAssessmentsFromSupabase(selectedFacilityId),
         fetchCarePlanReviewsDueFromSupabase(selectedFacilityId),
       ]);
+      if (!isCurrent()) return;
 
       setAssessments(liveAssessments);
       setCarePlans(liveCarePlans);
     } catch (err) {
+      if (!isCurrent()) return;
       setAssessments([]);
       setCarePlans([]);
       setError(err instanceof Error ? err.message : "Failed to load Clinical Desk");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

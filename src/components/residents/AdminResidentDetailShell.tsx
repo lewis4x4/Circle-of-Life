@@ -48,6 +48,7 @@ import {
 } from "@/lib/residents/presence";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type AdminResidentDetailShellProps = {
   children: ReactNode;
@@ -69,6 +70,7 @@ export function AdminResidentDetailShell({
   const hrefs = useMemo(() => adminResidentDetailHrefs(residentId), [residentId]);
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
@@ -84,6 +86,7 @@ export function AdminResidentDetailShell({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setLoading(true);
     setError(null);
@@ -98,9 +101,11 @@ export function AdminResidentDetailShell({
 
     try {
       const row = await loadResidentOverviewDetail(residentId, selectedFacilityId);
+      if (!isCurrent()) return;
       setDetail(row);
       setNotFound(!row);
     } catch (loadError) {
+      if (!isCurrent()) return;
       setDetail(null);
       setError(
         formatLiveDataLoadError(
@@ -109,9 +114,9 @@ export function AdminResidentDetailShell({
         ),
       );
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [initialFacilityId, residentId, selectedFacilityId]);
+  }, [beginLoad, initialFacilityId, residentId, selectedFacilityId]);
 
   useEffect(() => {
     void load();

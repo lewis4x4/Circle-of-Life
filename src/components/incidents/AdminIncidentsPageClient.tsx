@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 type BoardScope = "all" | "active" | "open";
 
 type AdminIncidentsPageClientProps = {
@@ -52,6 +53,7 @@ export function AdminIncidentsPageClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -64,19 +66,22 @@ export function AdminIncidentsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
     try {
       const liveRows = await fetchIncidentsFromSupabase(selectedFacilityId);
+      if (!isCurrent()) return;
       setRows(liveRows);
     } catch (err) {
+      if (!isCurrent()) return;
       setRows([]);
       setError(err instanceof Error ? err.message : "Failed to load incidents");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void loadIncidents();
