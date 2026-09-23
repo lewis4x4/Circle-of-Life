@@ -309,21 +309,6 @@
       "count": 1
     }
   },
-  "src/app/contact/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 5
-    }
-  },
-  "src/app/login/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 2
-    }
-  },
-  "src/app/tour/page.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 6
-    }
-  },
   "src/components/admin-assistant/AssistantDashboardPageClient.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
@@ -520,11 +505,6 @@
   "src/components/staffing/AdminStaffingConsolePageClient.tsx": {
     "haven-time/require-time-zone": {
       "count": 1
-    }
-  },
-  "src/components/web/tour-scheduler-modal.tsx": {
-    "jsx-a11y/label-has-associated-control": {
-      "count": 6
     }
   },
   "src/features/knowledge/components/DoctrineReviewQueue.tsx": {

@@ -16,6 +16,7 @@
  */
 
 import type { StatusPillTone } from "@/components/ui/status-pill";
+import { formatPersonName } from "@/lib/format/datetime";
 import { metricNoData, metricValue, type MetricState } from "@/lib/metrics/metric-state";
 
 export const SIGNAL_STATUSES = ["new", "acknowledged", "plan_in_place", "cleared"] as const;
@@ -102,12 +103,15 @@ export function residentDisplayName(row: {
   resident_first_name?: string | null;
   resident_last_name?: string | null;
 }): string {
-  const last = row.resident_last_name?.trim() ?? "";
-  const first = (row.resident_preferred_name?.trim() || row.resident_first_name?.trim()) ?? "";
-  if (!last && !first) return "Resident not named";
-  if (!last) return first;
-  if (!first) return last;
-  return `${last}, ${first}`;
+  // "First Last", the one name format across Haven (COL-659).
+  return formatPersonName(
+    {
+      first_name: row.resident_first_name,
+      last_name: row.resident_last_name,
+      preferred_name: row.resident_preferred_name,
+    },
+    { fallback: "Resident not named" },
+  );
 }
 
 export function roomLabel(value: string | null | undefined): string {

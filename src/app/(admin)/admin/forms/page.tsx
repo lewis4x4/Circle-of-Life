@@ -8,6 +8,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -268,21 +269,21 @@ export default function AdminInternalFormsPage() {
               {openCount > 0 ? ` ${openCount} open.` : ""}
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
-            onClick={() => setShowBuilder((v) => !v)}
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            {showBuilder ? "Close builder" : "New form"}
-          </Button>
+          {facilityReady ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 gap-2 font-medium text-[10px] uppercase tracking-wider"
+              onClick={() => setShowBuilder((v) => !v)}
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              {showBuilder ? "Close builder" : "New form"}
+            </Button>
+          ) : null}
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — forms and their queues are per-facility.
-          </p>
+          <FacilityGateNotice reason="Internal forms and their submission queues are kept per building." />
         ) : null}
 
         {notice ? (

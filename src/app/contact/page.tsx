@@ -116,8 +116,8 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-stone-700 block mb-1.5">Your Full Name</label>
-                      <input
+                      <label htmlFor="contact-your-full-name" className="text-xs font-bold text-stone-700 block mb-1.5">Your Full Name</label>
+                      <input id="contact-your-full-name"
                         type="text"
                         aria-label="Your Full Name"
                         maxLength={160}
@@ -130,8 +130,8 @@ export default function ContactPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-stone-700 block mb-1.5">Phone Number</label>
-                      <input
+                      <label htmlFor="contact-phone-number" className="text-xs font-bold text-stone-700 block mb-1.5">Phone Number</label>
+                      <input id="contact-phone-number"
                         type="tel"
                         aria-label="Phone Number"
                         maxLength={40}
@@ -146,8 +146,8 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-stone-700 block mb-1.5">Email Address</label>
-                      <input
+                      <label htmlFor="contact-email-address" className="text-xs font-bold text-stone-700 block mb-1.5">Email Address</label>
+                      <input id="contact-email-address"
                         type="email"
                         aria-label="Email Address"
                         maxLength={254}
@@ -160,8 +160,8 @@ export default function ContactPage() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-stone-700 block mb-1.5">Preferred Community</label>
-                      <select
+                      <label htmlFor="contact-preferred-community" className="text-xs font-bold text-stone-700 block mb-1.5">Preferred Community</label>
+                      <select id="contact-preferred-community"
                         aria-label="Preferred Community"
                         value={locationPreference}
                         onChange={(e) => setLocationPreference(e.target.value)}
@@ -177,8 +177,8 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-stone-700 block mb-1.5">How can we help your family?</label>
-                    <textarea
+                    <label htmlFor="contact-how-can-we-help-your-family" className="text-xs font-bold text-stone-700 block mb-1.5">How can we help your family?</label>
+                    <textarea id="contact-how-can-we-help-your-family"
                       aria-label="How can we help your family?"
                       maxLength={4000}
                       rows={4}

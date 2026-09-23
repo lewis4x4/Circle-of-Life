@@ -297,6 +297,8 @@ export default function LoginPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
+                        {/* Bound to the control by FormItem context (ui/form). */}
+                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                         <FormLabel className="font-medium text-slate-200">Work Email</FormLabel>
                         <FormControl>
                           <Input
@@ -318,6 +320,8 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between">
+                          {/* Bound to the control by FormItem context (ui/form). */}
+                          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                           <FormLabel className="font-medium text-slate-200">Password</FormLabel>
                           <button
                             type="button"
