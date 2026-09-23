@@ -27,7 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_HELP: Record<DocumentStatus, string> = {
   draft: "Uploaded but not yet ready for live use.",
   pending_review: "Indexed and ready for a human review pass.",
-  published: "Live for Grace and knowledge search.",
+  published: "Published: staff can find it in knowledge search and Grace.",
   archived: "Hidden from active knowledge use.",
   ingest_failed: "Indexing failed. Use Re-index after the source issue is fixed.",
 };

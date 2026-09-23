@@ -68,6 +68,10 @@ describe("formatLiveRoundingDueLabel", () => {
     expect(formatLiveRoundingDueLabel("2026-08-15T12:00:00.000Z", now)).toBe("Now");
     expect(formatLiveRoundingDueLabel("2026-08-15T12:05:00.000Z", now)).toBe("in 5m");
     expect(formatLiveRoundingDueLabel("2026-08-15T11:55:00.000Z", now)).toBe("5m ago");
+    // 2462 minutes overdue used to print "2462m ago" (COL-659).
+    expect(formatLiveRoundingDueLabel("2026-08-13T18:58:00.000Z", now)).toBe("41h ago");
+    expect(formatLiveRoundingDueLabel("2026-08-10T12:00:00.000Z", now)).toBe("5d ago");
+    expect(formatLiveRoundingDueLabel("2026-08-15T15:00:00.000Z", now)).toBe("in 3h");
   });
 
   it("does not replace posted parseable dates with the no-date gap copy", () => {

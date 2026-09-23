@@ -131,7 +131,7 @@ export default function VitalThresholdsPage() {
 
       <RecordDetailSection
         title="Alert thresholds"
-        description="When vitals exceed these values, alerts are generated after save (server evaluation)."
+        description="When a saved vital is outside these values, Haven raises an alert."
       >
         <div className="space-y-4">
           {error && <p className="text-sm text-destructive">{error}</p>}

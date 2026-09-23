@@ -220,7 +220,7 @@ export default function OperationsTemplatesPage() {
 
     const ladderText = form.escalation_ladder.trim();
     if (ladderText && ladderText !== "[]" && normalizeEscalationLadder(ladderText).length === 0) {
-      setError("Escalation ladder JSON is invalid.");
+      setError("The escalation steps could not be read. Check the format, or leave the field empty.");
       return;
     }
 
@@ -331,7 +331,7 @@ export default function OperationsTemplatesPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations Cadence Engine</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Template Authoring</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Version and govern the recurring operations templates that feed Today, Pager, calendar, escalation, and scheduler runs.
@@ -589,7 +589,7 @@ export default function OperationsTemplatesPage() {
               />
             </Field>
 
-            <Field label="Escalation ladder JSON">
+            <Field label="Escalation steps (advanced; leave empty if unsure)">
               <Textarea
                 value={form.escalation_ladder}
                 onChange={(event) => setForm((current) => ({ ...current, escalation_ladder: event.target.value }))}

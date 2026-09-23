@@ -82,11 +82,15 @@ describe("TimeclockOverview", () => {
     expect(rowA).toHaveTextContent("In since 6:58 a.m.");
     const rowB = screen.getByRole("link", { name: "Test Staff B" }).closest("tr")!;
     expect(rowB).toHaveTextContent("Out");
-    expect(rowB).toHaveTextContent("8 h 0 min");
+    expect(rowB).toHaveTextContent("8:00");
     expect(rowB).toHaveTextContent("1"); // one unacknowledged clock_skew
     expect(screen.getByRole("button", { name: "Export payroll CSV" })).toBeDisabled();
     expect(screen.getByText(TIMECLOCK_PAY_PERIOD_UNSET)).toBeInTheDocument();
-    expect(screen.getByTestId("period-label")).toHaveTextContent("Nov 2, 2026 to Nov 8, 2026");
+    expect(screen.getByTestId("period-label")).toHaveTextContent("Nov 2, 2026 to Nov 8, 2026 (one week, pay period not set)");
+    // The unset frequency is not pre-filled as Biweekly over a one-week view (COL-659).
+    expect(screen.getByLabelText("Frequency")).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("Anchor Monday"), { target: { value: "2026-10-26" } });
+    expect(screen.getByRole("button", { name: "Save pay period" })).toBeDisabled();
   });
 
   it("lets an owner set the pay period, then blocks export on open exceptions", async () => {

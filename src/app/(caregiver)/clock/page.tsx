@@ -74,7 +74,7 @@ export default function CaregiverClockPage() {
         setStaff(null);
         setOpenPunch(null);
         setMsg(
-          "No staff profile is linked to your login. Ask an administrator to set user_id on your staff row in Haven.",
+          "Your login is not linked to a staff record yet. Ask your administrator to link it.",
         );
         setLoading(false);
         return;

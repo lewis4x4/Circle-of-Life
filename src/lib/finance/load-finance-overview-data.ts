@@ -5,8 +5,12 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
 
 export type FinanceOverviewSnapshot = {
-  postedCount: number;
-  unpostedInvoices: number;
+  /** Null when the count read failed — never 0 (COL-649). */
+  postedCount: number | null;
+  /** Null when either the sent-invoice count or the posted-source read failed. */
+  unpostedInvoices: number | null;
+  /** Sent (billed) invoices in scope; null when the count read failed. */
+  sentInvoices: number | null;
   postedLookbackStart: string;
 };
 
@@ -24,7 +28,11 @@ export async function loadFinanceOverviewData(
     String(start.getUTCDate()).padStart(2, "0"),
   ].join("-");
 
-  const [{ count }, { count: invTotal }, { data: postedSources, error: postedSourcesError }] = await Promise.all([
+  const [
+    { count: postedTotal, error: postedError },
+    { count: invTotal, error: invError },
+    { data: postedSources, error: postedSourcesError },
+  ] = await Promise.all([
     supabase
       .from("journal_entries")
       .select("id", { count: "exact", head: true })
@@ -54,10 +62,12 @@ export async function loadFinanceOverviewData(
   const postedIds = new Set(
     (postedSources ?? []).map((row) => (row as { source_id: string | null }).source_id),
   );
+  const sentInvoices = !invError && typeof invTotal === "number" ? invTotal : null;
 
   return {
-    postedCount: count ?? 0,
-    unpostedInvoices: Math.max(0, (invTotal ?? 0) - postedIds.size),
+    postedCount: !postedError && typeof postedTotal === "number" ? postedTotal : null,
+    unpostedInvoices: sentInvoices === null ? null : Math.max(0, sentInvoices - postedIds.size),
+    sentInvoices,
     postedLookbackStart: iso,
   };
 }
