@@ -21,7 +21,7 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
@@ -697,6 +697,7 @@ export function AdminDietaryPageClient({
               <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
+                  <TableRowList label="Other active diet orders" minWidthClassName="min-w-[34rem]">
                   <TableRowHeader>
                     <span className="flex-[2] min-w-0">Resident</span>
                     <span className="flex-1 min-w-0">Food</span>
@@ -727,6 +728,7 @@ export function AdminDietaryPageClient({
                       </MotionItem>
                     ))}
                   </MotionList>
+                  </TableRowList>
                 </div>
               </div>
             )}

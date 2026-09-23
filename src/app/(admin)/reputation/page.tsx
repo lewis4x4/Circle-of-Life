@@ -8,7 +8,7 @@ import { Star } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { TableRow, TableRowHeader } from "@/components/ui/table-row";
+import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { formatMetric } from "@/lib/metrics/metric-state";
@@ -627,6 +627,7 @@ export default function AdminReputationHubPage() {
             {postedReplies.length > 0 && (
               <div className="mt-8 space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recently Posted</h4>
+                <TableRowList label="Recently posted replies" minWidthClassName="min-w-[28rem]">
                 <TableRowHeader>
                   <span className="flex-1 min-w-0">Listing</span>
                   <span className="flex-[2] min-w-0">Reply</span>
@@ -649,6 +650,7 @@ export default function AdminReputationHubPage() {
                     </MotionItem>
                   ))}
                 </MotionList>
+                </TableRowList>
               </div>
             )}
             
@@ -668,6 +670,7 @@ export default function AdminReputationHubPage() {
                <p className="text-sm text-muted-foreground">No connected accounts.</p>
             ) : (
               <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <TableRowList label="Connected listings" minWidthClassName="min-w-[24rem]">
                 <TableRowHeader>
                   <span className="flex-1 min-w-0">Listing</span>
                   <span className="w-[110px] shrink-0">Platform</span>
@@ -692,6 +695,7 @@ export default function AdminReputationHubPage() {
                     </TableRow>
                   ))}
                 </div>
+                </TableRowList>
               </div>
             )}
           </div>
