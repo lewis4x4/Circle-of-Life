@@ -179,13 +179,13 @@ export default function AdminNewScheduleWeekPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Date in target week</label>
-              <Input type="date" value={weekAnchor} onChange={(e) => setWeekAnchor(e.target.value)} required />
+              <label htmlFor="schedule-date-in-target-week" className="text-xs font-medium text-slate-600 dark:text-slate-400">Date in target week</label>
+              <Input id="schedule-date-in-target-week" type="date" value={weekAnchor} onChange={(e) => setWeekAnchor(e.target.value)} required />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Notes (optional)</label>
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Holiday coverage" />
+              <label htmlFor="schedule-notes-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">Notes (optional)</label>
+              <Input id="schedule-notes-optional" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Holiday coverage" />
             </div>
 
             <Button type="submit" disabled={submitting || !facilityReady}>

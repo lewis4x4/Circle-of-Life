@@ -22,6 +22,8 @@ export interface ResidentSelectorProps {
   disabled?: boolean;
   className?: string;
   placeholder?: string;
+  /** Bind to a visible `<label htmlFor>` (COL-658). */
+  id?: string;
 }
 
 type ResidentRow = Pick<
@@ -35,6 +37,7 @@ export function ResidentSelector({
   disabled = false,
   className = "",
   placeholder = "Select a resident",
+  id,
 }: ResidentSelectorProps) {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
@@ -104,6 +107,7 @@ export function ResidentSelector({
   return (
     <div className="relative">
       <select
+        id={id}
         value={value}
         onChange={handleChange}
         disabled={disabled || loading}
@@ -157,6 +161,8 @@ export interface ResidentSelectorCompactProps {
   facilityId: string;
   className?: string;
   placeholder?: string;
+  /** Filters have no visible label; the placeholder option is not a name (COL-658). */
+  "aria-label"?: string;
 }
 
 export function ResidentSelectorCompact({
@@ -165,6 +171,7 @@ export function ResidentSelectorCompact({
   facilityId,
   className = "",
   placeholder = "Resident",
+  "aria-label": ariaLabel = "Resident",
 }: ResidentSelectorCompactProps) {
   const supabase = useMemo(() => createClient(), []);
   const [residents, setResidents] = useState<ResidentOption[]>([]);
@@ -213,6 +220,7 @@ export function ResidentSelectorCompact({
   return (
     <div className="relative">
       <select
+        aria-label={ariaLabel}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={loading}
