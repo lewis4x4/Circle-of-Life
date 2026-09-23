@@ -211,7 +211,7 @@ export default function AdminReferralSourcesPage() {
     let facilityScoped: string | null = null;
     if (limitOneFacility) {
       if (!targetFacilityId || !isValidFacilityIdForQuery(targetFacilityId)) {
-        setFormError("Select a facility.");
+        setFormError("Choose the facility this source is limited to.");
         return;
       }
       facilityScoped = targetFacilityId;
