@@ -120,6 +120,7 @@ export default function ComplianceRulesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
+        <h1 className="sr-only">Compliance Scoring</h1>
         <p className="text-sm text-slate-500">Loading compliance rules…</p>
       </div>
     );
@@ -127,12 +128,15 @@ export default function ComplianceRulesPage() {
 
   if (!facilityReady) {
     return (
-      <Card className="border-amber-200 bg-amber-50">
-        <CardHeader>
-          <CardTitle>Select a Facility</CardTitle>
-          <CardDescription>Choose a facility to view compliance rules and run scans.</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Compliance Scoring</h1>
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle>Select a Facility</CardTitle>
+            <CardDescription>Choose a facility to view compliance rules and run scans.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 

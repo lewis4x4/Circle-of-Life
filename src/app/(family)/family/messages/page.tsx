@@ -269,9 +269,9 @@ function ResidentUpdateLog({
       <header className="mb-4 border-b border-border pb-3">
         <p className="text-xs text-muted-foreground">Updates for</p>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="truncate text-lg font-medium text-foreground">
+          <h1 className="truncate text-lg font-medium text-foreground">
             {residentName ?? "Resident"}
-          </h2>
+          </h1>
           {(
             <button
               type="button"

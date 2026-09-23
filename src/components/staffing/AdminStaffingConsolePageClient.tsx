@@ -365,9 +365,9 @@ export function AdminStaffingConsolePageClient({
             )}
           </div>
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-              Workforce Command
-            </h2>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+              Staffing alerts
+            </h1>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
               Operational staffing, schedule gaps, attendance events, and credential blockers for the selected scope.
             </p>

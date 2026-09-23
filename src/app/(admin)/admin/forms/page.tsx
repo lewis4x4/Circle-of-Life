@@ -258,10 +258,10 @@ export default function AdminInternalFormsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <ClipboardList className="h-8 w-8 text-info shrink-0" aria-hidden />
               Internal forms
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Admin-built forms — maintenance requests, supply requests, grievance intake, refund
               requests. Submissions route to this status-tracked queue.

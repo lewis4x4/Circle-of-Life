@@ -140,9 +140,9 @@ export default function ExecutiveAlertsPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-6 mb-4">
             <div>
               
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
                 Executive Alerts
-              </h2>
+              </h1>
               <p className="text-sm text-muted-foreground mt-1">Workflow routing and leadership intervention queue</p>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
                 {roleConfig.roleLabel} drill-in: review open exceptions, decide the intervention lane, and move into finance, insurance, or incident risk without dropping back to the operator home.
