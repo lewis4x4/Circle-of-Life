@@ -575,7 +575,7 @@ export function AdminReferralsPageClient({
                 Showing the next {REFERRAL_UPCOMING_TOUR_LIMIT} scheduled tours from lead records for the standup forecast.
               </p>
             </div>
-            <Badge className="border-none bg-primary/10 text-primary">Standup source</Badge>
+            <Badge className="border-none bg-primary/10 text-primary">Stand Up source</Badge>
           </div>
 
           {upcomingTours.length === 0 ? (
@@ -613,7 +613,7 @@ export function AdminReferralsPageClient({
                 Log outreach so weekly stand-ups reference the same ledger instead of rewriting work in chat.
               </p>
             </div>
-            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand-up source</Badge>
+            <Badge className="shrink-0 border-none bg-primary/10 text-primary">Stand Up source</Badge>
           </div>
 
           <div className="grid gap-8 p-5 lg:grid-cols-[1fr_1fr]">

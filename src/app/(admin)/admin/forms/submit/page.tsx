@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
@@ -137,9 +138,7 @@ export default function AdminSubmitInternalFormPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first.
-          </p>
+          <FacilityGateNotice reason="Form submissions are filed to one building's queue." />
         ) : null}
 
         {notice ? (
