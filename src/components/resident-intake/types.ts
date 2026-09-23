@@ -325,7 +325,7 @@ export function normalizeResidentIntakeSnapshot(payload: unknown): ResidentIntak
         key,
         label: server?.label ?? label,
         status: sourceStatus ?? server?.status ?? "missing",
-        count: Math.max(server?.count ?? 0, matching.length),
+        count: server ? Math.max(server.count, matching.length) : matching.length,
         sourceId,
         currentDocumentId,
         canAdd: Boolean(pending),

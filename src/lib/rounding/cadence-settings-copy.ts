@@ -9,6 +9,7 @@
  */
 
 import { RoundingNoticeCopy } from "@/components/rounding/RoundingNotices";
+import { metricFromRead, type MetricState } from "@/lib/metrics/metric-state";
 
 export const CADENCE_SETTINGS_TITLE = "Observation cadence and escalation";
 
@@ -136,4 +137,22 @@ export function applyModeLabel(raw: string | null): string {
     immediate: "Immediately",
   };
   return labels[raw] ?? staffRoleLabel(raw);
+}
+
+/** Tile placeholder when the building has no schedule in force. */
+export const NO_SCHEDULE_IN_FORCE = "No schedule in force";
+
+/**
+ * A building with no schedule in force has no checks and no unobserved span to
+ * measure. Its tiles say so rather than "0 checks" and a "0 min" longest gap,
+ * which reads as constant observation (COL-649).
+ */
+export function cadenceShapeMetric(value: number | null | undefined): MetricState<number> {
+  return metricFromRead({ value, noDataReason: NO_SCHEDULE_IN_FORCE });
+}
+
+/** "Now …" hint on the preview tiles, using the same no-schedule wording. */
+export function cadenceNowHint(value: number | null | undefined, format: (n: number) => string = String): string {
+  const state = cadenceShapeMetric(value);
+  return state.status === "value" ? `Now ${format(state.value)}` : "Now: no schedule in force";
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatResidentOverviewSpecialistCount,
   RESIDENT_OVERVIEW_NO_DATE_COPY,
   RESIDENT_OVERVIEW_NO_GENDER_COPY,
   RESIDENT_OVERVIEW_NO_NOTE_COPY,
@@ -143,5 +144,12 @@ describe("formatResidentOverviewDailyNoteSnippet", () => {
     const longNote = "A".repeat(400);
     expect(formatResidentOverviewDailyNoteSnippet(longNote)).toBe(longNote);
     expect(formatResidentOverviewDailyNoteSnippet(longNote).length).toBe(400);
+  });
+});
+
+describe("formatResidentOverviewSpecialistCount (COL-649)", () => {
+  it("does not show 0 when the count was not read", () => {
+    expect(formatResidentOverviewSpecialistCount(null)).toBe("Couldn't be read");
+    expect(formatResidentOverviewSpecialistCount(0)).toBe("0");
   });
 });

@@ -21,6 +21,7 @@ import { formatSpanMinutes, type ObservationConfigOverview } from "@/lib/roundin
 import {
   CADENCE_SETTINGS_EMPTY,
   LADDER_EMPTY,
+  cadenceShapeMetric,
   jurisdictionFloorLine,
 } from "@/lib/rounding/cadence-settings-copy";
 
@@ -43,8 +44,7 @@ export function CadenceCurrentSummary({
       <section aria-label="What this schedule asks of the building" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricCard
           label="Checks per resident per day"
-          value={current.day_shape?.windows_per_day ?? 0}
-          numericValue={current.day_shape?.windows_per_day ?? 0}
+          state={cadenceShapeMetric(current.day_shape?.windows_per_day)}
           thresholds={{ type: "informational" }}
           hint={
             thresholds
@@ -54,15 +54,14 @@ export function CadenceCurrentSummary({
         />
         <MetricCard
           label="Checks a day across the building"
-          value={current.daily_task_total ?? 0}
-          numericValue={current.daily_task_total ?? 0}
+          state={cadenceShapeMetric(current.daily_task_total)}
           thresholds={{ type: "informational" }}
           hint={`${overview.active_resident_count} residents in the building right now`}
         />
         <MetricCard
           label="Longest unobserved span"
-          value={formatSpanMinutes(current.day_shape?.largest_unobserved_gap_minutes ?? 0)}
-          numericValue={current.day_shape?.largest_unobserved_gap_minutes ?? 0}
+          state={cadenceShapeMetric(current.day_shape?.largest_unobserved_gap_minutes)}
+          format={formatSpanMinutes}
           thresholds={{ type: "informational" }}
           hint={
             thresholds
