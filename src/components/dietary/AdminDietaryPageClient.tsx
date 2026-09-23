@@ -876,7 +876,7 @@ export function AdminDietaryPageClient({
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-white/10"
                   />
                 </div>
-                <textarea
+                <textarea aria-label="Meal notes"
                   value={mealForm.notes}
                   onChange={(e) => setMealForm((prev) => ({ ...prev, notes: e.target.value }))}
                   placeholder="Meal notes"

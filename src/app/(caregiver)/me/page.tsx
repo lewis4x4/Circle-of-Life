@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { enumLabel } from "@/lib/display/enum-label";
 import { formatStaffRoleLabel } from "@/lib/staff/load-staff";
+import { formatPersonName } from "@/lib/format/datetime";
 
 type ProfileRow = Pick<Database["public"]["Tables"]["user_profiles"]["Row"], "app_role">;
 type StaffMini = Pick<
@@ -133,9 +134,8 @@ export default function CaregiverMePage() {
     }
   }
 
-  const displayName = staff
-    ? `${staff.first_name} ${staff.last_name}`.trim()
-    : email ?? "Signed in";
+  // A name, never the login email (which is shown on its own line below) (COL-659).
+  const displayName = formatPersonName(staff, { fallback: "Name not on file" });
 
   const roleLabel = staff
     ? formatStaffRoleLabel(String(staff.staff_role))

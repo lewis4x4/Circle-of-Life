@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -180,7 +181,7 @@ export default function AdminTransportationDriverNewPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice reason="Driver credentials are kept per building, for the staff who drive for that facility." />
       ) : null}
 
       {fetchErrorBannerMessage ? (
@@ -189,6 +190,7 @@ export default function AdminTransportationDriverNewPage() {
         </p>
       ) : null}
 
+      {facilityReady ? (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Credential record</CardTitle>
@@ -262,6 +264,7 @@ export default function AdminTransportationDriverNewPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }

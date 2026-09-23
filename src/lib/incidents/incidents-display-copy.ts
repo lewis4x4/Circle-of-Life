@@ -99,3 +99,32 @@ export function formatLevelWord(level: number | string | null | undefined): stri
   const number = levelNumberFromSeverity(level);
   return number === null ? INCIDENTS_NO_LEVEL_POSTED_COPY : INCIDENT_LEVEL_WORDS[number];
 }
+
+/**
+ * Brian, 2026-09-23 (COL-689): incident severity is Note / Heads-up / Urgent / Emergency
+ * everywhere, including the report form. Stored values stay `level_1`..`level_4`; forms
+ * add a short guide after the word so the reporter can pick the right one.
+ */
+const INCIDENT_LEVEL_GUIDE: Record<IncidentLevelNumber, string> = {
+  1: "minor or no injury",
+  2: "minor injury or a repeat event",
+  3: "moderate injury or a medication error",
+  4: "major injury or a regulatory trigger",
+};
+
+export const INCIDENT_SEVERITY_VALUES = ["level_1", "level_2", "level_3", "level_4"] as const;
+export type IncidentSeverityValue = (typeof INCIDENT_SEVERITY_VALUES)[number];
+
+/** "Heads-up — minor injury or a repeat event", for a severity picker. */
+export function formatSeverityChoice(level: number | string): string {
+  const number = levelNumberFromSeverity(level);
+  return number === null ? INCIDENTS_NO_LEVEL_POSTED_COPY : `${INCIDENT_LEVEL_WORDS[number]} — ${INCIDENT_LEVEL_GUIDE[number]}`;
+}
+
+/** `{ value, label }` for every severity; `withGuide` adds the short guide after the word. */
+export function incidentSeverityOptions(withGuide: boolean): { value: IncidentSeverityValue; label: string }[] {
+  return INCIDENT_SEVERITY_VALUES.map((value) => ({
+    value,
+    label: withGuide ? formatSeverityChoice(value) : formatLevelWord(value),
+  }));
+}

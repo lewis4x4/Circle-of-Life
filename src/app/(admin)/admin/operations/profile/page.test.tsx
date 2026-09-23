@@ -3,13 +3,14 @@ import axe from "axe-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildFacilityProfile } from "@/lib/operations/facility-profile";
 import Page from "./page";
+import { useFacilityStore } from "@/hooks/useFacilityStore";
 
 const env = vi.hoisted(() => ({
   query: "facility_id=site-a", actor: "person-a", role: "owner", organization: "org-a", loading: false,
   replace: vi.fn(), facilities: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: env.replace }), useSearchParams: () => new URLSearchParams(env.query),
+  useRouter: () => ({ replace: env.replace, refresh: vi.fn() }), useSearchParams: () => new URLSearchParams(env.query),
   usePathname: () => "/admin/operations/profile",
 }));
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({
@@ -21,6 +22,7 @@ function reply(id = "site-a", name = "Example facility") {
 }
 const ok = (body: unknown = reply()) => ({ ok: true, status: 200, json: async () => body });
 beforeEach(() => {
+  useFacilityStore.setState({ selectedFacilityId: null, availableFacilities: [], facilitiesCacheUserId: null });
   env.query = "facility_id=site-a"; env.actor = "person-a"; env.role = "owner"; env.organization = "org-a"; env.loading = false;
   env.replace.mockClear();
   env.facilities.mockReset().mockResolvedValue([{ id: "site-a", name: "Example facility" }, { id: "site-b", name: "Second facility" }]);
@@ -134,10 +136,13 @@ describe("Facility profile review", () => {
   it("keeps an unavailable URL facility out of the profile fetch", async () => {
     env.query = "facility_id=revoked-site";
     render(<Page />);
-    await screen.findByText("The selected facility is no longer accessible. Choose an available facility.");
+    await screen.findByText("The selected facility is no longer accessible.");
     expect(fetch).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByRole("combobox", { name: "Facility" }), { target: { value: "site-b" } });
-    expect(env.replace).toHaveBeenCalledWith("/admin/operations/profile?facility_id=site-b", { scroll: false });
+    // COL-651: the page's own dropdown is gone; the gate sets the header scope and the URL follows.
+    expect(screen.queryByRole("combobox", { name: "Facility" })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Second facility" }));
+    expect(useFacilityStore.getState().selectedFacilityId).toBe("site-b");
+    await waitFor(() => expect(env.replace).toHaveBeenCalledWith("/admin/operations/profile?facility_id=site-b", { scroll: false }));
   });
 
   it("prepares drafts only with the server capability and waits for confirmation before reporting counts", async () => {

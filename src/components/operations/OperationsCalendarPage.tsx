@@ -131,7 +131,7 @@ export function OperationsCalendarPage() {
 
       <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-4">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <select
+        <select aria-label="Status"
           value={selectedStatus}
           onChange={(event) => setSelectedStatus(event.target.value)}
           className="rounded-md border bg-background px-3 py-2 text-sm"

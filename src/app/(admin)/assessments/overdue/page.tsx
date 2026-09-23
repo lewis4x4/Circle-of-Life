@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import { AdminOverdueAssessmentsPageClient } from "@/components/assessments/AdminOverdueAssessmentsPageClient";
 import {
   fetchCarePlanReviewsDueFromSupabase,
+  fetchClinicalDeskScope,
   fetchOverdueAssessmentsFromSupabase,
+  type ClinicalDeskScope,
   type CarePlanReviewDueRow,
   type OverdueAssessmentRow,
 } from "@/lib/assessments/load-overdue-assessments";
@@ -24,12 +26,15 @@ export default async function OverdueAssessmentsPage() {
   let initialAssessments: OverdueAssessmentRow[] = [];
   let initialCarePlans: CarePlanReviewDueRow[] = [];
   let initialError: string | null = null;
+  let initialScope: ClinicalDeskScope | null = null;
+
   // Under All facilities the client renders the facility gate; there is no cross-facility queue.
   if (isValidFacilityIdForQuery(initialFacilityId)) {
     try {
-      [initialAssessments, initialCarePlans] = await Promise.all([
+      [initialAssessments, initialCarePlans, initialScope] = await Promise.all([
         fetchOverdueAssessmentsFromSupabase(initialFacilityId, supabase),
         fetchCarePlanReviewsDueFromSupabase(initialFacilityId, supabase),
+        fetchClinicalDeskScope(initialFacilityId, supabase),
       ]);
     } catch (error) {
       initialError =
@@ -43,6 +48,7 @@ export default async function OverdueAssessmentsPage() {
       initialCarePlans={initialCarePlans}
       initialError={initialError}
       initialFacilityId={initialFacilityId}
+      initialScope={initialScope}
     />
   );
 }

@@ -43,7 +43,7 @@ describe("the facility watchlist", () => {
   it("names the resident, the room, the signal, the band and the owner", () => {
     render(<WatchlistFacilityTable rows={[row({})]} />);
 
-    expect(screen.getByRole("link", { name: "Last, First" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "First Last" })).toHaveAttribute(
       "href",
       "/admin/rounding/watchlist/resident-1",
     );

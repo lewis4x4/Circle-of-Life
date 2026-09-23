@@ -244,7 +244,7 @@ export default function AdminControlledSubstancesPage() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <select
+          <select aria-label="Filter counts"
             value={filter}
             onChange={(e) => setFilter(e.target.value as FilterType)}
             className="h-10 rounded-[var(--radius)] border border-border bg-card px-3 text-sm text-foreground focus:ring-2 focus:ring-ring/50"

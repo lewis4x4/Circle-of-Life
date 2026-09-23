@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { formatCaregiverTasksShiftBucket } from "@/lib/caregiver/tasks-display-copy";
 import { fetchShiftDailyLogId } from "@/lib/caregiver/daily-log-link";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
@@ -28,6 +28,7 @@ export default function CaregiverTasksPage() {
     organizationId: string;
     facilityName: string | null;
     timeZone: string;
+    shifts?: FacilityShiftDefinition[];
   } | null>(null);
   const [residents, setResidents] = useState<ResidentWithRoom[]>([]);
   const [adlCountByResident, setAdlCountByResident] = useState<Map<string, number>>(new Map());
@@ -130,7 +131,7 @@ export default function CaregiverTasksPage() {
     setLoadError(null);
     try {
       const ymd = zonedYmd(new Date(), ctx.timeZone);
-      const shift = currentShiftForTimezone(ctx.timeZone);
+      const shift = currentShiftFor(ctx).shiftType;
       const dailyLogId = await fetchShiftDailyLogId(supabase, {
         residentId: resident.id,
         facilityId: ctx.facilityId,
@@ -220,7 +221,7 @@ export default function CaregiverTasksPage() {
           <MetricPill label="Residents in scope" value={String(metrics.residents)} tone="muted" />
           <MetricPill label="No ADL yet today" value={String(metrics.noPass)} tone="danger" />
           <MetricPill label="ADL entries today" value={String(metrics.totalAdl)} tone="success" />
-          <MetricPill label="Shift" value={formatCaregiverTasksShiftBucket(ctx?.timeZone)} tone="muted" />
+          <MetricPill label="Shift" value={formatCaregiverTasksShiftBucket(ctx?.timeZone, ctx?.shifts)} tone="muted" />
         </div>
       </div>
 
