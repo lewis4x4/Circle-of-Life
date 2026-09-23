@@ -273,12 +273,16 @@ function mapDbStaffRoleToUi(role: string): StaffRole {
   return "admin";
 }
 
+/** Job-title abbreviations that read as initials, not words ("CEO", never "Ceo") (COL-659). */
+const STAFF_ROLE_ACRONYMS = new Set(["cna", "rn", "lpn", "ceo", "coo", "cfo", "cto", "cmo", "don", "hr", "it"]);
+
 export function formatStaffRoleLabel(role: string): string {
   const normalized = role.trim().toLowerCase();
-  if (normalized === "cna") return "CNA";
-  if (normalized === "rn") return "RN";
-  if (normalized === "lpn") return "LPN";
-  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return normalized
+    .split("_")
+    .filter(Boolean)
+    .map((word) => (STAFF_ROLE_ACRONYMS.has(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(" ");
 }
 
 export function mapEmploymentToUiStatus(employment: string): StaffStatus {
