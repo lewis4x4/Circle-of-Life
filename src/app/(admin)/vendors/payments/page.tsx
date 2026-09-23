@@ -286,7 +286,7 @@ export default function VendorPaymentsPage() {
                 ))}
                 {!loading && rows.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-6 text-slate-500">
+                    <td colSpan={3} className="py-6 text-muted-foreground">
                       No payments yet.
                     </td>
                   </tr>

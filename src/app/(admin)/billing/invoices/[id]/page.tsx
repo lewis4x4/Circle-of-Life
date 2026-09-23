@@ -18,6 +18,7 @@ import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display
 import { isNotYetSentStatus } from "@/lib/billing/receivables";
 import { glPostUnavailableReason, postInvoiceToGl } from "@/lib/finance/post-to-gl";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
+import { requireCount } from "@/lib/metrics/require-count";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
 
@@ -168,8 +169,7 @@ export default function AdminInvoiceDetailPage() {
           .select("id", { count: "exact", head: true })
           .eq("entity_id", inv.entity_id)
           .is("deleted_at", null);
-        if (accounts.error) throw accounts.error;
-        setGlAccountCount(accounts.count ?? 0);
+        setGlAccountCount(requireCount(accounts, "GL account count"));
         const existingJe = await supabase
           .from("journal_entries")
           .select("id, status")

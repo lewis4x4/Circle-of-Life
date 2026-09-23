@@ -24,7 +24,7 @@ export function NowLane({ passes, onOpen }: NowLaneProps) {
             <h2 className="text-sm font-semibold text-rose-300 uppercase tracking-wider">
               Needs Attention
             </h2>
-            <span className="text-xs text-slate-500">{overdue.length}</span>
+            <span className="text-xs text-muted-foreground">{overdue.length}</span>
           </div>
         </div>
         <div className="space-y-2.5">
@@ -42,7 +42,7 @@ export function NowLane({ passes, onOpen }: NowLaneProps) {
             <h2 className="text-sm font-semibold text-amber-300 uppercase tracking-wider">
               Due Now
             </h2>
-            <span className="text-xs text-slate-500">{dueNow.length}</span>
+            <span className="text-xs text-muted-foreground">{dueNow.length}</span>
           </div>
         </div>
         <div className="space-y-2.5">
@@ -57,10 +57,10 @@ export function NowLane({ passes, onOpen }: NowLaneProps) {
         <div className="flex items-center justify-between mb-3 mt-2">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-slate-500" />
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Upcoming · 30 min
             </h2>
-            <span className="text-xs text-slate-500">{upcoming.length}</span>
+            <span className="text-xs text-muted-foreground">{upcoming.length}</span>
           </div>
         </div>
         <div className="space-y-2.5">

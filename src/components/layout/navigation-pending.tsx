@@ -196,14 +196,42 @@ export function NavPendingIndicator({ className }: { className?: string }) {
 
 type HavenNavLinkProps = ComponentProps<typeof Link>;
 
-/** Internal admin link — routes through a transition so pending UI shows immediately. */
-export function HavenNavLink({ href, onClick, ...props }: HavenNavLinkProps) {
+/**
+ * Internal admin link — routes through a transition so pending UI shows immediately.
+ *
+ * Prefetches on intent (hover, focus, touch), not on sight (COL-674). Viewport
+ * prefetch sent ~73 RSC requests per page view for the shell's nav, which is the
+ * request burst Netlify's edge answers with a proof-of-work challenge; a
+ * challenged client navigation falls back to a full reload. Pass `prefetch`
+ * explicitly to opt a link back into Next's default.
+ */
+export function HavenNavLink({ href, onClick, onMouseEnter, onFocus, onTouchStart, prefetch, ...props }: HavenNavLinkProps) {
   const ctx = useContext(NavigationPendingContext);
+  const router = useRouter();
   const hrefString = typeof href === "string" ? href : undefined;
+  const prefetchedRef = useRef(false);
+  const prefetchOnIntent = () => {
+    if (prefetch !== undefined || !hrefString || prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    router.prefetch(hrefString);
+  };
 
   return (
     <Link
       href={href}
+      prefetch={prefetch ?? false}
+      onMouseEnter={(event) => {
+        onMouseEnter?.(event);
+        prefetchOnIntent();
+      }}
+      onFocus={(event) => {
+        onFocus?.(event);
+        prefetchOnIntent();
+      }}
+      onTouchStart={(event) => {
+        onTouchStart?.(event);
+        prefetchOnIntent();
+      }}
       data-haven-nav-link
       onClick={(event) => {
         onClick?.(event);

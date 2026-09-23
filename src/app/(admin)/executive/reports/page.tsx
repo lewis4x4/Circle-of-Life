@@ -523,7 +523,7 @@ export default function ExecutiveSavedReportsPage() {
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Named report definitions; export CSV or open a printable report (save as PDF from the browser).
             </p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Organization portfolio — saved definitions and exports roll up all facilities in your organization, not a single-facility board view.
             </p>
           </div>
@@ -733,7 +733,7 @@ export default function ExecutiveSavedReportsPage() {
           </CardHeader>
           <CardContent>
             {otherRows.length === 0 ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">No saved reports yet.</p>
+              <p className="text-sm text-muted-foreground">No saved reports yet.</p>
             ) : (
               <Table>
                 <TableHeader>
