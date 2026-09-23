@@ -30,9 +30,9 @@ type RateRow = {
   endDate: string | null;
   basePrivateCents: number;
   baseSemiPrivateCents: number | null;
-  careSurchargeLevel1Cents: number;
-  careSurchargeLevel2Cents: number;
-  careSurchargeLevel3Cents: number;
+  careSurchargeLevel1Cents: number | null;
+  careSurchargeLevel2Cents: number | null;
+  careSurchargeLevel3Cents: number | null;
   communityFeeCents: number | null;
   notes: string | null;
   current: boolean;
@@ -104,9 +104,9 @@ export default function AdminBillingRatesPage() {
           endDate: r.end_date,
           basePrivateCents: r.base_rate_private,
           baseSemiPrivateCents: r.base_rate_semi_private,
-          careSurchargeLevel1Cents: r.care_surcharge_level_1 ?? 0,
-          careSurchargeLevel2Cents: r.care_surcharge_level_2 ?? 0,
-          careSurchargeLevel3Cents: r.care_surcharge_level_3 ?? 0,
+          careSurchargeLevel1Cents: r.care_surcharge_level_1,
+          careSurchargeLevel2Cents: r.care_surcharge_level_2,
+          careSurchargeLevel3Cents: r.care_surcharge_level_3,
           communityFeeCents: r.community_fee,
           notes: r.notes,
           current: r.end_date == null,

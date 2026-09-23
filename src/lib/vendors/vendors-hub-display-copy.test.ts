@@ -4,6 +4,7 @@ import {
   vendorsHubKpiEmptyCopy,
   vendorsHubKpiTileValue,
   vendorsHubMtdSpendTileValue,
+  VENDORS_HUB_NO_PAYMENTS_COPY,
   type VendorsHubKpiContext,
 } from "./vendors-hub-display-copy";
 
@@ -77,5 +78,17 @@ describe("vendorsHubMtdSpendTileValue", () => {
       "Vendor counts did not load",
     );
     expect(vendorsHubMtdSpendTileValue(null, ctx())).not.toBe(EM_DASH);
+  });
+});
+
+describe("vendorsHubMtdSpendTileValue with no payments (COL-649)", () => {
+  const loaded = { organizationId: "org", loadFailed: false };
+
+  it("says no payments were recorded instead of $0.00", () => {
+    expect(vendorsHubMtdSpendTileValue(0, loaded, 0)).toBe(VENDORS_HUB_NO_PAYMENTS_COPY);
+  });
+
+  it("formats a real total over recorded payments", () => {
+    expect(vendorsHubMtdSpendTileValue(125_00, loaded, 2)).toBe("$125.00");
   });
 });

@@ -14,6 +14,8 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { formatMetric } from "@/lib/metrics/metric-state";
+import { payrollBatchCountState } from "@/lib/payroll/payroll-hub-display";
 import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -165,6 +167,7 @@ export default function AdminPayrollHubPage() {
   };
 
   const facilityReady = Boolean(selectedFacilityId && isValidFacilityIdForQuery(selectedFacilityId));
+  const batchCount = payrollBatchCountState({ facilityReady, loading, error, shownCount: displayRows.length });
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
@@ -184,14 +187,20 @@ export default function AdminPayrollHubPage() {
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
               <></>
-              <MonolithicWatermark value={displayRows.length} className="text-success/10 opacity-50" />
+              {batchCount.status === "value" ? (
+                <MonolithicWatermark value={batchCount.value} className="text-success/10 opacity-50" />
+              ) : null}
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <h3 className="text-[10px] font-medium tracking-wider uppercase text-success flex items-center gap-2">
                   <Banknote className="h-3.5 w-3.5" /> Export Batches
                 </h3>
-                <p className="text-4xl font-mono tracking-tighter text-success pb-1 tabular-nums">
-                  {displayRows.length}
-                </p>
+                {batchCount.status === "value" ? (
+                  <p className="text-4xl font-mono tracking-tighter text-success pb-1 tabular-nums">
+                    {batchCount.value}
+                  </p>
+                ) : (
+                  <p className="pb-1 text-base font-medium text-muted-foreground">{formatMetric(batchCount)}</p>
+                )}
               </div>
             </V2Card>
           </div>
