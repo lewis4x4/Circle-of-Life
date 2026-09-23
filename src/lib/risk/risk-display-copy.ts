@@ -21,3 +21,15 @@ export function formatRiskDateTime(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return RISK_NO_TIMESTAMP_POSTED_COPY;
   return new Date(value).toLocaleString();
 }
+
+/**
+ * Card tone for the portfolio score. No score posted is neutral: it used to
+ * fall through to green, so an unscored portfolio looked healthy (COL-649).
+ * The 50/70 bands are the page's existing cut-offs, unchanged here.
+ */
+export function riskPortfolioTone(value: number | null | undefined): "indigo" | "emerald" | "amber" | "red" {
+  if (!isFiniteRiskMetric(value)) return "indigo";
+  if (value < 50) return "red";
+  if (value < 70) return "amber";
+  return "emerald";
+}

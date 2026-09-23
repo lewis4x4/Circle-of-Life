@@ -7,6 +7,7 @@ import type { DocumentRow, DocumentAudience, DocumentStatus } from "../lib/types
 import { adminUpdateDocument, adminDeleteDocument, createObsidianDraft, reindexDocument } from "../lib/knowledge-api";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
+import { knowledgeReviewDueLabel, knowledgeReviewOwnerLabel } from "@/lib/knowledge/review-queue-display-copy";
 
 type ReviewFilter = "all" | "ready" | "assigned_to_me" | "unassigned" | "overdue";
 
@@ -94,11 +95,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
     });
   }, [documents, filter, reviewFilter, today, user?.id]);
 
-  const reviewOwnerLabel = (doc: DocumentRow) => {
-    if (!doc.review_owner) return "Unassigned";
-    if (user?.id && doc.review_owner === user.id) return "You";
-    return "Assigned";
-  };
+  const reviewOwnerLabel = (doc: DocumentRow) => knowledgeReviewOwnerLabel(doc, user?.id);
 
   const handleStatusChange = async (docId: string, status: DocumentStatus) => {
     setActionSuccess(null);
@@ -320,9 +317,9 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                 <td className="px-4 py-3">
                   <div className="space-y-1 text-xs text-slate-600 dark:text-zinc-300">
                     <div className="font-medium">{reviewOwnerLabel(doc)}</div>
-                    <div className="text-slate-500 dark:text-zinc-400">
-                      {doc.review_due_at ? `Due ${new Date(doc.review_due_at).toLocaleDateString()}` : "No due date"}
-                    </div>
+                    {knowledgeReviewDueLabel(doc) ? (
+                      <div className="text-slate-500 dark:text-zinc-400">{knowledgeReviewDueLabel(doc)}</div>
+                    ) : null}
                   </div>
                 </td>
                 <td className="px-4 py-3">
