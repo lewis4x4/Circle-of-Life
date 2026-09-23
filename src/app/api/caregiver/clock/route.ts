@@ -22,12 +22,29 @@ function parseBody(body: unknown): ClockBody | null {
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
+function frontDoorRefusal() {
+  return NextResponse.json({ error: FRONT_DOOR_CLOCK_COPY.refusal, code: "front_door_clock" }, { status: 409, headers: NO_STORE });
+}
+
+/**
+ * Migration 483's restrictive time_records policies refuse a staff punch where
+ * the kiosk timeclock is on. A refused write is that rule (or plain RLS, which
+ * this route never widens), so it answers like the pre-check does.
+ */
+function isPolicyRefusal(error: { code?: string | null }): boolean {
+  return error.code === "42501";
+}
+
 /**
  * POST /api/caregiver/clock: the mobile punch behind /caregiver/clock.
  * One clock (spec 40 §1): where the facility's timeclock is on, staff punch at
  * the front-door kiosk and this route writes nothing to `time_records` (409).
  * Writes go through the caller's own session, so RLS decides who may punch
  * where, exactly as the page's direct writes did before.
+ *
+ * The flag pre-check is a fast path. When the flag cannot be read (the service
+ * role holds no grant on timeclock_facility_settings), the write still goes
+ * ahead and the database enforces the rule (migration 483).
  */
 export async function POST(request: Request) {
   let raw: unknown;
@@ -65,12 +82,7 @@ export async function POST(request: Request) {
   }
 
   const flag = await timeclockFlagForFacility(actor.admin, actor.organizationId, facilityId);
-  if (flag === "on") {
-    return NextResponse.json({ error: FRONT_DOOR_CLOCK_COPY.refusal, code: "front_door_clock" }, { status: 409, headers: NO_STORE });
-  }
-  if (flag === "unknown") {
-    return NextResponse.json({ error: "Time clock is temporarily unavailable. Try again." }, { status: 503, headers: NO_STORE });
-  }
+  if (flag === "on") return frontDoorRefusal();
 
   const now = new Date().toISOString();
   if (openRecordId) {
@@ -80,6 +92,7 @@ export async function POST(request: Request) {
       .eq("id", openRecordId)
       .is("deleted_at", null);
     if (update.error) {
+      if (isPolicyRefusal(update.error)) return frontDoorRefusal();
       logError("caregiver.clock", update.error, { action: "clock_out" });
       return NextResponse.json({ error: "Clock out failed." }, { status: 500, headers: NO_STORE });
     }
@@ -110,6 +123,7 @@ export async function POST(request: Request) {
   };
   const insert = await actor.client.from("time_records").insert(row).select("id").single();
   if (insert.error) {
+    if (isPolicyRefusal(insert.error)) return frontDoorRefusal();
     logError("caregiver.clock", insert.error, { action: "clock_in" });
     return NextResponse.json({ error: "Clock in failed." }, { status: 500, headers: NO_STORE });
   }

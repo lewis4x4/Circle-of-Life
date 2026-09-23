@@ -7,6 +7,8 @@ const mock = vi.hoisted(() => ({
   insert: vi.fn(),
   update: vi.fn(),
   results: {} as Record<string, { data: unknown; error: unknown }>,
+  insertResult: { data: { id: "new-record" }, error: null } as { data: unknown; error: unknown },
+  updateResult: { error: null } as { error: unknown },
 }));
 
 vi.mock("@/lib/auth/current-api-actor", () => ({ requireCurrentApiActor: mock.requireActor }));
@@ -29,11 +31,11 @@ function sessionClient() {
       builder.maybeSingle = async () => mock.results[table] ?? { data: null, error: null };
       builder.insert = (row: unknown) => {
         mock.insert(table, row);
-        return { select: () => ({ single: async () => ({ data: { id: "new-record" }, error: null }) }) };
+        return { select: () => ({ single: async () => mock.insertResult }) };
       };
       builder.update = (patch: unknown) => {
         mock.update(table, patch);
-        const chain = { eq: () => chain, is: async () => ({ error: null }) };
+        const chain = { eq: () => chain, is: async () => mock.updateResult };
         return chain;
       };
       return builder;
@@ -51,6 +53,8 @@ function request(body: unknown): Request {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mock.insertResult = { data: { id: "new-record" }, error: null };
+  mock.updateResult = { error: null };
   mock.results = {
     staff: { data: { id: "s1", organization_id: "o1" }, error: null },
     time_records: { data: { id: RECORD, facility_id: FACILITY }, error: null },
@@ -76,11 +80,24 @@ describe("POST /api/caregiver/clock", () => {
     expect(mock.update).not.toHaveBeenCalled();
   });
 
-  it("fails closed with 503 when the flag cannot be read", async () => {
+  it("lets the database decide when the flag cannot be read: its one-clock policy refusal is a 409", async () => {
+    // The service role holds no grant on timeclock_facility_settings; migration 483's
+    // restrictive time_records policies enforce the rule for the caller's own session.
+    mock.flag.mockResolvedValue("unknown");
+    mock.insertResult = { data: null, error: { code: "42501", message: "new row violates row-level security policy" } };
+    const refused = await POST(request({ action: "in", facility_id: FACILITY }));
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({ error: "Clock in at the front door.", code: "front_door_clock" });
+
+    mock.updateResult = { error: { code: "42501", message: "new row violates row-level security policy" } };
+    expect((await POST(request({ action: "out", time_record_id: RECORD }))).status).toBe(409);
+  });
+
+  it("still punches when the flag cannot be read and the database allows it (flag off)", async () => {
     mock.flag.mockResolvedValue("unknown");
     const response = await POST(request({ action: "in", facility_id: FACILITY }));
-    expect(response.status).toBe(503);
-    expect(mock.insert).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mock.insert).toHaveBeenCalled();
   });
 
   it("keeps the mobile punch where the flag is off", async () => {

@@ -13,6 +13,7 @@ import type { Database } from "@/types/database";
 
 import { Button } from "@/components/ui/button";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
+import { FrontDoorClockNotice } from "@/components/caregiver/FrontDoorClockNotice";
 
 type StaffRow = Pick<
   Database["public"]["Tables"]["staff"]["Row"],
@@ -36,6 +37,8 @@ export function CaregiverClockPanel() {
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [facilityTimeZone, setFacilityTimeZone] = useState<string | undefined>(undefined);
   const [homeHref, setHomeHref] = useState("/caregiver");
+  /** The server said this building clocks in at the front-door kiosk (spec 40 §1). */
+  const [frontDoor, setFrontDoor] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -124,7 +127,11 @@ export function CaregiverClockPanel() {
         credentials: "same-origin",
       });
       if (!response.ok) {
-        const json = (await response.json().catch(() => null)) as { error?: unknown } | null;
+        const json = (await response.json().catch(() => null)) as { error?: unknown; code?: unknown } | null;
+        if (response.status === 409 && json?.code === "front_door_clock") {
+          setFrontDoor(true);
+          return;
+        }
         setMsg(typeof json?.error === "string" ? json.error : failure);
         return;
       }
@@ -145,6 +152,8 @@ export function CaregiverClockPanel() {
     if (!openPunch) return;
     await punch({ action: "out", time_record_id: openPunch.id }, "Clock out failed.");
   }
+
+  if (frontDoor) return <FrontDoorClockNotice homeHref={homeHref} />;
 
   if (loading) {
     return (

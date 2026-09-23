@@ -1791,6 +1791,16 @@ GRANT EXECUTE ON FUNCTION public.floor_staff_display_names(uuid[]) TO authentica
 COMMENT ON FUNCTION public.floor_staff_display_names(uuid[]) IS
   'Display names ("Ashley W.") for up to 200 staff ids, limited to the caller''s organization and to staff whose home facility or live assignment is one the caller can access; returns nothing else about them. COL-37 ruling: definer required -- migration 475 restricts a med tech to their own staff row, so a shared floor tablet could not name who charted a check; the body scopes by haven.organization_id(), haven.accessible_facility_ids() and excludes family, and projects only the display name.';
 
+-- ---------------------------------------------------------------------------
+-- 11. One clock: the server reads the facility timeclock flag
+-- ---------------------------------------------------------------------------
+-- /caregiver/clock decides server side whether to send staff to the front
+-- door. Staff cannot read timeclock_facility_settings under RLS (managers
+-- only), and 408 revoked every privilege from service_role, so the server's
+-- service-role read was refused. Grant exactly the three columns that read
+-- needs, read only; nothing else on the table changes.
+GRANT SELECT (organization_id, facility_id, timeclock_enabled) ON public.timeclock_facility_settings TO service_role;
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;
 
