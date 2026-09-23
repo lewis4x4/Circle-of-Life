@@ -210,7 +210,7 @@ export default function CaregiverResidentConditionChangePage() {
       <div className="space-y-4">
         <Link
           href={homeHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
         >
           <ArrowLeft className="h-4 w-4" />
           Shift home
@@ -230,7 +230,7 @@ export default function CaregiverResidentConditionChangePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading…
       </div>
@@ -255,7 +255,7 @@ export default function CaregiverResidentConditionChangePage() {
     <div className="space-y-4">
       <Link
         href={`/caregiver/resident/${residentId}`}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
       >
         <ArrowLeft className="h-4 w-4" />
         Resident
@@ -350,18 +350,18 @@ export default function CaregiverResidentConditionChangePage() {
           <div className="space-y-2 border-t border-rose-900/30 pt-4">
             <p className="text-xs font-medium uppercase tracking-wide text-rose-200/50">Recent reports</p>
             {rows.length === 0 ? (
-              <p className="text-sm text-zinc-400">No condition change reports yet.</p>
+              <p className="text-sm text-muted-foreground">No condition change reports yet.</p>
             ) : (
               <ul className="space-y-2">
                 {rows.map((row) => (
                   <li key={row.id} className="rounded-lg border border-rose-900/30 bg-black/20 p-3 text-sm">
                     <p className="font-medium text-rose-100">
                       {CHANGE_TYPES.find((c) => c.value === row.change_type)?.label ?? row.change_type}
-                      <span className="font-normal text-zinc-500"> · </span>
-                      <span className="capitalize text-zinc-300">{row.severity}</span>
+                      <span className="font-normal text-muted-foreground"> · </span>
+                      <span className="capitalize text-muted-foreground">{row.severity}</span>
                     </p>
                     <p className="mt-1 text-zinc-200">{row.description}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {new Date(row.reported_at).toLocaleString(undefined, {
                         month: "short",
                         day: "numeric",

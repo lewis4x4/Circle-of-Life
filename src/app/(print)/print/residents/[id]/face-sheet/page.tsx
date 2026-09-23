@@ -180,7 +180,7 @@ export default function ResidentFaceSheetPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-500" aria-label="Loading face sheet" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading face sheet" />
       </div>
     );
   }

@@ -80,7 +80,7 @@ export default function CaregiverResidentQuickProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -140,7 +140,7 @@ export default function CaregiverResidentQuickProfilePage() {
               <div className="flex flex-wrap items-center gap-4 mb-3">
                  <h2 className="text-4xl md:text-2xl font-semibold tracking-tight text-white mb-1">{p.displayName}</h2>
               </div>
-              <p className="text-zinc-400 text-lg flex items-center gap-3 font-mono font-medium tracking-wide">
+              <p className="text-muted-foreground text-lg flex items-center gap-3 font-mono font-medium tracking-wide">
                 <span className="bg-white/10 px-3 py-1 rounded-full text-white">{p.roomLabel}</span>
                 <span className="opacity-50">|</span>
                 {p.status === "hospital_hold" ? "Hospital Hold" : p.primaryDiagnosis ?? "No Primary Diagnosis"}
@@ -289,7 +289,7 @@ export default function CaregiverResidentQuickProfilePage() {
                        </Button>
                        <Button
                          type="button"
-                         className="flex-[0.5] h-14 rounded-full font-mono uppercase tracking-wider text-xs px-8 transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white tap-responsive shadow-inner font-bold"
+                         className="flex-[0.5] h-14 rounded-full font-mono uppercase tracking-wider text-xs px-8 transition-all border border-white/10 bg-black/40 text-muted-foreground hover:bg-white/10 hover:text-white tap-responsive shadow-inner font-bold"
                          onClick={() => { setNoteOpen(false); setNoteDraft(""); setNoteSaved(false); }}
                        >
                          Cancel

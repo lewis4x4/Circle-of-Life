@@ -224,7 +224,7 @@ export default function AdminInvoiceGeneratePage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+              <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
               <CardTitle className="text-xl">
                 Generate invoices — {billingLabel}
               </CardTitle>
@@ -273,7 +273,7 @@ export default function AdminInvoiceGeneratePage() {
 
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
               Building preview…
             </div>
@@ -282,7 +282,7 @@ export default function AdminInvoiceGeneratePage() {
               {error}
             </div>
           ) : preview.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               No billable residents found for this facility and period.
             </p>
           ) : (
@@ -363,7 +363,7 @@ export default function AdminInvoiceGeneratePage() {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest text-slate-500">Net invoice run</div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Net invoice run</div>
                   <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                     {billingCurrency.format(grandTotal / 100)}
                   </div>

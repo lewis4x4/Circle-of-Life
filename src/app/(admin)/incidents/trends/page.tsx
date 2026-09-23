@@ -100,7 +100,7 @@ export default function AdminIncidentTrendsPage() {
       <div className="relative z-10 space-y-6 w-full">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-card p-8 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-sm mt-4">
           <div className="space-y-2">
-            <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold")}>
+            <Link href="/admin/incidents" className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-xs text-muted-foreground mb-2 uppercase tracking-wider font-bold")}>
               ← Incident queue
             </Link>
             <h1 className="text-4xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white flex items-center gap-4">
@@ -112,7 +112,7 @@ export default function AdminIncidentTrendsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="px-4 py-2 rounded-xl flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Totals</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Totals</span>
               <span className="font-mono text-lg font-bold text-slate-800 dark:text-slate-200 tabular-nums">{stats.total}</span>
             </div>
             <div className="px-4 py-2 rounded-xl border-amber-200/50 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/20 flex items-center gap-3">
@@ -123,14 +123,14 @@ export default function AdminIncidentTrendsPage() {
         </header>
 
         {loading ? (
-          <p className="text-sm font-mono text-slate-500 text-center py-12">Loading trends…</p>
+          <p className="text-sm font-mono text-muted-foreground text-center py-12">Loading trends…</p>
         ) : error ? (
           <div className="p-12 text-center text-rose-600 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-900/50">
             <p className="font-medium text-lg">{error}</p>
             <button onClick={() => void load()} className="mt-4 text-sm underline hover:no-underline">Retry</button>
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
+          <div className="p-12 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
             <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Incidents Found</p>
             <p className="text-sm opacity-80 mt-1">When reportable events land in Supabase, their category and severity distributions will appear here.</p>
           </div>

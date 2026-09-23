@@ -216,7 +216,7 @@ export default function AdminNewInserviceSessionPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <GraduationCap className="h-6 w-6 text-slate-500" />
+        <GraduationCap className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New in-service session</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -225,7 +225,7 @@ export default function AdminNewInserviceSessionPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted-foreground">
         Only an <strong>owner</strong>, <strong>org admin</strong>, or <strong>facility admin</strong> can create
         sessions..
       </p>
@@ -313,7 +313,7 @@ export default function AdminNewInserviceSessionPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   If you pick a catalog program, each selected attendee also receives a matching{" "}
                   <strong>staff training completion</strong> row (same date and hours as this session).
                 </p>
@@ -348,9 +348,9 @@ export default function AdminNewInserviceSessionPage() {
                     aria-label="Staff attendees for this in-service session"
                   >
                   {loading ? (
-                    <p className="text-sm text-slate-500">Loading staff…</p>
+                    <p className="text-sm text-muted-foreground">Loading staff…</p>
                   ) : staffList.length === 0 ? (
-                    <p className="text-sm text-slate-500">No staff in this facility.</p>
+                    <p className="text-sm text-muted-foreground">No staff in this facility.</p>
                   ) : (
                     <ul className="space-y-2">
                       {staffList.map((s) => (
@@ -372,7 +372,7 @@ export default function AdminNewInserviceSessionPage() {
                   )}
                   </div>
                 </fieldset>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[10px] text-muted-foreground">
                   {selectedStaffIds.size} selected
                 </p>
               </div>

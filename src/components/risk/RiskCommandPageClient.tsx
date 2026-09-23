@@ -88,7 +88,7 @@ export default function RiskCommandPageClient({
       <RiskHubNav />
 
       <div className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{scopeLabel}</p>
+        <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{scopeLabel}</p>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Risk Command</h1>
@@ -233,7 +233,7 @@ export default function RiskCommandPageClient({
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-slate-900 dark:text-white">{delivery.facilityName}</p>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                             {delivery.channel} · {delivery.recipient_role}
                           </p>
                         </div>
@@ -244,7 +244,7 @@ export default function RiskCommandPageClient({
                               ? "text-emerald-600 dark:text-emerald-400"
                               : delivery.delivery_status === "failed"
                                 ? "text-red-600 dark:text-red-400"
-                                : "text-slate-500 dark:text-slate-400",
+                                : "text-muted-foreground",
                           )}
                         >
                           {delivery.delivery_status}
@@ -284,7 +284,7 @@ export default function RiskCommandPageClient({
                     >
                       <p className="font-medium text-slate-900 dark:text-white">{alert.title}</p>
                       {alert.body ? <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{alert.body}</p> : null}
-                      <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                      <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.18em] text-muted-foreground">
                         <span>{alert.severity}</span>
                         <span>{formatRiskDateTime(alert.created_at)}</span>
                       </div>
@@ -326,7 +326,7 @@ export default function RiskCommandPageClient({
                       </div>
                       <div className="mt-3 space-y-2">
                         {row.topDrivers.length === 0 ? (
-                          <p className="text-sm text-slate-500 dark:text-slate-400">No dominant risk drivers recorded.</p>
+                          <p className="text-sm text-muted-foreground">No dominant risk drivers recorded.</p>
                         ) : (
                           row.topDrivers.map((driver) => (
                             <div key={`${row.id}-${driver.key}`} className="rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-slate-900/70">
@@ -377,7 +377,7 @@ function MetricCard({
     <Card className={toneClass}>
       <CardContent className="flex items-start justify-between gap-4 p-5">
         <div className="space-y-1.5">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
           <p className="text-2xl font-semibold text-slate-900 dark:text-white">{value}</p>
           <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>
         </div>

@@ -103,7 +103,7 @@ export default function PurchaseOrdersListPage() {
                 ))}
                 {!loading && rows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-6 text-slate-500">
+                    <td colSpan={4} className="py-6 text-muted-foreground">
                       No purchase orders yet.
                     </td>
                   </tr>

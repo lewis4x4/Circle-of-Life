@@ -295,7 +295,7 @@ export default function NewComplianceRulePage() {
             </div>
 
             {/* The automated check behind a rule is set up by Haven support, never typed here (COL-652). */}
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               New rules save as drafts. Haven support sets up the automated check for each rule and turns it on.
             </p>
 

@@ -324,7 +324,7 @@ export default function BudgetPage() {
             </div>
             {budgets.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm text-slate-500">{budgets.length} budget line(s) for {period}.</p>
+                <p className="text-sm text-muted-foreground">{budgets.length} budget line(s) for {period}.</p>
               </div>
             )}
           </CardContent>

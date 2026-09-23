@@ -168,7 +168,7 @@ export function SignaturePad({
         />
         {!hasSignature && !isDrawing && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="flex flex-col items-center gap-2 text-slate-400">
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <PenTool className="w-8 h-8" />
               <span className="text-sm font-medium">Sign above</span>
             </div>
@@ -176,7 +176,7 @@ export function SignaturePad({
         )}
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-xs text-slate-500 dark:text-slate-400">
+        <span className="text-xs text-muted-foreground">
           Draw your signature with mouse or touch
         </span>
         {hasSignature && (
