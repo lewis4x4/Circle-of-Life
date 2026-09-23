@@ -141,7 +141,7 @@ export async function fetchRentRollFromSupabase(
   supabase: SupabaseClient,
 ): Promise<RentRollLoad> {
   if (!isValidFacilityIdForQuery(facilityId)) {
-    throw new Error("Rent roll is per facility. Pick a facility in the header.");
+    throw new Error("Rent roll is per facility; no facility id was given.");
   }
   const bounds = rentRollPeriodBounds(period);
 

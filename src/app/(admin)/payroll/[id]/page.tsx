@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -294,7 +295,10 @@ export default function AdminPayrollBatchDetailPage() {
   if (!facilityReady) {
     return (
       <div className="mx-auto max-w-4xl space-y-6 p-6">
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice
+          title="Payroll batch"
+          reason="Payroll batches are kept per building. Choose the building this batch belongs to."
+        />
         <Link href="/admin/payroll" className={cn(buttonVariants({ variant: "outline" }))}>
           Back to payroll
         </Link>

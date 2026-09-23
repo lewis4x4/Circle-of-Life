@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 // Types
 type AssessmentRow = OverdueAssessmentRow;
@@ -54,6 +55,7 @@ export function AdminOverdueAssessmentsPageClient({
   // No cross-facility queue exists; under All facilities the desk is gated (COL-651).
   const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
   const [assessments, setAssessments] = useState<AssessmentRow[]>(initialAssessments);
   const [carePlans, setCarePlans] = useState<CarePlanRow[]>(initialCarePlans);
   const [scope, setScope] = useState<ClinicalDeskScope | null>(initialScope);
@@ -68,6 +70,7 @@ export function AdminOverdueAssessmentsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
@@ -84,19 +87,21 @@ export function AdminOverdueAssessmentsPageClient({
         fetchCarePlanReviewsDueFromSupabase(selectedFacilityId),
         fetchClinicalDeskScope(selectedFacilityId),
       ]);
+      if (!isCurrent()) return;
 
       setAssessments(liveAssessments);
       setCarePlans(liveCarePlans);
       setScope(liveScope);
     } catch (err) {
+      if (!isCurrent()) return;
       setAssessments([]);
       setCarePlans([]);
       setScope(null);
       setError(err instanceof Error ? err.message : "Failed to load Clinical Desk");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

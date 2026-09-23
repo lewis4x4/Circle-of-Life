@@ -15,23 +15,7 @@
 export const LEGACY_FACILITY_GATES: Record<string, readonly string[]> = {
   "b1-executive": [],
 
-  "b2-money": [
-    "src/app/(admin)/admin/cash/page.tsx",
-    "src/app/(admin)/admin/letters/generate/page.tsx",
-    "src/app/(admin)/admin/letters/page.tsx",
-    "src/app/(admin)/billing/collections/page.tsx",
-    "src/app/(admin)/billing/concessions/page.tsx",
-    "src/app/(admin)/billing/invoices/generate/page.tsx",
-    "src/app/(admin)/billing/invoices/opening-balance/page.tsx",
-    "src/app/(admin)/billing/rates/new/page.tsx",
-    "src/app/(admin)/billing/rates/page.tsx",
-    "src/app/(admin)/billing/rent-roll/page.tsx",
-    "src/app/(admin)/finance/journal-entries/new/page.tsx",
-    "src/app/(admin)/payroll/[id]/page.tsx",
-    "src/app/(admin)/payroll/new/page.tsx",
-    "src/app/(admin)/payroll/page.tsx",
-    "src/lib/billing/load-rent-roll.ts",
-  ],
+  "b2-money": [],
 
   "b3-operations": [],
 
@@ -53,6 +37,8 @@ export const NOT_A_GATE: Record<string, string> = {
     "Validation for a template's own facility field: org-wide templates need none, facility-scoped ones pick one in the form.",
   "src/app/(admin)/admin/rounding/reports/page.tsx":
     "The report builder asks for a building alongside its date range; it is a form input, not a page gate.",
+  "src/app/(admin)/finance/journal-entries/new/page.tsx":
+    "A journal entry's own facility field: entries may post at entity level, and facility admins must pick one.",
   "src/components/layout/AppShell.tsx":
     "The survey-visit tools in the shell menu, which sits beside the header selector itself.",
   "src/lib/v2-forms.ts": "Validation message for a form's own required facility field.",

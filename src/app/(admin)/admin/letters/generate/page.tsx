@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { fetchActorContext } from "@/lib/office/meetings";
@@ -219,9 +220,7 @@ export default function AdminGenerateLetterPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — letters render on that facility&apos;s letterhead.
-          </p>
+          <FacilityGateNotice reason="Letters render on one building's letterhead and are logged to that building's files." />
         ) : null}
 
         {notice ? (

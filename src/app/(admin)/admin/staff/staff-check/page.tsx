@@ -74,7 +74,7 @@ export default async function StaffCheckPage() {
           facilityId={facilityId}
           organizationId={profile.organization_id}
           actorId={profile.id}
-          staffHref="/staff"
+          staffHref="/admin/staff"
           grantsHref="/admin/settings/users"
           onRefresh={refresh}
         />

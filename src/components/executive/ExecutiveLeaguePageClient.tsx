@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Download, ShieldCheck, ShieldAlert, MessageSquare, Table2 } from "lucide-react";
 
+import { PageHeader } from "@/design-system/components/PageHeader";
 import { ExecutiveHubNav } from "@/app/(admin)/executive/executive-hub-nav";
 import {
   AdminEmptyState,
@@ -114,21 +115,17 @@ export default function ExecutiveLeaguePageClient({
     <div className="space-y-6">
       <ExecutiveHubNav />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Portfolio-wide league table and board handoff
-          </p>
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Executive league</h1>
-            <p className="max-w-3xl text-sm text-muted-foreground">
-              Rank facilities with one board-facing score that blends operational risk, financial pressure, occupancy,
-              and insurance readiness. This route is portfolio-wide by design and feeds board-pack conversations.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title="Executive league"
+        subtitle={
+          <>
+            Rank facilities with one board-facing score that blends operational risk, financial pressure, occupancy,
+            and insurance readiness. This route is portfolio-wide by design and feeds board-pack conversations.
+            League CSV file names carry the Eastern (ET) file date.
+          </>
+        }
+        actions={
+          <>
           <button
             type="button"
             className={buttonVariants({ variant: "outline", size: "sm" })}
@@ -138,18 +135,15 @@ export default function ExecutiveLeaguePageClient({
             <Download className="mr-2 h-4 w-4" />
             League PDF
           </button>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-              onClick={() => downloadLeagueCsv(rows)}
-              disabled={rows.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              League CSV
-            </button>
-            <span className="text-xs text-muted-foreground">Eastern (ET) file date</span>
-          </div>
+          <button
+            type="button"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            onClick={() => downloadLeagueCsv(rows)}
+            disabled={rows.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            League CSV
+          </button>
           {boardSummary.weekOf ? (
             <Link
               className={buttonVariants({ variant: "outline", size: "sm" })}
@@ -164,8 +158,9 @@ export default function ExecutiveLeaguePageClient({
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/insurance/renewal-packages">
             Insurance readiness
           </Link>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => router.refresh()} /> : null}
 

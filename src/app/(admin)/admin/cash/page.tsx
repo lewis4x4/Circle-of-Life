@@ -7,6 +7,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { formatCents, parseDollarsToCents } from "@/lib/finance/format-cents";
@@ -376,9 +377,7 @@ export default function AdminCashLedgersPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — ledgers are per-facility.
-          </p>
+          <FacilityGateNotice reason="Petty cash drawers and resident trust ledgers are kept per building." />
         ) : null}
 
         {notice && scopeReady ? (

@@ -38,9 +38,10 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({
-    selectedFacilityId: facilityMock.selectedFacilityId,
-  }),
+  useFacilityStore: (select?: (state: { selectedFacilityId: string | null }) => unknown) => {
+    const state = { selectedFacilityId: facilityMock.selectedFacilityId };
+    return select ? select(state) : state;
+  },
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
