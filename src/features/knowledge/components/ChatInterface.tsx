@@ -236,7 +236,7 @@ export function ChatInterface({
             >
               <Paperclip className="h-5 w-5" />
             </button>
-            <textarea
+            <textarea aria-label="Ask the knowledge base"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -115,9 +116,9 @@ export default function AdminTransportationInspectionNewPage() {
         </Link>
       </div>
 
-      {!facilityReady && (
-        <p className="text-sm text-warning">Select a facility first.</p>
-      )}
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Inspections attach to a facility's own fleet vehicles." />
+      ) : null}
 
       {error && (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-100">
@@ -125,6 +126,7 @@ export default function AdminTransportationInspectionNewPage() {
         </p>
       )}
 
+      {facilityReady ? (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Inspection</CardTitle>
@@ -188,6 +190,7 @@ export default function AdminTransportationInspectionNewPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }

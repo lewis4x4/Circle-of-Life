@@ -74,10 +74,10 @@ export default function TourPage() {
 
                 {/* Campus Choice */}
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-widest text-stone-700 block mb-2">
+                  <p id="tour-community-label" className="text-xs font-bold uppercase tracking-widest text-stone-700 block mb-2">
                     1. Choose Community
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  </p>
+                  <div role="group" aria-labelledby="tour-community-label" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {FACILITIES.map((f) => (
                       <button
                         type="button"
@@ -105,10 +105,10 @@ export default function TourPage() {
                 {/* Date & Time */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-stone-700 block mb-1.5">
+                    <label htmlFor="tour-2-date-of-visit" className="text-xs font-bold uppercase tracking-widest text-stone-700 block mb-1.5">
                       2. Date of Visit
                     </label>
-                    <input
+                    <input id="tour-2-date-of-visit"
                       type="date"
                       required
                       value={tourDate}
@@ -118,10 +118,10 @@ export default function TourPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-stone-700 block mb-1.5">
+                    <label htmlFor="tour-3-preferred-time" className="text-xs font-bold uppercase tracking-widest text-stone-700 block mb-1.5">
                       3. Preferred Time
                     </label>
-                    <select
+                    <select id="tour-3-preferred-time"
                       value={tourTime}
                       onChange={(e) => setTourTime(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl border border-stone-300 text-xs bg-[#FAF7F2] focus:outline-none focus:ring-2 focus:ring-[#C85A32]"
@@ -181,8 +181,8 @@ export default function TourPage() {
                 {/* Contact Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-stone-700 block mb-1">Your Full Name</label>
-                    <input
+                    <label htmlFor="tour-your-full-name" className="text-xs font-bold text-stone-700 block mb-1">Your Full Name</label>
+                    <input id="tour-your-full-name"
                       type="text"
                       required
                       placeholder="Sarah Thornton"
@@ -193,8 +193,8 @@ export default function TourPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-stone-700 block mb-1">Mobile Phone (for SMS)</label>
-                    <input
+                    <label htmlFor="tour-mobile-phone-for-sms" className="text-xs font-bold text-stone-700 block mb-1">Mobile Phone (for SMS)</label>
+                    <input id="tour-mobile-phone-for-sms"
                       type="tel"
                       required
                       placeholder="(386) 555-0199"
@@ -205,8 +205,8 @@ export default function TourPage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-stone-700 block mb-1">Email Address</label>
-                    <input
+                    <label htmlFor="tour-email-address" className="text-xs font-bold text-stone-700 block mb-1">Email Address</label>
+                    <input id="tour-email-address"
                       type="email"
                       required
                       placeholder="sarah@example.com"

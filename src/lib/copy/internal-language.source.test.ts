@@ -15,7 +15,6 @@ import { findInternalLanguage } from "@/lib/copy/internal-language";
  * staff-facing. Anything else fails. If a reviewed file stops matching, remove it.
  */
 const REVIEWED: Record<string, { count: number; why: string }> = {
-  "src/components/common/facility-gate-legacy.ts": { count: 4, why: "Guard registry of reviewed files (reasons for a CI test); never rendered." },
   "src/components/landing/landing-home.tsx": { count: 2, why: "Marketing landing page for buyers; not mounted by any route." },
   "src/design-system/templates/T6Settings.preview.tsx": { count: 1, why: "Design-system preview fixture; not a product route." },
   "src/lib/navigation/staff-launch-hidden.ts": { count: 1, why: "`note` is a code comment kept as data; never rendered." },
