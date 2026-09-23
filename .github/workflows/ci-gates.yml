@@ -55,7 +55,7 @@ jobs:
         run: npm ci
 
       - name: Gate failure regression tests
-        run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs
+        run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs scripts/perf/route-load-budget.test.mjs
 
       - name: TypeScript and application tests
         if: needs.classify.outputs.policy_only != 'true'
