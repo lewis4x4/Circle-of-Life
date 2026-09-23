@@ -61,7 +61,10 @@ function useGateFacilities(): { facilities: Facility[]; loading: boolean; failed
     if (authLoading || userId == null || facilities.length > 0 || requestedFor.current === userId) return;
     requestedFor.current = userId;
     setStatus("loading");
-    fetchAdminFacilityOptions()
+    // Inside the chain, so a throw or a non-promise return lands in catch
+    // instead of crashing the page's render.
+    Promise.resolve()
+      .then(() => fetchAdminFacilityOptions())
       .then((list) => {
         if (list.length > 0) setAvailableFacilities(list, userId);
         setStatus("done");
