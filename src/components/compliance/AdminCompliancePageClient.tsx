@@ -42,6 +42,7 @@ import {
   complianceDeficienciesAllClear,
   complianceOverdueEmergencyAlert,
   compliancePocDueLine,
+  complianceScoreAlert,
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
   complianceSnapshotTileLoadingCopy,
@@ -50,6 +51,7 @@ import {
   complianceTileState,
 } from "@/lib/compliance/compliance-hub-copy";
 import { enumLabel } from "@/lib/display/enum-label";
+import { loadComplianceScoreAlert } from "@/lib/operating-rules/operating-rules";
 import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 
 type DefRow = {
@@ -97,6 +99,7 @@ export function AdminCompliancePageClient({
   // Enhanced tier state
   const [complianceScore, setComplianceScore] = useState<{ percentage: number; passed: number; total: number } | null>(null);
   const [enhancedScoreLoading, setEnhancedScoreLoading] = useState(true);
+  const [scoreAlertRule, setScoreAlertRule] = useState<Awaited<ReturnType<typeof loadComplianceScoreAlert>>>(null);
   const [emergencyItems, setEmergencyItems] = useState<EmergencyItem[]>([]);
   const [emergencyError, setEmergencyError] = useState(false);
   const [reminders, setReminders] = useState<ComplianceReminder[]>([]);
@@ -209,11 +212,14 @@ export function AdminCompliancePageClient({
   const loadEnhancedData = useCallback(async () => {
     if (!selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId)) {
       setComplianceScore(null);
+      setScoreAlertRule(null);
       setEmergencyItems([]);
       setEmergencyError(false);
       setEnhancedScoreLoading(false);
       return;
     }
+    // COL-710: the pass-rate alert level is an operating rule, off unless set.
+    void loadComplianceScoreAlert(supabase, { facilityId: selectedFacilityId }).then(setScoreAlertRule);
 
     setEnhancedScoreLoading(true);
     setEmergencyError(false);
@@ -235,7 +241,7 @@ export function AdminCompliancePageClient({
     } finally {
       setEnhancedScoreLoading(false);
     }
-  }, [selectedFacilityId]);
+  }, [selectedFacilityId, supabase]);
 
   useEffect(() => {
     void loadSnapshot();
@@ -260,6 +266,7 @@ export function AdminCompliancePageClient({
   const tileState = (value: number | undefined) =>
     complianceTileState({ facilityReady: true, loading: snapLoading, error: snapError, value });
   const overdueEmergencyAlert = facilityReady ? complianceOverdueEmergencyAlert(emergencyItems) : null;
+  const scoreAlert = facilityReady ? complianceScoreAlert(complianceScore, scoreAlertRule) : null;
   const deficienciesAllClear = complianceDeficienciesAllClear({
     facilityReady,
     loading: defLoading,
@@ -334,6 +341,21 @@ export function AdminCompliancePageClient({
             </span>
             <Link href="/admin/compliance/emergency-preparedness" className="font-medium underline underline-offset-2">
               Open emergency preparedness
+            </Link>
+          </div>
+        ) : null}
+
+        {scoreAlert ? (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning"
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              {scoreAlert}
+            </span>
+            <Link href="/admin/compliance/rules" className="font-medium underline underline-offset-2">
+              View rules
             </Link>
           </div>
         ) : null}

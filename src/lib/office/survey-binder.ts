@@ -65,13 +65,18 @@ export type BinderEvidence = {
   documentCount: number | null;
   expiringSoonCount: number | null;
   inservicesThisYear: number | null;
-  /** Due today through the 60-day window. Items already past due are in `drillsOverdue`, not here. */
+  /**
+   * Due today through the look-ahead window (`survey_binder.due_window_days`,
+   * COL-710). Items already past due are in `drillsOverdue`, not here.
+   */
   drillsDueSoon: number | null;
   /** Emergency checklist items (drills, generator tests) whose next due date has passed (COL-649). */
   drillsOverdue: number | null;
   /** Facility documents whose expiration date has passed (COL-649). */
   documentsExpired: number | null;
   lastSurvey: { date: string; type: string; result: string } | null;
+  /** The look-ahead window in force; null when the operating rule could not be read. */
+  dueWindowDays: number | null;
 };
 
 /** Preserve unknown separately from a confirmed zero count. */
@@ -103,17 +108,25 @@ export type BinderEvidenceDateWindow = {
   todayIso: string;
   /** Last facility day before today: the inclusive upper bound for "already past due". */
   yesterdayIso: string;
-  in60Iso: string;
+  /** Last day of the look-ahead window; null when the window is unknown. */
+  dueWindowEndIso: string | null;
   yearStartIso: string;
 };
 
-/** Eastern calendar windows for expiring-soon, drills-due, and in-services YTD counts. */
-export function binderEvidenceDateWindow(now: Date = new Date()): BinderEvidenceDateWindow {
+/**
+ * Eastern calendar windows for expiring-soon, drills-due, and in-services YTD
+ * counts. The look-ahead length is the `survey_binder.due_window_days`
+ * operating rule (COL-710); null leaves the window unknown instead of guessing.
+ */
+export function binderEvidenceDateWindow(
+  dueWindowDays: number | null,
+  now: Date = new Date(),
+): BinderEvidenceDateWindow {
   const todayIso = todayFacilityDateIso(now);
   return {
     todayIso,
     yesterdayIso: facilityDateIsoDaysFromToday(-1, now),
-    in60Iso: facilityDateIsoDaysFromToday(60, now),
+    dueWindowEndIso: dueWindowDays === null ? null : facilityDateIsoDaysFromToday(dueWindowDays, now),
     yearStartIso: `${todayIso.slice(0, 4)}-01-01`,
   };
 }
@@ -122,9 +135,14 @@ export function binderEvidenceDateWindow(now: Date = new Date()): BinderEvidence
 export async function fetchBinderEvidence(
   supabase: SupabaseClient,
   facilityId: string,
+  dueWindowDays: number | null,
   now: Date = new Date(),
 ): Promise<BinderEvidence> {
-  const { todayIso, yesterdayIso, in60Iso, yearStartIso } = binderEvidenceDateWindow(now);
+  const { todayIso, yesterdayIso, dueWindowEndIso, yearStartIso } = binderEvidenceDateWindow(dueWindowDays, now);
+  const inWindow = (table: string, column: string) =>
+    dueWindowEndIso === null
+      ? Promise.resolve(null)
+      : countWindow(supabase, table, facilityId, column, todayIso, dueWindowEndIso);
 
   const [
     documentCount,
@@ -135,11 +153,11 @@ export async function fetchBinderEvidence(
     documentsExpired,
   ] = await Promise.all([
     countWindow(supabase, "facility_documents", facilityId, null, null, null),
-    countWindow(supabase, "facility_documents", facilityId, "expiration_date", todayIso, in60Iso),
+    inWindow("facility_documents", "expiration_date"),
     countWindow(supabase, "inservice_log_sessions", facilityId, "session_date", yearStartIso, "2999-12-31"),
-    countWindow(supabase, "emergency_checklist_items", facilityId, "next_due_date", todayIso, in60Iso),
+    inWindow("emergency_checklist_items", "next_due_date"),
     // A window that starts today cannot see anything already late: a drill
-    // 158 days overdue read as "Drills due ≤60d 0" (COL-649).
+    // 158 days overdue read as "Drills due" 0 (COL-649).
     countWindow(supabase, "emergency_checklist_items", facilityId, "next_due_date", null, yesterdayIso),
     countWindow(supabase, "facility_documents", facilityId, "expiration_date", null, yesterdayIso),
   ]);
@@ -175,5 +193,6 @@ export async function fetchBinderEvidence(
     drillsOverdue,
     documentsExpired,
     lastSurvey,
+    dueWindowDays,
   };
 }

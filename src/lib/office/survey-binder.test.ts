@@ -11,15 +11,15 @@ describe("binderEvidenceDateWindow", () => {
   /** 8:05 PM Eastern on 2026-08-20 (EDT, UTC−4) — after the UTC date rolls to tomorrow. */
   const eightOhFivePmEt = new Date("2026-08-20T20:05:00-04:00");
 
-  it("anchors today and +60 on the Eastern calendar, not UTC ISO slice", () => {
-    const window = binderEvidenceDateWindow(eightOhFivePmEt);
+  it("anchors today and the configured window on the Eastern calendar, not UTC ISO slice", () => {
+    const window = binderEvidenceDateWindow(60, eightOhFivePmEt);
 
     expect(window.todayIso).toBe("2026-08-20");
     expect(window.todayIso).not.toBe("2026-08-21");
     expect(eightOhFivePmEt.toISOString().slice(0, 10)).toBe("2026-08-21");
 
-    expect(window.in60Iso).toBe("2026-10-19");
-    expect(window.in60Iso).not.toBe(
+    expect(window.dueWindowEndIso).toBe("2026-10-19");
+    expect(window.dueWindowEndIso).not.toBe(
       new Date(eightOhFivePmEt.getTime() + 60 * 86400 * 1000).toISOString().slice(0, 10),
     );
   });
@@ -28,12 +28,17 @@ describe("binderEvidenceDateWindow", () => {
     /** 9:30 PM Eastern on 2025-12-31 — still 2025 locally while UTC is already 2026-01-01. */
     const newYearsEveEt = new Date("2025-12-31T21:30:00-05:00");
 
-    const window = binderEvidenceDateWindow(newYearsEveEt);
+    const window = binderEvidenceDateWindow(60, newYearsEveEt);
 
     expect(window.todayIso).toBe("2025-12-31");
     expect(window.yearStartIso).toBe("2025-01-01");
     expect(window.yearStartIso).not.toBe("2026-01-01");
     expect(newYearsEveEt.getUTCFullYear()).toBe(2026);
+  });
+
+  it("follows the configured window length (COL-710)", () => {
+    expect(binderEvidenceDateWindow(30, eightOhFivePmEt).dueWindowEndIso).toBe("2026-09-19");
+    expect(binderEvidenceDateWindow(null, eightOhFivePmEt).dueWindowEndIso).toBeNull();
   });
 });
 
@@ -93,7 +98,7 @@ describe("fetchBinderEvidence", () => {
       },
     } as unknown as SupabaseClient;
 
-    await fetchBinderEvidence(supabase, "facility-alpha-001", eightOhFivePmEt);
+    await fetchBinderEvidence(supabase, "facility-alpha-001", 60, eightOhFivePmEt);
 
     const expiring = queryLog.find(
       (q) => q.table === "facility_documents" && q.column === "expiration_date",
@@ -128,9 +133,19 @@ describe("fetchBinderEvidence", () => {
 
 it("shows unavailable evidence separately from a confirmed zero", async () => {
  const chain = { select() { return this; }, eq() { return this; }, is() { return this; }, gte() { return this; }, lte() { return this; }, order() { return this; }, limit() { return this; }, then(resolve: (value: unknown) => void) { resolve({ data: null, count: null, error: new Error("unavailable") }); } };
- const evidence = await fetchBinderEvidence({ from: () => chain } as unknown as SupabaseClient, "facility");
+ const evidence = await fetchBinderEvidence({ from: () => chain } as unknown as SupabaseClient, "facility", 60);
  expect(evidence.documentCount).toBeNull();
  expect(evidence.expiringSoonCount).toBeNull();
  expect(evidence.drillsOverdue).toBeNull();
  expect(evidence.lastSurveyAvailable).toBe(false);
+});
+
+it("skips the window counts when the window setting could not be read (COL-710)", async () => {
+ const tables: string[] = [];
+ const chain = { select() { return this; }, eq() { return this; }, is() { return this; }, gte() { return this; }, lte() { return this; }, order() { return this; }, limit() { return this; }, then(resolve: (value: unknown) => void) { resolve({ data: [], count: 2, error: null }); } };
+ const evidence = await fetchBinderEvidence({ from: (t: string) => { tables.push(t); return chain; } } as unknown as SupabaseClient, "facility", null);
+ expect(evidence.expiringSoonCount).toBeNull();
+ expect(evidence.drillsDueSoon).toBeNull();
+ expect(evidence.drillsOverdue).toBe(2);
+ expect(evidence.dueWindowDays).toBeNull();
 });
