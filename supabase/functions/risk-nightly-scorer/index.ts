@@ -22,12 +22,7 @@ import { withTiming } from "../_shared/structured-log.ts";
 import { SITE_AUTHORITY_CLASSES } from "../_shared/operation-authority.ts";
 import { judgeDue } from "../../../src/lib/operations/schedule-evaluator.ts";
 // COL-710: the level cut-offs are the `risk.score_bands` operating rule, read per facility per night.
-import {
-  parseRiskScoreBands,
-  riskAlertThresholdJson,
-  riskLevelFromBands,
-  type RiskScoreBands,
-} from "../../../src/lib/operating-rules/risk-bands.ts";
+import { parseRiskScoreBands, riskAlertThresholdJson, riskLevelFromBands, type RiskScoreBands } from "../../../src/lib/operating-rules/risk-bands.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIVE_DEFICIENCY_STATUSES = new Set(["open", "poc_submitted", "poc_accepted", "recited"]);

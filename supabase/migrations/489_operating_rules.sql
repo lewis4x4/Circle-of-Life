@@ -185,7 +185,7 @@ INSERT INTO public.operating_rules (organization_id, facility_id, rule_key, valu
 SELECT o.id, NULL, 'risk.score_bands',
        '{"critical_below": 50, "high_below": 70, "moderate_below": 85}'::jsonb,
        DATE '2026-09-23',
-       'Seeded by migration 488 (COL-710): the risk levels the nightly scorer used before they became configurable (critical below 50, high below 70, moderate below 85).'
+       'Seeded by migration 489 (COL-710): the risk levels the nightly scorer used before they became configurable (critical below 50, high below 70, moderate below 85).'
 FROM public.organizations o
 WHERE o.deleted_at IS NULL
 ON CONFLICT DO NOTHING;
@@ -193,7 +193,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.operating_rules (organization_id, facility_id, rule_key, value, effective_from, change_reason)
 SELECT o.id, NULL, 'survey_binder.due_window_days', '60'::jsonb,
        DATE '2026-09-23',
-       'Seeded by migration 488 (COL-710): the 60-day survey binder window used before it became configurable.'
+       'Seeded by migration 489 (COL-710): the 60-day survey binder window used before it became configurable.'
 FROM public.organizations o
 WHERE o.deleted_at IS NULL
 ON CONFLICT DO NOTHING;

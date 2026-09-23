@@ -1,5 +1,5 @@
 /**
- * Effective-dated operating rules (COL-710, migration 488).
+ * Effective-dated operating rules (COL-710, migration 489).
  *
  * Business thresholds that used to be literals in code — the risk score bands,
  * the survey binder's look-ahead window, the compliance pass-rate alert — are
