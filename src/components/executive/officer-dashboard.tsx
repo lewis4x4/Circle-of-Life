@@ -19,6 +19,8 @@ import {
   formatExecutiveOfficerKpiValue,
   formatExecutiveRelativeAge,
 } from "@/lib/executive/executive-display-copy";
+import { registerCountState } from "@/lib/executive/register-coverage";
+import { formatMetric } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 
 /**
@@ -293,4 +295,27 @@ export function officerKpiValue(value: number | undefined, loading: boolean, met
 /** Danger/warning tone only when an alarm count is > 0 (0-guard). */
 export function officerAlarmTone(value: number | undefined, tone: OfficerKpiTone): OfficerKpiTone {
   return value != null && value > 0 ? tone : "neutral";
+}
+
+/**
+ * Tile value + tone for a count from a register that may never have been used
+ * (COL-649): "Nothing recorded yet" in neutral tone instead of a confident 0.
+ */
+export function officerRegisterKpi(
+  value: number | undefined,
+  registerRecorded: boolean | null | undefined,
+  loading: boolean,
+  metricLabel: string,
+  alarm: OfficerKpiTone,
+): { value: string; tone: OfficerKpiTone } {
+  const state = registerCountState({ loading, count: value, registerRecorded });
+  if (!state) return { value: officerKpiValue(value, loading, metricLabel), tone: "neutral" };
+  if (state.status !== "value") return { value: formatMetric(state), tone: "neutral" };
+  return { value: String(state.value), tone: officerAlarmTone(state.value, alarm) };
+}
+
+/** Empty watchlist copy that names open rounding escalations the list does not include. */
+export function officerAlertsEmptyDescription(openRoundingEscalations: number | null | undefined): string | undefined {
+  if (!openRoundingEscalations || openRoundingEscalations <= 0) return undefined;
+  return `${openRoundingEscalations} open rounding ${openRoundingEscalations === 1 ? "escalation is" : "escalations are"} on Smart Rounding and not raised as executive alerts. This is not an all-clear.`;
 }

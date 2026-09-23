@@ -10,6 +10,7 @@ import {
   fetchFacilityBedCensusById,
   isFacilityOccupancyCensusLoaded,
 } from "@/lib/executive/facility-occupancy-census";
+import { fetchExecRegisterCoverage } from "@/lib/executive/register-coverage";
 
 type FacilityMini = {
   id: string;
@@ -94,6 +95,7 @@ export async function loadExecutiveKpiBulk(
     openExceptionsRes,
     activeWatchRes,
     bedCensusByFacility,
+    orgRegisters,
   ] = await Promise.all([
     scope(
       supabase
@@ -172,6 +174,11 @@ export async function loadExecutiveKpiBulk(
         .eq("status", "active"),
     ),
     fetchFacilityBedCensusById(supabase, facilityIds),
+    fetchExecRegisterCoverage(
+      supabase,
+      organizationId,
+      facilityScoped ? { facilityId: scopedFacilityId! } : { facilityIds },
+    ),
   ]);
 
   const allBatchEntries = [
@@ -277,6 +284,7 @@ export async function loadExecutiveKpiBulk(
   orgKpi.residentAssurance.overdueTasksCount = (overdueTasksRes.data ?? []).length;
   orgKpi.residentAssurance.openExceptions = (openExceptionsRes.data ?? []).length;
   orgKpi.residentAssurance.activeWatchCount = (activeWatchRes.data ?? []).length;
+  orgKpi.registers = orgRegisters;
 
   return {
     orgKpi,
