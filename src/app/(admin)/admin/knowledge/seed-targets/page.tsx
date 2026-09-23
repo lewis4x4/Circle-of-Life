@@ -190,14 +190,14 @@ export default function SeedTargetsRoute() {
           Add org-specific target
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <input
+          <input aria-label="Topic slug"
             type="text"
             placeholder="Topic slug (e.g. evacuation_host_list)"
             value={newTopic}
             onChange={(e) => setNewTopic(e.target.value)}
             className="rounded border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
           />
-          <input
+          <input aria-label="Topic label"
             type="text"
             placeholder="Topic label (e.g. Hurricane evacuation host facility list)"
             value={newLabel}

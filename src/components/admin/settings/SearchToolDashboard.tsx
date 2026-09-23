@@ -92,11 +92,14 @@ function TierBadge({ tier }: { tier: SearchToolTier }) {
 }
 
 function PolicyToggle({
+  label,
   enabled,
   saving,
   canEdit,
   onToggle,
 }: {
+  /** Accessible name, e.g. "Resident search for Owner" (COL-658). */
+  label: string;
   enabled: boolean;
   saving: boolean;
   canEdit: boolean;
@@ -106,16 +109,21 @@ function PolicyToggle({
     return (
       <div className="flex items-center justify-center">
         {enabled ? (
-          <Check className="h-4 w-4 text-emerald-500" />
+          <Check className="h-4 w-4 text-emerald-500" aria-hidden />
         ) : (
-          <X className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+          <X className="h-4 w-4 text-slate-300 dark:text-slate-600" aria-hidden />
         )}
+        <span className="sr-only">{`${label}: ${enabled ? "allowed" : "not allowed"}`}</span>
       </div>
     );
   }
 
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-label={label}
       onClick={onToggle}
       disabled={saving}
       className={cn(
@@ -478,6 +486,7 @@ export function SearchToolDashboard() {
                             {MATRIX_DISPLAY_ROLES.map((role) => (
                               <td key={role} className="py-2.5 text-center">
                                 <PolicyToggle
+                                  label={`${tool.label} for ${ROLE_LABELS[role] ?? role}`}
                                   enabled={
                                     policyMap[tool.name]?.[role] ?? false
                                   }
@@ -521,11 +530,13 @@ export function SearchToolDashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter..."
+                aria-label="Filter audit entries"
                 className="h-8 w-32 border-0 bg-transparent px-0 text-xs focus-visible:ring-0 font-mono"
               />
             </div>
 
             <select
+              aria-label="Filter audit by tool"
               value={filterTool}
               onChange={(e) => setFilterTool(e.target.value)}
               className="h-8 rounded-xl border border-slate-200/50 bg-white/60 px-2 text-xs text-slate-700 dark:border-slate-800/60 dark:bg-black/40 dark:text-slate-300 font-mono"
@@ -539,6 +550,7 @@ export function SearchToolDashboard() {
             </select>
 
             <select
+              aria-label="Filter audit by role"
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
               className="h-8 rounded-xl border border-slate-200/50 bg-white/60 px-2 text-xs text-slate-700 dark:border-slate-800/60 dark:bg-black/40 dark:text-slate-300 font-mono"

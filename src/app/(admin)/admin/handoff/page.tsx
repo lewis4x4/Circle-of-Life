@@ -7,6 +7,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -187,9 +188,7 @@ export default function AdminHandoffPage() {
         </header>
 
         {!facilityReady ? (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility first — the handoff board is per-facility.
-          </p>
+          <FacilityGateNotice reason="The handoff board is per building and per shift." />
         ) : null}
 
         {notice ? (

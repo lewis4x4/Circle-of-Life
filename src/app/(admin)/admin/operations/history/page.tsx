@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { isOperationsViewRole } from "@/lib/operations/constants";
 import type { CorporateHistoryReply } from "@/lib/operations/corporate-history";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
@@ -11,6 +11,7 @@ import { ReceiptHistory, localTime } from "../work/_components/receipt-history";
 import { HistoryReceiptSummary } from "./history-receipt-summary";
 import { CONTROL } from "../work/_components/work-inputs";
 import { ActivityHistoryExport } from "./activity-history-export";
+import { useHeaderBoundFacility } from "../_components/use-header-bound-facility";
 
 export default function CorporateActivityHistoryPage() {
   const auth = useHavenAuth();
@@ -40,85 +41,35 @@ function PersonHistory({
 }) {
   const params = useSearchParams();
   const router = useRouter();
-  const facilityId = params.get("facility_id") ?? "";
   const activityId = params.get("activity_id") ?? "";
   const cursor = params.get("cursor") ?? "";
-  const [facilities, setFacilities] = useState<
-    { id: string; name: string }[] | null
-  >(null);
-  const [error, setError] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let active = true;
-    void fetchAdminFacilityOptions()
-      .then((rows) => {
-        if (active) {
-          setFacilities(rows);
-          setError("");
-        }
-      })
-      .catch(() => {
-        if (active) setError("Facility options unavailable.");
-      });
-    return () => {
-      active = false;
-    };
-  }, [attempt]);
-  function navigate(changes: Record<string, string | null>) {
-    const next = new URLSearchParams(params.toString());
-    for (const [key, value] of Object.entries(changes)) {
-      if (value) next.set(key, value);
-      else next.delete(key);
-    }
-    router.replace(`/admin/operations/history?${next}`, { scroll: false });
-  }
+  const navigate = useCallback(
+    (changes: Record<string, string | null>) => {
+      const next = new URLSearchParams(params.toString());
+      for (const [key, value] of Object.entries(changes)) {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      }
+      router.replace(`/admin/operations/history?${next}`, { scroll: false });
+    },
+    [params, router],
+  );
+  const facilityId = useHeaderBoundFacility(
+    useCallback(
+      (next) => navigate({ facility_id: next, activity_id: null, cursor: null }),
+      [navigate],
+    ),
+  );
   return (
     <div className="space-y-5 p-4">
       <header>
         <h1 className="text-2xl font-semibold">Corporate activity history</h1>
         <p className="text-muted-foreground">
-          Choose a facility and activity to review its dated work, receipts and
-          supporting files.
+          Review a facility&apos;s dated work, receipts and supporting files by
+          activity.
         </p>
       </header>
       <OperationsViewNav />
-      {error ? (
-        <div role="alert">
-          {error}{" "}
-          <button className={CONTROL} onClick={() => setAttempt((n) => n + 1)}>
-            Retry facilities
-          </button>
-        </div>
-      ) : facilities === null ? (
-        <p role="status">Loading facilities…</p>
-      ) : facilities.length === 0 ? (
-        <p>No accessible facilities.</p>
-      ) : (
-        <label className="flex max-w-lg flex-col gap-1">
-          Facility
-          <select
-            className={CONTROL}
-            value={facilityId}
-            onChange={(event) =>
-              navigate({
-                facility_id: event.target.value,
-                activity_id: null,
-                cursor: null,
-              })
-            }
-          >
-            <option value="">Choose a facility</option>
-            {facilityId && !facilities.some((row) => row.id === facilityId) ? (
-              <option value={facilityId}>Selected facility</option>
-            ) : null}
-            {facilities.map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
       {facilityId ? (
         <HistoryScope
           key={`${facilityId}:${activityId}:${cursor}`}
@@ -130,7 +81,7 @@ function PersonHistory({
           navigate={navigate}
         />
       ) : (
-        <p>Choose a facility to see its activities.</p>
+        <FacilityGateNotice reason="Activity history is recorded per site." />
       )}
     </div>
   );

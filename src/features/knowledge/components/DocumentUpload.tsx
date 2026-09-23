@@ -155,7 +155,7 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         )}
       </div>
 
-      <input
+      <input aria-label="Document title"
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -164,7 +164,7 @@ export function DocumentUpload({ workspaceId, workspaceLoading, onSuccess }: Doc
         className="w-full rounded-[8px] border border-input bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
       />
 
-      <select
+      <select aria-label="Audience"
         value={audience}
         onChange={(e) => setAudience(e.target.value as DocumentAudience)}
         disabled={disabled}

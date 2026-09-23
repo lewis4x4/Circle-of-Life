@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { addHours, format, parseISO } from "date-fns";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -459,7 +460,10 @@ export default function EditResidentTransportRequestPage() {
   if (!facilityReady && !authLoading) {
     return (
       <div className="mx-auto max-w-2xl p-6">
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice
+          title="Transport request"
+          reason="Trips are kept per building; choose the facility this trip belongs to."
+        />
       </div>
     );
   }

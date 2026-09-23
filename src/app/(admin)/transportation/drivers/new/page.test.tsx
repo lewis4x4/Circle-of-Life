@@ -31,7 +31,7 @@ const supabaseMock = vi.hoisted(() => ({
 const routerPushMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: routerPushMock }),
+  useRouter: () => ({ push: routerPushMock, refresh: vi.fn() }),
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -43,9 +43,15 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 }));
 
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({
-    selectedFacilityId: facilityMock.selectedFacilityId,
-  }),
+  useFacilityStore: (selector?: (state: Record<string, unknown>) => unknown) => {
+    const state = {
+      selectedFacilityId: facilityMock.selectedFacilityId,
+      availableFacilities: [{ id: "00000000-0000-4000-8000-00000000fac1", name: "Homewood Lodge" }, { id: "00000000-0000-4000-8000-00000000fac2", name: "Oakridge ALF" }],
+      facilitiesCacheUserId: "00000000-0000-4000-8000-0000000user1",
+      setAvailableFacilities: () => {},
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -105,6 +111,20 @@ describe("AdminTransportationDriverNewPage auth hydration", () => {
     supabaseMock.insertError = null;
     supabaseMock.insertPayload = null;
     routerPushMock.mockReset();
+  });
+
+  it("under All facilities shows the facility gate instead of an inert credential form (COL-651)", () => {
+    authMock.loading = false;
+    authMock.organizationId = "00000000-0000-4000-8000-00000000org1";
+    authMock.user = { id: "00000000-0000-4000-8000-0000000user1" };
+    facilityMock.selectedFacilityId = null;
+
+    render(<AdminTransportationDriverNewPage />);
+
+    expect(screen.getByTestId("facility-gate")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Homewood Lodge" })).toBeInTheDocument();
+    expect(screen.queryByText("Credential record")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /save credential/i })).not.toBeInTheDocument();
   });
 
   it("shows named loading copy while auth is hydrating", () => {
