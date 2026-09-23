@@ -331,7 +331,7 @@ export default function OperationsTemplatesPage() {
   return (
     <div className="space-y-6 p-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Operations</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Operations</p>
         <h1 className="text-3xl font-semibold tracking-tight">Template Authoring</h1>
         <p className="max-w-3xl text-sm text-muted-foreground">
           Version and govern the recurring operations templates that feed Today, Pager, calendar, escalation, and scheduler runs.

@@ -527,9 +527,9 @@ export default function AdminNotificationsSettingsPage() {
           </div>
 
           {routesLoading ? (
-            <p className="text-sm text-slate-500">Loading routes…</p>
+            <p className="text-sm text-muted-foreground">Loading routes…</p>
           ) : routes.length === 0 ? (
-            <p className="text-sm text-slate-500">No routes found for your organization yet.</p>
+            <p className="text-sm text-muted-foreground">No routes found for your organization yet.</p>
           ) : (
             <HorizontalScroll label="Notification routes" className="rounded-lg border">
               <table className="w-full min-w-[900px] text-left text-xs">
@@ -618,7 +618,7 @@ export default function AdminNotificationsSettingsPage() {
             Send test to my devices
           </Button>
           {!canDispatch && role !== null && (
-            <p className="mt-2 text-sm text-slate-500">Ask an owner or org admin to run a test dispatch.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Ask an owner or org admin to run a test dispatch.</p>
           )}
         </CardContent>
       </Card>

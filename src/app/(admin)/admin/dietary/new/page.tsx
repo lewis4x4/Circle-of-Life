@@ -237,7 +237,7 @@ export default function AdminDietaryNewPage() {
             <div className="space-y-2">
               <Label htmlFor="res">Resident</Label>
               {loadingResidents || authLoading ? (
-                <p className="text-sm text-slate-500">{DIETARY_NEW_LOADING_RESIDENTS_COPY}</p>
+                <p className="text-sm text-muted-foreground">{DIETARY_NEW_LOADING_RESIDENTS_COPY}</p>
               ) : showEmptyResidentsGap ? (
                 <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {DIETARY_NEW_NO_RESIDENTS_AT_FACILITY_COPY}

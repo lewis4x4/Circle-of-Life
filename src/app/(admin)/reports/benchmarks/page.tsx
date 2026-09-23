@@ -68,10 +68,10 @@ export default function ReportsBenchmarksPage() {
       <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible z-10 w-full transition-all">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Defined Benchmarks</h3>
-            <p className="text-sm font-mono tracking-wide mt-1 text-slate-500 dark:text-slate-400">Central benchmark definitions used by report templates.</p>
+            <p className="text-sm font-mono tracking-wide mt-1 text-muted-foreground">Central benchmark definitions used by report templates.</p>
           </div>
           {rows.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
+            <div className="p-16 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Definitions Found</p>
                <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">Configure central benchmarks in reports admin.</p>
              </div>
@@ -81,7 +81,7 @@ export default function ReportsBenchmarksPage() {
                   <MotionItem key={row.id}>
                     <div className="p-6 rounded-lg group transition-all duration-300 hover:scale-[1.01] cursor-default border border-slate-200 dark:border-white/5 bg-white/80 w-full flex flex-col xl:flex-row xl:items-center justify-between gap-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20">
                         <div className="flex flex-col min-w-[300px] gap-1 shrink-0">
-                           <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Metric Key</span>
+                           <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Metric Key</span>
                            <span className="font-bold text-slate-900 dark:text-slate-100 uppercase text-sm tracking-wide">
                               {enumLabel(row.metric_key)}
                            </span>
@@ -89,15 +89,15 @@ export default function ReportsBenchmarksPage() {
 
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full items-center">
                            <div className="flex flex-col gap-2 align-left md:text-left">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Type</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Type</span>
                               <Badge className="bg-primary/5 text-primary border border-primary/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">{row.benchmark_type}</Badge>
                            </div>
                            <div className="flex flex-col gap-2 align-left md:text-left">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Scope</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Scope</span>
                               <span className="font-mono text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">{row.scope_type}</span>
                            </div>
                            <div className="flex flex-col gap-2 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Window</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Window</span>
                               <span className="font-mono text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-wide">{row.effective_from} - {row.effective_to ?? "Open"}</span>
                            </div>
                         </div>

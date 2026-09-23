@@ -77,13 +77,13 @@ export function AdminFacilityScopeDropdown({
           )}
         >
           <span className="flex min-w-0 items-center gap-2">
-            <Building2 className="h-4 w-4 shrink-0 text-slate-500 dark:text-zinc-400" aria-hidden />
+            <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <span className="truncate">{triggerLabel}</span>
           </span>
           {loading ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" aria-hidden />
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
           ) : (
-            <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 dark:text-zinc-500" aria-hidden />
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent

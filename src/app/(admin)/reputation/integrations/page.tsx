@@ -201,7 +201,7 @@ export default function ReputationIntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
-            <p className="flex items-center gap-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading…
             </p>
           ) : status ? (
@@ -268,7 +268,7 @@ export default function ReputationIntegrationsPage() {
             </>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-slate-500">Could not load integration status.</p>
+              <p className="text-sm text-muted-foreground">Could not load integration status.</p>
               <Button type="button" variant="outline" onClick={() => void load()}>
                 Retry status
               </Button>
@@ -287,7 +287,7 @@ export default function ReputationIntegrationsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
-            <p className="flex items-center gap-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading…
             </p>
           ) : status ? (
@@ -328,7 +328,7 @@ export default function ReputationIntegrationsPage() {
             </>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-slate-500">Could not load integration status.</p>
+              <p className="text-sm text-muted-foreground">Could not load integration status.</p>
               <Button type="button" variant="outline" onClick={() => void load()}>
                 Retry status
               </Button>

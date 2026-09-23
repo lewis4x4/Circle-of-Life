@@ -328,7 +328,7 @@ export default function BillingConcessionsPage() {
           <div className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm relative overflow-hidden transition-all">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4 flex items-center justify-between">
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mt-1">Resident Detail</h3>
-              <p className="text-[10px] font-mono tracking-widest text-slate-400 mt-1 uppercase"><FileSpreadsheet className="inline h-3 w-3 mr-1" />Management visibility</p>
+              <p className="text-[10px] font-mono tracking-widest text-muted-foreground mt-1 uppercase"><FileSpreadsheet className="inline h-3 w-3 mr-1" />Management visibility</p>
             </div>
             <MotionList className="space-y-3">
               {rows.map((row) => (
@@ -339,7 +339,7 @@ export default function BillingConcessionsPage() {
                         <div className="rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"><UserCircle className="h-5 w-5" /></div>
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white">{row.residentName}</p>
-                          <p className="text-xs text-slate-500">{formatConcessionsDateDisplay(row.effectiveDate)} · {roomLabel(row)}</p>
+                          <p className="text-xs text-muted-foreground">{formatConcessionsDateDisplay(row.effectiveDate)} · {roomLabel(row)}</p>
                         </div>
                       </div>
                       <Badge variant="outline" className="w-fit">
@@ -375,7 +375,7 @@ export default function BillingConcessionsPage() {
                         </>
                       )}
                       <div>
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Reason</p>
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Reason</p>
                         <p className="text-sm text-slate-700 dark:text-slate-300">{row.kind === "payer_split" ? "Not a concession" : reasonLabel(row.reason)}</p>
                         {row.expiresOn ? <p className="text-xs text-amber-600 dark:text-amber-300">Expires {formatConcessionsDateDisplay(row.expiresOn)}</p> : null}
                       </div>
@@ -407,7 +407,7 @@ function MetricCard({ label, value, tone }: { label: string; value: number; tone
 function MoneyCell({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
       <p className="font-mono text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">{billingCurrency.format(value / 100)}</p>
     </div>
   );

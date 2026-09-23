@@ -171,7 +171,7 @@ export default function AdminQualityHubPage() {
           <V2Card className="border-slate-500/20 shadow-[inset_0_0_15px_rgba(100,116,139,0.05)]" hoverColor="slate">
             <MonolithicWatermark value={hubLoading ? 0 : pbjRows.length} className="text-muted-foreground/10 opacity-50" />
             <div className="relative z-10 flex flex-col h-full justify-between">
-              <h3 className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
+              <h3 className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground">
                  PBJ Batches
               </h3>
               <p className="text-4xl font-mono tracking-tighter text-slate-600 dark:text-slate-400 pb-1">{qualityHubMetricValue(pbjRows.length, metricCtx)}</p>
@@ -314,7 +314,7 @@ export default function AdminQualityHubPage() {
         </>
       ) : null}
 
-      <div className="flex flex-wrap gap-2 text-sm text-slate-500 font-mono tracking-wider uppercase mt-4">
+      <div className="flex flex-wrap gap-2 text-sm text-muted-foreground font-mono tracking-wider uppercase mt-4">
         <span>Dashboard:</span>
         <Link href={homeHref} className={cn(buttonVariants({ variant: "link", size: "sm" }), "h-auto p-0 text-[10px] text-primary leading-none pb-0.5")}>
           Back to dashboard

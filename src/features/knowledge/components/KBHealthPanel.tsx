@@ -11,7 +11,7 @@ interface KBHealthPanelProps {
 
 export function KBHealthPanel({ health, loading }: KBHealthPanelProps) {
   if (loading || !health) {
-    return <div className="text-sm text-slate-400 py-8 text-center">Loading health metrics…</div>;
+    return <div className="text-sm text-muted-foreground py-8 text-center">Loading health metrics…</div>;
   }
 
   const cards = [
@@ -41,7 +41,7 @@ export function KBHealthPanel({ health, loading }: KBHealthPanelProps) {
       value: health.failedIngestions,
       sub: "need attention",
       icon: AlertTriangle,
-      color: health.failedIngestions > 0 ? "text-red-500" : "text-slate-400",
+      color: health.failedIngestions > 0 ? "text-red-500" : "text-muted-foreground",
     },
   ];
 
@@ -53,10 +53,10 @@ export function KBHealthPanel({ health, loading }: KBHealthPanelProps) {
           <div key={card.label} className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
             <div className="flex items-center gap-2 mb-2">
               <Icon className={`w-4 h-4 ${card.color}`} />
-              <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">{card.label}</span>
+              <span className="text-xs font-medium text-muted-foreground">{card.label}</span>
             </div>
             <div className="text-2xl font-semibold text-slate-800 dark:text-zinc-100">{card.value}</div>
-            <div className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5">{card.sub}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{card.sub}</div>
           </div>
         );
       })}
