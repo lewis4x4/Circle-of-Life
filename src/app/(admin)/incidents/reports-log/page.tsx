@@ -18,6 +18,7 @@ import {
   AdminOperationalListPanel,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -138,10 +139,7 @@ export default function IncidentReportsLogPage() {
       </div>
 
       {!facilityId ? (
-        <AdminEmptyState
-          title="Choose a facility"
-          description="The reports log is kept per building. Pick a facility in the header to see its month."
-        />
+        <FacilityGateNotice reason="The reports log is kept per building, one month at a time." />
       ) : (
         <AdminOperationalListPanel
           toolbar={
