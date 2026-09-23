@@ -22,6 +22,13 @@ describe("formatIncidentOccurredAt", () => {
     expect(formatted).not.toBe(INCIDENTS_NO_DATE_POSTED_COPY);
   });
 
+  it("renders in the facility zone whatever zone the runtime is in (COL-659)", () => {
+    // 02:05 UTC on Sep 16 is 10:05 PM on Sep 15 in Florida. The server used to
+    // print "Sep 16, 2:05 AM" and the browser "Sep 15, 10:05 PM".
+    expect(formatIncidentOccurredAt("2026-09-16T02:05:00+00:00")).toBe("Sep 15, 10:05 PM");
+    expect(formatIncidentFollowupDue("2026-09-16T02:05:00+00:00")).toBe("Sep 15, 10:05 PM");
+  });
+
   it("names the gap when occurred-at is missing or blank", () => {
     expect(formatIncidentOccurredAt(null)).toBe(INCIDENTS_NO_DATE_POSTED_COPY);
     expect(formatIncidentOccurredAt(undefined)).toBe(INCIDENTS_NO_DATE_POSTED_COPY);
