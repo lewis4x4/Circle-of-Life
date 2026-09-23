@@ -46,6 +46,8 @@ const BASELINE: Record<string, number> = {
   "src/lib/navigation/staff-launch-hidden.ts": 1,
   "src/lib/operations/dietary-service-source-map.ts": 4,
   "src/lib/resident-intake/fact-registry.ts": 19,
+  // A route name in a comment ("/dietary" is the Cook app), not a role.
+  "src/lib/routing/legacy-redirects.ts": 1,
   "src/lib/search-tools.ts": 2,
   "src/lib/staff/load-staff.ts": 5,
   "src/lib/stand-up/model.ts": 4,
