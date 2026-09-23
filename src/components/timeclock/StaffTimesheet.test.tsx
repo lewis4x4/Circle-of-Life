@@ -101,6 +101,27 @@ describe("StaffTimesheet", () => {
     expect(tables.inserts[0]).toMatchObject({ correction_type: "acknowledge", exception_key: "offline_capture:p2", reason: "manager_verified_time" });
   });
 
+  it("requires an explicit meal-end time instead of acknowledging an unfinished meal", async () => {
+    tables.time_punches = [
+      { id: "p1", staff_id: STAFF_A, facility_id: FACILITY, punch_type: "in", punched_at: "2026-11-02T12:00:00Z", flags: [] },
+      { id: "meal", staff_id: STAFF_A, facility_id: FACILITY, punch_type: "meal_start", punched_at: "2026-11-02T16:00:00Z", flags: [] },
+      { id: "out", staff_id: STAFF_A, facility_id: FACILITY, punch_type: "out", punched_at: "2026-11-02T20:00:00Z", flags: [] },
+    ];
+    render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
+    await screen.findByRole("heading", { name: "Test Staff A" });
+    expect(screen.queryByRole("button", { name: "Acknowledge" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Add meal end" }));
+    expect(screen.getByLabelText("Punch type")).toHaveValue("meal_end");
+    expect(screen.getByLabelText("Punch time (Eastern)")).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    expect(tables.inserts).toHaveLength(0);
+    fireEvent.change(screen.getByLabelText("Punch time (Eastern)"), { target: { value: "2026-11-02T12:00" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(tables.inserts).toHaveLength(1));
+    expect(tables.inserts[0]).toMatchObject({ correction_type: "add_punch", punch_type: "meal_end", corrected_punched_at: "2026-11-02T17:00:00.000Z" });
+    await waitFor(() => expect(screen.getByRole("article", { name: "Mon, Nov 2" })).toHaveTextContent("7:00 worked"));
+  });
+
   it("keeps a visiting staff member's missing clock-out correction at the worked facility", async () => {
     tables.staff[0]!.facility_id = "home-facility";
     tables.time_punches = [];
