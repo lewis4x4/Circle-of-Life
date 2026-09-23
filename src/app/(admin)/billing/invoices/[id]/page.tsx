@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -75,9 +76,7 @@ type QueryResult<T> = { data: T | null; error: QueryError | null };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
 function formatDate(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 export default function AdminInvoiceDetailPage() {

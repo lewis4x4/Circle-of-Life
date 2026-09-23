@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -82,14 +83,7 @@ type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 const MILEAGE_APPROVER_ROLES = new Set(["owner", "org_admin", "facility_admin", "med_tech"]);
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatShortDateTime(iso, { fallback: iso });
 }
 
 function formatUsd(cents: number): string {

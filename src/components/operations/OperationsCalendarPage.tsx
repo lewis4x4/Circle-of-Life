@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react";
@@ -236,7 +237,7 @@ export function OperationsCalendarPage() {
                       {task.assigned_shift
                         ? OPERATION_SHIFT_LABELS[task.assigned_shift] || task.assigned_shift
                         : "Facility-wide"}
-                      {task.due_at ? ` · Due ${new Date(task.due_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
+                      {task.due_at ? ` · Due ${formatDisplayTime(task.due_at)}` : ""}
                     </p>
                     <p>Assigned to: {task.assigned_to_name || "Unassigned"}</p>
                   </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Loader2 } from "lucide-react";
@@ -185,8 +186,5 @@ export default function CaregiverSchedulesPage() {
 }
 
 function formatShiftDate(d: string): string {
-  const [y, m, day] = d.split("-").map(Number);
-  if (!y || !m || !day) return d;
-  const dt = new Date(y, m - 1, day);
-  return dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  return formatDateTimeWith(d.slice(0, 10), { weekday: "short", month: "short", day: "numeric", year: "numeric" }, { fallback: d });
 }

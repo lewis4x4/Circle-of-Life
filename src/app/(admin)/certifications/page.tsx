@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -599,9 +600,7 @@ function deriveTimelineUi(c: Pick<SupabaseCertRow, "status" | "expiration_date">
 }
 
 function formatIsoDate(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 /**

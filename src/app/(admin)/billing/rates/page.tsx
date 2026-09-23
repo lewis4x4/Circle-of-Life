@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Percent } from "lucide-react";
@@ -91,9 +92,7 @@ const RATE_SURCHARGE_FIELDS: ReadonlyArray<[label: string, get: (row: RateRow) =
 ];
 
 function formatDate(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 function buildFacilityRates(

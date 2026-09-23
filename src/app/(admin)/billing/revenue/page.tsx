@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, TrendingUp } from "lucide-react";
 
@@ -35,10 +36,7 @@ function monthKey(isoDate: string): string {
 }
 
 function monthLabel(key: string): string {
-  const [y, m] = key.split("-").map(Number);
-  const d = new Date(y, (m ?? 1) - 1, 1);
-  if (Number.isNaN(d.getTime())) return key;
-  return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(d);
+  return formatDateTimeWith(`${key.slice(0, 7)}-01`, { month: "short", year: "numeric" }, { fallback: key });
 }
 
 export default function AdminRevenuePage() {

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -628,13 +629,7 @@ export function AuditTab({ facilityId, suspectedSurfaceSignals, metricsSummary }
                         onClick={() => setExpanded(expandedRow ? null : entry.id)}
                       >
                         <td className="px-3 py-1.5 align-middle tabular-nums">
-                          {new Date(entry.timestamp).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                          })}
+                          {formatDateTimeWith(entry.timestamp, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                         </td>
                         <td className="max-w-[10rem] truncate px-3 py-1.5 align-middle text-foreground" title={entry.changed_by_display}>
                           {entry.changed_by_display}

@@ -147,7 +147,7 @@ function buildExecutiveKpiPrintHtml(props: {
   kpi: ExecKpiPayload;
 }): string {
   const { reportName, templateLabel, scopeLabel, kpi } = props;
-  const generatedAt = new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const generatedAt = formatDisplayDateTime(new Date());
   const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
   const rows: { label: string; value: string }[] = [
     { label: "Occupied residents", value: String(kpi.census.occupiedResidents) },

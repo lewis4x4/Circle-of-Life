@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { useState } from "react";
 import { Loader2, UserCheck, UserPlus } from "lucide-react";
 
@@ -21,9 +22,7 @@ export type ResidentMatchReviewProps = {
 
 function dateLabel(value: string | null): string {
   if (!value) return "DOB not posted";
-  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
+  return formatDisplayDate(value.slice(0, 10), { fallback: value });
 }
 
 export function ResidentMatchReview({ residentId, residentName, candidates, busyAction, onCommand }: ResidentMatchReviewProps) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React from "react";
 import { Calendar, AlertCircle } from "lucide-react";
 
@@ -39,11 +40,7 @@ export function ExpirationBadge({ expirationDate, yellowDays = 90, redDays = 30 
     icon = <Calendar className="h-3 w-3" />;
   }
 
-  const formatDate = new Date(expirationDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const formatDate = formatDisplayDate(expirationDate);
 
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${bgClass}`}>
