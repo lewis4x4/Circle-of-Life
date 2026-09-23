@@ -12,6 +12,7 @@ import {
   formatShiftCurrentResidentCompactName,
   formatShiftCurrentResidentName,
   formatShiftCurrentRoomLabel,
+  formatShiftCurrentWindowLabel,
 } from "@/lib/med-tech/shift-current-display-copy";
 
 type QueryRow = Record<string, unknown>;
@@ -254,16 +255,17 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
         text: t.summary as string,
       }));
 
-      const startH = fmtTime(shift.shift_start as string);
-      const endH = fmtTime(shift.shift_end as string);
-      const isPM = new Date(shift.shift_start as string).getHours() >= 12;
 
       const shiftType = currentShiftForTimezone("America/New_York");
       setData({
         userId: user.id,
         shift: {
           techName: fullName, techInitials: initials,
-          shiftLabel: `${isPM ? "PM" : "AM"} · ${startH} - ${endH}`,
+          shiftLabel: formatShiftCurrentWindowLabel(
+            shift.shift_start as string,
+            (shift.shift_end as string | null) ?? null,
+            fmtTime,
+          ),
           unitLabel: facilityLabel,
           assignedCount: resItems.length,
           elapsedLabel: elapsed(shift.clocked_in_at as string | null),
