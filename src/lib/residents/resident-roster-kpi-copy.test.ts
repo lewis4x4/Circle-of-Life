@@ -35,8 +35,8 @@ describe("residentRosterFacilityScopeReady", () => {
 });
 
 describe("residentRosterOpenBedsEmptyCopy", () => {
-  it("prompts for facility scope when none is selected", () => {
-    expect(residentRosterOpenBedsEmptyCopy(null, null)).toBe("Select a facility to load capacity");
+  it("says capacity is per building under All facilities, without gate copy in the value slot", () => {
+    expect(residentRosterOpenBedsEmptyCopy(null, null)).toBe("Counted per building");
   });
 
   it("names a metrics load gap when scope is set but metrics failed", () => {
@@ -65,7 +65,7 @@ describe("residentRosterOpenBedsEmptyCopy", () => {
 describe("residentRosterCarePlanReviewsEmptyCopy", () => {
   it("prompts for facility scope when none is selected", () => {
     expect(residentRosterCarePlanReviewsEmptyCopy(null, null)).toBe(
-      "Select a facility to load reviews",
+      "Counted per building",
     );
   });
 
@@ -108,7 +108,7 @@ describe("rosterOpenBedsLoadedFootnote", () => {
 describe("residentRosterKpiStripHelperLine", () => {
   it("prompts for header facility scope when none is selected", () => {
     expect(residentRosterKpiStripHelperLine(null, false, false)).toBe(
-      "Select a facility in the header — capacity and care plan figures load per site.",
+      "Unoccupied beds and care plan reviews are counted per building. The roster below covers all your facilities.",
     );
   });
 
