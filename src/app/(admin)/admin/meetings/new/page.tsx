@@ -132,7 +132,7 @@ export default function AdminNewMeetingPage() {
   ]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 max-w-2xl">
         <header className="mb-2 flex items-end justify-between gap-4">
           <div>

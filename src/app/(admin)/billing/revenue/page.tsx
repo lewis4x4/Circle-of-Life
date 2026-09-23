@@ -102,7 +102,7 @@ export default function AdminRevenuePage() {
   const grand = useMemo(() => byMonth.reduce((acc, r) => acc + r.cents, 0), [byMonth]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2">
         <BillingHubNav />

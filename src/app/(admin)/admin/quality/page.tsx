@@ -105,7 +105,7 @@ export default function AdminQualityHubPage() {
   const metricCtx = { noOrganization, loading: hubLoading };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
+    <div className="relative w-full pb-12">
       <div className="relative z-10 space-y-8 max-w-6xl mx-auto">
       <PageHeader title="Measure catalog" />
 
