@@ -5,6 +5,14 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
 
+/**
+ * Receivable statuses — a Deno mirror of RECEIVABLE_INVOICE_STATUSES in
+ * `src/lib/billing/receivables.ts` (COL-650/COL-667). Open AR counts sent,
+ * partly paid and overdue invoices only; drafts are not billed yet.
+ * `receivables.test.ts` fails if the two lists drift.
+ */
+export const EDGE_RECEIVABLE_INVOICE_STATUSES = ["sent", "partial", "overdue"] as const;
+
 export type ExecDashboardMetricCode =
   | "occ_pt"
   | "rev_mtd"
@@ -328,6 +336,7 @@ export async function computeKpiForFacilityIds(
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .is("voided_at", null)
+    .in("status", [...EDGE_RECEIVABLE_INVOICE_STATUSES])
     .gt("balance_due", 0);
 
   let invoicesMtdQuery = supabase
@@ -717,6 +726,7 @@ export async function computeKpiBundleForFacilityIds(
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .is("voided_at", null)
+    .in("status", [...EDGE_RECEIVABLE_INVOICE_STATUSES])
     .gt("balance_due", 0)
     .in("facility_id", facilityIds);
 

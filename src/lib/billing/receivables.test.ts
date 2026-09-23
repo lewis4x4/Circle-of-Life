@@ -69,6 +69,15 @@ describe("receivables definition (COL-650)", () => {
   });
 });
 
+describe("Edge mirror of the receivable definition (COL-667)", () => {
+  it("keeps supabase/functions/_shared/exec-kpi-metrics.ts on the same statuses", () => {
+    const edge = readFileSync(path.join(process.cwd(), "supabase/functions/_shared/exec-kpi-metrics.ts"), "utf8");
+    const match = edge.match(/EDGE_RECEIVABLE_INVOICE_STATUSES = (\[[^\]]*\])/);
+    expect(match).not.toBeNull();
+    expect(JSON.parse(match![1])).toEqual([...RECEIVABLE_INVOICE_STATUSES]);
+  });
+});
+
 /**
  * One definition, enforced: no money page may carry its own invoice-status list.
  * A literal array or Set naming "sent" together with "partial" or "overdue" is a

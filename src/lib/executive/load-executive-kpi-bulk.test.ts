@@ -25,3 +25,10 @@ describe("loadExecutiveKpiBulk date windows", () => {
     expect(window.mtdStart).toBe("2026-08-01");
   });
 });
+
+describe("loadExecutiveKpiBulk AR definition (COL-667)", () => {
+  it("reads AR through the shared receivable summary, not a raw balance sum", () => {
+    expect(bulkSource).toContain("summarizeExecutiveFinancial");
+    expect(bulkSource).not.toMatch(/reduce\([^)]*balance_due/);
+  });
+});
