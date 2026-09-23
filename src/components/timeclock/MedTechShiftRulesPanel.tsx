@@ -24,6 +24,7 @@ import {
   type MedTechShiftOpenTrigger,
   type MedTechShiftRule,
 } from "@/lib/med-tech/shift-rules";
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { createClient } from "@/lib/supabase/client";
 
 const FIELD = "mt-1 block h-9 rounded-[8px] border border-border bg-background px-2 text-sm";
@@ -39,7 +40,7 @@ type Draft = {
 const EMPTY_DRAFT: Draft = { scope: "", open: "", close: "", effectiveFrom: "", reason: "" };
 
 function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  return formatDisplayDateTime(iso);
 }
 
 export type MedTechShiftRulesPanelProps = {
