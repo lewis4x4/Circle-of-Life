@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { formatOperationsAssetsCardDescription } from "@/lib/operations/operations-display-copy";
 import { cn } from "@/lib/utils";
 
 type AssetRow = {
@@ -35,7 +36,11 @@ type VendorOption = {
 
 export default function OperationsAssetsPage() {
   const router = useRouter();
-  const { selectedFacilityId } = useFacilityStore();
+  const { selectedFacilityId, availableFacilities } = useFacilityStore();
+  const scopedFacilityName = useMemo(() => {
+    if (!selectedFacilityId) return null;
+    return availableFacilities.find((f) => f.id === selectedFacilityId)?.name ?? null;
+  }, [availableFacilities, selectedFacilityId]);
   const [assets, setAssets] = useState<AssetRow[]>([]);
   const [vendors, setVendors] = useState<VendorOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,7 +228,7 @@ export default function OperationsAssetsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Assets</CardTitle>
-          <CardDescription>{loading ? "Loading asset register..." : `${assets.length} assets in the selected facility`}</CardDescription>
+          <CardDescription>{loading ? "Loading asset register..." : formatOperationsAssetsCardDescription(assets.length, scopedFacilityName)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {assets.map((asset) => (
