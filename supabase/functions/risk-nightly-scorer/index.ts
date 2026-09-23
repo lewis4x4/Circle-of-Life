@@ -19,6 +19,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
+import { SITE_AUTHORITY_CLASSES } from "../_shared/operation-authority.ts";
 import { judgeDue } from "../../../src/lib/operations/schedule-evaluator.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -466,7 +467,7 @@ Deno.serve(async (req) => {
       admin
         .from("operation_automation_tasks")
         .select("facility_id, status, due_at, license_threatening")
-        .eq("authority_class", "facility")
+        .in("authority_class", SITE_AUTHORITY_CLASSES)
         .not("subject_id", "is", null)
         .or("completion_evidence_paths.is.null,completion_evidence_paths.eq.{}")
         .eq("organization_id", org.id)

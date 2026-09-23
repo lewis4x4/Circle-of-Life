@@ -35,6 +35,27 @@ export async function hasLinkedStaffRecord(
   return (data ?? []).length > 0;
 }
 
+/**
+ * Family-side link: an active (unrevoked) family_resident_links row. Same
+ * null-on-failure contract as hasLinkedStaffRecord.
+ */
+export async function hasLinkedResident(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<boolean | null> {
+  const { data, error } = await supabase
+    .from("family_resident_links")
+    .select("resident_id")
+    .eq("user_id", userId)
+    .is("revoked_at", null)
+    .limit(1);
+  if (error) {
+    console.error("[account-link] family link check failed", error);
+    return null;
+  }
+  return (data ?? []).length > 0;
+}
+
 export async function loadAccountLinkContact(
   supabase: SupabaseClient<Database>,
   facilityId: string | null,

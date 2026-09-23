@@ -47,7 +47,7 @@ export function onboardingShellAccessRedirect(request: NextRequest, user: AuthCl
     role === "coordinator" ||
     role === "maintenance_role" ||
     role === "broker" ||
-    role === "marketing"
+    role === "recruiter"
   ) {
     return NextResponse.redirect(new URL(getDashboardRouteForRole(role), nextUrl.origin));
   }

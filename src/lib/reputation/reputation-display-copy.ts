@@ -31,3 +31,12 @@ export function formatReputationListingLabel(label: string | null | undefined): 
   }
   return trimmed;
 }
+
+/** Hub action-card subtitle — names the facility when the map has it. */
+export function formatReputationHubCardSubtitle(
+  facilityName: string | null | undefined,
+): string {
+  const trimmed = facilityName?.trim();
+  if (trimmed) return `Connected listings and reply workflow for ${trimmed}.`;
+  return "Connected listings and reply workflow for this facility.";
+}

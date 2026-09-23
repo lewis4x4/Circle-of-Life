@@ -71,6 +71,7 @@ import {
 import { presenceHistoryLines, presenceSinceSummary } from "@/lib/residents/resident-presence-history";
 import { dnhLabel, feedingTubeLabel, type ResidentRecordField } from "@/lib/residents/resident-record-edit";
 import { ResidentRecordFactDialog } from "@/components/residents/ResidentRecordFactDialog";
+import { ResidentRecordHistory } from "@/components/residents/ResidentRecordHistory";
 import { ChangeBedAction } from "@/components/residents/ChangeBedAction";
 import { residentIntakeCreateHref } from "@/components/resident-intake/ResidentIntakeLinks";
 import {
@@ -356,6 +357,8 @@ export function ResidentDetailOverviewClient({
   const [showAllTasks, setShowAllTasks] = useState(false);
   // COL-597: the in-place editor for one field, and Change bed opened from the unit gap.
   const [editorField, setEditorField] = useState<ResidentRecordField | null>(null);
+  // COL-627: a save on the record re-reads its history, which the overview load does not carry.
+  const [recordHistoryToken, setRecordHistoryToken] = useState(0);
   const [bedGapOpen, setBedGapOpen] = useState(false);
   const benefitsTasks = useResidentBenefitsTasks(residentId);
 
@@ -414,6 +417,11 @@ export function ResidentDetailOverviewClient({
   }, [load]);
 
   const onAfterLog = useCallback(() => {
+    void load({ silent: true });
+  }, [load]);
+
+  const onAfterRecordEdit = useCallback(() => {
+    setRecordHistoryToken((token) => token + 1);
     void load({ silent: true });
   }, [load]);
 
@@ -857,6 +865,10 @@ export function ResidentDetailOverviewClient({
             <DirectiveRow label="Primary payer" value={detail.primaryPayer ?? "Not recorded"} muted={!detail.primaryPayer} />
           </div>
         </Disclosure>
+
+        <Disclosure title="Record history">
+          <ResidentRecordHistory residentId={detail.id} reloadToken={recordHistoryToken} />
+        </Disclosure>
       </section>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
@@ -1072,7 +1084,7 @@ export function ResidentDetailOverviewClient({
         field={editorField}
         detail={detail}
         onOpenChange={(open) => !open && setEditorField(null)}
-        onSaved={onAfterLog}
+        onSaved={onAfterRecordEdit}
       />
       {isPresenceStatus(detail.rawStatus) ? (
         <ChangeBedAction
