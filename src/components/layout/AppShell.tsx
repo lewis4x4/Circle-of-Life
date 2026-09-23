@@ -48,6 +48,7 @@ import { useSurveyVisitSession } from "@/hooks/useSurveyVisitSession";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { createClient } from "@/lib/supabase/client";
 import { syncSelectedFacilityCookie } from "@/lib/facilities/selected-facility-cookie";
+import { singleFacilityDefault } from "@/lib/facilities/single-facility-default";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,7 +75,6 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu/UserMenu";
 import { UserMenuSheet } from "@/components/layout/UserMenu/UserMenuSheet";
 import { LazyOverlayShells } from "@/components/layout/LazyOverlayShells";
-import { isFacilityOperatorRole } from "@/lib/auth/app-role";
 import { applyExecutiveCommandNavToItems } from "@/lib/auth/executive-nav-access";
 import { getRoleDashboardConfig, getResolvedRoleLabel } from "@/lib/auth/dashboard-routing";
 import {
@@ -394,6 +394,22 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     safeSelectedFacilityId,
   ]);
 
+  useEffect(() => {
+    if (authLoading || currentUserId == null || facilitiesLoading || facilitiesLoadFailed) return;
+    // COL-651: one accessible building is the scope. The cookie effect above
+    // then moves the server's scope and refreshes.
+    const onlyFacilityId = singleFacilityDefault(visibleFacilities, safeSelectedFacilityId);
+    if (onlyFacilityId) setSelectedFacility(onlyFacilityId);
+  }, [
+    authLoading,
+    currentUserId,
+    facilitiesLoadFailed,
+    facilitiesLoading,
+    safeSelectedFacilityId,
+    setSelectedFacility,
+    visibleFacilities,
+  ]);
+
   const handleFacilityScopeChange = useCallback(
     (facilityId: string | null) => {
       if (setSelectedFacility(facilityId) === false) return;
@@ -476,13 +492,12 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     />
   );
 
-  // COL-593: a facility operator with exactly one building gets a static chip
+  // COL-593 / COL-651: anyone with exactly one building gets a static chip
   // that reads the building's name — there is nothing to switch to, and
-  // "All facilities" is not a scope Home can render for.
+  // "All facilities" would only dead-end their facility-gated pages. The
+  // effect above defaults the scope to that building.
   const singleOperatorFacility =
-    !facilityControlLoading && isFacilityOperatorRole(appRole) && visibleFacilities.length === 1
-      ? visibleFacilities[0]
-      : null;
+    !facilityControlLoading && visibleFacilities.length === 1 ? visibleFacilities[0] : null;
 
   const renderFacilityScope = () => singleOperatorFacility ? (
     <span
