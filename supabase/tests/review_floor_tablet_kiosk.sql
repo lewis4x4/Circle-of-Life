@@ -749,4 +749,54 @@ DO $$ DECLARE r jsonb; r2 jsonb; c uuid := gen_random_uuid(); BEGIN
   IF public.timeclock_identify(pg_temp.tok('floor'), 'FA-1', NULL, '111111')->>'error' <> 'device_unknown' THEN RAISE EXCEPTION 'Floor token identified'; END IF;
 END $$;
 
+-- ---------------------------------------------------------------------------
+-- 16. Who charted it: names for staff at the caller's facilities only.
+-- ---------------------------------------------------------------------------
+DO $$ BEGIN
+  IF has_function_privilege('anon', 'public.floor_staff_display_names(uuid[])', 'EXECUTE')
+     OR has_function_privilege('service_role', 'public.floor_staff_display_names(uuid[])', 'EXECUTE')
+     OR NOT has_function_privilege('authenticated', 'public.floor_staff_display_names(uuid[])', 'EXECUTE') THEN
+    RAISE EXCEPTION 'floor_staff_display_names grants wrong';
+  END IF;
+  IF (SELECT array_agg(a.attname::text ORDER BY a.attname) FROM unnest((SELECT proargnames FROM pg_proc WHERE oid = 'public.floor_staff_display_names(uuid[])'::regprocedure)) a(attname)
+      WHERE a.attname <> 'p_staff_ids') <> ARRAY['display_name', 'staff_id'] THEN
+    RAISE EXCEPTION 'floor_staff_display_names returns more than a staff id and a name';
+  END IF;
+END $$;
+INSERT INTO public.staff(id, organization_id, facility_id, first_name, last_name, staff_role, hire_date, employment_status)
+  SELECT '00000000-0000-4000-8000-00000000f2f2', org2, fac2, 'Probe', 'Foxtrot', 'resident_aide'::public.staff_role, current_date - 100, 'active'::public.employment_status FROM fk;
+SELECT pg_temp.fk_staff(b_user, b_session) FROM fk;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; names jsonb; BEGIN
+  SELECT * INTO f FROM fk;
+  SELECT jsonb_object_agg(staff_id, display_name) INTO names
+  FROM public.floor_staff_display_names(ARRAY[f.a_staff, f.b_staff, f.n_staff, f.g_staff, '00000000-0000-4000-8000-00000000f2f2'::uuid]);
+  IF names->>f.a_staff::text <> 'Probe A.' OR names->>f.b_staff::text <> 'Probe B.' OR names->>f.n_staff::text <> 'Probe N.' THEN
+    RAISE EXCEPTION 'Same-facility names missing: %', names;
+  END IF;
+  IF names ? f.g_staff::text THEN RAISE EXCEPTION 'Another facility''s staff name visible'; END IF;
+  IF names ? '00000000-0000-4000-8000-00000000f2f2' THEN RAISE EXCEPTION 'Another organization''s staff name visible'; END IF;
+  IF (SELECT count(*) FROM public.floor_staff_display_names(array_fill(f.a_staff, ARRAY[201]))) <> 0 THEN RAISE EXCEPTION 'Name lookup not capped at 200 ids'; END IF;
+END $$;
+RESET ROLE;
+-- A live assignment to the caller's facility makes the name visible.
+INSERT INTO public.staff_facility_assignments(organization_id, staff_id, facility_id, start_date, end_date)
+  SELECT org, g_staff, facility, current_date - 1, current_date + 1 FROM fk;
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.floor_staff_display_names(ARRAY[(SELECT g_staff FROM fk)]) WHERE display_name = 'Probe G.') THEN
+    RAISE EXCEPTION 'Name of staff assigned to the caller''s facility not visible';
+  END IF;
+END $$;
+RESET ROLE;
+-- No signed-in actor, no names.
+SELECT set_config('request.jwt.claims', '{"role":"anon"}', true);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM public.floor_staff_display_names(ARRAY[(SELECT a_staff FROM fk)])) THEN RAISE EXCEPTION 'Names returned without an actor'; END IF;
+END $$;
+GRANT SELECT ON fk TO anon;
+SET LOCAL ROLE anon;
+SELECT pg_temp.fk_fail(format('SELECT * FROM public.floor_staff_display_names(ARRAY[%L::uuid])', a_staff), 'permission denied') FROM fk;
+RESET ROLE;
+
 ROLLBACK;

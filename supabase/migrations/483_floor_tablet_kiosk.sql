@@ -1754,6 +1754,43 @@ CREATE POLICY "Staff do not open a time record where the kiosk timeclock is on" 
     OR clock_out IS NOT NULL
   );
 
+-- ---------------------------------------------------------------------------
+-- 10. Who charted it: display names for staff at the caller's facilities
+-- ---------------------------------------------------------------------------
+-- Migration 475 lets a med tech read only their own staff row, so on a shared
+-- tablet the next person cannot see who charted a check. This returns the
+-- "Ashley W." name and nothing else -- no user id, contact data, role or status
+-- -- for staff in the caller's organization whose home facility, or a live
+-- dated assignment, is one the caller can access. At most 200 ids per call.
+CREATE FUNCTION public.floor_staff_display_names(p_staff_ids uuid[])
+RETURNS TABLE (staff_id uuid, display_name text)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT s.id, haven.floor_display_name(s.first_name, s.preferred_name, s.last_name)
+  FROM public.staff AS s
+  WHERE pg_catalog.cardinality(p_staff_ids) BETWEEN 1 AND 200
+    AND s.id = ANY (p_staff_ids)
+    AND s.organization_id = haven.organization_id()
+    AND haven.app_role() IS DISTINCT FROM 'family'
+    AND (
+      s.facility_id IN (SELECT haven.accessible_facility_ids())
+      OR EXISTS (
+        SELECT 1 FROM public.staff_facility_assignments AS a
+        WHERE a.staff_id = s.id AND a.organization_id = s.organization_id AND a.deleted_at IS NULL
+          AND a.facility_id IN (SELECT haven.accessible_facility_ids())
+          AND a.start_date <= ((pg_catalog.clock_timestamp() AT TIME ZONE haven.timeclock_facility_timezone(a.facility_id))::date)
+          AND (a.end_date IS NULL OR a.end_date >= ((pg_catalog.clock_timestamp() AT TIME ZONE haven.timeclock_facility_timezone(a.facility_id))::date))
+      )
+    )
+$$;
+REVOKE ALL ON FUNCTION public.floor_staff_display_names(uuid[]) FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.floor_staff_display_names(uuid[]) TO authenticated;
+COMMENT ON FUNCTION public.floor_staff_display_names(uuid[]) IS
+  'Display names ("Ashley W.") for up to 200 staff ids, limited to the caller''s organization and to staff whose home facility or live assignment is one the caller can access; returns nothing else about them. COL-37 ruling: definer required -- migration 475 restricts a med tech to their own staff row, so a shared floor tablet could not name who charted a check; the body scopes by haven.organization_id(), haven.accessible_facility_ids() and excludes family, and projects only the display name.';
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;
 
@@ -1765,5 +1802,6 @@ COMMIT;
 -- timeclock_create_enrollment_code(uuid), 468's assert_rounding_service_actor
 -- and 327's current_authorized_actor; restore 412's sign_out_method check and
 -- INSERT policy; drop the two restrictive time_records policies and
--- haven.timeclock_enabled_for; drop the new columns. floor_unlocks and kiosk visitor rows are
+-- haven.timeclock_enabled_for; DROP FUNCTION public.floor_staff_display_names(uuid[]);
+-- drop the new columns. floor_unlocks and kiosk visitor rows are
 -- attribution evidence: keep them.

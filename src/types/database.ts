@@ -21678,6 +21678,13 @@ export type Database = {
         Args: { p_staff_ids: string[] }
         Returns: Json
       }
+      floor_staff_display_names: {
+        Args: { p_staff_ids: string[] }
+        Returns: {
+          display_name: string
+          staff_id: string
+        }[]
+      }
       floor_roster: {
         Args: { p_device_token: string }
         Returns: Json
