@@ -28,6 +28,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const ET_FMT = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -39,7 +40,7 @@ const ET_FMT = new Intl.DateTimeFormat("en-US", {
 });
 
 function categoryLabel(id: string): string {
-  return LETTER_CATEGORIES.find((c) => c.id === id)?.label ?? id.replace(/_/g, " ");
+  return LETTER_CATEGORIES.find((c) => c.id === id)?.label ?? enumLabel(id);
 }
 
 export default function AdminLettersHubPage() {

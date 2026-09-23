@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { MotionCard } from "@/components/ui/motion-card";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type LocalInboxItem = {
   id: string;
@@ -623,7 +624,7 @@ export function AdminDashboardPageClient({
             Facility priorities
           </p>
           <h2 className="mt-0.5 truncate text-[13px] font-medium text-foreground">
-            {adminConfig.firstScreenPriority.join(" · ").replace(/_/g, " ")}
+            {enumLabel(adminConfig.firstScreenPriority.join(" · "))}
           </h2>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -632,7 +633,7 @@ export function AdminDashboardPageClient({
               key={lane}
               className="inline-flex h-6 items-center rounded border border-border/60 bg-secondary/60 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
             >
-              {lane.replace(/_/g, " ")}
+              {enumLabel(lane)}
             </span>
           ))}
         </div>

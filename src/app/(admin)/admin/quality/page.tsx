@@ -36,6 +36,7 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export default function AdminQualityHubPage() {
   const { selectedFacilityId } = useFacilityStore();
@@ -300,7 +301,7 @@ export default function AdminQualityHubPage() {
                 <MotionItem key={p.id}>
                   <TableRow>
                     <span className="flex-[2] min-w-0 text-[12px] font-mono text-foreground tabular-nums truncate">{p.period_start} → {p.period_end}</span>
-                    <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{p.status.replace(/_/g, " ")}</span>
+                    <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{enumLabel(p.status)}</span>
                     <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{formatQualityHubPbjRowCount(p.row_count)}</span>
                     <span className="w-[140px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
                       {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}

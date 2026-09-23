@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canApprovePurchaseOrder } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type PoRow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type LineRow = Database["public"]["Tables"]["po_line_items"]["Row"];
@@ -114,7 +115,7 @@ export default function PurchaseOrderDetailPage() {
         <>
           <RecordDetailHeader
             title={po.po_number}
-            subtitle={po.status.replace(/_/g, " ")}
+            subtitle={enumLabel(po.status)}
             backLink={{ label: "Back to purchase orders", href: "/admin/vendors/purchase-orders" }}
           />
 

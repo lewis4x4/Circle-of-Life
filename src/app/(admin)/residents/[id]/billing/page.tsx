@@ -21,6 +21,7 @@ import {
   residentBillingMedicaidSplitLine,
 } from "@/lib/billing/resident-billing-display-copy";
 import { BillingInvoiceLedger, PayerTypeBadge, billingCurrency, mapDbPayerTypeToUi } from "../../../billing/billing-invoice-ledger";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type SupabaseResident = {
   id: string;
@@ -141,7 +142,7 @@ function careForAcuity(schedule: RateSchedule | null, acuity: string | null): nu
 }
 
 function reasonLabel(reason: string): string {
-  return CONCESSION_REASONS.find(([value]) => value === reason)?.[1] ?? reason.replace(/_/g, " ");
+  return CONCESSION_REASONS.find(([value]) => value === reason)?.[1] ?? enumLabel(reason);
 }
 
 export default function ResidentBillingPage() {

@@ -33,9 +33,10 @@ import {
 import { buildMorningHuddlePrintHtml } from "@/lib/office/morning-huddle-print";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function humanize(value: string): string {
-  return value.replace(/_/g, " ");
+  return enumLabel(value);
 }
 
 function formatEtTime(iso: string): string {

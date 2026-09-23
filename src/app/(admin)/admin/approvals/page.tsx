@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type SwapRow = Database["public"]["Tables"]["shift_swap_requests"]["Row"];
 type TimeRecordRow = Database["public"]["Tables"]["time_records"]["Row"];
@@ -595,7 +596,7 @@ export default function AdminApprovalsInboxPage() {
             </div>
             {!canApproveMileage && appRole !== null ? (
               <p className="text-sm text-warning rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3">
-                Your role ({appRole.replace(/_/g, " ")}) can view mileage rows; approval is limited to
+                Your role ({enumLabel(appRole)}) can view mileage rows; approval is limited to
                 owner, org admin, facility admin, and nurse.
               </p>
             ) : null}

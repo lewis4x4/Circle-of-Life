@@ -18,6 +18,7 @@ import {
   formatFacilityTimestampEt,
   utcIsoToFacilityDatetimeLocal,
 } from "@/lib/facility-wall-clock";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type Choice = { value: string; label: string };
 export type Field = {
@@ -39,7 +40,7 @@ export type Field = {
 export const fieldClass =
   "min-h-11 w-full rounded-[var(--radius)] border border-input bg-background px-3 py-2 text-sm focus-visible:outline-ring";
 export function label(value: string) {
-  return value.replace(/_/g, " ").replace(/^./, (s) => s.toUpperCase());
+  return enumLabel(value).replace(/^./, (s) => s.toUpperCase());
 }
 const dateOnly = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 /** Calendar dates read as "Sep 21, 2026"; timestamps read in Eastern time. Renewal work spans years, so the year always shows. */

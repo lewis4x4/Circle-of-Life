@@ -42,14 +42,14 @@ const ACRONYMS: Record<string, string> = {
   uti: "UTI",
 };
 
-export type EnumLabelCase = "sentence" | "title";
+export type EnumLabelCase = "sentence" | "title" | "lower";
 
 export type EnumLabelOptions = {
   /** Exact wording for values whose label is not their spelling. Keys are matched case-insensitively. */
   overrides?: Readonly<Record<string, string>>;
   /** Returned for null, undefined or blank. */
   empty?: string;
-  /** Sentence case (Quiet Operator default) or Title Case for proper-noun-like names. */
+  /** Sentence case (Quiet Operator default), Title Case for proper-noun-like names, or lower case inside a sentence. */
   case?: EnumLabelCase;
 };
 
@@ -68,7 +68,8 @@ export function enumLabel(value: string | null | undefined, options: EnumLabelOp
 
   const tokens = key.split(/[\s_-]+/).filter(Boolean);
   const title = options.case === "title";
-  return tokens.map((token, index) => word(token, title || index === 0)).join(" ");
+  const lower = options.case === "lower";
+  return tokens.map((token, index) => word(token, !lower && (title || index === 0))).join(" ");
 }
 
 /** `{ value, label }` pairs for a select, in the order given. */

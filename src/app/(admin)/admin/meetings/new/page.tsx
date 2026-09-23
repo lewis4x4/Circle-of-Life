@@ -18,6 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RawTemplate = Omit<MeetingTemplateRow, "default_agenda"> & { default_agenda: unknown };
 
@@ -179,7 +180,7 @@ export default function AdminNewMeetingPage() {
                 <option value="">No template — blank meeting</option>
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.cadence.replace(/_/g, " ")})
+                    {t.name} ({enumLabel(t.cadence)})
                   </option>
                 ))}
               </select>

@@ -32,6 +32,7 @@ import {
   RecordDetailHeader,
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
+import { enumLabel } from "@/lib/display/enum-label";
 type ShiftAssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"];
 
@@ -395,7 +396,7 @@ function ScheduleStatusBadge({ status }: { status: string }) {
 }
 
 function AssignmentStatusBadge({ status }: { status: string }) {
-  const label = status.replace(/_/g, " ");
+  const label = enumLabel(status);
   return (
     <Badge variant="secondary" className="font-mono text-[9px] uppercase tracking-wider">
       {label}

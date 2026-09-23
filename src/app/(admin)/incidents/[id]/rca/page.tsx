@@ -19,6 +19,7 @@ import {
   RecordDetailSection,
 } from "@/design-system/components/record-detail";
 import { VoiceNoteButton } from "@/components/care-events/admin/VoiceNoteButton";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const STORAGE_PREFIX = "haven-rca-draft-v1:";
 
@@ -714,7 +715,7 @@ export default function AdminIncidentRcaPage() {
           </p>
           <p>
             <span className="text-muted-foreground">Category:</span>{" "}
-            <span className="text-foreground">{incident.category.replace(/_/g, " ")}</span>
+            <span className="text-foreground">{enumLabel(incident.category)}</span>
           </p>
           <p className="whitespace-pre-wrap">{incident.description}</p>
         </div>

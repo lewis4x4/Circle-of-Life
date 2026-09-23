@@ -26,6 +26,7 @@ import {
   formatStaffDetailRateCents,
   formatStaffDetailTerminationDate,
 } from "@/lib/staff/staff-detail-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const FIELD_LABEL = "text-xs font-medium text-muted-foreground";
 
@@ -386,7 +387,7 @@ export function StaffProfileSections({
         view={
           <div className="space-y-4 text-sm">
             <DetailRow label="Hire date" value={formatStaffDetailHireDate(staff.hire_date)} />
-            <DetailRow label="Status" value={staff.employment_status.replace(/_/g, " ")} />
+            <DetailRow label="Status" value={enumLabel(staff.employment_status)} />
             {staff.termination_date ? (
               <DetailRow
                 label="Termination"

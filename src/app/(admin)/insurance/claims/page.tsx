@@ -29,6 +29,7 @@ import {
   INSURANCE_HUB_LIST_LIMIT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Row = Database["public"]["Tables"]["insurance_claims"]["Row"];
 
@@ -153,7 +154,7 @@ export default function InsuranceClaimsPage() {
                               : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-slate-400 dark:border-white/10",
                           )}
                         >
-                          {r.status.replace(/_/g, " ")}
+                          {enumLabel(r.status)}
                         </span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                           Loss: {formattedDate}

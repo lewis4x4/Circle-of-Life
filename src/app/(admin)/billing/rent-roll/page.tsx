@@ -25,6 +25,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 
 import { BillingHubNav } from "../billing-hub-nav";
+import { enumLabel } from "@/lib/display/enum-label";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 
@@ -327,7 +328,7 @@ function RentRollPageContent() {
                   <span key={plan.name}>
                     {index > 0 ? " · " : ""}
                     {plan.name} {money(plan.rateCents)}
-                    {plan.rateUnit === "monthly" ? "" : ` per ${plan.rateUnit.replace(/_/g, " ").replace(/^per /, "")}`}
+                    {plan.rateUnit === "monthly" ? "" : ` per ${enumLabel(plan.rateUnit, { case: "lower" }).replace(/^per /, "")}`}
                   </span>
                 ))}
               </div>

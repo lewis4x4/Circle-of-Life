@@ -5,7 +5,7 @@ import {
   formatCaregiverTasksShiftBucket,
 } from "./tasks-display-copy";
 
-const SHIFT_BUCKETS = ["day", "evening", "night"] as const;
+const SHIFT_BUCKETS = ["Day", "Evening", "Night"] as const;
 
 describe("formatCaregiverTasksShiftBucket", () => {
   it("names the gap when timezone is missing or blank", () => {

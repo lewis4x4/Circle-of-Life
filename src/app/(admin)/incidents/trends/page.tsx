@@ -12,6 +12,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const DAYS = 90;
 
@@ -33,7 +34,7 @@ function startIso(days: number): string {
 }
 
 function humanCategory(raw: string): string {
-  return raw.replace(/_/g, " ");
+  return enumLabel(raw);
 }
 
 export default function AdminIncidentTrendsPage() {
