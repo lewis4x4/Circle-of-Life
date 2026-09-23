@@ -8,11 +8,15 @@ import { ClipboardCheck, CalendarClock, UserSquare2, ShieldAlert } from "lucide-
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
   fetchCarePlanReviewsDueFromSupabase,
+  fetchClinicalDeskScope,
   fetchOverdueAssessmentsFromSupabase,
   NO_FACILITY_SOURCE_NOTICE,
+  type ClinicalDeskScope,
   type CarePlanReviewDueRow,
   type OverdueAssessmentRow,
 } from "@/lib/assessments/load-overdue-assessments";
+import { clinicalDeskEmptyCopy, clinicalDeskQueueState } from "@/lib/assessments/overdue-assessments-display-copy";
+import { clinicalQueueCount, formatQueueChip } from "@/lib/clinical/clinical-queue-state";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +39,7 @@ type AdminOverdueAssessmentsPageClientProps = {
   initialCarePlans: CarePlanRow[];
   initialError: string | null;
   initialFacilityId: string | null;
+  initialScope: ClinicalDeskScope | null;
   initialSourceNotice: string | null;
 };
 
@@ -43,12 +48,14 @@ export function AdminOverdueAssessmentsPageClient({
   initialCarePlans,
   initialError,
   initialFacilityId,
+  initialScope,
   initialSourceNotice,
 }: AdminOverdueAssessmentsPageClientProps) {
   const { selectedFacilityId } = useFacilityStore();
   const skipNextLoadRef = useRef(initialError == null);
   const [assessments, setAssessments] = useState<AssessmentRow[]>(initialAssessments);
   const [carePlans, setCarePlans] = useState<CarePlanRow[]>(initialCarePlans);
+  const [scope, setScope] = useState<ClinicalDeskScope | null>(initialScope);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [sourceNotice, setSourceNotice] = useState<string | null>(initialSourceNotice);
@@ -69,20 +76,24 @@ export function AdminOverdueAssessmentsPageClient({
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
         setAssessments([]);
         setCarePlans([]);
+        setScope(null);
         setSourceNotice(NO_FACILITY_SOURCE_NOTICE);
         return;
       }
 
-      const [liveAssessments, liveCarePlans] = await Promise.all([
+      const [liveAssessments, liveCarePlans, liveScope] = await Promise.all([
         fetchOverdueAssessmentsFromSupabase(selectedFacilityId),
         fetchCarePlanReviewsDueFromSupabase(selectedFacilityId),
+        fetchClinicalDeskScope(selectedFacilityId),
       ]);
 
       setAssessments(liveAssessments);
       setCarePlans(liveCarePlans);
+      setScope(liveScope);
     } catch (err) {
       setAssessments([]);
       setCarePlans([]);
+      setScope(null);
       setError(err instanceof Error ? err.message : "Failed to load Clinical Desk");
     } finally {
       setIsLoading(false);
@@ -93,8 +104,27 @@ export function AdminOverdueAssessmentsPageClient({
     void load();
   }, [load]);
 
-  const overdueCount = assessments.length;
-  const plansDueCount = carePlans.length;
+  const scopeReady = isValidFacilityIdForQuery(selectedFacilityId);
+  const assessmentQueue = clinicalDeskQueueState({
+    scopeReady,
+    error,
+    scopeSize: scope?.assessmentsOnFile,
+    itemCount: assessments.length,
+  });
+  const carePlanQueue = clinicalDeskQueueState({
+    scopeReady,
+    error,
+    scopeSize: scope?.activeCarePlans,
+    itemCount: carePlans.length,
+  });
+  const overdueChip = formatQueueChip(
+    clinicalQueueCount(assessmentQueue, assessments.length, "No assessments on file"),
+    "overdue",
+  );
+  const plansDueChip = formatQueueChip(
+    clinicalQueueCount(carePlanQueue, carePlans.length, "No active care plans"),
+    "needed",
+  );
   const hasCriticals = assessments.some(a => a.riskLevel === "Critical" || a.riskLevel === "High") || carePlans.some(p => p.daysOverdue > 0);
 
   if (isLoading) {
@@ -140,11 +170,11 @@ export function AdminOverdueAssessmentsPageClient({
          <div className="flex flex-wrap gap-3">
            <div className="inline-flex items-center px-4 py-2 rounded-full border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 shadow-sm text-sm font-bold tracking-wide">
              <ClipboardCheck className="mr-2 h-4 w-4 text-rose-500" />
-             {overdueCount} Overdue
+             {overdueChip}
            </div>
            <div className="inline-flex items-center px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary shadow-sm text-sm font-bold tracking-wide">
              <CalendarClock className="mr-2 h-4 w-4 text-primary" />
-             {plansDueCount} Needed
+             {plansDueChip}
            </div>
          </div>
       </div>
@@ -163,11 +193,16 @@ export function AdminOverdueAssessmentsPageClient({
               Action Required: Assessments
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">
-              {assessments.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
+              {assessmentQueue !== "items" ? (
+                <div
+                  data-queue-state={assessmentQueue}
+                  className="p-12 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
+                >
                   <ClipboardCheck className="w-12 h-12 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
-                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">All Clear</p>
-                  <p className="text-sm mt-1">No overdue assessments.</p>
+                  <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">
+                    {clinicalDeskEmptyCopy("assessments", assessmentQueue).title}
+                  </p>
+                  <p className="text-sm mt-1">{clinicalDeskEmptyCopy("assessments", assessmentQueue).body}</p>
                 </div>
               ) : (
                 <MotionList className="space-y-4">
@@ -227,11 +262,16 @@ export function AdminOverdueAssessmentsPageClient({
               Generated Care Plan Drafts
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">
-              {carePlans.length === 0 ? (
-                <div className="p-20 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2">
+              {carePlanQueue !== "items" ? (
+                <div
+                  data-queue-state={carePlanQueue}
+                  className="p-20 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
+                >
                   <CalendarClock className="w-16 h-16 text-slate-300 dark:text-zinc-600 mx-auto mb-4" />
-                  <p className="font-semibold text-xl text-slate-900 dark:text-slate-100">All Clear</p>
-                  <p className="text-base mt-2">No drafts awaiting review.</p>
+                  <p className="font-semibold text-xl text-slate-900 dark:text-slate-100">
+                    {clinicalDeskEmptyCopy("carePlans", carePlanQueue).title}
+                  </p>
+                  <p className="text-base mt-2">{clinicalDeskEmptyCopy("carePlans", carePlanQueue).body}</p>
                 </div>
               ) : (
                 <MotionList className="grid gap-4">

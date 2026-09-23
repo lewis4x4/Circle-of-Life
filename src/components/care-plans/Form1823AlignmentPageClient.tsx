@@ -119,7 +119,12 @@ function matchesFilters(row: Form1823AlignmentRosterRow, filters: Filters, query
 type SummaryTile = {
   key: string;
   label: string;
-  count: number;
+  /**
+   * null when there is nothing to count from (no plan compared, no form
+   * recorded): the tile shows no number rather than a "(0)" that reads as a
+   * clean review (COL-649).
+   */
+  count: number | null;
   /** What the count is out of; every tile states it so a zero is never universal by implication. */
   denominator: string;
   tone: FilterPillTone;
@@ -157,16 +162,16 @@ export function buildSummaryTiles(counts: Form1823AlignmentCounts): SummaryTile[
     {
       key: "gaps",
       label: "Needs the plan does not answer",
-      count: counts.withGaps,
-      denominator: `of ${counts.compared} compared`,
+      count: counts.compared > 0 ? counts.withGaps : null,
+      denominator: counts.compared > 0 ? `of ${counts.compared} compared` : "none compared yet",
       tone: "warning",
       filters: { alignment: "gaps" },
     },
     {
       key: "stale",
       label: `1823 expired or older than ${FORM_1823_MAX_AGE_YEARS} years`,
-      count: counts.expiredForm1823 + counts.overAgeForm1823,
-      denominator: `of ${recorded} recorded`,
+      count: recorded > 0 ? counts.expiredForm1823 + counts.overAgeForm1823 : null,
+      denominator: recorded > 0 ? `of ${recorded} recorded` : "none recorded",
       tone: "warning",
       filters: { document: "stale" },
     },
@@ -321,11 +326,13 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
                   <li key={tile.key} className="flex flex-col gap-1">
                     <FilterPill
                       label={tile.label}
-                      count={tile.count}
+                      count={tile.count ?? undefined}
                       tone={tile.tone}
                       active={active}
-                      className={cn(filterPillContrastClass, (active || tile.count > 0) && "text-foreground")}
-                      aria-label={`${tile.label}: ${tile.count} ${tile.denominator}`}
+                      className={cn(filterPillContrastClass, (active || (tile.count !== null && tile.count > 0)) && "text-foreground")}
+                      aria-label={
+                        tile.count === null ? `${tile.label}: ${tile.denominator}` : `${tile.label}: ${tile.count} ${tile.denominator}`
+                      }
                       onClick={() => toggleTile(tile)}
                     />
                     <span className="pl-1 text-[11px] text-muted-foreground">{tile.denominator}</span>
