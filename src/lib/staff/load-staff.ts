@@ -23,7 +23,19 @@ export type StaffRow = {
   certifications: CertificationStatus;
   nextShift: string;
   photoUrl?: string | null;
+  /** The building this employment record belongs to; one person can hold a record at several. */
+  facilityId?: string;
+  /** Linked login, when the record has one — the only identity shared across a person's records. */
+  userId?: string | null;
 };
+
+/**
+ * People, not employment records: records linked to the same login are one
+ * person; an unlinked record counts on its own (never matched by name or email).
+ */
+export function countDistinctStaffPeople(rows: Pick<StaffRow, "id" | "userId">[]): number {
+  return new Set(rows.map((row) => (row.userId ? `user:${row.userId}` : `staff:${row.id}`))).size;
+}
 
 type SupabaseStaffRow = {
   id: string;
@@ -238,6 +250,8 @@ export async function fetchStaffFromSupabase(
       certifications: certState,
       nextShift,
       photoUrl: s.photo_url,
+      facilityId: s.facility_id,
+      userId: s.user_id,
     };
   });
 }

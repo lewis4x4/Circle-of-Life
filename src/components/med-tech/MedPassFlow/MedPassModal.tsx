@@ -44,8 +44,8 @@ export function MedPassModal({ pass, onClose, onSaved }: { pass: MedPassItem; on
     <div className="w-full max-w-xl space-y-4 rounded-xl border border-slate-700 bg-slate-900 p-6 text-white">
       <h2 id="med-pass-title" className="text-xl font-semibold">{pass.resident} · Medication confirmation</h2>
       <p>{pass.med} · {pass.dose} · Scheduled {pass.time}</p>
-      {receipt ? <div role="status" className="space-y-2"><p>Saved to the MAR: {status}.</p><p className="text-xs text-slate-400">Record {receipt}</p><Button onClick={onClose}>Return to pass</Button></div> : <>
-        <p className="text-sm text-slate-300">Review the current order, resident identity, allergies, route, dose, time and any hold instructions before recording the action you actually performed. Saving checks current order status and active holds.</p>
+      {receipt ? <div role="status" className="space-y-2"><p>Saved to the MAR: {status}.</p><p className="text-xs text-muted-foreground">Record {receipt}</p><Button onClick={onClose}>Return to pass</Button></div> : <>
+        <p className="text-sm text-muted-foreground">Review the current order, resident identity, allergies, route, dose, time and any hold instructions before recording the action you actually performed. Saving checks current order status and active holds.</p>
         {pass.hold && <p role="alert" className="text-amber-200">Hold: {pass.hold}</p>}
         <label className="block">Actual action<select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="mt-1 block w-full rounded border border-slate-600 bg-slate-800 p-3"><option value="given">Given</option><option value="refused">Refused</option><option value="held">Held</option></select></label>
         <label className="block">Indication, exception reason or notes<textarea value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1 block w-full rounded border border-slate-600 bg-slate-800 p-3" /></label>

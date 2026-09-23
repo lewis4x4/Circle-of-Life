@@ -100,15 +100,15 @@ export function DiscrepancyResolutionModal({
               >
                 <div>
                   <p className="font-medium text-rose-100">{d.medicationName}</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-chrome-foreground-muted">
                     {d.countDate} · {d.shift} shift
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-chrome-foreground-muted">
                     Expected: <span className="text-white">{d.expectedCount}</span>
                   </p>
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-chrome-foreground-muted">
                     Actual: <span className="text-white">{d.actualCount}</span>
                   </p>
                   <p className="font-mono font-bold text-rose-400">
@@ -118,7 +118,7 @@ export function DiscrepancyResolutionModal({
               </div>
             ))}
             <div className="pt-2 border-t border-rose-900/30 flex justify-between items-center">
-              <span className="text-sm text-zinc-400">Total Discrepancy</span>
+              <span className="text-sm text-chrome-foreground-muted">Total Discrepancy</span>
               <span className={`font-mono font-bold text-lg ${totalDiscrepancy === 0 ? "text-emerald-400" : "text-rose-400"}`}>
                 {totalDiscrepancy > 0 ? "+" : ""}{totalDiscrepancy}
               </span>
@@ -137,7 +137,7 @@ export function DiscrepancyResolutionModal({
               placeholder="Describe the root cause and resolution (e.g., 'Dose given but not documented — eMAR updated', 'Pill dropped — witnessed destruction', 'Count error — recount confirmed balance')"
               className="w-full rounded-lg border border-rose-900/50 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-2 focus:ring-rose-500/50 resize-none"
             />
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-chrome-foreground-muted">
               This documentation is required for regulatory compliance.
             </p>
           </div>
@@ -148,7 +148,7 @@ export function DiscrepancyResolutionModal({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            className="flex-1 border-zinc-700 text-chrome-foreground-muted hover:bg-zinc-800"
             disabled={submitting}
           >
             Cancel

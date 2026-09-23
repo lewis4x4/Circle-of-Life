@@ -102,7 +102,7 @@ function OnboardingQuestionsContent() {
 
   if (hydration === "loading" || hydration === "idle") {
     return (
-      <div className="flex items-center gap-2 text-slate-300">
+      <div className="flex items-center gap-2 text-chrome-foreground-muted">
         <Loader2 className="h-5 w-5 animate-spin text-teal-400" aria-hidden />
         <span>Loading onboarding questions…</span>
       </div>
@@ -122,14 +122,14 @@ function OnboardingQuestionsContent() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">Onboarding Questions</h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-400">
+          <p className="mt-1 max-w-2xl text-sm text-chrome-foreground-muted">
             Answer the questions you can. Your answers save automatically and are visible to the rest of the leadership
             team. Use <strong className="text-slate-200">Core</strong> first, then Extended Discovery when ready.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {saveStatus === "saving" ? (
-            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 text-xs text-chrome-foreground-muted">
               <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
               Saving…
             </span>
@@ -165,12 +165,12 @@ function OnboardingQuestionsContent() {
       <Card className="border-white/10 bg-white/[0.03]">
         <CardHeader>
           <CardTitle className="text-white">Workspace</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-chrome-foreground-muted">
             Defaults apply to new answers; you can override per question when a shared login is used.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
-          <label className="block text-sm text-slate-300">
+          <label className="block text-sm text-chrome-foreground-muted">
             Organization label (for export)
             <Input
               value={organizationLabel}
@@ -179,7 +179,7 @@ function OnboardingQuestionsContent() {
               placeholder="e.g. Circle of Life"
             />
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className="block text-sm text-chrome-foreground-muted">
             Default &quot;Your name&quot; for new answers
             <Input
               value={defaultEnteredByName}
@@ -205,7 +205,7 @@ function OnboardingQuestionsContent() {
               "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               activeTier === "core"
                 ? "bg-teal-500/20 text-teal-100 ring-1 ring-teal-500/40"
-                : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                : "text-chrome-foreground-muted hover:bg-white/5 hover:text-slate-200",
             )}
             onClick={() => setActiveTier("core")}
           >
@@ -219,29 +219,29 @@ function OnboardingQuestionsContent() {
               "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               activeTier === "extended"
                 ? "bg-teal-500/20 text-teal-100 ring-1 ring-teal-500/40"
-                : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                : "text-chrome-foreground-muted hover:bg-white/5 hover:text-slate-200",
             )}
             onClick={() => setActiveTier("extended")}
           >
             Extended Discovery
           </button>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-chrome-foreground-muted">
           {activeTier === "core"
             ? "These questions shape your first rollout. Answer them first."
             : "Deeper discovery for long-term product, integrations, and rollout planning."}
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-chrome-foreground-muted">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4">
           <span>
             <strong className="text-white">{tierProgress.answered}</strong> / {tierProgress.total} answered
-            <span className="ml-2 text-slate-500">
+            <span className="ml-2 text-chrome-foreground-muted">
               ({activeTier === "core" ? "Core" : "Extended"})
             </span>
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-chrome-foreground-muted">
             All tiers: Core {tierStats.core.answered}/{tierStats.core.total} · Extended{" "}
             {tierStats.extended.answered}/{tierStats.extended.total}
           </span>

@@ -5,7 +5,7 @@ import { CreditCard } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/home/record-payment";
-import { pastDueTotalCents, type HomePastDue } from "@/lib/home/past-due";
+import { pastDueRuleClause, pastDueTotalCents, type HomePastDue } from "@/lib/home/past-due";
 import { cn } from "@/lib/utils";
 
 import { CARD_CLASS, CARD_HEAD_CLASS } from "./home-styles";
@@ -50,7 +50,7 @@ export function PastDueStrip({ pastDue, onRecordPayment, onLogContact }: PastDue
           <p className="mt-0.5 text-xs text-muted-foreground">
             {count === 0
               ? "Nobody is past due."
-              : `${count} ${count === 1 ? "resident" : "residents"} · ${formatCents(pastDueTotalCents(pastDue))} open · past the due day plus ${pastDue.graceDays ?? 0} days`}
+              : `${count} ${count === 1 ? "resident" : "residents"} · ${formatCents(pastDueTotalCents(pastDue))} open · ${pastDueRuleClause(pastDue)}`}
           </p>
         </div>
         {count > 0 ? (

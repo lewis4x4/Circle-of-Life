@@ -780,7 +780,7 @@ export default function AdminTrainingHubPage() {
                                 className="h-7 text-[9px] px-2"
                               />
                             ) : (
-                              <span className="text-slate-400">{TRAINING_HUB_NO_PDF_COPY}</span>
+                              <span className="text-muted-foreground">{TRAINING_HUB_NO_PDF_COPY}</span>
                             )}
                           </td>
                         </tr>
@@ -1213,7 +1213,7 @@ export default function AdminTrainingHubPage() {
 
                   {recentPassedRows.length > 0 && (
                     <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                         Recently passed
                       </h4>
                       {recentPassedRows.map((row) => {

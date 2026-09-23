@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin/users/user-audit-display-copy";
 import type { Database } from "@/types/database";
 import { auditLogQuerySchema } from "@/lib/validation/user-management";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -75,9 +76,9 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 
   const queryResult = await query;
   const entries = (queryResult.data ?? []) as UserManagementAuditRow[];
-  const count = queryResult.count ?? 0;
   const queryErr = queryResult.error;
-  if (queryErr) {
+  const count = headCountOrNull(queryResult);
+  if (queryErr || count === null) {
     return NextResponse.json({ error: "Failed to fetch audit log" }, { status: 500 });
   }
 

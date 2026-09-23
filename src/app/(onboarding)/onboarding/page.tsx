@@ -125,7 +125,7 @@ export default function OnboardingDashboardPage() {
 
   if (hydration === "loading" || hydration === "idle") {
     return (
-      <div className="flex items-center gap-2 text-slate-300">
+      <div className="flex items-center gap-2 text-chrome-foreground-muted">
         <Loader2 className="h-5 w-5 animate-spin text-teal-400" aria-hidden />
         <span>Loading overview…</span>
       </div>
@@ -150,14 +150,14 @@ export default function OnboardingDashboardPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle className="text-xl text-white">Activation Overview</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-chrome-foreground-muted">
                   Guided onboarding record for pilot scope, decisions, and build readiness.
                 </CardDescription>
               </div>
               {isOrgAdmin ? <ExportMarkdownButton variant="outline" className="shrink-0" /> : null}
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-slate-300">
+          <CardContent className="space-y-3 text-sm text-chrome-foreground-muted">
             <div className="space-y-2 rounded-lg border border-teal-500/30 bg-teal-500/5 px-3 py-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-teal-100">Core (pilot readiness)</span>
@@ -165,7 +165,7 @@ export default function OnboardingDashboardPage() {
                   {coreAnswered} / {coreTotal}
                 </Badge>
               </div>
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-xs text-chrome-foreground-muted">
                 <span>Progress</span>
                 <span className="text-teal-200/90">{completionPctCore}%</span>
               </div>
@@ -173,7 +173,7 @@ export default function OnboardingDashboardPage() {
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
               <span>Extended discovery</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">{completionPctExtended}%</span>
+                <span className="text-xs text-chrome-foreground-muted">{completionPctExtended}%</span>
                 <Badge className="border-0 bg-slate-500/20 text-slate-200">
                   {extendedAnswered} / {extendedTotal}
                 </Badge>
@@ -195,7 +195,7 @@ export default function OnboardingDashboardPage() {
             </div>
             <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2">
               <span>Last answer update</span>
-              <span className="text-right text-slate-400">{lastUpdatedLabel}</span>
+              <span className="text-right text-chrome-foreground-muted">{lastUpdatedLabel}</span>
             </div>
           </CardContent>
         </Card>
@@ -225,7 +225,7 @@ export default function OnboardingDashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-white">Departments</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-chrome-foreground-muted">
                 Completion by department, split by Core (readiness) vs Extended discovery.
               </CardDescription>
             </div>
@@ -242,13 +242,13 @@ export default function OnboardingDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {totalQuestions === 0 ? (
-              <p className="text-sm text-slate-500">No questions loaded yet.</p>
+              <p className="text-sm text-chrome-foreground-muted">No questions loaded yet.</p>
             ) : (
               <>
                 <div className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-teal-200/90">Core lanes</p>
                   {departmentRowsCore.length === 0 ? (
-                    <p className="text-sm text-slate-500">No Core questions in library.</p>
+                    <p className="text-sm text-chrome-foreground-muted">No Core questions in library.</p>
                   ) : (
                     departmentRowsCore.map((department) => (
                       <div
@@ -256,19 +256,19 @@ export default function OnboardingDashboardPage() {
                         className="grid gap-2 rounded-xl border border-teal-500/15 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
                       >
                         <p className="font-medium text-slate-100">{department.name}</p>
-                        <p className="text-slate-400">
+                        <p className="text-chrome-foreground-muted">
                           Answered: {department.answered}/{department.total}
                         </p>
-                        <p className="text-slate-400">Progress: {department.pctDept}%</p>
-                        <p className="text-slate-400">Status: {department.status}</p>
+                        <p className="text-chrome-foreground-muted">Progress: {department.pctDept}%</p>
+                        <p className="text-chrome-foreground-muted">Status: {department.status}</p>
                       </div>
                     ))
                   )}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Extended lanes</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-chrome-foreground-muted">Extended lanes</p>
                   {departmentRowsExtended.length === 0 ? (
-                    <p className="text-sm text-slate-500">No Extended questions in library.</p>
+                    <p className="text-sm text-chrome-foreground-muted">No Extended questions in library.</p>
                   ) : (
                     departmentRowsExtended.map((department) => (
                       <div
@@ -276,11 +276,11 @@ export default function OnboardingDashboardPage() {
                         className="grid gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
                       >
                         <p className="font-medium text-slate-100">{department.name}</p>
-                        <p className="text-slate-400">
+                        <p className="text-chrome-foreground-muted">
                           Answered: {department.answered}/{department.total}
                         </p>
-                        <p className="text-slate-400">Progress: {department.pctDept}%</p>
-                        <p className="text-slate-400">Status: {department.status}</p>
+                        <p className="text-chrome-foreground-muted">Progress: {department.pctDept}%</p>
+                        <p className="text-chrome-foreground-muted">Status: {department.status}</p>
                       </div>
                     ))
                   )}
@@ -293,11 +293,11 @@ export default function OnboardingDashboardPage() {
         <Card className="border-white/10 bg-white/[0.03]">
           <CardHeader>
             <CardTitle className="text-white">Next best action</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-chrome-foreground-muted">
               Complete first-run sequence items before opening secondary lanes.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-slate-300">
+          <CardContent className="space-y-3 text-sm text-chrome-foreground-muted">
             <ActionItem label="Leadership / Governance / Decision Rights" state="in_progress" />
             <ActionItem label="Pilot Scope / Success Definition" state="queued" />
             <ActionItem label="Current Systems / Shadow Systems" state="queued" />
@@ -333,7 +333,7 @@ function MetricCard({
   return (
     <Card className="border-white/10 bg-white/[0.03]">
       <CardHeader className="space-y-1 pb-2">
-        <CardDescription className="text-slate-400">{label}</CardDescription>
+        <CardDescription className="text-chrome-foreground-muted">{label}</CardDescription>
         <CardTitle className="text-3xl text-white">{value}</CardTitle>
       </CardHeader>
       <CardContent>
@@ -351,7 +351,7 @@ function ActionItem({
   state: "in_progress" | "queued";
 }) {
   const badgeClass =
-    state === "in_progress" ? "bg-teal-500/20 text-teal-100" : "bg-slate-500/20 text-slate-300";
+    state === "in_progress" ? "bg-teal-500/20 text-teal-100" : "bg-slate-500/20 text-chrome-foreground-muted";
   const badgeLabel = state === "in_progress" ? "In progress" : "Queued";
 
   return (
