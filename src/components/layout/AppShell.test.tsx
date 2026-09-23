@@ -202,19 +202,18 @@ describe("AppShell all-sections jump list", () => {
     expect(executiveLinks.every((link) => link.getAttribute("aria-current") !== "page")).toBe(true);
   });
 
-  it("puts the phone pillar strip in a sideways scroller and scrolls the current pillar into view (COL-657)", () => {
+  it("lets the phone pillar strip scroll with a faded trailing edge and scrolls the current pillar into view (COL-657)", () => {
     const scrollIntoView = vi.fn();
     const original = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = scrollIntoView;
     try {
       pathMock.pathname = "/admin/staff";
       const { container } = renderAppShell();
-      const strip = [...container.querySelectorAll('nav[aria-label="Primary"]')]
-        .find((nav) => nav.querySelector('[data-slot="horizontal-scroll-viewport"]'));
-      expect(strip).toBeDefined();
-      const viewport = strip!.querySelector('[data-slot="horizontal-scroll-viewport"]')!;
-      expect(viewport.className).toContain("overflow-x-auto");
-      const current = viewport.querySelector('a[aria-current="page"]');
+      const viewport = container.querySelector('nav[aria-label="Primary"] [data-slot="pillar-strip-viewport"]');
+      expect(viewport).not.toBeNull();
+      expect(viewport!.className).toContain("overflow-x-auto");
+      expect(viewport!.className).toContain("mask-image");
+      const current = viewport!.querySelector('a[aria-current="page"]');
       expect(current).toHaveTextContent("Workforce");
       expect(scrollIntoView.mock.contexts).toContain(current);
     } finally {

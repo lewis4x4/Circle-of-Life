@@ -8,6 +8,7 @@ import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.m
 import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
 import requireTimeZone from "./eslint-rules/require-time-zone.mjs";
 import noAdhocBackLink from "./eslint-rules/no-adhoc-back-link.mjs";
+import iconButtonNeedsName from "./eslint-rules/icon-button-needs-name.mjs";
 
 const uiV2Plugin = {
   rules: {
@@ -198,6 +199,18 @@ const eslintConfig = defineConfig([
           depth: 4,
         },
       ],
+    },
+  },
+  {
+    // COL-658: icon-only buttons must carry an accessible name. The Button
+    // primitive's icon sizes and SelectTrigger enforce this in their types;
+    // this covers native <button> and non-icon-size <Button>.
+    files: ["src/**/*.{tsx,jsx}"],
+    plugins: {
+      a11y: { rules: { "icon-button-needs-name": iconButtonNeedsName } },
+    },
+    rules: {
+      "a11y/icon-button-needs-name": "error",
     },
   },
 ]);
