@@ -97,9 +97,6 @@
   "src/components/home/PastDueStrip.tsx": {
     "silent-zero": 1
   },
-  "src/components/incidents/AdminIncidentDetailPageClient.tsx": {
-    "all-clear-copy": 1
-  },
   "src/components/resident-intake/types.ts": {
     "count-or-zero": 1
   },

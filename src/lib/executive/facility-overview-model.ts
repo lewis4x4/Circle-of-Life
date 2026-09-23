@@ -584,11 +584,23 @@ export function buildInsuranceCostDisplay(snapshot: TcorSnapshot): InsuranceCost
   if (snapshot.policyRows === 0 && snapshot.claimRows === 0) {
     return { state: "not_on_file", periodLine };
   }
+  // "$0.00 premiums across 3 policies" read as free coverage when no policy
+  // had a premium recorded at all (COL-649). Name the gap instead, and do not
+  // present a total that leaves the premiums out.
+  const stated = snapshot.policiesWithStatedPremium ?? snapshot.policyRows;
+  const unstated = snapshot.policyRows - stated;
+  const lossesPart = `${formatUsdFromCents(snapshot.incurredLossesCents)} incurred losses (paid plus reserves) across ${plural(snapshot.claimRows, "claim")}`;
+  const premiumsPart =
+    snapshot.policyRows > 0 && stated === 0
+      ? `No premium recorded on ${plural(snapshot.policyRows, "policy", "policies")}`
+      : unstated > 0
+        ? `${formatUsdFromCents(snapshot.premiumsCents)} premiums on ${stated} of ${plural(snapshot.policyRows, "policy", "policies")} (${unstated} with no premium recorded)`
+        : `${formatUsdFromCents(snapshot.premiumsCents)} premiums across ${plural(snapshot.policyRows, "policy", "policies")}`;
   return {
     state: "recorded",
     periodLine,
-    total: formatUsdFromCents(snapshot.tcorCents),
-    breakdownLine: `${formatUsdFromCents(snapshot.premiumsCents)} premiums across ${plural(snapshot.policyRows, "policy", "policies")} · ${formatUsdFromCents(snapshot.incurredLossesCents)} incurred losses (paid plus reserves) across ${plural(snapshot.claimRows, "claim")}`,
+    total: snapshot.policyRows > 0 && stated === 0 ? "Premiums not recorded" : formatUsdFromCents(snapshot.tcorCents),
+    breakdownLine: `${premiumsPart} · ${lossesPart}`,
   };
 }
 
