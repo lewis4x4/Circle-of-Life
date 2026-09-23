@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminEmptyState } from "@/components/common/admin-list-patterns";
-import { buttonVariants } from "@/components/ui/button";
+import { BackLink } from "@/design-system/components/BackLink";
 import {
   CARE_PLAN_PRINT_NO_PLAN_DESCRIPTION,
   CARE_PLAN_PRINT_NO_PLAN_TITLE,
@@ -50,9 +49,7 @@ export default async function LegacyCarePlanPrintRedirect({
   return (
     <div className="mx-auto max-w-xl space-y-4 py-8">
       <AdminEmptyState title={CARE_PLAN_PRINT_NO_PLAN_TITLE} description={CARE_PLAN_PRINT_NO_PLAN_DESCRIPTION} />
-      <Link href={`/admin/residents/${residentId}/care-plan`} className={buttonVariants({ variant: "outline" })}>
-        Open care plan
-      </Link>
+      <BackLink label="Care plan" href={`/admin/residents/${residentId}/care-plan`} />
     </div>
   );
 }
