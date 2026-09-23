@@ -172,7 +172,7 @@ export default function AdminDischargeNewPage() {
     setLoadingDrafts(false);
 
     const residentSelectWithRoom =
-      "id, first_name, last_name, status, admission_date, beds(bed_label, rooms(room_number))";
+      "id, first_name, last_name, status, admission_date, beds:beds!residents_bed_id_fkey(bed_label, rooms(room_number))";
 
     const primaryRes = await supabase
       .from("residents")
