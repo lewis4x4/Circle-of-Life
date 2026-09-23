@@ -381,7 +381,7 @@ export default function AdminTransportationHubPage() {
              <Link href="/admin/transportation/requests/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold text-[10px] tap-responsive shadow-lg")} >
                + Transport request
              </Link>
-             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold text-[10px] tap-responsive bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg")} >
+             <Link href="/admin/transportation/vehicles/new" className={cn(buttonVariants({ size: "default" }), "h-12 px-6 rounded-full font-bold text-[10px] tap-responsive shadow-lg")} >
                + Vehicle
              </Link>
              <Link

@@ -291,9 +291,7 @@ function AdminIncidentFormInner() {
       <form onSubmit={onSubmit} className="space-y-6">
         {/* Primary Classification */}
         <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span> Primary Classification
-          </h3>
+          <h2 className="mb-6 text-base font-semibold text-foreground">Primary classification</h2>
 
           <div className="space-y-6">
             <div className="space-y-2">
@@ -351,9 +349,7 @@ function AdminIncidentFormInner() {
 
         {/* Details */}
         <div className="rounded-lg border border-slate-200/60 dark:border-white/5 bg-card p-6 lg:p-8 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-rose-500 mb-6 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span> Details & Location
-          </h3>
+          <h2 className="mb-6 text-base font-semibold text-foreground">Details and location</h2>
 
           <div className="space-y-6">
             <div className="space-y-2">
