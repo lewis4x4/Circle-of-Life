@@ -36,9 +36,6 @@
   "src/app/(admin)/vendors/[id]/page.tsx": {
     "count-or-zero": 3
   },
-  "src/app/(admin)/vendors/page.tsx": {
-    "silent-zero": 2
-  },
   "src/app/(caregiver)/caregiver/page.tsx": {
     "count-or-zero": 1
   },
@@ -122,9 +119,6 @@
   },
   "src/lib/exec-kpi-snapshot.ts": {
     "count-or-zero": 8
-  },
-  "src/lib/finance/load-finance-overview-data.ts": {
-    "count-or-zero": 1
   },
   "src/lib/insurance/assemble-renewal-package-payload.ts": {
     "count-or-zero": 3
