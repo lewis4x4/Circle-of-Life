@@ -397,10 +397,10 @@ export default function AdminApprovalsInboxPage() {
     <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-6">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             <ListChecks className="h-8 w-8 text-primary shrink-0" aria-hidden />
             Approvals inbox
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Everything waiting on an approver, in one queue: shift swaps, completed time punches,
             mileage reimbursements, and knowledge-base publish reviews. Actions here write the same

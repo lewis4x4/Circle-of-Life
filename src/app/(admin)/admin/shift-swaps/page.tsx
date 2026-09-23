@@ -321,9 +321,9 @@ export default function AdminShiftSwapsPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6">
           
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
             Shift swaps {pendingCount > 0 ? <></> : null}
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Oversight queue for COL’s shift swap workflow. Pending requests can be approved or denied when your role
             allows (facility admin or med-tech per RLS). Export supports audits.

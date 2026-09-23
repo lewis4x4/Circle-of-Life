@@ -209,10 +209,11 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col md:ml-20 md:border-l md:border-border">
           <header className="haven-chrome-topnav sticky top-0 z-40 flex flex-col items-stretch gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-8 md:py-4">
             <div className="min-w-0 flex-1">
+              {/* The facility picker sits beside the heading, not inside it (COL-658). */}
               <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
                 {facilityName}
-                {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               </h1>
+              {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
               {shiftLabel ? <p className="mt-0.5 text-xs haven-chrome-fg-muted">
                 {shiftLabel}
               </p> : null}

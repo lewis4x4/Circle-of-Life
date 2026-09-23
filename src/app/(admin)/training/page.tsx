@@ -616,9 +616,9 @@ export default function AdminTrainingHubPage() {
         <header className="mb-8">
           <div>
             
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               Training & Competency
-            </h2>
+            </h1>
           </div>
         </header>
 

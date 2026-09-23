@@ -191,10 +191,10 @@ export default function AdminMeetingsHubPage() {
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
               <NotebookPen className="h-8 w-8 text-info shrink-0" aria-hidden />
               Meeting hub
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Recurring meeting templates, agendas, in-app minutes, and action items that become
               escalation-chased operations tasks. Replaces the standup call log spreadsheet.
