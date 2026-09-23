@@ -100,6 +100,7 @@ export const secretMapping = {
   'report-scheduler':['report_scheduler_secret','REPORT_SCHEDULER_SECRET'],
   'resident-assurance-ai':['resident_assurance_ai_secret','RESIDENT_ASSURANCE_AI_SECRET'],
   'resident-safety-scorer':['resident_safety_scorer_secret','RESIDENT_SAFETY_SCORER_SECRET'],
+  'risk-nightly-scorer':['risk_nightly_scorer_secret','RISK_NIGHTLY_SCORER_SECRET'],
   'stand-up-google':['stand_up_google_cron_secret','STAND_UP_GOOGLE_CRON_SECRET'],
   'stand-up-publisher':['stand_up_publisher_cron_secret','STAND_UP_PUBLISHER_CRON_SECRET'],
   'stand-up-history-publisher':['stand_up_history_cron_secret','STAND_UP_HISTORY_PUBLISHER_CRON_SECRET'],
