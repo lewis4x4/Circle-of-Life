@@ -720,4 +720,33 @@ INSERT INTO public.time_records(staff_id, facility_id, organization_id, clock_in
   SELECT b_staff, facility, org, clock_timestamp() - interval '3 hours', clock_timestamp() - interval '2 hours', 'manual', owner_user FROM fk;
 RESET ROLE;
 
+-- ---------------------------------------------------------------------------
+-- 15. Kiosk receipts carry display_name and last_out_at (screens 12 and 13).
+-- ---------------------------------------------------------------------------
+DO $$ DECLARE r jsonb; r2 jsonb; c uuid := gen_random_uuid(); BEGIN
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FA-1', NULL, '111111');
+  IF NOT (r->>'ok')::boolean OR r->>'display_name' <> 'Probe A.' OR r->>'first_name' <> 'Probe' OR r->>'state' <> 'in'
+     OR NOT (r ? 'last_out_at') OR r->'last_out_at' <> 'null'::jsonb OR NOT (r ? 'today_worked_minutes') THEN
+    RAISE EXCEPTION 'Identify receipt wrong before any out punch: %', r;
+  END IF;
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FB-2', NULL, '222222');
+  IF r->>'display_name' <> 'Probe B.' OR r->>'last_out_at' IS NULL
+     OR (r->>'last_out_at')::timestamptz <> (SELECT max(punched_at) FROM public.time_punches WHERE staff_id = (SELECT b_staff FROM fk) AND punch_type = 'out') THEN
+    RAISE EXCEPTION 'Identify last_out_at wrong: %', r;
+  END IF;
+  r := public.timeclock_record_punch(pg_temp.tok('kiosk'), 'FA-1', NULL, '111111', 'out', clock_timestamp(), c, false);
+  IF NOT (r->>'ok')::boolean OR (r->>'replayed')::boolean OR r->>'display_name' <> 'Probe A.'
+     OR (r->>'last_out_at')::timestamptz IS DISTINCT FROM (r->>'punched_at')::timestamptz THEN
+    RAISE EXCEPTION 'Punch receipt wrong: %', r;
+  END IF;
+  r2 := public.timeclock_record_punch(pg_temp.tok('kiosk'), 'FA-1', NULL, '111111', 'out', clock_timestamp(), c, false);
+  IF NOT (r2->>'replayed')::boolean OR r2->>'display_name' <> 'Probe A.' OR r2->>'last_out_at' IS DISTINCT FROM r->>'last_out_at' THEN
+    RAISE EXCEPTION 'Replayed punch receipt wrong: %', r2;
+  END IF;
+  -- Refusals are unchanged: no receipt fields on an error, and a floor token still cannot identify.
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FA-1', NULL, '000000');
+  IF (r->>'ok')::boolean OR r ? 'display_name' THEN RAISE EXCEPTION 'Refusal leaked receipt fields: %', r; END IF;
+  IF public.timeclock_identify(pg_temp.tok('floor'), 'FA-1', NULL, '111111')->>'error' <> 'device_unknown' THEN RAISE EXCEPTION 'Floor token identified'; END IF;
+END $$;
+
 ROLLBACK;

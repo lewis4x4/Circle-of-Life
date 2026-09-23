@@ -845,6 +845,49 @@ GRANT EXECUTE ON FUNCTION public.timeclock_set_device_roster_roles(uuid, text[])
 COMMENT ON FUNCTION public.timeclock_set_device_roster_roles(uuid, text[]) IS
   'Sets which login roles a floor tablet lists; null returns it to the facility default. COL-37 ruling: definer required -- timeclock_devices holds no request-role grant; the body checks auth.uid(), haven.app_role() in (owner, org_admin), the organization and haven.accessible_facility_ids() first.';
 
+-- The kiosk identify step, unchanged from 408 except that the receipt also
+-- carries display_name ("Ashley W.", the floor roster rule) and last_out_at
+-- (the most recent effective out punch in the last 14 days, null if none) for
+-- the kiosk confirmation screens. Floor tokens are still device_unknown
+-- through haven.timeclock_resolve.
+CREATE OR REPLACE FUNCTION public.timeclock_identify(
+  p_device_token text, p_identifier text, p_badge_lookup_hmac text, p_pin text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_now timestamptz := clock_timestamp();
+  v_r jsonb;
+  v_state text;
+  v_tz text;
+  v_staff uuid;
+BEGIN
+  v_r := haven.timeclock_resolve(p_device_token, p_identifier, p_badge_lookup_hmac, p_pin);
+  IF NOT (v_r->>'ok')::boolean THEN
+    RETURN jsonb_build_object('ok', false, 'error', v_r->>'error');
+  END IF;
+  v_staff := (v_r->>'staff_id')::uuid;
+  v_state := haven.timeclock_state(v_staff, v_now);
+  v_tz := haven.timeclock_facility_timezone((v_r->>'facility_id')::uuid);
+  RETURN jsonb_build_object(
+    'ok', true,
+    'first_name', v_r->>'first_name',
+    'state', v_state,
+    'next_actions', to_jsonb(haven.timeclock_next_actions(v_state)),
+    'today_worked_minutes', haven.timeclock_today_minutes(v_staff, v_now, v_tz),
+    'display_name', (SELECT haven.floor_display_name(st.first_name, st.preferred_name, st.last_name) FROM public.staff st WHERE st.id = v_staff),
+    'last_out_at', (SELECT max(e.punched_at) FROM haven.timeclock_effective_punches(v_staff, v_now - interval '14 days', v_now + interval '1 second') e WHERE e.punch_type = 'out')
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.timeclock_identify(text, text, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.timeclock_identify(text, text, text, text) TO service_role;
+COMMENT ON FUNCTION public.timeclock_identify(text, text, text, text) IS
+  'Validates device, facility flag, credential, lockout, PIN and staff status without recording a punch, so the kiosk can offer only the valid next action; the receipt includes display_name and last_out_at. COL-37 ruling: definer required -- reads timeclock_credentials, which no request role may select; service_role only.';
+
 -- The kiosk punch path, kiosk-kind only: the idempotent-replay lookup ignores
 -- floor tokens, and haven.timeclock_resolve refuses them as device_unknown.
 CREATE OR REPLACE FUNCTION public.timeclock_record_punch(
@@ -900,7 +943,9 @@ BEGIN
         'flags', to_jsonb(v_existing.flags),
         'state', v_state,
         'next_actions', to_jsonb(haven.timeclock_next_actions(v_state)),
-        'today_worked_minutes', haven.timeclock_today_minutes(v_existing.staff_id, v_now, v_tz)
+        'today_worked_minutes', haven.timeclock_today_minutes(v_existing.staff_id, v_now, v_tz),
+        'display_name', (SELECT haven.floor_display_name(st.first_name, st.preferred_name, st.last_name) FROM public.staff st WHERE st.id = v_existing.staff_id),
+        'last_out_at', (SELECT max(e.punched_at) FROM haven.timeclock_effective_punches(v_existing.staff_id, v_now - interval '14 days', v_now + interval '1 second') e WHERE e.punch_type = 'out')
       );
     END IF;
   END IF;
@@ -954,14 +999,16 @@ BEGIN
     'flags', to_jsonb(v_flags),
     'state', v_state,
     'next_actions', to_jsonb(haven.timeclock_next_actions(v_state)),
-    'today_worked_minutes', haven.timeclock_today_minutes(v_staff, v_now, v_tz)
+    'today_worked_minutes', haven.timeclock_today_minutes(v_staff, v_now, v_tz),
+    'display_name', (SELECT haven.floor_display_name(st.first_name, st.preferred_name, st.last_name) FROM public.staff st WHERE st.id = v_staff),
+    'last_out_at', (SELECT max(e.punched_at) FROM haven.timeclock_effective_punches(v_staff, v_now - interval '14 days', v_now + interval '1 second') e WHERE e.punch_type = 'out')
   );
 END;
 $$;
 REVOKE ALL ON FUNCTION public.timeclock_record_punch(text, text, text, text, text, timestamptz, uuid, boolean) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.timeclock_record_punch(text, text, text, text, text, timestamptz, uuid, boolean) TO service_role;
 COMMENT ON FUNCTION public.timeclock_record_punch(text, text, text, text, text, timestamptz, uuid, boolean) IS
-  'Records one punch from a kiosk-kind tablet after validating device, facility flag, credential, lockout, PIN, staff status, facility membership and the valid next punch type; idempotent on (device, client_punch_id). A floor tablet never punches. Server time is the punch time unless captured offline. COL-37 ruling: definer required -- the only insert path into time_punches, which has no INSERT policy; service_role only.';
+  'Records one punch from a kiosk-kind tablet (receipt includes display_name and last_out_at) after validating device, facility flag, credential, lockout, PIN, staff status, facility membership and the valid next punch type; idempotent on (device, client_punch_id). A floor tablet never punches. Server time is the punch time unless captured offline. COL-37 ruling: definer required -- the only insert path into time_punches, which has no INSERT policy; service_role only.';
 
 -- ---------------------------------------------------------------------------
 -- 7. Floor path (service_role only; /api/floor/* owns the HTTP contract)
@@ -1713,7 +1760,7 @@ COMMIT;
 -- Rollback: DROP FUNCTION the floor_*, visitor_kiosk_*, visitor_match_resident,
 -- timeclock_set_device_roster_roles and timeclock_enroll_device(text,text,text)
 -- functions and the haven helpers above; restore 408's timeclock_resolve,
--- timeclock_enroll_device(text,text), timeclock_record_punch,
+-- timeclock_enroll_device(text,text), timeclock_identify, timeclock_record_punch,
 -- timeclock_list_devices, timeclock_revoke_device and
 -- timeclock_create_enrollment_code(uuid), 468's assert_rounding_service_actor
 -- and 327's current_authorized_actor; restore 412's sign_out_method check and
