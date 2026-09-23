@@ -8,7 +8,7 @@ import { prepareDestination } from "next/dist/shared/lib/router/utils/prepare-de
 
 export const repairedRoutes = [
   "finance/forecast",
-  "finance/close",
+  "finance/period-close",
   "finance/trust",
   "reports/history/[id]",
   "training/inservice/new",

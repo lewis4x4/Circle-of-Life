@@ -86,7 +86,6 @@ const TOP_LEVEL_ROUTES: Record<string, string> = {
   // Authenticated surfaces that deliberately own their own chrome.
   "change-password": "forced password change gate; no navigation until the password is changed",
   "facility-launch": "static launch app with its own global styles (see admin-shell.ts)",
-  clinical: "mounts AppShell in clinical/layout.tsx",
   // Legacy aliases: every page must redirect (checked below).
   pipeline: "aliases into /admin",
   // Known shell-less self-service page, tracked with the duplicate-URL child of COL-631.
@@ -145,11 +144,29 @@ describe("route shell coverage (COL-644)", () => {
     ["/pipeline/discharge-management", "/admin/discharge"],
     ["/pipeline/discharge-management/new-reconciliation", "/admin/discharge/new"],
     ["/pipeline/discharge-transition", "/admin/discharge"],
+    ["/clinical/residents", "/admin/residents"],
+    ["/clinical/residents/abc", "/admin/residents/abc"],
+    ["/clinical/residents/add", "/admin/residents/new"],
+    ["/admin/finance/close", "/admin/finance/period-close"],
   ])("permanently redirects %s to %s", (from, to) => {
     const redirect = redirectFor(from);
     expect(redirect).not.toBeNull();
     expect(resolveDestination(redirect!.source, redirect!.destination, from)).toBe(to);
     expect(isAdminShellPage(to)).toBe(true);
     if (from !== "/pipeline/discharge-transition") expect(redirect!.permanent).toBe(true);
+  });
+});
+
+describe("floor app short paths (COL-654)", () => {
+  it.each([
+    ["/clock", "/caregiver/clock"],
+    ["/me", "/caregiver/me"],
+    ["/tasks", "/caregiver/tasks"],
+    ["/resident/abc/log", "/caregiver/resident/abc/log"],
+  ])("permanently redirects %s to %s", (from, to) => {
+    const redirect = redirectFor(from);
+    expect(redirect?.permanent).toBe(true);
+    expect(resolveDestination(redirect!.source, redirect!.destination, from)).toBe(to);
+    expect(fs.existsSync(path.join(APP_DIR, "(caregiver)", ...to.replace(/abc/, "[id]").split("/").filter(Boolean), "page.tsx"))).toBe(true);
   });
 });
