@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -886,7 +887,7 @@ export function AdminStaffingConsolePageClient({
           {visibleSnapshots.slice(0, 5).map((snap) => (
             <div key={snap.id} className={cn(listRowClass, "grid gap-2 text-sm sm:grid-cols-[1fr_auto] sm:items-center")}>
               <div className="font-medium text-foreground">
-                {new Date(snap.snapshotAt).toLocaleDateString()} / {snap.shift}
+                {formatDisplayDate(snap.snapshotAt)} / {snap.shift}
               </div>
               <div className="text-muted-foreground">
                 Ratio {snap.ratio.toFixed(1)}

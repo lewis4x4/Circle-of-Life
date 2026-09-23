@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -277,7 +278,7 @@ export default function AdminQualityHubPage() {
                     <span className="flex-1 min-w-0 text-[12px] text-foreground capitalize truncate">{enumLabel(p.status)}</span>
                     <span className="w-[80px] shrink-0 text-right text-[12px] font-medium text-foreground tabular-nums">{formatQualityHubPbjRowCount(p.row_count)}</span>
                     <span className="w-[140px] shrink-0 text-right text-[11px] text-muted-foreground font-mono tabular-nums truncate">
-                      {new Date(p.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                      {formatDisplayDateTime(p.created_at)}
                     </span>
                   </TableRow>
                 </MotionItem>

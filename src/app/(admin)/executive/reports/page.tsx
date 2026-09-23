@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -666,7 +667,7 @@ export default function ExecutiveSavedReportsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
-                          {parsed.publishedAt ? new Date(parsed.publishedAt).toLocaleString() : "Not yet"}
+                          {parsed.publishedAt ? formatDisplayDateTime(parsed.publishedAt) : "Not yet"}
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400">
                           {formatExecutiveLastGeneratedAt(r.last_generated_at)}

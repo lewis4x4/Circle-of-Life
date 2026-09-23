@@ -12,6 +12,7 @@
  * band rules, not from arithmetic performed here.
  */
 
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/format/datetime";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -249,7 +250,7 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
                 <div className="flex gap-2">
                   <dt className="text-muted-foreground">First seen</dt>
                   <dd className="tabular-nums text-foreground">
-                    {new Date(signal.first_detected_at).toLocaleDateString()}
+                    {formatDisplayDate(signal.first_detected_at)}
                   </dd>
                 </div>
                 <div className="flex gap-2">
@@ -298,10 +299,10 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
                     <tr key={row.id} className="h-9">
                       <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_label}<ObservationEvidence evidence={row.evidence} observations={observations} /></td>
                       <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                        {new Date(row.first_detected_at).toLocaleDateString()}
+                        {formatDisplayDate(row.first_detected_at)}
                       </td>
                       <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                        {row.cleared_at ? new Date(row.cleared_at).toLocaleDateString() : "Open"}
+                        {row.cleared_at ? formatDisplayDate(row.cleared_at) : "Open"}
                       </td>
                       <td className="px-3 py-2">
                         <StatusPill tone={signalStatusTone(row.status)}>
@@ -337,7 +338,7 @@ function ObservationEvidence({ evidence, observations }: {
     <summary className="cursor-pointer text-sm font-medium">View underlying observations</summary>
     {entries.length < ids.length ? <p className="mt-2 text-sm text-muted-foreground">Some referenced observations are unavailable in this building or with your access.</p> : null}
     <ul className="mt-2 space-y-3">{entries.map((row) => <li key={row.id}>
-      <time className="text-xs text-muted-foreground" dateTime={row.observed_at}>{new Date(row.observed_at).toLocaleString()}</time>
+      <time className="text-xs text-muted-foreground" dateTime={row.observed_at}>{formatDisplayDateTime(row.observed_at)}</time>
       <p className="text-sm">{row.composed_summary || "Observation narrative unavailable."}</p>
       {row.note ? <p className="text-sm text-muted-foreground">Note: {row.note}</p> : null}
     </li>)}</ul>
