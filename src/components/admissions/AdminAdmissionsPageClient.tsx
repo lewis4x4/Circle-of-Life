@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { PageHeader } from "@/design-system/components/PageHeader";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,7 +36,6 @@ import {
 } from "@/lib/admissions/admissions-hub-bootstrap";
 import {
   admissionsHubMetricValue,
-  admissionsHubNoFacilityNotice,
   admissionsHubScopedEmptyNotice,
   admissionsHubScopeLabel,
   formatAdmissionsHubConferenceScheduledDate,
@@ -507,8 +507,8 @@ export function AdminAdmissionsPageClient({
 
   const noFacility = !selectedFacilityId || !isValidFacilityIdForQuery(selectedFacilityId);
   const metricCtx = useMemo(
-    (): AdmissionsHubMetricContext => ({ noFacility, loading }),
-    [loading, noFacility],
+    (): AdmissionsHubMetricContext => ({ loading }),
+    [loading],
   );
 
   const blockedAdmissions = useMemo(() => {
@@ -578,23 +578,16 @@ export function AdminAdmissionsPageClient({
                     Process discharge
                   </Link>
                 </>
-              ) : (
-                <>
-                  <span className={cn(workflowQuietLinkClass, "pointer-events-none opacity-40")}>+ New referral</span>
-                  <span className={cn(workflowQuietLinkClass, "pointer-events-none opacity-40")}>Start admission</span>
-                  <span className={cn(workflowQuietLinkClass, "pointer-events-none opacity-40")}>Process discharge</span>
-                </>
-              )}
+              ) : null}
             </div>
           </div>
         }
       />
 
       {noFacility ? (
-        <div role="status" className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          {admissionsHubNoFacilityNotice()}
-        </div>
-      ) : null}
+        <FacilityGateNotice reason="Referrals, admissions, discharges and family work are kept per building." />
+      ) : (
+      <>
 
       {/* FOLLOW-UP(ISSUE): Consider consolidating Family Portal + Family Messages sidebar entries per hub IA decision. */}
 
@@ -639,9 +632,7 @@ export function AdminAdmissionsPageClient({
           />
         }
       >
-        {noFacility ? (
-          <p className="text-sm text-muted-foreground">Select a facility to preview referrals.</p>
-        ) : loading ? (
+        {loading ? (
           <p className="text-sm text-muted-foreground">Loading referrals…</p>
         ) : referrals.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
@@ -724,9 +715,7 @@ export function AdminAdmissionsPageClient({
           />
         }
       >
-        {noFacility ? (
-          <p className="text-sm text-muted-foreground">Select a facility to preview admissions.</p>
-        ) : loading ? (
+        {loading ? (
           <p className="text-sm text-muted-foreground">Loading admissions…</p>
         ) : admissions.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
@@ -841,9 +830,7 @@ export function AdminAdmissionsPageClient({
       </HubSection>
 
       <HubSection title="Discharges" viewAllHref="/admin/discharge" metrics={<InlineMetricsRow parts={[{ label: "In review", value: hubMetric(dischargeMetrics.inReview, metricCtx) }]} />}>
-        {noFacility ? (
-          <p className="text-sm text-muted-foreground">Select a facility to preview discharge work.</p>
-        ) : loading ? (
+        {loading ? (
           <p className="text-sm text-muted-foreground">Loading discharges…</p>
         ) : discharges.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
@@ -928,9 +915,7 @@ export function AdminAdmissionsPageClient({
         {familyActionMessage ? (
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">{familyActionMessage}</div>
         ) : null}
-        {noFacility ? (
-          <p className="text-sm text-muted-foreground">Select a facility to preview family connections.</p>
-        ) : loading ? (
+        {loading ? (
           <p className="text-sm text-muted-foreground">Loading family connections…</p>
         ) : triage.length === 0 && conferences.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
@@ -1043,6 +1028,8 @@ export function AdminAdmissionsPageClient({
           </div>
         )}
       </HubSection>
+      </>
+      )}
     </div>
   );
 }
