@@ -91,6 +91,27 @@ const RECRUITER_ADMIN_PATH_PREFIXES = [
   "/admin/reputation",
 ] as const;
 
+/**
+ * Brian, 2026-09-23: "take away admin finance, payroll and staff pages from
+ * med-techs". Med-Tech inherited the retired nurse role's admin-shell access
+ * (COL-615); these areas are withdrawn from it. Short aliases (/finance, /payroll,
+ * /staff) are the same pages.
+ */
+const MED_TECH_BLOCKED_ADMIN_PATH_PREFIXES = [
+  "/admin/finance",
+  "/finance",
+  "/admin/payroll",
+  "/payroll",
+  "/admin/staff",
+  "/staff",
+] as const;
+
+export function isMedTechBlockedAdminPath(pathname: string): boolean {
+  return MED_TECH_BLOCKED_ADMIN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export function isRecruiterAllowedAdminPath(pathname: string): boolean {
   return RECRUITER_ADMIN_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
