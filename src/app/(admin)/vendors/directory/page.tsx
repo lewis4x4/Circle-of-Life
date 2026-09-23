@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
 import { vendorStatusUiLabel } from "@/lib/vendors/vendor-category-ui";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type VendorRow = Database["public"]["Tables"]["vendors"]["Row"];
 
@@ -139,36 +140,38 @@ export default function VendorDirectoryPage() {
           <CardTitle className="text-base">Vendors</CardTitle>
           <CardDescription>{loading ? "Loading…" : `${rows.length} vendor(s)`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">Name</th>
-                <th className="pb-2 pr-4 font-medium">Category</th>
-                <th className="pb-2 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((v) => (
-                <tr key={v.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4">
-                    <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/vendors/${v.id}`}>
-                      {v.name}
-                    </Link>
-                  </td>
-                  <td className="py-2 pr-4 capitalize text-slate-600 dark:text-slate-400">{v.category}</td>
-                  <td className="py-2 text-slate-600 dark:text-slate-400">{vendorStatusUiLabel(v.status)}</td>
+        <CardContent>
+          <HorizontalScroll label="Vendor directory">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="pb-2 pr-4 font-medium">Name</th>
+                  <th className="pb-2 pr-4 font-medium">Category</th>
+                  <th className="pb-2 font-medium">Status</th>
                 </tr>
-              ))}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-6 text-slate-500">
-                    No vendors yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((v) => (
+                  <tr key={v.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4">
+                      <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/vendors/${v.id}`}>
+                        {v.name}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-4 capitalize text-slate-600 dark:text-slate-400">{v.category}</td>
+                    <td className="py-2 text-slate-600 dark:text-slate-400">{vendorStatusUiLabel(v.status)}</td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-slate-500">
+                      No vendors yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>

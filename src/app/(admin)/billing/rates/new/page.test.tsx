@@ -13,7 +13,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/billing/rates/new",
 }));
 vi.mock("@/hooks/useFacilityStore", () => ({
-  useFacilityStore: () => ({ selectedFacilityId: mocks.selectedFacilityId }),
+  useFacilityStore: (select?: (state: { selectedFacilityId: string | null }) => unknown) => {
+    const state = { selectedFacilityId: mocks.selectedFacilityId };
+    return select ? select(state) : state;
+  },
 }));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({ from: () => ({}) }),

@@ -17,6 +17,7 @@ import {
   INSURANCE_LOSS_RUNS_LIST_SELECT,
 } from "@/lib/admin/hub-list-limits";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Row = Database["public"]["Tables"]["loss_runs"]["Row"];
 
@@ -88,29 +89,31 @@ export default function InsuranceLossRunsPage() {
           <CardTitle className="text-base">History</CardTitle>
           <CardDescription>{loading ? "Loading…" : `${rows.length} row(s)`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="py-2 pr-4 font-medium">Period</th>
-                <th className="py-2 pr-4 font-medium">Claims</th>
-                <th className="py-2 pr-4 font-medium">Paid</th>
-                <th className="py-2 font-medium">Reserve</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4">
-                    {r.period_start} – {r.period_end}
-                  </td>
-                  <td className="py-2 pr-4 tabular-nums">{r.total_claims_count}</td>
-                  <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(Number(r.total_paid_cents))}</td>
-                  <td className="py-2 tabular-nums">{formatUsdFromCents(Number(r.total_reserve_cents))}</td>
+        <CardContent>
+          <HorizontalScroll label="Loss runs">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="py-2 pr-4 font-medium">Period</th>
+                  <th className="py-2 pr-4 font-medium">Claims</th>
+                  <th className="py-2 pr-4 font-medium">Paid</th>
+                  <th className="py-2 font-medium">Reserve</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4">
+                      {r.period_start} – {r.period_end}
+                    </td>
+                    <td className="py-2 pr-4 tabular-nums">{r.total_claims_count}</td>
+                    <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(Number(r.total_paid_cents))}</td>
+                    <td className="py-2 tabular-nums">{formatUsdFromCents(Number(r.total_reserve_cents))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </HorizontalScroll>
           {!loading && rows.length === 0 && organizationId ? (
             <p className="text-sm text-slate-600 dark:text-slate-400">No loss runs generated yet.</p>
           ) : null}

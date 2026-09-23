@@ -15,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 function isDateDue(row: CarePlanReviewDueRow): boolean {
   return row.reasons.some((reason) => reason.kind === "review_due");
@@ -57,12 +58,15 @@ export function CarePlanReviewsDuePageClient({
 
   const skipNextLoadRef = useRef(initialError == null);
 
+  const beginLoad = useLatestLoad();
+
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
       skipNextLoadRef.current = false;
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
@@ -71,16 +75,18 @@ export function CarePlanReviewsDuePageClient({
         fetchCarePlanReviewsDue(selectedFacilityId),
         fetchActiveCarePlanCount(selectedFacilityId),
       ]);
+      if (!isCurrent()) return;
       setRows(data);
       setActivePlanCount(planCount);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(err instanceof Error ? err.message : "Unable to load care plan reviews.");
       setRows([]);
       setActivePlanCount(null);
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

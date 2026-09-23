@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Badge } from "@/components/ui/badge";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
@@ -112,6 +113,7 @@ function roomLabel(row: ConcessionRow): string {
 
 export default function BillingConcessionsPage() {
   const { selectedFacilityId } = useFacilityStore();
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const [rows, setRows] = useState<ConcessionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,8 +125,8 @@ export default function BillingConcessionsPage() {
     try {
       const supabase = createClient();
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+        // Gated below: no facility is not a load failure.
         setRows([]);
-        setError("Select a facility to view concession tracking.");
         return;
       }
 
@@ -291,6 +293,10 @@ export default function BillingConcessionsPage() {
           </div>
         </header>
 
+        {!facilityReady ? (
+          <FacilityGateNotice reason="Concessions compare each resident's rent with the rate schedule posted for their building." />
+        ) : null}
+
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} /> : null}
 
         {!isLoading && rows.length > 0 ? (
@@ -314,7 +320,7 @@ export default function BillingConcessionsPage() {
         ) : null}
 
         {isLoading ? <AdminTableLoadingState /> : null}
-        {!isLoading && rows.length === 0 && !error ? (
+        {facilityReady && !isLoading && rows.length === 0 && !error ? (
           <AdminEmptyState title="No concession rows" description="Confirm negotiated terms on resident billing profiles or import monthly rent data." />
         ) : null}
 

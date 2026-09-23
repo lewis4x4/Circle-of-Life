@@ -57,6 +57,7 @@ import { formatCorrectiveActionNotes } from "@/lib/care-events/admin-copy";
 import { toObligationDelivery } from "@/lib/care-events/admin-data";
 import { IncidentCareEventNotifications } from "@/components/incidents/IncidentCareEventNotifications";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 export type AdminIncidentDetailPageClientProps = {
   initialDetail?: IncidentDetailView | null;
@@ -76,6 +77,7 @@ export function AdminIncidentDetailPageClient({
   const { user } = useHavenAuth();
   const bootstrapped = initialFacilityId !== undefined;
   const skipNextLoadRef = useRef(bootstrapped && initialError == null);
+  const beginLoad = useLatestLoad();
 
   const [loading, setLoading] = useState(!bootstrapped);
   const [error, setError] = useState<string | null>(initialError);
@@ -102,6 +104,7 @@ export function AdminIncidentDetailPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setLoading(true);
     setError(null);
@@ -116,6 +119,7 @@ export function AdminIncidentDetailPageClient({
 
     try {
       const row = await loadIncidentDetail(incidentId, selectedFacilityId);
+      if (!isCurrent()) return;
       if (!row) {
         setNotFound(true);
         setLoading(false);
@@ -127,11 +131,14 @@ export function AdminIncidentDetailPageClient({
       );
       try {
         const options = await fetchIncidentFollowupAssignees(row.incident.facility_id);
+        if (!isCurrent()) return;
         setAssigneeOptions(options);
       } catch {
+        if (!isCurrent()) return;
         setAssigneeOptions([]);
       }
     } catch (err) {
+      if (!isCurrent()) return;
       setError(
         formatLiveDataLoadError(
           err,
@@ -139,9 +146,9 @@ export function AdminIncidentDetailPageClient({
         ),
       );
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [incidentId, selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, incidentId, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();

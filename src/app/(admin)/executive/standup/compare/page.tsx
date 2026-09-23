@@ -25,6 +25,7 @@ import {
 } from "@/lib/executive/standup-page-state";
 import { formatStandupMetricDelta, formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export default function ExecutiveStandupComparePage() {
   const searchParams = useSearchParams();
@@ -256,36 +257,38 @@ export default function ExecutiveStandupComparePage() {
                     <CardTitle className="text-lg">{sectionLabel}</CardTitle>
                     <CardDescription>Total-row comparison across the two selected weeks.</CardDescription>
                   </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="min-w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 dark:border-white/10">
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Metric</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">{comparison.fromWeek}</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">{comparison.toWeek}</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Delta</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {metricKeys.map((metricKey) => {
-                          const leftMetric = leftTotals?.metrics[metricKey];
-                          const rightMetric = rightTotals?.metrics[metricKey];
-                          const sample = rightMetric ?? leftMetric;
-                          if (!sample) return null;
-                          return (
-                            <tr key={metricKey} className="border-b border-slate-100 dark:border-white/5">
-                              <td className="px-3 py-3">
-                                <div className="font-medium text-slate-900 dark:text-white">{sample.label}</div>
-                                <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{sample.description}</div>
-                              </td>
-                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</td>
-                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</td>
-                              <td className="px-3 py-3 text-primary">{formatStandupMetricDelta(leftMetric, rightMetric)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <CardContent>
+                    <HorizontalScroll label="Stand Up comparison">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-white/10">
+                            <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Metric</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">{comparison.fromWeek}</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">{comparison.toWeek}</th>
+                            <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Delta</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {metricKeys.map((metricKey) => {
+                            const leftMetric = leftTotals?.metrics[metricKey];
+                            const rightMetric = rightTotals?.metrics[metricKey];
+                            const sample = rightMetric ?? leftMetric;
+                            if (!sample) return null;
+                            return (
+                              <tr key={metricKey} className="border-b border-slate-100 dark:border-white/5">
+                                <td className="px-3 py-3">
+                                  <div className="font-medium text-slate-900 dark:text-white">{sample.label}</div>
+                                  <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{sample.description}</div>
+                                </td>
+                                <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</td>
+                                <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</td>
+                                <td className="px-3 py-3 text-primary">{formatStandupMetricDelta(leftMetric, rightMetric)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </HorizontalScroll>
                   </CardContent>
                 </Card>
               );

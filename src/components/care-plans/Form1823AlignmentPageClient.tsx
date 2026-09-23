@@ -28,6 +28,7 @@ import {
   type Form1823RowAlignmentState,
 } from "@/lib/care-plans/form-1823-alignment-roster";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type Props = {
   initialRoster: Form1823AlignmentRoster | null;
@@ -204,6 +205,7 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -211,17 +213,21 @@ export function Form1823AlignmentPageClient({ initialRoster, initialError, initi
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
     setIsLoading(true);
     setError(null);
     try {
-      setRoster(await fetchForm1823AlignmentRoster(selectedFacilityId));
+      const roster = await fetchForm1823AlignmentRoster(selectedFacilityId);
+      if (!isCurrent()) return;
+      setRoster(roster);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(err instanceof Error ? err.message : "Unable to load Form 1823 alignment.");
       setRoster(null);
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     // Deferred so the read starts after paint rather than inside the effect body.

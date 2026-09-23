@@ -59,6 +59,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatThresholdsTabLastChangedSuffix } from "@/lib/facilities/thresholds-tab-display-copy";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type AuditFacilityRow = {
   id: string;
@@ -320,183 +321,185 @@ export function ThresholdsTab({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[8px] border border-border bg-card">
-        <table className="min-w-full text-sm">
-          <thead className="border-b border-border bg-muted/10 text-left">
-            <tr className="text-muted-foreground">
-              <th className="px-3 py-2 font-medium">Type</th>
-              <th className="px-3 py-2 font-medium">Yellow</th>
-              <th className="px-3 py-2 font-medium">Red</th>
-              <th className="px-3 py-2 font-medium">Direction</th>
-              <th className="px-3 py-2 font-medium">Enabled</th>
-              <th className="w-10 px-2 py-2" aria-label="Actions" />
-            </tr>
-          </thead>
-          <tbody className="text-foreground">
-            {grouped.map(({ domain, types }) => (
-              <React.Fragment key={domain}>
-                <tr className="bg-muted/[0.08]">
-                  <td className="px-3 pb-2 pt-4" colSpan={6}>
-                    <h3 className="text-[14px] font-semibold text-foreground">{THRESHOLD_DOMAIN_LABELS[domain]}</h3>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="p-0" colSpan={6}>
-                    <div className="mx-3 h-px bg-border" />
-                  </td>
-                </tr>
-                {types.map((tt) => {
-                  const row = [...local].find((r) => r.threshold_type === tt);
-                  if (!row) return null;
-                  const org = orgMap.get(tt);
-                  const inherited = thresholdsMatchOrgDefault(row, org);
-                  const meta = OPERATIONAL_THRESHOLD_CATALOG[tt];
-                  const freqValue =
-                    row.alert_frequency ?? org?.alert_frequency ?? meta?.alertFrequency ?? "daily_until_resolved";
-                  const err = rowErrors.get(row.id);
+      <div className="rounded-[8px] border border-border bg-card">
+        <HorizontalScroll label="Facility thresholds">
+          <table className="min-w-full text-sm">
+            <thead className="border-b border-border bg-muted/10 text-left">
+              <tr className="text-muted-foreground">
+                <th className="px-3 py-2 font-medium">Type</th>
+                <th className="px-3 py-2 font-medium">Yellow</th>
+                <th className="px-3 py-2 font-medium">Red</th>
+                <th className="px-3 py-2 font-medium">Direction</th>
+                <th className="px-3 py-2 font-medium">Enabled</th>
+                <th className="w-10 px-2 py-2" aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody className="text-foreground">
+              {grouped.map(({ domain, types }) => (
+                <React.Fragment key={domain}>
+                  <tr className="bg-muted/[0.08]">
+                    <td className="px-3 pb-2 pt-4" colSpan={6}>
+                      <h3 className="text-[14px] font-semibold text-foreground">{THRESHOLD_DOMAIN_LABELS[domain]}</h3>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-0" colSpan={6}>
+                      <div className="mx-3 h-px bg-border" />
+                    </td>
+                  </tr>
+                  {types.map((tt) => {
+                    const row = [...local].find((r) => r.threshold_type === tt);
+                    if (!row) return null;
+                    const org = orgMap.get(tt);
+                    const inherited = thresholdsMatchOrgDefault(row, org);
+                    const meta = OPERATIONAL_THRESHOLD_CATALOG[tt];
+                    const freqValue =
+                      row.alert_frequency ?? org?.alert_frequency ?? meta?.alertFrequency ?? "daily_until_resolved";
+                    const err = rowErrors.get(row.id);
 
-                  return (
-                    <React.Fragment key={row.id}>
-                      <tr className="border-t border-border">
-                        <td className="max-w-[14rem] px-3 py-3 align-middle">
-                          <div className="space-y-1">
-                            <p className={cn("font-medium", inherited ? "italic text-muted-foreground" : "")}>
-                              {THRESHOLD_TYPE_LABELS[tt]}
-                            </p>
-                            {inherited ? (
-                              <p className="text-[11px] italic text-muted-foreground">↑ Inherited from org</p>
-                            ) : org ? (
-                              <p className="text-[11px] text-muted-foreground">
-                                Override · org {org.yellow_threshold} · {org.red_threshold}
+                    return (
+                      <React.Fragment key={row.id}>
+                        <tr className="border-t border-border">
+                          <td className="max-w-[14rem] px-3 py-3 align-middle">
+                            <div className="space-y-1">
+                              <p className={cn("font-medium", inherited ? "italic text-muted-foreground" : "")}>
+                                {THRESHOLD_TYPE_LABELS[tt]}
                               </p>
-                            ) : null}
-                            <div className="flex flex-wrap items-center gap-2 pt-1">
-                              <span className="text-[11px] text-muted-foreground">
-                                Digest: {describeAlertFrequency(tt, row.alert_frequency)}
-                              </span>
-                              <Select
-                                value={freqValue}
-                                onValueChange={(v) =>
-                                  updateRow(row.id, {
-                                    alert_frequency: v,
-                                  })
-                                }
-                              >
-                                <SelectTrigger className="h-7 w-[160px] text-[11px]" aria-label="Alert frequency">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {THRESHOLD_ALERT_FREQUENCIES.map((f) => (
-                                    <SelectItem key={f} value={f} className="text-xs">
-                                      {describeAlertFrequency(tt, f)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              {inherited ? (
+                                <p className="text-[11px] italic text-muted-foreground">↑ Inherited from org</p>
+                              ) : org ? (
+                                <p className="text-[11px] text-muted-foreground">
+                                  Override · org {org.yellow_threshold} · {org.red_threshold}
+                                </p>
+                              ) : null}
+                              <div className="flex flex-wrap items-center gap-2 pt-1">
+                                <span className="text-[11px] text-muted-foreground">
+                                  Digest: {describeAlertFrequency(tt, row.alert_frequency)}
+                                </span>
+                                <Select
+                                  value={freqValue}
+                                  onValueChange={(v) =>
+                                    updateRow(row.id, {
+                                      alert_frequency: v,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger className="h-7 w-[160px] text-[11px]" aria-label="Alert frequency">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {THRESHOLD_ALERT_FREQUENCIES.map((f) => (
+                                      <SelectItem key={f} value={f} className="text-xs">
+                                        {describeAlertFrequency(tt, f)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 align-middle">
-                          <div className={cn(inherited ? "opacity-80" : "")}>
-                            <NumberInput
-                              aria-label={`${THRESHOLD_TYPE_LABELS[tt]} yellow`}
-                              min={0}
-                              value={row.yellow_threshold}
-                              onValueChange={(n) => updateRow(row.id, { yellow_threshold: n })}
-                              className={cn(inherited ? "italic text-muted-foreground" : "")}
+                          </td>
+                          <td className="px-3 py-3 align-middle">
+                            <div className={cn(inherited ? "opacity-80" : "")}>
+                              <NumberInput
+                                aria-label={`${THRESHOLD_TYPE_LABELS[tt]} yellow`}
+                                min={0}
+                                value={row.yellow_threshold}
+                                onValueChange={(n) => updateRow(row.id, { yellow_threshold: n })}
+                                className={cn(inherited ? "italic text-muted-foreground" : "")}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 align-middle">
+                            <div className={cn(inherited ? "opacity-80" : "")}>
+                              <NumberInput
+                                aria-label={`${THRESHOLD_TYPE_LABELS[tt]} red`}
+                                min={0}
+                                value={row.red_threshold}
+                                onValueChange={(n) => updateRow(row.id, { red_threshold: n })}
+                                className={cn(inherited ? "italic text-muted-foreground" : "")}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 align-middle">
+                            <div className="flex max-w-[10rem] items-start gap-1.5 text-[11px] leading-snug text-muted-foreground">
+                              <span className="text-foreground/90">{thresholdDirectionLabel(tt)}</span>
+                              <Tooltip>
+                                <TooltipTrigger
+                                  type="button"
+                                  className="mt-0.5 rounded-[4px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  aria-label={`About ${THRESHOLD_TYPE_LABELS[tt]}`}
+                                >
+                                  <Info className="size-3.5 shrink-0" aria-hidden />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs text-xs leading-snug">{meta?.description ?? ""}</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 align-middle">
+                            <Switch
+                              checked={row.enabled}
+                              onCheckedChange={(v) => updateRow(row.id, { enabled: v })}
+                              aria-label={`Enable alerts for ${THRESHOLD_TYPE_LABELS[tt]}`}
                             />
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 align-middle">
-                          <div className={cn(inherited ? "opacity-80" : "")}>
-                            <NumberInput
-                              aria-label={`${THRESHOLD_TYPE_LABELS[tt]} red`}
-                              min={0}
-                              value={row.red_threshold}
-                              onValueChange={(n) => updateRow(row.id, { red_threshold: n })}
-                              className={cn(inherited ? "italic text-muted-foreground" : "")}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 align-middle">
-                          <div className="flex max-w-[10rem] items-start gap-1.5 text-[11px] leading-snug text-muted-foreground">
-                            <span className="text-foreground/90">{thresholdDirectionLabel(tt)}</span>
-                            <Tooltip>
-                              <TooltipTrigger
+                          </td>
+                          <td className="px-2 py-3 align-middle text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
                                 type="button"
-                                className="mt-0.5 rounded-[4px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                aria-label={`About ${THRESHOLD_TYPE_LABELS[tt]}`}
+                                className="inline-flex size-8 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-muted"
+                                aria-label="Row actions"
                               >
-                                <Info className="size-3.5 shrink-0" aria-hidden />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs text-xs leading-snug">{meta?.description ?? ""}</TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 align-middle">
-                          <Switch
-                            checked={row.enabled}
-                            onCheckedChange={(v) => updateRow(row.id, { enabled: v })}
-                            aria-label={`Enable alerts for ${THRESHOLD_TYPE_LABELS[tt]}`}
-                          />
-                        </td>
-                        <td className="px-2 py-3 align-middle text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              type="button"
-                              className="inline-flex size-8 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-muted"
-                              aria-label="Row actions"
-                            >
-                              <MoreHorizontal className="size-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52">
-                              <DropdownMenuItem
-                                disabled={!org}
-                                onSelect={() => {
-                                  resetRowToOrg(row.id);
-                                }}
-                              >
-                                Reset to org default
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  router.push("/admin/settings/notifications");
-                                }}
-                              >
-                                View alert routing →
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  void openHistory(row);
-                                }}
-                              >
-                                View history
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  updateRow(row.id, { enabled: false });
-                                }}
-                              >
-                                Disable
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                      {err ? (
-                        <tr className="bg-destructive/5">
-                          <td className="px-3 pb-3 pt-0 text-xs text-destructive" colSpan={6}>
-                            {err}
+                                <MoreHorizontal className="size-4" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-52">
+                                <DropdownMenuItem
+                                  disabled={!org}
+                                  onSelect={() => {
+                                    resetRowToOrg(row.id);
+                                  }}
+                                >
+                                  Reset to org default
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    router.push("/admin/settings/notifications");
+                                  }}
+                                >
+                                  View alert routing →
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    void openHistory(row);
+                                  }}
+                                >
+                                  View history
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    updateRow(row.id, { enabled: false });
+                                  }}
+                                >
+                                  Disable
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         </tr>
-                      ) : null}
-                    </React.Fragment>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
+                        {err ? (
+                          <tr className="bg-destructive/5">
+                            <td className="px-3 pb-3 pt-0 text-xs text-destructive" colSpan={6}>
+                              {err}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </React.Fragment>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </HorizontalScroll>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5 lg:gap-8">

@@ -13,6 +13,7 @@ import {
   formatCoverageReviewStatus,
 } from "@/lib/knowledge/coverage-display-copy";
 import { createClient } from "@/lib/supabase/client";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /**
  * KB-NEXT-11: coverage dashboard.
@@ -363,46 +364,48 @@ function GapsPanel({
   }
   return (
     <div className="rounded-xl border border-border bg-card">
-      <table className="w-full text-sm">
-        <thead className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 text-left">Question</th>
-            <th className="px-3 py-2 text-left">Signal</th>
-            <th className="px-3 py-2 text-left">Surface</th>
-            <th className="px-3 py-2 text-right">Freq.</th>
-            <th className="px-3 py-2 text-left">Last asked</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {gaps.map((g) => (
-            <tr key={g.id} className="border-b border-border/60 last:border-b-0">
-              <td className="px-3 py-2 text-foreground max-w-md truncate" title={g.question}>
-                {g.question}
-              </td>
-              <td className="px-3 py-2 text-xs">
-                <span className="inline-flex rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">
-                  {SIGNAL_LABELS[g.signal] ?? g.signal}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">{g.surface}</td>
-              <td className="px-3 py-2 text-right font-mono text-xs">{g.frequency}</td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">
-                {new Date(g.last_asked_at).toLocaleString()}
-              </td>
-              <td className="px-3 py-2 text-right">
-                <button
-                  type="button"
-                  onClick={() => void onResolve(g.id)}
-                  className="rounded border border-border bg-background px-2 py-0.5 text-[11px] hover:bg-muted/40"
-                >
-                  Resolve
-                </button>
-              </td>
+      <HorizontalScroll label="Knowledge coverage">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left">Question</th>
+              <th className="px-3 py-2 text-left">Signal</th>
+              <th className="px-3 py-2 text-left">Surface</th>
+              <th className="px-3 py-2 text-right">Freq.</th>
+              <th className="px-3 py-2 text-left">Last asked</th>
+              <th className="px-3 py-2"></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {gaps.map((g) => (
+              <tr key={g.id} className="border-b border-border/60 last:border-b-0">
+                <td className="px-3 py-2 text-foreground max-w-md truncate" title={g.question}>
+                  {g.question}
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  <span className="inline-flex rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+                    {SIGNAL_LABELS[g.signal] ?? g.signal}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">{g.surface}</td>
+                <td className="px-3 py-2 text-right font-mono text-xs">{g.frequency}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">
+                  {new Date(g.last_asked_at).toLocaleString()}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => void onResolve(g.id)}
+                    className="rounded border border-border bg-background px-2 py-0.5 text-[11px] hover:bg-muted/40"
+                  >
+                    Resolve
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </HorizontalScroll>
     </div>
   );
 }
@@ -417,57 +420,59 @@ function FreshnessPanel({ rows }: { rows: FreshnessRow[] }) {
   }
   return (
     <div className="rounded-xl border border-border bg-card">
-      <table className="w-full text-sm">
-        <thead className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 text-left">Title</th>
-            <th className="px-3 py-2 text-left">Compliance</th>
-            <th className="px-3 py-2 text-left">Status</th>
-            <th className="px-3 py-2 text-right">Age (days)</th>
-            <th className="px-3 py-2 text-left">Review</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((d) => (
-            <tr key={d.document_id} className="border-b border-border/60 last:border-b-0">
-              <td className="px-3 py-2 text-foreground max-w-md truncate" title={d.title}>
-                <Link
-                  href={`/admin/knowledge/documents/${d.document_id}`}
-                  className="hover:underline"
-                >
-                  {d.title}
-                </Link>
-              </td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">
-                {formatCoverageComplianceCategory(d.compliance_category)}
-              </td>
-              <td className="px-3 py-2">
-                <span
-                  className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] capitalize ${
-                    FRESHNESS_TONE[d.freshness_status]
-                  }`}
-                >
-                  {d.freshness_status}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-right font-mono text-xs">
-                {formatCoverageDaysSinceRefresh(d.days_since_refresh)}
-              </td>
-              <td className="px-3 py-2 text-xs">
-                {d.review_overdue ? (
-                  <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] text-rose-800">
-                    {formatCoverageReviewStatus(true)}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {formatCoverageReviewStatus(false)}
-                  </span>
-                )}
-              </td>
+      <HorizontalScroll label="Knowledge coverage gaps">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border bg-muted/30 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left">Title</th>
+              <th className="px-3 py-2 text-left">Compliance</th>
+              <th className="px-3 py-2 text-left">Status</th>
+              <th className="px-3 py-2 text-right">Age (days)</th>
+              <th className="px-3 py-2 text-left">Review</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((d) => (
+              <tr key={d.document_id} className="border-b border-border/60 last:border-b-0">
+                <td className="px-3 py-2 text-foreground max-w-md truncate" title={d.title}>
+                  <Link
+                    href={`/admin/knowledge/documents/${d.document_id}`}
+                    className="hover:underline"
+                  >
+                    {d.title}
+                  </Link>
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">
+                  {formatCoverageComplianceCategory(d.compliance_category)}
+                </td>
+                <td className="px-3 py-2">
+                  <span
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] capitalize ${
+                      FRESHNESS_TONE[d.freshness_status]
+                    }`}
+                  >
+                    {d.freshness_status}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-xs">
+                  {formatCoverageDaysSinceRefresh(d.days_since_refresh)}
+                </td>
+                <td className="px-3 py-2 text-xs">
+                  {d.review_overdue ? (
+                    <span className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] text-rose-800">
+                      {formatCoverageReviewStatus(true)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {formatCoverageReviewStatus(false)}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </HorizontalScroll>
     </div>
   );
 }
