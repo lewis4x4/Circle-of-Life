@@ -272,9 +272,11 @@ def parse_workbook(raw, facility_map, file_id, filename, sheets=None, weeks=None
                         populated = True
                     key = LABELS.get(label) if schema == "standup-2026-v1" else None
                     if key:
+                        cell_address = cell["address"] if cell else _address(col, row)
                         if key in mapped:
-                            local_issues.append({"code": "duplicate_label", "message": label})
-                        mapped[key] = cell["address"] if cell else _address(col, row)
+                            local_issues.append({"code": "duplicate_label", "cell": cell_address, "first_cell": mapped[key],
+                                                 "message": label + ": entered in both " + mapped[key] + " and " + cell_address})
+                        mapped[key] = cell_address
                         try:
                             values[key] = cell_number(cell, key)
                         except WorkbookError as exc:

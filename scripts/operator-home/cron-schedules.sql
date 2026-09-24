@@ -53,7 +53,9 @@ select cron.schedule(
       'category', jsonb_build_array('safety'),
       'date_from', to_char((now() at time zone 'America/New_York')::date, 'YYYY-MM-DD'),
       'date_to', to_char((now() at time zone 'America/New_York')::date + 7, 'YYYY-MM-DD')
-    )
+    ),
+    -- pg_net's 5-second default is shorter than a run (COL-547).
+    timeout_milliseconds := 60000
   );
   $$
 );
@@ -83,6 +85,10 @@ select cron.schedule(
   '*/15 * * * *',
   $$select public.home_escalate_uncleared();$$
 );
+
+-- Pure SQL, so it is registered, not rewritten; the monitor reads its
+-- cron.job_run_details (COL-253). Without this it reports not_monitored (COL-547).
+select job_monitor.register_native(jobid) from cron.job where jobname = 'home-escalate-uncleared-15m';
 
 -- ---------------------------------------------------------------------------
 -- Verification

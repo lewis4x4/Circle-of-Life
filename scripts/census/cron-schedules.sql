@@ -53,7 +53,9 @@ select cron.schedule(
       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'daily_census_log_anon_key'),
       'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'daily_census_log_cron_secret')
     ),
-    body := '{}'::jsonb
+    body := '{}'::jsonb,
+    -- pg_net's 5-second default is shorter than a run (COL-547).
+    timeout_milliseconds := 60000
   );
   $$
 );
