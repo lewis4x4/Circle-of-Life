@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
+import { BackLink } from "@/design-system/components/BackLink";
 import { enumLabel } from "@/lib/display/enum-label";
 
 export function CaregiverPendingPoliciesList() {
@@ -62,15 +63,7 @@ export function CaregiverPendingPoliciesList() {
         </p>
       </div>
 
-      <Link
-        href={homeHref}
-        className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
-          "h-auto min-h-[44px] w-full border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-        )}
-      >
-        Back to shift home
-      </Link>
+      <BackLink label="Shift home" href={homeHref} className="min-h-[44px]" />
 
       {loading ? (
         <div className="flex items-center gap-2 text-muted-foreground">
