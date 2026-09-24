@@ -231,7 +231,7 @@ BEGIN
     f.facility_id,
     v_org,
     'Synthetic',
-    'Staff',
+    'Staff ' || r.staff_role::text,
     r.staff_role,
     current_date
   FROM (

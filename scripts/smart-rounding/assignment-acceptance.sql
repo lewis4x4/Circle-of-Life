@@ -268,7 +268,7 @@ BEGIN
         v_facility,
         v_org,
         'Staff',
-        'Synthetic',
+        'Synthetic ' || n.idx,
         'resident_aide',
         current_date - 100,
         'active'
