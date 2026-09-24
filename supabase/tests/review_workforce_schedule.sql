@@ -5,7 +5,7 @@ CREATE TEMP TABLE schedule_fixture AS
 SELECT f.id facility,f.organization_id org,
  (SELECT id FROM public.facilities WHERE organization_id=f.organization_id AND id<>f.id AND deleted_at IS NULL LIMIT 1) other_facility,
  gen_random_uuid() staff,gen_random_uuid() colleague,gen_random_uuid() week,gen_random_uuid() next_week,gen_random_uuid() empty_week,
- gen_random_uuid() definition,gen_random_uuid() overlap_definition,gen_random_uuid() swap,gen_random_uuid() other_staff,gen_random_uuid() other_week
+ gen_random_uuid() definition,gen_random_uuid() overlap_definition,gen_random_uuid() swap,gen_random_uuid() other_staff,gen_random_uuid() other_week,gen_random_uuid() unit,gen_random_uuid() resident
 FROM public.facilities f WHERE f.deleted_at IS NULL AND EXISTS (SELECT 1 FROM public.facilities b WHERE b.organization_id=f.organization_id AND b.id<>f.id AND b.deleted_at IS NULL) LIMIT 1;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM schedule_fixture) THEN RAISE EXCEPTION 'Two replay facilities required'; END IF; END $$;
 CREATE TEMP TABLE schedule_actors AS SELECT role,gen_random_uuid() id,gen_random_uuid() session_id FROM unnest(ARRAY['med_tech','manager','facility_admin']) role;
@@ -30,6 +30,7 @@ INSERT INTO public.facility_shift_definitions(id,organization_id,facility_id,shi
 SELECT overlap_definition,org,facility,'schedule_overlap_review','day','Review day','05:00','17:00' FROM schedule_fixture;
 INSERT INTO public.staff(id,organization_id,facility_id,first_name,last_name,staff_role,hire_date) SELECT other_staff,org,other_facility,'Inaccessible','Employee','resident_aide',current_date FROM schedule_fixture;
 INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date) SELECT other_week,other_facility,org,'2091-01-01' FROM schedule_fixture;
+INSERT INTO public.units(id,facility_id,organization_id,name) SELECT unit,facility,org,'Grid preservation unit' FROM schedule_fixture;
 CREATE FUNCTION pg_temp.schedule_actor(p_role text) RETURNS void LANGUAGE plpgsql AS $$
 DECLARE a record;
 BEGIN
@@ -47,6 +48,7 @@ END $$;
 GRANT USAGE ON SCHEMA auth TO authenticated;
 GRANT SELECT ON schedule_fixture,schedule_actors TO authenticated;
 GRANT SELECT,INSERT,UPDATE,DELETE ON public.schedules,public.shift_assignments TO authenticated;
+GRANT UPDATE(employment_status) ON public.staff TO authenticated;
 GRANT SELECT ON public.facility_shift_definitions,public.staff,public.staff_certifications,public.facilities,public.family_resident_links,public.residents TO authenticated;
 
 SELECT pg_temp.schedule_actor('manager');
@@ -82,7 +84,49 @@ DO $$ DECLARE f record; version timestamptz; cells jsonb; BEGIN
  DELETE FROM public.shift_assignments WHERE schedule_id=f.empty_week;
 
 END $$;
+
+-- A grid edit changes shift configuration, not the resident/unit care plan or its identity.
+DO $$ DECLARE f record; original_id uuid; later_id uuid; version timestamptz; BEGIN
+ SELECT * INTO f FROM schedule_fixture;
+ SELECT id INTO original_id FROM public.shift_assignments WHERE schedule_id=f.week AND staff_id=f.staff AND deleted_at IS NULL;
+ UPDATE public.shift_assignments SET unit_id=f.unit,assigned_resident_ids=ARRAY[f.resident],shift_classification='agency',notes='Keep this care assignment'
+ WHERE id=original_id;
+ SELECT updated_at INTO version FROM public.schedules WHERE id=f.week;
+ PERFORM public.schedule_bulk_upsert(f.week,version,jsonb_build_array(jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-01','shift_definition_id',f.overlap_definition)));
+ IF NOT EXISTS (SELECT 1 FROM public.shift_assignments WHERE id=original_id AND deleted_at IS NULL AND shift_definition_id=f.overlap_definition
+   AND unit_id=f.unit AND assigned_resident_ids=ARRAY[f.resident] AND shift_classification='agency' AND notes='Keep this care assignment') THEN
+   RAISE EXCEPTION 'Grid edit discarded the existing assignment identity or care metadata';
+ END IF;
+ -- Two final non-overlapping cells are updated together. Updating Jan 1 first
+ -- would temporarily overlap Jan 2's old day shift, so row-by-row edits are invalid.
+ PERFORM public.schedule_bulk_upsert(f.week,(SELECT updated_at FROM public.schedules WHERE id=f.week),jsonb_build_array(jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-02','shift_definition_id',f.overlap_definition)));
+ SELECT id INTO later_id FROM public.shift_assignments WHERE schedule_id=f.week AND staff_id=f.staff AND shift_date='2091-01-02' AND deleted_at IS NULL;
+ PERFORM public.schedule_bulk_upsert(f.week,(SELECT updated_at FROM public.schedules WHERE id=f.week),jsonb_build_array(
+   jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-01','shift_definition_id',f.definition),
+   jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-02','shift_definition_id',f.definition)));
+ IF (SELECT count(*) FROM public.shift_assignments WHERE id IN(original_id,later_id) AND deleted_at IS NULL AND shift_definition_id=f.definition)<>2 THEN
+   RAISE EXCEPTION 'Atomic grid move replaced identities or failed to update both cells';
+ END IF;
+ -- Off retires only that assignment, leaving its evidence and care metadata intact.
+ PERFORM public.schedule_bulk_upsert(f.week,(SELECT updated_at FROM public.schedules WHERE id=f.week),jsonb_build_array(jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-02','shift_definition_id',NULL)));
+ IF NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE id=later_id AND deleted_at IS NOT NULL) THEN RAISE EXCEPTION 'Off did not retain the retired assignment'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE id=original_id AND deleted_at IS NULL AND unit_id=f.unit AND assigned_resident_ids=ARRAY[f.resident]) THEN RAISE EXCEPTION 'Off changed another cell'; END IF;
+END $$;
 RESET ROLE;
+-- Do not silently copy a replacement or omit a planned slot when the original employee is inactive.
+SELECT pg_temp.schedule_actor('facility_admin');
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE f record; version timestamptz; BEGIN
+ SELECT * INTO f FROM schedule_fixture;
+ UPDATE public.staff SET employment_status='terminated' WHERE id=f.staff;
+ SELECT updated_at INTO version FROM public.schedules WHERE id=f.next_week;
+ PERFORM pg_temp.schedule_expect_error(format('SELECT public.schedule_copy_week(%L,%L)',f.next_week,version),'Active employee in schedule facility required');
+ IF EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.next_week AND deleted_at IS NULL)
+   OR (SELECT updated_at FROM public.schedules WHERE id=f.next_week) IS DISTINCT FROM version THEN RAISE EXCEPTION 'Rejected inactive copy left a partial plan'; END IF;
+ UPDATE public.staff SET employment_status='active' WHERE id=f.staff;
+END $$;
+RESET ROLE;
+SELECT pg_temp.schedule_actor('manager');
 CREATE FUNCTION pg_temp.schedule_suppress_parent() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$;
 CREATE TRIGGER aa_schedule_review_parent BEFORE UPDATE ON public.schedules FOR EACH ROW EXECUTE FUNCTION pg_temp.schedule_suppress_parent();
 SET LOCAL ROLE authenticated;
@@ -105,6 +149,24 @@ SELECT pg_temp.schedule_actor('manager');
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE f record; BEGIN
  SELECT * INTO f FROM schedule_fixture;
+ -- Copy uses the original planned slots, including call-outs, without adding
+ -- temporary replacements or inheriting their attendance status.
+ BEGIN
+   PERFORM public.schedule_publish(f.week,(SELECT updated_at FROM public.schedules WHERE id=f.week));
+   UPDATE public.shift_assignments SET status='called_out' WHERE schedule_id=f.week AND staff_id=f.staff AND deleted_at IS NULL;
+   INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,custom_start_time,custom_end_time,unit_id,covers_assignment_id)
+   SELECT schedule_id,f.colleague,facility_id,organization_id,shift_date,shift_type,custom_start_time,custom_end_time,unit_id,id
+   FROM public.shift_assignments WHERE schedule_id=f.week AND staff_id=f.staff AND deleted_at IS NULL;
+   PERFORM public.schedule_copy_week(f.next_week,(SELECT updated_at FROM public.schedules WHERE id=f.next_week));
+   IF (SELECT count(*) FROM public.shift_assignments WHERE schedule_id=f.next_week AND deleted_at IS NULL)<>2
+     OR NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.next_week AND staff_id=f.staff AND shift_date='2091-01-08' AND status='assigned' AND covers_assignment_id IS NULL AND deleted_at IS NULL
+       AND unit_id=f.unit AND assigned_resident_ids=ARRAY[f.resident] AND shift_classification='agency' AND notes='Keep this care assignment')
+     OR EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.next_week AND staff_id=f.colleague AND shift_date='2091-01-08' AND deleted_at IS NULL) THEN
+     RAISE EXCEPTION 'Copy duplicated a call-out coverage slot or lost the original employee';
+   END IF;
+   RAISE EXCEPTION USING ERRCODE='P0715',MESSAGE='rollback coverage-copy fixture';
+ EXCEPTION WHEN SQLSTATE 'P0715' THEN NULL;
+ END;
  PERFORM public.schedule_copy_week(f.next_week,(SELECT updated_at FROM public.schedules WHERE id=f.next_week));
  IF (SELECT count(*) FROM public.shift_assignments WHERE schedule_id=f.next_week AND deleted_at IS NULL AND shift_date IN ('2091-01-08','2091-01-09'))<>2 THEN RAISE EXCEPTION 'Copy did not shift dates by seven days'; END IF;
  PERFORM public.schedule_publish(f.week,(SELECT updated_at FROM public.schedules WHERE id=f.week));

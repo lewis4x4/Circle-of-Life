@@ -1,61 +1,168 @@
 {
-  "checked_at": "2026-09-23T22:40:19.994163+00:00",
-  "source_base": "82ddd099",
+  "checked_at": "2026-09-24T00:54:40.326526+00:00",
+  "source_base": "093f4ada",
+  "source_state": "Working tree review fixes; final source integration and release gates pending",
+  "migration": "497_workforce_in_place.sql",
   "full_release_ready": false,
+  "review_fixes": [
+    {
+      "id": 1,
+      "finding": "Existing schedule assignment ID and care metadata were replaced",
+      "source_fix": "Update existing cells in place; preserve unit, assigned residents, classification and notes; Off retains retired evidence"
+    },
+    {
+      "id": 2,
+      "finding": "Copy week duplicated call-out replacement coverage",
+      "source_fix": "Copy original planned rows with covers_assignment_id null and retain planning metadata; reject inactive original staff"
+    },
+    {
+      "id": 3,
+      "finding": "Completed shifts over 16 hours were treated as missing clock-outs",
+      "source_fix": "Completed long_shift is reviewable; genuine missing_out and missing_meal_end still require correction"
+    },
+    {
+      "id": 4,
+      "finding": "Correction reads used a sequential batch waterfall",
+      "source_fix": "Bound concurrent reads to eight while preserving pagination and exact-count checks"
+    },
+    {
+      "id": 5,
+      "finding": "Completed-week review links expanded into configured pay periods",
+      "source_fix": "Explicit period_start, exclusive period_end and period_mode=workweek preserve the selected week"
+    },
+    {
+      "id": 6,
+      "finding": "Historical scheduled totals used mutable current shift definitions",
+      "source_fix": "Require recorded assignment times for completed-week totals; absent historical times remain unknown"
+    },
+    {
+      "id": 7,
+      "finding": "Unverified evidence expiry hid outstanding employee-file deadlines",
+      "source_fix": "Retain incomplete completion deadlines; use verified evidence for renewal expiry"
+    },
+    {
+      "id": 8,
+      "finding": "Navigation outside the grid could discard unsaved changes",
+      "source_fix": "Register unsaved schedule changes with the shared route-leave guard"
+    }
+  ],
   "source_checks": {
-    "native_postgres": {
-      "exit_code": 0,
-      "migration_files": 486,
-      "sql_probes": 113,
-      "acceptance_suites": 7,
-      "care_event_parity_cases": 105
-    },
-    "initial_focused": {
-      "suites": 20,
-      "tests": 419
-    },
-    "current_base_integration": {
-      "suites": 9,
-      "tests": 58
-    },
-    "final_schedule_context_history": {
-      "suites": 3,
-      "tests": 15
-    },
-    "standalone_next_build": {
-      "exit_code": 0,
-      "scope": "current-base application compilation, separate from sequence-gated production build"
-    },
-    "typecheck": "passed",
-    "lint": "passed",
-    "synthetic_browser": {
-      "screenshots": 12,
-      "axe_routes": 3,
-      "hosted_authentication": false
-    },
-    "workforce_loader": {
-      "tests": 10,
+    "evidence_source": "Parent integration lane readback; focused results precede final source integration",
+    "focused_review_regressions": {
       "result": "passed",
-      "includes": "unresolved punch and published-assignment employee identity fails closed"
+      "suites": 15,
+      "tests": 108
     },
-    "schedule_browser": {
-      "artifact": "schedule-browser.json",
-      "screenshots": 2,
-      "axe_violations": 0,
+    "canonical_typecheck": {
+      "result": "passed",
+      "command": "npm run typecheck",
+      "scope": "Repeated successfully after the shared route-leave follow-up"
+    },
+    "targeted_sql": {
+      "result": "passed",
+      "scope": "Workforce schedule SQL and affected compatibility probes; not a current full replay"
+    },
+    "schedule_direct_write_concurrency": {
+      "result": "passed",
+      "script": "scripts/workforce/verify-schedule-concurrency.py",
+      "checks": [
+        "Conflicting direct edit returns55P03 without partial write",
+        "Concurrent parent-first bulk RPC commits",
+        "Direct retry succeeds"
+      ],
       "production_data": false
+    },
+    "shared_route_leave": {
+      "result": "passed",
+      "tests": 9,
+      "regression": "Before the fix navigation asked twice; after the fix exactly one confirmation is requested"
+    },
+    "repository_lint": {
+      "result": "passed",
+      "checks": [
+        "ESLint",
+        "constitution"
+      ],
+      "constitution_files": 63
     }
   },
-  "canonical_gate": {
-    "verdict": "FAIL",
-    "artifact": "test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json",
-    "remaining_blockers": [
-      "migration sequence requires483-486 before487",
-      "production build and its managed UI preview require that sequence"
-    ],
-    "superseded_failure": "native replay now passes in full after RLS initplan and fixture updates"
+  "additional_fix": {
+    "finding": "Direct assignment row locks could deadlock parent-first schedule commands",
+    "source_fix": "Parent schedule FOR UPDATE NOWAIT returns55P03 for reload/retry"
   },
+  "canonical_gate": {
+    "verdict": "PENDING",
+    "scope": "Final integrated migration497 tree",
+    "pending": [
+      "Main migration sequence reconciliation",
+      "Full repository and release-sensitive gates",
+      "Current-base required CI",
+      "Merge and post-merge CI",
+      "Production migration and application deployment",
+      "Hosted revision and smoke verification"
+    ],
+    "prior_failed_artifact": "test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json"
+  },
+  "predecessor_sequence": [
+    {
+      "migrations": "483-484",
+      "pr": 847,
+      "state": "merged; integration reconciliation in progress"
+    },
+    {
+      "migrations": "485",
+      "pr": 822,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "486-487",
+      "pr": 848,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "488",
+      "pr": 838,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "489",
+      "pr": 839,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "490",
+      "pr": 845,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "491",
+      "pr": 841,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "492",
+      "pr": 842,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "493",
+      "pr": 843,
+      "state": "reconciliation in progress"
+    },
+    {
+      "migrations": "494-495",
+      "pr": 814,
+      "state": "held; hold unchanged"
+    },
+    {
+      "migrations": "496",
+      "pr": 833,
+      "state": "reconciliation in progress"
+    }
+  ],
   "production_changes_by_this_draft": false,
   "adp_submission_available": false,
+  "human_acceptance_claimed": false,
   "independent_timekeeping_release": {
     "pr": 835,
     "sha": "4aa2861554737313aed063398c550d8c4320cf52",
@@ -67,5 +174,76 @@
     "raw_route_smoke_pass": false,
     "browser_login_checks_passed": 3,
     "unresolved_finding": "COL-729"
+  },
+  "historical_snapshot": {
+    "checked_at": "2026-09-23T22:40:19.994163+00:00",
+    "source_base": "82ddd099",
+    "full_release_ready": false,
+    "source_checks": {
+      "native_postgres": {
+        "exit_code": 0,
+        "migration_files": 486,
+        "sql_probes": 113,
+        "acceptance_suites": 7,
+        "care_event_parity_cases": 105
+      },
+      "initial_focused": {
+        "suites": 20,
+        "tests": 419
+      },
+      "current_base_integration": {
+        "suites": 9,
+        "tests": 58
+      },
+      "final_schedule_context_history": {
+        "suites": 3,
+        "tests": 15
+      },
+      "standalone_next_build": {
+        "exit_code": 0,
+        "scope": "current-base application compilation, separate from sequence-gated production build"
+      },
+      "typecheck": "passed",
+      "lint": "passed",
+      "synthetic_browser": {
+        "screenshots": 12,
+        "axe_routes": 3,
+        "hosted_authentication": false
+      },
+      "workforce_loader": {
+        "tests": 10,
+        "result": "passed",
+        "includes": "unresolved punch and published-assignment employee identity fails closed"
+      },
+      "schedule_browser": {
+        "artifact": "schedule-browser.json",
+        "screenshots": 2,
+        "axe_violations": 0,
+        "production_data": false
+      }
+    },
+    "canonical_gate": {
+      "verdict": "FAIL",
+      "artifact": "test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json",
+      "remaining_blockers": [
+        "migration sequence requires483-486 before487",
+        "production build and its managed UI preview require that sequence"
+      ],
+      "superseded_failure": "native replay now passes in full after RLS initplan and fixture updates"
+    },
+    "production_changes_by_this_draft": false,
+    "adp_submission_available": false,
+    "independent_timekeeping_release": {
+      "pr": 835,
+      "sha": "4aa2861554737313aed063398c550d8c4320cf52",
+      "deploy": "6ab45712f16dd800089c7902",
+      "state": "published",
+      "pr_ci": "success",
+      "post_merge_ci": "success",
+      "post_merge_run": 35930278514,
+      "raw_route_smoke_pass": false,
+      "browser_login_checks_passed": 3,
+      "unresolved_finding": "COL-729"
+    }
   }
 }

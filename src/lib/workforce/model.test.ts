@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignmentSpan, attendanceState, type WorkforceAssignment } from "./model";
+import { assignmentSpan, attendanceState, completedWeekTimesheetHref, type WorkforceAssignment } from "./model";
 const row: WorkforceAssignment = { id: "1", staff_id: "1", schedule_id: "1", shift_date: "2026-09-23", shift_type: "night", status: "assigned", custom_start_time: "18:00:00", custom_end_time: "06:00:00" };
 describe("Workforce schedule comparison", () => {
   it("keeps an overnight assignment on its service date and ends next morning", () => {
@@ -12,6 +12,16 @@ describe("Workforce schedule comparison", () => {
     expect(span?.label).toBe("Night 6:00PM–6:00AM");
   });
   it("does not invent default times when configuration is missing", () => expect(assignmentSpan({ ...row, custom_start_time: null, custom_end_time: null }, [])).toBeNull());
+  it("requires both recorded endpoints for completed-week comparisons", () => {
+    const definition = { shiftKey: "night", label: "Night", rosterShiftType: "night" as const, startsAtLocal: "18:00:00", endsAtLocal: "06:00:00", sortOrder: 1 };
+    expect(assignmentSpan({ ...row, custom_end_time: null }, [definition], { recordedTimesOnly: true })).toBeNull();
+    expect(assignmentSpan(row, [{ ...definition, endsAtLocal: "02:00:00" }], { recordedTimesOnly: true })?.end.toISOString()).toBe("2026-09-24T10:00:00.000Z");
+  });
+  it("links to the exact completed week with an exclusive end date", () => {
+    const url = new URL(completedWeekTimesheetHref("staff-id", { weekStart: "2026-09-14", weekEnd: "2026-09-20" }), "https://example.test");
+    expect(url.pathname).toBe("/admin/timeclock/staff-id");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ period_start: "2026-09-14", period_end: "2026-09-21", period_mode: "workweek" });
+  });
   it("does not count a normal assigned and present employee as a gap", () => expect(attendanceState(true, true, false)).toBe("expected"));
   it("separates missing, unscheduled, and called-out staff", () => {
     expect(attendanceState(true, false, false)).toBe("missing");

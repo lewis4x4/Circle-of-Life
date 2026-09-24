@@ -48,10 +48,12 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
   const periodStart = facilityDayStart(weekStart);
   const periodEnd = facilityDayStart(thisWeek);
   const yesterday = addFacilityCalendarDays(today, -1);
+  const dueThrough = addFacilityCalendarDays(today, 60);
   const people: WorkforcePerson[] = [...staffById.values()].map((s) => {
     const personAssignments = publishedAssignments.filter((a) => a.staff_id === s.id);
     const resolved = personAssignments.map((a) => ({ assignment: a, span: assignmentSpan(a, shifts) }));
     const spans = resolved.filter((v) => v.span !== null);
+    const historicalSpans = personAssignments.filter((a) => a.shift_date < thisWeek).map((a) => assignmentSpan(a, shifts, { recordedTimesOnly: true }));
     const unresolved = resolved.filter((v) => v.span === null).map((v) => v.assignment);
     const unknownToday = unresolved.find((a) => a.shift_date >= yesterday && a.shift_date <= today);
     const unknownNext = unresolved.filter((a) => a.shift_date > today && !["called_out", "no_show"].includes(a.status)).sort((a, b) => a.shift_date.localeCompare(b.shift_date))[0];
@@ -60,7 +62,14 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
     const clock = statusNow(ledger.punches, ledger.corrections, s.id, now);
     const sheet = computeTimesheet({ staffId: s.id, punches: ledger.punches, corrections: ledger.corrections, rejections: ledger.rejections, periodStart, periodEnd, now });
     const file = "hire_date" in s ? assessEmployeeFile(requirements, records, s, today) : [];
-    const due = file.flatMap((a) => { const date = a.record?.expires_on ?? (a.state !== "verified" ? a.dueOn : null); return date && date <= addFacilityCalendarDays(today, 60) ? [{ title: a.requirement.title, date }] : []; });
+    const due = file.flatMap((a) => {
+      // Incomplete or unverified evidence cannot replace a completion deadline
+      // with its proposed expiry. For a completed requirement, show renewal due.
+      const completionDue = a.state !== "verified" && a.state !== "expired" ? a.dueOn : null;
+      const verifiedExpiry = a.record?.status === "verified" && a.record.completed_on && a.record.completed_on <= today ? a.record.expires_on : null;
+      const date = [completionDue, verifiedExpiry].filter((value): value is string => !!value).sort()[0];
+      return date && date <= dueThrough ? [{ title: a.requirement.title, date }] : [];
+    });
     return {
       id: s.id, name: "first_name" in s ? `${s.first_name} ${s.last_name}` : s.name, role: "staff_role" in s ? s.staff_role.replaceAll("_", " ") : "Visiting staff", status: clock.state, since: clock.since?.toISOString() ?? null,
       currentShift: current?.span?.label ?? (unknownToday ? "Shift times not configured" : null),
@@ -68,7 +77,7 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
       scheduleId: current?.assignment.schedule_id ?? unknownToday?.schedule_id ?? next?.assignment.schedule_id ?? unknownNext?.schedule_id ?? null,
       attendance: unknownToday ? "unknown" : attendanceState(!!current, clock.state !== "out", !!current && ["called_out", "no_show"].includes(current.assignment.status)),
       scheduleMissing: periodScheduleMissing,
-      scheduledMinutes: periodScheduleMissing || unresolved.some((a) => a.shift_date < thisWeek) ? null : spans.reduce((total, v) => total + Math.max(0, Math.round((Math.min(v.span!.end.getTime(), periodEnd.getTime()) - Math.max(v.span!.start.getTime(), periodStart.getTime())) / 60000)), 0),
+      scheduledMinutes: periodScheduleMissing || historicalSpans.some((span) => span === null) ? null : historicalSpans.reduce((total, span) => total + Math.max(0, Math.round((Math.min(span!.end.getTime(), periodEnd.getTime()) - Math.max(span!.start.getTime(), periodStart.getTime())) / 60000)), 0),
       workedMinutes: sheet.days.some((d) => d.punches.length > 0) ? sheet.periodWorkedMinutes : null,
       timeIncomplete: sheet.exceptions.some((e) => !e.acknowledged && (e.type === "missing_out" || e.type === "missing_meal_end")),
       exceptions: sheet.exceptions.filter((e) => !e.acknowledged).length,

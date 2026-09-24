@@ -131,6 +131,8 @@ export function NavigationPendingProvider({ children }: { children: React.ReactN
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
       if (!anchor || (anchor.target && anchor.target !== '_self') || anchor.hasAttribute('download')) return;
+      // Provider-managed links run the guard in their own click handler.
+      if (anchor.hasAttribute('data-haven-nav-link')) return;
       if (!allowRouteLeave(anchor.href)) { event.preventDefault(); event.stopImmediatePropagation(); }
       else if (needsStandUpDocumentNavigation(anchor.href)) { event.preventDefault(); event.stopImmediatePropagation(); setRouteTransitionPending(true); window.location.assign(anchor.href); }
       else if (!anchor.hasAttribute('data-haven-nav-link') && !sameRoute(anchor.href)) setRouteTransitionPending(true);
@@ -232,7 +234,7 @@ export function HavenNavLink({ href, onClick, onMouseEnter, onFocus, onTouchStar
         onTouchStart?.(event);
         prefetchOnIntent();
       }}
-      data-haven-nav-link
+      data-haven-nav-link={ctx && hrefString ? '' : undefined}
       onClick={(event) => {
         onClick?.(event);
         if (ctx && hrefString && (!props.target || props.target === '_self') && !props.download && isPrimaryNavigationClick(event)) {

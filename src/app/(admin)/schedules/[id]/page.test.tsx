@@ -31,6 +31,7 @@ vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({
 }) }));
 
 import SchedulePage from "./page";
+import { allowRouteLeave } from "@/components/layout/navigation-pending";
 
 beforeEach(() => {
   state.refresh.mockClear();
@@ -41,6 +42,35 @@ beforeEach(() => {
 });
 
 describe("weekly schedule editing", () => {
+  it("keeps unsaved cells when an operator cancels in-app navigation", async () => {
+    const confirm = vi.fn().mockReturnValue(false);
+    vi.stubGlobal("confirm", confirm);
+    const ui = render(<SchedulePage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ }));
+    expect(allowRouteLeave("/admin/staff")).toBe(false);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(screen.getByText("1 unsaved cell change.")).toBeInTheDocument();
+    confirm.mockReturnValue(true);
+    expect(allowRouteLeave("/admin/staff")).toBe(true);
+    ui.unmount();
+    expect(allowRouteLeave("/admin/staff")).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it("removes the route guard after saving the changes", async () => {
+    const confirm = vi.fn().mockReturnValue(false);
+    vi.stubGlobal("confirm", confirm);
+    render(<SchedulePage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ }));
+    expect(allowRouteLeave("/admin/staff", true)).toBe(false);
+    expect(confirm).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Save 1 changes" }));
+    await screen.findByText("Draft saved.");
+    expect(allowRouteLeave("/admin/staff")).toBe(true);
+    expect(confirm).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it("saves configured grid cells together and shows actual shift hours", async () => {
     render(<SchedulePage />);
     const firstCell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });

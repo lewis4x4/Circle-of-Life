@@ -9,7 +9,24 @@
 - People reads the employee-file assessment engine, upcoming published shifts, recorded hours and dated requirements. It does not infer medical clearance or fabricate visiting-staff due dates.
 - Legacy time records reject self-approval/pay/scope forgery; Manager staff scope follows Brian's dated COL-571 decision. This is not a claim of complete platform-wide role parity.
 
-## Evidence
+## Current review-fix evidence
+
+The current source fixes all eight review findings: assignment ID/care-metadata preservation; original-plan copy without call-out replacements; reviewable completed long shifts; bounded correction-read concurrency; exact workweek navigation; recorded historical scheduled hours; outstanding employee-file deadlines; and the unsaved-grid route-leave guard. The additional SQL lock-order repair returns `55P03` for retry and preserves an atomic result.
+
+The integration lane reports:
+
+- **108 focused tests across 15 suites passed.**
+- **Nine shared route-leave tests passed.** The regression first reproduced two confirmations where one was expected; the fix preserves a single confirmation.
+- **Canonical typecheck passed again after that follow-up.**
+- **Repository lint passed:** ESLint and the constitution check across 63 files.
+- **Targeted Workforce schedule SQL and affected compatibility probes passed.**
+- **Direct-write concurrency proof passed:** the conflicting direct edit receives `55P03` without a partial write, the bulk RPC commits, and a later direct retry succeeds. Script: `scripts/workforce/verify-schedule-concurrency.py`.
+
+These results precede final source integration. Final full gates, current-base required CI, merge, migration application, application deployment and hosted verification remain pending. No current full replay or production release is claimed from the earlier evidence below.
+
+## Historical evidence before the review fixes
+
+The following evidence belongs to the earlier source snapshot recorded in `evidence/verification.json`. It is retained for history and does not prove the current migration 497 tree:
 
 - Initial focused run: 419 tests across 20 suites passed.
 - Current-base integration: 58 tests across nine suites passed; separate source-scope/identity/race checks also passed.
@@ -17,13 +34,29 @@
 - Standalone Next application build passed, including the new routes. This does not override the failing release sequence gate.
 - Twelve desktop/tablet/phone screenshots and three axe route checks passed against production Workforce components/CSS with labelled synthetic source responses. An additional Schedule browser proof passed cell cycling, configured-time save/readback, publication/read-only state and phone scrolling; both additional captures have zero axe violations. These are not hosted authentication or staff acceptance.
 - Expanded schedule SQL proof passed publication, direct/legacy writes, scope, swap atomicity, and Home compatibility. Two concurrent writers serialized; the second overlap was rejected and one assignment persisted.
-- Final native PostgreSQL replay passed: **486 migration files, 113 SQL probes, all seven Smart Rounding acceptance suites, and 105 care-event parity cases**. The final command exited 0.
+- The earlier native PostgreSQL replay passed: **486 migration files, 113 SQL probes, all seven Smart Rounding acceptance suites, and 105 care-event parity cases**. That command exited 0.
 
 ## Required release gate
 
-`test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json` records FAIL. The source sequence expects 483 and finds this branch's 487. Production build and the gate-managed UI preview therefore remain blocked. An RLS initplan check and outdated acceptance-fixture setup discovered during that run were corrected. The final native replay passed in full; its supplemental receipt is `docs/workforce/evidence/verification.json`. No failed artifact is rewritten as passed.
+`test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json` remains an unchanged historical **FAIL**. At that time, the source sequence expected 483 and found this branch's then-numbered 487. An RLS initplan check and outdated acceptance-fixture setup discovered during that run were corrected, and the earlier native replay subsequently passed. The historical receipt is preserved in `docs/workforce/evidence/verification.json`; it is not relabelled as a successful current gate.
 
-Predecessors are held PR #814 (483–484), PR #822 (485) and PR #833 (486). This branch does not copy those files, change their holds, or relax migration checks. Reconcile against main and rerun the required release-sensitive gates after that sequence lands.
+The Workforce migration is now **497**. The integration lane's current predecessor map is:
+
+| Migration(s) | PR | Current recorded state |
+|---|---|---|
+| 483–484 | #847 | Merged; main integration still being reconciled |
+| 485 | #822 | Sequence reconciliation in progress |
+| 486–487 | #848 | Sequence reconciliation in progress |
+| 488 | #838 | Sequence reconciliation in progress |
+| 489 | #839 | Sequence reconciliation in progress |
+| 490 | #845 | Sequence reconciliation in progress |
+| 491 | #841 | Sequence reconciliation in progress |
+| 492 | #842 | Sequence reconciliation in progress |
+| 493 | #843 | Sequence reconciliation in progress |
+| 494–495 | #814 | Held COL-677 work; hold unchanged |
+| 496 | #833 | Sequence reconciliation in progress |
+
+This mapping replaces the earlier numbering, not the earlier failed evidence. It does not certify that the full sequence is merged, applied or released. Resolve the sequence on main, retain the held-work boundary, and run the required release-sensitive gates against the final integrated tree. Never bypass migration checks to claim completion.
 
 ## Separate correction release
 

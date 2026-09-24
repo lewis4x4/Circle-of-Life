@@ -42,6 +42,14 @@ describe('shared pending navigation protection', () => {
     const newTab = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }); screen.getByText('Open reports in new tab').dispatchEvent(newTab);
     expect(modified.defaultPrevented).toBe(false); expect(newTab.defaultPrevented).toBe(false); expect(guard).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled();
   });
+  it('asks once when a guarded sidebar navigation is accepted', () => {
+    const guard = vi.fn(() => true);
+    removeGuard = registerRouteLeaveGuard(guard);
+    render(<NavigationPendingProvider><Routes /></NavigationPendingProvider>);
+    fireEvent.click(screen.getByText('Sidebar facilities'));
+    expect(guard).toHaveBeenCalledTimes(1);
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/admin/facilities');
+  });
   it('cancels eligible browser traversal before any history mutation and releases when clean', () => {
     setupGuard();
     const navigation = (window as unknown as { navigation: EventTarget }).navigation;

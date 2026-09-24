@@ -72,6 +72,28 @@ describe("Workforce source loading", () => {
     expect(result.people[0]).toMatchObject({ scheduledMinutes: 720, scheduleMissing: false });
   });
 
+  it.each(["published", "archived"])("does not infer %s historical hours from a mutable shift definition", async (status) => {
+    const definition = { facility_id: FACILITY.id, shift_key: "night", roster_shift_type: "night", label: "Night", starts_at_local: "18:00:00", ends_at_local: "06:00:00", sort_order: 1, active: true, deleted_at: null };
+    const sources = {
+      schedules: [{ ...schedule("last-week", "2026-09-14"), status, published_at: "2026-09-10T12:00:00Z" }],
+      shift_assignments: [assigned("legacy", "2026-09-15", "last-week", false)],
+      facility_shift_definitions: [definition],
+    };
+    const before = await loadWorkforce(database(sources), FACILITY, "org", NOW);
+    definition.ends_at_local = "02:00:00";
+    const after = await loadWorkforce(database(sources), FACILITY, "org", NOW);
+    expect(before.people[0]).toMatchObject({ scheduledMinutes: null, scheduleMissing: false });
+    expect(after.people[0]).toMatchObject({ scheduledMinutes: null, scheduleMissing: false });
+  });
+
+  it("retains recorded historical times after current definitions change", async () => {
+    const result = await loadWorkforce(database({
+      shift_assignments: [assigned("recorded", "2026-09-15")],
+      facility_shift_definitions: [{ facility_id: FACILITY.id, shift_key: "night", roster_shift_type: "night", label: "Night", starts_at_local: "19:00:00", ends_at_local: "03:00:00", sort_order: 1, active: true, deleted_at: null }],
+    }), FACILITY, "org", NOW);
+    expect(result.people[0].scheduledMinutes).toBe(720);
+  });
+
   it("retains recorded hours and unresolved punches when the kiosk is turned off", async () => {
     clock.enabled.mockResolvedValue(false);
     ledger.punches = [punch("in", "in", "2026-09-15T11:00:00Z"), punch("out", "out", "2026-09-15T19:00:00Z"), punch("missing-out", "in", "2026-09-16T11:00:00Z")];
@@ -100,6 +122,30 @@ describe("Workforce source loading", () => {
     const result = await loadWorkforce(database({ employee_file_requirements: [requirement] }), FACILITY, "org", NOW);
     expect(result.people.find((person) => person.id === "visitor")).toMatchObject({ fileStatus: "Employee file unavailable here", due: [] });
     expect(result.people.find((person) => person.id === staff.id)?.due).toEqual([{ title: "Orientation", date: "2026-01-04" }]);
+  });
+
+  it.each(["submitted", "rejected"])("keeps an overdue completion in the due queue when %s evidence names a future expiry", async (status) => {
+    const result = await loadWorkforce(database({
+      employee_file_requirements: [{ id: "requirement", facility_id: FACILITY.id, code: "orientation", title: "Orientation", version: 1, review_status: "approved", category: "orientation", due_days: 3, recurrence_status: "one_time", applies_to_staff_roles: ["*"], deleted_at: null }],
+      employee_file_records: [{ id: "evidence", facility_id: FACILITY.id, requirement_id: "requirement", staff_id: staff.id, status, completed_on: "2026-01-02", expires_on: "2027-01-02", created_at: "2026-01-02T12:00:00Z", deleted_at: null }],
+    }), FACILITY, "org", NOW);
+    expect(result.people[0].due).toEqual([{ title: "Orientation", date: "2026-01-04" }]);
+  });
+
+  it("keeps the completion deadline while verified evidence is still below the required count", async () => {
+    const result = await loadWorkforce(database({
+      employee_file_requirements: [{ id: "requirement", facility_id: FACILITY.id, code: "orientation", title: "Orientation", version: 1, review_status: "approved", category: "orientation", due_days: 3, recurrence_status: "one_time", minimum_completions: 2, minimum_distinct_days: 1, applies_to_staff_roles: ["*"], deleted_at: null }],
+      employee_file_records: [{ id: "evidence", facility_id: FACILITY.id, requirement_id: "requirement", staff_id: staff.id, status: "verified", completed_on: "2026-01-02", expires_on: "2027-01-02", created_at: "2026-01-02T12:00:00Z", deleted_at: null }],
+    }), FACILITY, "org", NOW);
+    expect(result.people[0].due).toEqual([{ title: "Orientation", date: "2026-01-04" }]);
+  });
+
+  it("uses verified renewal expiry after the requirement has been satisfied", async () => {
+    const result = await loadWorkforce(database({
+      employee_file_requirements: [{ id: "requirement", facility_id: FACILITY.id, code: "certificate", title: "Certificate", version: 1, review_status: "approved", category: "training", due_days: 3, recurrence_status: "recurring", applies_to_staff_roles: ["*"], deleted_at: null }],
+      employee_file_records: [{ id: "evidence", facility_id: FACILITY.id, requirement_id: "requirement", staff_id: staff.id, status: "verified", completed_on: "2026-01-02", expires_on: "2026-10-15", created_at: "2026-01-02T12:00:00Z", deleted_at: null }],
+    }), FACILITY, "org", NOW);
+    expect(result.people[0].due).toEqual([{ title: "Certificate", date: "2026-10-15" }]);
   });
 
   it("preserves true empty and zero values when data is configured and no shift was published", async () => {

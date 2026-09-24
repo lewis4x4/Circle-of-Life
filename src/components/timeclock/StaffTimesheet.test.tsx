@@ -8,6 +8,7 @@ const ORG = "00000000-0000-0000-0000-000000000001";
 const STAFF_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 const auth = vi.hoisted(() => ({ appRole: "facility_admin", organizationId: "00000000-0000-0000-0000-000000000001" as string | null, user: { id: "user-1" } as { id: string } | null }));
+const navigation = vi.hoisted(() => ({ query: "period_start=2026-11-02" }));
 const tables = vi.hoisted(() => ({
   timeclock_organization_settings: [] as Record<string, unknown>[],
   time_punches: [] as Record<string, unknown>[],
@@ -18,7 +19,7 @@ const tables = vi.hoisted(() => ({
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: auth.appRole, organizationId: auth.organizationId, user: auth.user, loading: false }) }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("period_start=2026-11-02") }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(navigation.query) }));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: (table: keyof typeof tables) => {
@@ -50,6 +51,7 @@ const NOW = () => new Date("2026-11-05T16:00:00.000Z");
 
 beforeEach(() => {
   auth.appRole = "facility_admin";
+  navigation.query = "period_start=2026-11-02";
   tables.inserts = [];
   tables.timeclock_organization_settings = [];
   tables.staff = [{ id: STAFF_A, first_name: "Test Staff", last_name: "A", preferred_name: null, employment_status: "active", facility_id: FACILITY }];
@@ -64,6 +66,45 @@ beforeEach(() => {
 });
 
 describe("StaffTimesheet", () => {
+  it("keeps an explicit workweek and weekly navigation under biweekly pay settings", async () => {
+    tables.timeclock_organization_settings = [{ timeclock_pay_period: "biweekly", timeclock_pay_period_anchor: "2026-10-26" }];
+    navigation.query = "period_start=2026-11-02&period_end=2026-11-09&period_mode=workweek";
+    render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
+    await screen.findByRole("heading", { name: "Test Staff A" });
+    expect(screen.getByTestId("period-label")).toHaveTextContent("Nov 2, 2026 to Nov 8, 2026");
+    expect(screen.getByRole("group", { name: "Workweek" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "← Timecards" })).toHaveAttribute("href", "/admin/timecards");
+    fireEvent.click(screen.getByRole("button", { name: "Previous period" }));
+    await waitFor(() => expect(screen.getByTestId("period-label")).toHaveTextContent("Oct 26, 2026 to Nov 1, 2026"));
+    fireEvent.click(screen.getByRole("button", { name: "Next period" }));
+    await waitFor(() => expect(screen.getByTestId("period-label")).toHaveTextContent("Nov 2, 2026 to Nov 8, 2026"));
+    fireEvent.click(screen.getByRole("button", { name: "Next period" }));
+    await waitFor(() => expect(screen.getByTestId("period-label")).toHaveTextContent("Nov 9, 2026 to Nov 15, 2026"));
+  });
+
+  it("keeps existing ledger links aligned with organization pay periods", async () => {
+    tables.timeclock_organization_settings = [{ timeclock_pay_period: "biweekly", timeclock_pay_period_anchor: "2026-10-26" }];
+    render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
+    await screen.findByRole("heading", { name: "Test Staff A" });
+    expect(screen.getByTestId("period-label")).toHaveTextContent("Oct 26, 2026 to Nov 8, 2026");
+    expect(screen.getByRole("group", { name: "Pay period" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "← Timeclock" })).toHaveAttribute("href", "/admin/timeclock?period_start=2026-10-26");
+    fireEvent.click(screen.getByRole("button", { name: "Next period" }));
+    await waitFor(() => expect(screen.getByTestId("period-label")).toHaveTextContent("Nov 9, 2026 to Nov 22, 2026"));
+  });
+
+  it.each([
+    "period_start=2026-11-02&period_mode=workweek",
+    "period_start=2026-11-03&period_end=2026-11-10&period_mode=workweek",
+    "period_start=2026-11-02&period_end=2026-11-16&period_mode=workweek",
+  ])("rejects an invalid explicit workweek instead of showing a different period: %s", async (query) => {
+    navigation.query = query;
+    render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
+    expect(await screen.findByText("The workweek link must include a Monday start and the following Monday as its end.")).toBeInTheDocument();
+    expect(screen.queryByTestId("period-label")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Workweeks" })).toBeNull();
+  });
+
   it("renders days, exceptions and the full history for a manager", async () => {
     render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
     expect(await screen.findByRole("heading", { name: "Test Staff A" })).toBeInTheDocument();
@@ -99,6 +140,20 @@ describe("StaffTimesheet", () => {
     fireEvent.click(within(screen.getByRole("article", { name: "Tue, Nov 3" })).getByRole("button", { name: "Acknowledge" }));
     await waitFor(() => expect(tables.inserts).toHaveLength(1));
     expect(tables.inserts[0]).toMatchObject({ correction_type: "acknowledge", exception_key: "offline_capture:p2", reason: "manager_verified_time" });
+  });
+
+  it("acknowledges a completed long shift without asking for another clock-out", async () => {
+    tables.time_punches = [tables.time_punches[0]!, { id: "out", staff_id: STAFF_A, facility_id: FACILITY, punch_type: "out", punched_at: "2026-11-03T05:00:00Z", flags: [] }];
+    render(<StaffTimesheet staffId={STAFF_A} now={NOW} />);
+    await screen.findByRole("heading", { name: "Test Staff A" });
+    expect(screen.getByRole("article", { name: "Mon, Nov 2" })).toHaveTextContent("17:00 worked");
+    expect(screen.getByText(/Shift longer than 16 hours/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add clock out" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Acknowledge" }));
+    await waitFor(() => expect(tables.inserts).toHaveLength(1));
+    expect(tables.inserts[0]).toMatchObject({ correction_type: "acknowledge", exception_key: "long_shift:p1", reason: "manager_verified_time" });
+    await screen.findByText("Acknowledged");
+    expect(screen.queryByRole("button", { name: "Acknowledge" })).toBeNull();
   });
 
   it("requires an explicit meal-end time instead of acknowledging an unfinished meal", async () => {

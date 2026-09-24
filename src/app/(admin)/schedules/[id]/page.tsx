@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
+import { registerRouteLeaveGuard } from "@/components/layout/navigation-pending";
 import { useWorkforce } from "@/components/workforce/WorkforceContext";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -86,9 +87,10 @@ export default function AdminScheduleWeekDetailPage() {
   const pendingCount = Object.keys(changes).length;
   useEffect(() => {
     if (!pendingCount) return;
-    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    const unbind = registerRouteLeaveGuard((silent) => !silent && window.confirm("Discard unsaved schedule changes?"));
+    const prevent = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", prevent);
-    return () => window.removeEventListener("beforeunload", prevent);
+    return () => { unbind(); window.removeEventListener("beforeunload", prevent); };
   }, [pendingCount]);
 
   const scopeMatches = !schedule || !isValidFacilityIdForQuery(selectedFacilityId) || schedule.facility_id === selectedFacilityId;
