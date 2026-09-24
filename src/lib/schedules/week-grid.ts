@@ -12,13 +12,40 @@ export type ScheduleShiftDefinition = {
 export type ScheduleAssignment = Database["public"]["Tables"]["shift_assignments"]["Row"] & {
   shift_definition_id?: string | null;
 };
+export type ScheduleTimeBlock = { start_time: string; end_time: string };
 export type ScheduleCellChange = {
   staff_id: string;
   shift_date: string;
   shift_definition_id: string | null;
   custom_start_time?: string;
   custom_end_time?: string;
+  /** A split shift: two same-day blocks saved as two assignments in one cell. */
+  custom_blocks?: ScheduleTimeBlock[];
 };
+
+/** Grid value for the cook split preset. Facility definition IDs are UUIDs, so this cannot collide. */
+export const COOK_SPLIT = "cook_split";
+export const COOK_SPLIT_LABEL = "Cook split";
+/** COL-795: the same split at every building — breakfast and lunch, then supper. */
+export const COOK_SPLIT_BLOCKS: readonly ScheduleTimeBlock[] = [
+  { start_time: "06:00", end_time: "13:00" },
+  { start_time: "16:00", end_time: "18:00" },
+];
+/** Kitchen staff roles that get the Cook split step in the click cycle. */
+export const COOK_STAFF_ROLES: ReadonlySet<string> = new Set(["cook", "dietary_staff", "dietary_aide", "dietary_manager"]);
+
+export function isCookStaffRole(staffRole: string | null | undefined): boolean {
+  return COOK_STAFF_ROLES.has(staffRole ?? "");
+}
+
+/** True when a saved cell holds exactly the cook split: two plain custom blocks at the preset times. */
+export function isCookSplitCell(assignments: Pick<ScheduleAssignment, "shift_type" | "shift_definition_id" | "custom_start_time" | "custom_end_time">[]): boolean {
+  if (assignments.length !== COOK_SPLIT_BLOCKS.length) return false;
+  const sorted = [...assignments].sort((a, b) => (a.custom_start_time ?? "").localeCompare(b.custom_start_time ?? ""));
+  return sorted.every((assignment, index) => assignment.shift_type === "custom" && !assignment.shift_definition_id
+    && assignment.custom_start_time?.slice(0, 5) === COOK_SPLIT_BLOCKS[index].start_time
+    && assignment.custom_end_time?.slice(0, 5) === COOK_SPLIT_BLOCKS[index].end_time);
+}
 
 export function scheduleWeekDates(start: string): string[] {
   return Array.from({ length: 7 }, (_, index) => addFacilityCalendarDays(start, index));
@@ -37,6 +64,17 @@ export function formatScheduleTime(time: string): string {
 export function formatScheduleTimes(start: string | null, end: string | null): string {
   if (!start || !end) return "Times not recorded";
   return `${formatScheduleTime(start)}–${formatScheduleTime(end)}${end <= start ? " (+1 day)" : ""}`;
+}
+
+/** One label per run of blocks, so a split reads "Cook split 6:00a–1:00p and 4:00p–6:00p". */
+export function describeScheduleCell(shifts: { label: string; start: string | null; end: string | null }[]): string {
+  const parts: string[] = [];
+  shifts.forEach((shift, index) => {
+    const times = formatScheduleTimes(shift.start, shift.end);
+    if (index > 0 && shifts[index - 1].label === shift.label) parts[parts.length - 1] += ` and ${times}`;
+    else parts.push(`${shift.label} ${times}`);
+  });
+  return parts.join(", ");
 }
 
 /** Actual elapsed scheduled hours, including overnight shifts and DST changes. No meal deduction is inferred. */
@@ -58,8 +96,10 @@ export function assignmentDefinitionId(assignment: ScheduleAssignment, definitio
   return definition?.id ?? null;
 }
 
-export function nextScheduleCellValue(current: string | null, definitions: ScheduleShiftDefinition[]): string | null {
+/** Off → facility definitions → Cook split (kitchen staff only) → Custom → Off. */
+export function nextScheduleCellValue(current: string | null, definitions: ScheduleShiftDefinition[], options: { cookSplit?: boolean } = {}): string | null {
   if (current === "custom") return null;
+  if (current === COOK_SPLIT) return "custom";
   const index = definitions.findIndex((definition) => definition.id === current);
-  return definitions[index + 1]?.id ?? "custom";
+  return definitions[index + 1]?.id ?? (options.cookSplit ? COOK_SPLIT : "custom");
 }

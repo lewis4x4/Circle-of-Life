@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
-import { Copy, Download, Save, Send } from "lucide-react";
+import { Copy, Download, Printer, Save, Send } from "lucide-react";
 import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ import { enumLabel } from "@/lib/display/enum-label";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { formatScheduleAssignmentStaffLabel } from "@/lib/schedules/schedule-assignment-display-copy";
 import { formatSchedulePublishedSubtitle } from "@/lib/schedules/schedules-display-copy";
-import { assignmentDefinitionId, formatScheduleTimes, nextScheduleCellValue, scheduleCellKey, scheduledHours, scheduleWeekDates, type ScheduleAssignment, type ScheduleCellChange, type ScheduleShiftDefinition } from "@/lib/schedules/week-grid";
+import { scheduleCellTone, scheduleToneStyle, SCHEDULE_TONE_ORDER, SCHEDULE_TONES } from "@/lib/schedules/schedule-colors";
+import { assignmentDefinitionId, COOK_SPLIT, COOK_SPLIT_BLOCKS, COOK_SPLIT_LABEL, describeScheduleCell, formatScheduleTimes, isCookSplitCell, isCookStaffRole, nextScheduleCellValue, scheduleCellKey, scheduledHours, scheduleWeekDates, type ScheduleAssignment, type ScheduleCellChange, type ScheduleShiftDefinition } from "@/lib/schedules/week-grid";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -114,11 +115,19 @@ export default function AdminScheduleWeekDetailPage() {
   for (const id of assignedIds) if (!gridPeople.some((person) => person.id === id)) gridPeople.push({ id, first_name: "Staff record", last_name: "unavailable", staff_role: "", employment_status: "inactive" });
   const visiblePeople = gridPeople.filter((person) => `${person.first_name} ${person.last_name} ${person.staff_role}`.toLowerCase().includes(search.toLowerCase().trim()));
 
+  /** Several assignments in one cell need review below, unless they are the cook split. */
+  function isMultipleCell(personId: string, date: string): boolean {
+    const existing = byCell.get(scheduleCellKey(personId, date)) ?? [];
+    return existing.length > 1 && !isCookSplitCell(existing);
+  }
+
   function cellValue(personId: string, date: string): string | null {
     const key = scheduleCellKey(personId, date);
     const change = changes[key];
-    if (change) return change.custom_start_time ? "custom" : change.shift_definition_id;
-    const assignment = byCell.get(key)?.[0];
+    if (change) return change.custom_blocks ? COOK_SPLIT : change.custom_start_time ? "custom" : change.shift_definition_id;
+    const existing = byCell.get(key) ?? [];
+    if (isCookSplitCell(existing)) return COOK_SPLIT;
+    const assignment = existing[0];
     if (!assignment) return null;
     return assignment.shift_type === "custom" && !assignment.shift_definition_id
       ? "custom" : assignmentDefinitionId(assignment, definitions);
@@ -128,9 +137,11 @@ export default function AdminScheduleWeekDetailPage() {
     if (!editable || busy || person.employment_status !== "active") return;
     const key = scheduleCellKey(person.id, date);
     const existing = byCell.get(key) ?? [];
-    if (existing.length > 1) return;
+    if (isMultipleCell(person.id, date)) return;
     const original = existing[0];
-    const unchanged = value === "custom"
+    const unchanged = value === COOK_SPLIT ? isCookSplitCell(existing)
+      : isCookSplitCell(existing) ? false
+      : value === "custom"
       ? original?.shift_type === "custom" && !original.shift_definition_id
         && original.custom_start_time?.slice(0, 5) === start && original.custom_end_time?.slice(0, 5) === end
       : value === null ? !original : !!original && assignmentDefinitionId(original, definitions) === value;
@@ -138,8 +149,9 @@ export default function AdminScheduleWeekDetailPage() {
       const updated = { ...previous };
       if (unchanged) delete updated[key];
       else updated[key] = {
-        staff_id: person.id, shift_date: date, shift_definition_id: value === "custom" ? null : value,
+        staff_id: person.id, shift_date: date, shift_definition_id: value === "custom" || value === COOK_SPLIT ? null : value,
         ...(value === "custom" ? { custom_start_time: start, custom_end_time: end } : {}),
+        ...(value === COOK_SPLIT ? { custom_blocks: COOK_SPLIT_BLOCKS.map((block) => ({ ...block })) } : {}),
       };
       return updated;
     });
@@ -147,15 +159,15 @@ export default function AdminScheduleWeekDetailPage() {
   }
 
   function openCustomEditor(person: StaffRow, date: string, trigger: HTMLButtonElement) {
-    if (!editable || busy || person.employment_status !== "active" || (byCell.get(scheduleCellKey(person.id, date))?.length ?? 0) > 1) return;
+    if (!editable || busy || person.employment_status !== "active" || isMultipleCell(person.id, date)) return;
     const shift = cellValue(person.id, date) === "custom" ? effectiveCell(person.id, date)[0] : null;
     customTrigger.current = trigger;
     setCustomEditor({ person, date, start: shift?.start?.slice(0, 5) ?? "", end: shift?.end?.slice(0, 5) ?? "" });
   }
 
   function cycleCell(person: StaffRow, date: string, trigger: HTMLButtonElement) {
-    if (!editable || busy || (byCell.get(scheduleCellKey(person.id, date))?.length ?? 0) > 1 || person.employment_status !== "active") return;
-    const next = nextScheduleCellValue(cellValue(person.id, date), definitions);
+    if (!editable || busy || isMultipleCell(person.id, date) || person.employment_status !== "active") return;
+    const next = nextScheduleCellValue(cellValue(person.id, date), definitions, { cookSplit: isCookStaffRole(person.staff_role) });
     if (next === "custom") openCustomEditor(person, date, trigger);
     else setCellChange(person, date, next);
   }
@@ -180,15 +192,20 @@ export default function AdminScheduleWeekDetailPage() {
     } finally { setBusy(false); }
   }
 
-  function effectiveCell(personId: string, date: string) {
+  function effectiveCell(personId: string, date: string): { label: string; shiftType: string | null; start: string | null; end: string | null }[] {
     const key = scheduleCellKey(personId, date);
     const existing = byCell.get(key) ?? [];
     const change = changes[key];
-    if (!change) return existing.map((assignment) => ({ label: definitions.find((definition) => definition.id === assignmentDefinitionId(assignment, definitions))?.label ?? enumLabel(assignment.shift_type), start: assignment.custom_start_time, end: assignment.custom_end_time }));
-    if (change.custom_start_time && change.custom_end_time) return [{ label: "Custom", start: change.custom_start_time, end: change.custom_end_time }];
+    if (!change) {
+      const split = isCookSplitCell(existing);
+      return [...existing].sort((a, b) => (a.custom_start_time ?? "").localeCompare(b.custom_start_time ?? "")).map((assignment) => ({ label: split ? COOK_SPLIT_LABEL : definitions.find((definition) => definition.id === assignmentDefinitionId(assignment, definitions))?.label ?? enumLabel(assignment.shift_type), shiftType: assignment.shift_type, start: assignment.custom_start_time, end: assignment.custom_end_time }));
+    }
+    if (change.custom_blocks) return change.custom_blocks.map((block) => ({ label: COOK_SPLIT_LABEL, shiftType: "custom", start: block.start_time, end: block.end_time }));
+    if (change.custom_start_time && change.custom_end_time) return [{ label: "Custom", shiftType: "custom", start: change.custom_start_time, end: change.custom_end_time }];
     const definition = definitions.find((item) => item.id === change.shift_definition_id);
-    return definition ? [{ label: definition.label, start: definition.starts_at_local, end: definition.ends_at_local }] : [];
+    return definition ? [{ label: definition.label, shiftType: definition.roster_shift_type, start: definition.starts_at_local, end: definition.ends_at_local }] : [];
   }
+
 
   function personHours(personId: string): string {
     const hours = days.flatMap((date) => effectiveCell(personId, date).map((shift) => scheduledHours(date, shift.start, shift.end, timeZone)));
@@ -218,7 +235,7 @@ export default function AdminScheduleWeekDetailPage() {
         <p className="text-sm text-muted-foreground">{schedule ? `${formatDate(schedule.week_start_date)} – ${formatDate(days[6])} · ${timeZone}` : "Weekly shifts"}</p>
         {schedule?.published_at && <p className="text-xs text-muted-foreground">{formatSchedulePublishedSubtitle(schedule.published_at, schedule.notes)}</p>}
       </div>
-      {editable && <div className="flex flex-wrap gap-2">
+      {editable && <div className="flex flex-wrap gap-2" data-print-hide>
         <Button variant="outline" disabled={busy || pendingCount > 0 || assignments.length > 0} title={assignments.length ? "Copy last week is available for an empty draft." : undefined} onClick={() => void mutate("copy")}><Copy className="mr-2 h-4 w-4" />Copy last week</Button>
         <Button variant="outline" disabled={busy || pendingCount === 0} onClick={() => void mutate("save")}><Save className="mr-2 h-4 w-4" />{busy ? "Saving…" : `Save${pendingCount ? ` ${pendingCount} changes` : " draft"}`}</Button>
         <Button disabled={busy || pendingCount > 0 || assignments.length === 0} onClick={() => void mutate("publish")}><Send className="mr-2 h-4 w-4" />Publish week</Button>
@@ -230,19 +247,23 @@ export default function AdminScheduleWeekDetailPage() {
     {notice && <p role="status" className="rounded-lg border border-border bg-muted/40 p-3 text-sm">{notice}</p>}
     {!loading && schedule && <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{editable ? `Click a cell to cycle: Off${definitions.length ? ` → ${definitions.map((definition) => definition.label).join(" → ")}` : ""} → Custom → Off. Save changes before publishing.` : schedule.status === "published" ? "Published shifts are visible to assigned staff." : "Review the schedule below."}</p>
-        <Input aria-label="Find a person on the schedule" placeholder="Find a person…" value={search} onChange={(event) => setSearch(event.target.value)} className="w-full sm:w-56" />
+        <p className="text-sm text-muted-foreground">{editable ? `Click a cell to cycle: Off${definitions.length ? ` → ${definitions.map((definition) => definition.label).join(" → ")}` : ""} → ${gridPeople.some((person) => isCookStaffRole(person.staff_role)) ? `${COOK_SPLIT_LABEL} (cooks, ${COOK_SPLIT_BLOCKS.map((block) => formatScheduleTimes(block.start_time, block.end_time)).join(" + ")}) → ` : ""}Custom → Off. Save changes before publishing.` : schedule.status === "published" ? "Published shifts are visible to assigned staff." : "Review the schedule below."}</p>
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto" data-print-hide>
+          <Button type="button" variant="outline" size="sm" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print</Button>
+          <Input aria-label="Find a person on the schedule" placeholder="Find a person…" value={search} onChange={(event) => setSearch(event.target.value)} className="w-full sm:w-56" />
+        </div>
       </div>
+      <ul aria-label="Schedule color key" className="flex flex-wrap items-center gap-2 text-xs">{SCHEDULE_TONE_ORDER.map((tone) => <li key={tone} className="rounded-md border px-2 py-1 font-medium" style={scheduleToneStyle(tone)}>{SCHEDULE_TONES[tone].label}</li>)}</ul>
       {definitions.length === 0 && <p className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">No preset shifts are configured for this facility. Click a cell to enter Custom times, or configure presets in facility settings.</p>}
       {pendingCount > 0 && <div className="flex items-center gap-3 text-sm" role="status"><span>{pendingCount} unsaved cell {pendingCount === 1 ? "change" : "changes"}.</span><Button size="sm" variant="ghost" disabled={busy} onClick={() => setChanges({})}>Discard changes</Button></div>}
       {visiblePeople.length === 0 ? <AdminEmptyState title={search ? "No matching people" : "No active staff in this facility"} description={search ? "Try another name or clear the search." : "Add staff to People before planning their shifts."} /> : <HorizontalScroll label="Seven-day employee schedule" className="overflow-hidden rounded-xl border border-border bg-card" viewportClassName="rounded-xl">
-        <table className="w-full min-w-[1040px] border-collapse text-sm"><caption className="sr-only">Seven-day employee schedule. Hours use the facility time zone and do not deduct unrecorded meals.</caption>
+        <table className="w-full min-w-[1040px] border-collapse text-sm print:min-w-0"><caption className="sr-only">Seven-day employee schedule. Hours use the facility time zone and do not deduct unrecorded meals.</caption>
           <thead><tr className="border-b border-border text-left"><th scope="col" className="sticky left-0 z-10 min-w-48 bg-card p-4 font-medium">Person</th>{days.map((date) => <th scope="col" key={date} className="min-w-28 p-3 text-center font-medium">{formatDate(date)}</th>)}<th scope="col" className="p-4 text-right font-medium">Hours</th></tr></thead>
           <tbody>{visiblePeople.map((person) => <tr key={person.id} className="border-b border-border/60 last:border-b-0">
             <th scope="row" className="sticky left-0 z-10 bg-card p-4 text-left font-medium"><Link href={`/admin/staff/${person.id}`} className="hover:underline">{formatScheduleAssignmentStaffLabel(person)}</Link><span className="mt-1 block text-xs font-normal text-muted-foreground">{enumLabel(person.staff_role)}{person.employment_status !== "active" ? " · Inactive" : ""}</span></th>
-            {days.map((date) => { const key = scheduleCellKey(person.id, date); const shifts = effectiveCell(person.id, date); const multiple = (byCell.get(key)?.length ?? 0) > 1; return <td key={date} className="p-1.5"><button type="button" onClick={(event) => cycleCell(person, date, event.currentTarget)} disabled={!editable || busy || multiple || person.employment_status !== "active"} aria-label={`${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}: ${shifts.map((shift) => `${shift.label} ${formatScheduleTimes(shift.start, shift.end)}`).join(", ") || "Off"}. ${multiple ? "Review multiple assignments below." : "Cycle shift."}`} className={`min-h-16 w-full rounded-lg border px-2 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default ${changes[key] ? "border-primary bg-primary/10" : shifts.length ? "border-border bg-muted/50" : "border-transparent text-muted-foreground hover:border-border"}`}>
-              {shifts.length ? shifts.map((shift, index) => <span key={index} className="block"><span className="font-semibold">{shift.label}</span><span className="mt-1 block text-[11px] text-muted-foreground">{formatScheduleTimes(shift.start, shift.end)}</span></span>) : <span>Off</span>}
-            </button>{editable && !multiple && person.employment_status === "active" && cellValue(person.id, date) === "custom" && <Button type="button" variant="ghost" size="sm" className="mt-1 h-7 w-full text-xs" disabled={busy} aria-label={`Edit custom times for ${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}`} onClick={(event) => openCustomEditor(person, date, event.currentTarget)}>Edit times</Button>}</td>; })}
+            {days.map((date) => { const key = scheduleCellKey(person.id, date); const shifts = effectiveCell(person.id, date); const multiple = isMultipleCell(person.id, date); const tone = scheduleCellTone({ staffRole: person.staff_role, cellValue: cellValue(person.id, date), shift: shifts[0] }); return <td key={date} className="p-1.5"><button type="button" onClick={(event) => cycleCell(person, date, event.currentTarget)} disabled={!editable || busy || multiple || person.employment_status !== "active"} data-schedule-tone={tone ?? undefined} style={tone ? scheduleToneStyle(tone) : undefined} aria-label={`${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}: ${describeScheduleCell(shifts) || "Off"}${tone ? ` (${SCHEDULE_TONES[tone].label} color)` : ""}${changes[key] ? ", unsaved" : ""}. ${multiple ? "Review multiple assignments below." : "Cycle shift."}`} className={`min-h-16 w-full rounded-lg border px-2 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default ${changes[key] ? "outline-2 outline-offset-2 outline-dashed outline-primary" : ""} ${tone ? "" : changes[key] ? "border-primary bg-primary/10" : shifts.length ? "border-border bg-muted/50" : "border-transparent text-muted-foreground hover:border-border"}`}>
+              {shifts.length ? shifts.map((shift, index) => <span key={index} className="block">{index === 0 || shifts[index - 1].label !== shift.label ? <span className="font-semibold">{shift.label}</span> : null}<span className={`mt-1 block text-[11px] ${tone ? "" : "text-muted-foreground"}`}>{formatScheduleTimes(shift.start, shift.end)}</span></span>) : <span>Off</span>}
+            </button>{editable && !multiple && person.employment_status === "active" && cellValue(person.id, date) === "custom" && <Button type="button" variant="ghost" size="sm" className="mt-1 h-7 w-full text-xs" data-print-hide disabled={busy} aria-label={`Edit custom times for ${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}`} onClick={(event) => openCustomEditor(person, date, event.currentTarget)}>Edit times</Button>}</td>; })}
             <td className="p-4 text-right font-medium tabular-nums">{personHours(person.id)}</td>
           </tr>)}</tbody>
           <tfoot><tr className="border-t border-border"><th scope="row" className="sticky left-0 bg-card p-4 text-left font-medium">Assigned shifts</th>{days.map((date) => <td key={date} className="p-3 text-center tabular-nums">{gridPeople.reduce((sum, person) => sum + effectiveCell(person.id, date).length, 0)}</td>)}<td /></tr></tfoot>

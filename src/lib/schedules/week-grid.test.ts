@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignmentDefinitionId, formatScheduleTimes, nextScheduleCellValue, scheduledHours, scheduleWeekDates, type ScheduleAssignment, type ScheduleShiftDefinition } from "./week-grid";
+import { assignmentDefinitionId, COOK_SPLIT, COOK_SPLIT_BLOCKS, describeScheduleCell, formatScheduleTimes, isCookSplitCell, isCookStaffRole, nextScheduleCellValue, scheduledHours, scheduleWeekDates, type ScheduleAssignment, type ScheduleShiftDefinition } from "./week-grid";
 
 const shifts: ScheduleShiftDefinition[] = [
   { id: "day", label: "Day", roster_shift_type: "day", starts_at_local: "06:00:00", ends_at_local: "18:00:00" },
@@ -16,6 +16,38 @@ describe("schedule week grid", () => {
     expect(nextScheduleCellValue("night", shifts)).toBe("custom");
     expect(nextScheduleCellValue("custom", shifts)).toBeNull();
     expect(nextScheduleCellValue(null, [])).toBe("custom");
+  });
+  it("adds one Cook split step before Custom for kitchen staff only", () => {
+    const cook = { cookSplit: true };
+    expect(nextScheduleCellValue(null, shifts, cook)).toBe("day");
+    expect(nextScheduleCellValue("day", shifts, cook)).toBe("night");
+    expect(nextScheduleCellValue("night", shifts, cook)).toBe(COOK_SPLIT);
+    expect(nextScheduleCellValue(COOK_SPLIT, shifts, cook)).toBe("custom");
+    expect(nextScheduleCellValue("custom", shifts, cook)).toBeNull();
+    expect(nextScheduleCellValue(null, [], cook)).toBe(COOK_SPLIT);
+    // A split already on a non-cook's cell still leaves through Custom.
+    expect(nextScheduleCellValue(COOK_SPLIT, shifts)).toBe("custom");
+    expect(isCookStaffRole("cook")).toBe(true);
+    expect(isCookStaffRole("dietary_aide")).toBe(true);
+    expect(isCookStaffRole("medication_tech")).toBe(false);
+    expect(isCookStaffRole(undefined)).toBe(false);
+  });
+  it("schedules the cook split as 6am–1pm plus 4pm–6pm, nine hours", () => {
+    expect(COOK_SPLIT_BLOCKS).toEqual([{ start_time: "06:00", end_time: "13:00" }, { start_time: "16:00", end_time: "18:00" }]);
+    expect(COOK_SPLIT_BLOCKS.reduce((sum, block) => sum + (scheduledHours("2026-10-01", block.start_time, block.end_time) ?? 0), 0)).toBe(9);
+  });
+  it("recognizes a saved cook split only from two plain custom blocks at the preset times", () => {
+    const block = (start: string, end: string, extra: Partial<ScheduleAssignment> = {}) => ({ shift_type: "custom", shift_definition_id: null, custom_start_time: start, custom_end_time: end, ...extra }) as ScheduleAssignment;
+    expect(isCookSplitCell([block("16:00:00", "18:00:00"), block("06:00:00", "13:00:00")])).toBe(true);
+    expect(isCookSplitCell([block("06:00:00", "13:00:00")])).toBe(false);
+    expect(isCookSplitCell([block("06:00:00", "13:00:00"), block("16:00:00", "19:00:00")])).toBe(false);
+    expect(isCookSplitCell([block("06:00:00", "13:00:00", { shift_type: "day" }), block("16:00:00", "18:00:00")])).toBe(false);
+    expect(isCookSplitCell([block("06:00:00", "13:00:00", { shift_definition_id: "day" }), block("16:00:00", "18:00:00")])).toBe(false);
+  });
+  it("describes a split under one label", () => {
+    expect(describeScheduleCell([{ label: "Cook split", start: "06:00", end: "13:00" }, { label: "Cook split", start: "16:00", end: "18:00" }])).toBe("Cook split 6:00a–1:00p and 4:00p–6:00p");
+    expect(describeScheduleCell([{ label: "Day", start: "06:00", end: "18:00" }, { label: "Custom", start: "19:00", end: "20:00" }])).toBe("Day 6:00a–6:00p, Custom 7:00p–8:00p");
+    expect(describeScheduleCell([])).toBe("");
   });
   it("shows stored overnight times and missing data honestly", () => {
     expect(formatScheduleTimes("18:00:00", "06:00:00")).toBe("6:00p–6:00a (+1 day)");
