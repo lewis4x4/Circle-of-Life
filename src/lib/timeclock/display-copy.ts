@@ -24,6 +24,7 @@ export function resolveExceptionsToExport(count: number): string {
 export const EXCEPTION_LABELS: Record<ExceptionType, string> = {
   missing_out: "Missing clock out",
   missing_meal_end: "Meal never ended",
+  long_shift: "Shift longer than 16 hours",
   clock_skew: "Tablet clock differed from server",
   offline_capture: "Captured offline",
   rejected_offline_sync: "Offline punch refused at sync",

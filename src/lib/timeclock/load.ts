@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { mapWithConcurrency } from "@/lib/rounding/compliance-day-chunks";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
 import type { PayPeriodSettings, RawCorrection, RawPunch, RawSyncRejection } from "@/lib/timeclock/compute";
 import type { Database } from "@/types/database";
@@ -31,6 +32,7 @@ type Client = SupabaseClient<Database>;
 
 const LOOKBACK_MS = 24 * 60 * 60 * 1000;
 const ID_BATCH_SIZE = 100;
+const ID_BATCH_CONCURRENCY = 8;
 const PUNCH_COLUMNS = "id, staff_id, facility_id, punch_type, punched_at, device_time, captured_offline, flags";
 const CORRECTION_COLUMNS = "id, staff_id, facility_id, correction_type, target_punch_id, target_correction_id, punch_type, corrected_punched_at, exception_key, reason, note, corrected_by, corrected_at";
 const STAFF_COLUMNS = "id, first_name, last_name, preferred_name, employment_status, facility_id";
@@ -47,12 +49,12 @@ async function allPages<T>(query: () => PageQuery<T>): Promise<T[]> {
 /** Keep ID filters small enough for URL limits; each batch can still span pages. */
 async function byIds<T>(ids: string[], query: (batch: string[]) => PageQuery<T>): Promise<T[]> {
   const unique = [...new Set(ids)];
-  const rows: T[] = [];
+  const batches: string[][] = [];
   for (let index = 0; index < unique.length; index += ID_BATCH_SIZE) {
-    const batch = unique.slice(index, index + ID_BATCH_SIZE);
-    rows.push(...await allPages(() => query(batch)));
+    batches.push(unique.slice(index, index + ID_BATCH_SIZE));
   }
-  return rows;
+  const pages = await mapWithConcurrency(batches, ID_BATCH_CONCURRENCY, (batch) => allPages(() => query(batch)));
+  return pages.flat();
 }
 
 type LedgerScope = { column: "facility_id" | "staff_id"; id: string };
@@ -76,7 +78,7 @@ async function loadPeriodLedger(supabase: Client, scope: LedgerScope, periodStar
   const addedIds = corrections.filter((row) => row.correction_type === "add_punch").map((row) => row.id);
   corrections.push(...await byIds(punches.map((row) => row.id), (ids) => correctionQuery().in("target_punch_id", ids)) as RawCorrection[]);
   corrections.push(...await byIds(addedIds, (ids) => correctionQuery().in("target_correction_id", ids)) as RawCorrection[]);
-  const exceptionTypes = ["missing_out", "missing_meal_end", "clock_skew", "offline_capture", "short_turnaround"];
+  const exceptionTypes = ["missing_out", "missing_meal_end", "long_shift", "clock_skew", "offline_capture", "short_turnaround"];
   const exceptionKeys = [...punches.map((row) => row.id), ...addedIds].flatMap((id) => exceptionTypes.map((type) => `${type}:${id}`));
   exceptionKeys.push(...rejections.map((row) => `rejected_offline_sync:${row.id}`));
   corrections.push(...await byIds(exceptionKeys, (keys) => correctionQuery().in("exception_key", keys)) as RawCorrection[]);
