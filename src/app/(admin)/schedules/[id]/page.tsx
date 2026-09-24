@@ -3,14 +3,13 @@
 import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { Copy, Download, Save, Send } from "lucide-react";
 import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
@@ -27,6 +26,8 @@ import { readAllPages } from "@/lib/supabase/read-all-pages";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+
+const CustomShiftDialog = dynamic(() => import("@/components/schedules/CustomShiftDialog"));
 
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"];
 type StaffRow = { id: string; first_name: string; last_name: string; staff_role: string; employment_status: string };
@@ -159,16 +160,6 @@ export default function AdminScheduleWeekDetailPage() {
     else setCellChange(person, date, next);
   }
 
-  const customHours = customEditor ? scheduledHours(customEditor.date, customEditor.start, customEditor.end, timeZone) : null;
-  const customTimesValid = !!customEditor && /^([01]\d|2[0-3]):[0-5]\d$/.test(customEditor.start)
-    && /^([01]\d|2[0-3]):[0-5]\d$/.test(customEditor.end) && customHours !== null;
-
-  function applyCustomTimes() {
-    if (!customEditor || !customTimesValid) return;
-    setCellChange(customEditor.person, customEditor.date, "custom", customEditor.start, customEditor.end);
-    setCustomEditor(null);
-  }
-
   async function mutate(action: "save" | "copy" | "publish" | "remove", assignmentId?: string) {
     if (!schedule || !editable || busy) return;
     setBusy(true);
@@ -213,22 +204,13 @@ export default function AdminScheduleWeekDetailPage() {
   }
 
   return <div className="space-y-5">
-    <Dialog open={!!customEditor && editable && !loading} onOpenChange={(open) => { if (!open) setCustomEditor(null); }}>
-      <DialogContent className="max-w-md" onCloseAutoFocus={(event) => { event.preventDefault(); customTrigger.current?.focus(); }}>
-        <DialogHeader>
-          <DialogTitle>Custom shift</DialogTitle>
-          <DialogDescription>{customEditor ? `${formatScheduleAssignmentStaffLabel(customEditor.person)} · ${formatDate(customEditor.date)} · ${timeZone}` : "Choose start and finish times."}</DialogDescription>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2"><Label htmlFor="custom-shift-start">Start time</Label><Input id="custom-shift-start" type="time" step="60" value={customEditor?.start ?? ""} onChange={(event) => setCustomEditor((current) => current ? { ...current, start: event.target.value } : null)} /></div>
-          <div className="space-y-2"><Label htmlFor="custom-shift-end">Finish time</Label><Input id="custom-shift-end" type="time" step="60" value={customEditor?.end ?? ""} onChange={(event) => setCustomEditor((current) => current ? { ...current, end: event.target.value } : null)} /></div>
-        </div>
-        <p className="text-sm text-muted-foreground" aria-live="polite">{customTimesValid && customEditor
-          ? `${formatScheduleTimes(customEditor.start, customEditor.end)} · ${customHours?.toFixed(1)} scheduled hours${customEditor.end < customEditor.start ? ". Finishes the next day." : "."}`
-          : customEditor?.start && customEditor?.end ? "Choose different start and finish times." : "Choose both times. An earlier finish time means the next day."}</p>
-        <DialogFooter><Button type="button" variant="outline" onClick={() => setCustomEditor(null)}>Cancel</Button><Button type="button" disabled={!customTimesValid || !editable || busy} onClick={applyCustomTimes}>Apply times</Button></DialogFooter>
-      </DialogContent>
-    </Dialog>
+    {customEditor && editable && !loading && <CustomShiftDialog
+      key={`${customEditor.person.id}:${customEditor.date}`}
+      personName={formatScheduleAssignmentStaffLabel(customEditor.person)} date={customEditor.date} dateLabel={formatDate(customEditor.date)} timeZone={timeZone}
+      initialStart={customEditor.start} initialEnd={customEditor.end}
+      onClose={() => setCustomEditor(null)} onRestoreFocus={() => customTrigger.current?.focus()}
+      onApply={(start, end) => { setCellChange(customEditor.person, customEditor.date, "custom", start, end); setCustomEditor(null); }}
+    />}
     <Link href="/admin/schedules" className="text-sm text-muted-foreground underline">All schedule weeks</Link>
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="space-y-1">

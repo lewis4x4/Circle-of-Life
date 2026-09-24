@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-09-24T14:54:07.834Z",
+  "checked_at": "2026-09-24T15:10:44.644Z",
   "scope": "Synthetic local Supabase/route/shell adapters; actual Schedule component, Workforce context, and production CSS. Not hosted authentication, database, notification, or staff acceptance.",
   "actual_component": "src/app/(admin)/schedules/[id]/page.tsx",
   "screenshots": {

@@ -113,12 +113,12 @@ describe("weekly schedule editing", () => {
     fireEvent.click(cell);
     expect(cell).toHaveAccessibleName(/Night 6:00p–6:00a/);
     fireEvent.click(cell);
-    expect(screen.getByRole("dialog", { name: "Custom shift" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Custom shift" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(cell).toHaveAccessibleName(/Night 6:00p–6:00a/);
     fireEvent.click(cell);
-    fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "22:00" } });
+    fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "22:00" } });
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "22:00" } });
     expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "04:30" } });
@@ -139,7 +139,7 @@ describe("weekly schedule editing", () => {
     fireEvent.click(cell);
     fireEvent.click(cell);
     fireEvent.click(cell);
-    fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "09:15" } });
+    fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "09:15" } });
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "16:45" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply times" }));
     fireEvent.click(cell);
@@ -152,7 +152,7 @@ describe("weekly schedule editing", () => {
     state.assignments = [{ id: "assignment-1", staff_id: "staff-1", shift_date: "2026-09-28", shift_type: "custom", shift_definition_id: null, custom_start_time: "09:00:00", custom_end_time: "17:00:00", status: "assigned" }];
     render(<SchedulePage />);
     fireEvent.click(await screen.findByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
-    expect(screen.getByLabelText("Start time")).toHaveValue("09:00");
+    expect(await screen.findByLabelText("Start time")).toHaveValue("09:00");
     expect(screen.getByLabelText("Finish time")).toHaveValue("17:00");
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "18:00" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
