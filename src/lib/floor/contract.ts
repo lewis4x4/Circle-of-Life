@@ -94,9 +94,13 @@ export const FLOOR_ERROR_COPY: Record<FloorErrorCode, string> = {
   unavailable: "Haven could not be reached. Try again.",
 };
 
-/** "That PIN did not match. 3 tries left." when the count is known, else the plain line. */
+/**
+ * "That PIN did not match. 3 tries left." when the count is known, else the
+ * plain line. No tries left means the miss just locked the credential.
+ */
 export function floorPinMismatchCopy(triesLeft: number | null | undefined): string {
   if (typeof triesLeft !== "number" || !Number.isInteger(triesLeft) || triesLeft < 0) return FLOOR_ERROR_COPY.not_recognized;
+  if (triesLeft === 0) return FLOOR_ERROR_COPY.locked;
   return `${FLOOR_ERROR_COPY.not_recognized} ${triesLeft} ${triesLeft === 1 ? "try" : "tries"} left.`;
 }
 

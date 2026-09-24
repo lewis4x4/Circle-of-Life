@@ -64,6 +64,7 @@ describe("operator copy for refusals", () => {
   it("counts the PIN tries left, singular and plural, and stays plain without a count", () => {
     expect(floorPinMismatchCopy(3)).toBe("That PIN did not match. 3 tries left.");
     expect(floorPinMismatchCopy(1)).toBe("That PIN did not match. 1 try left.");
+    expect(floorPinMismatchCopy(0)).toBe("Locked for 15 minutes. Ask the administrator.");
     expect(floorPinMismatchCopy(undefined)).toBe("That PIN did not match.");
   });
 
