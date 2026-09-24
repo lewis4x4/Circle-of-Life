@@ -4,13 +4,15 @@ import { loadRiskRoleContextServer } from "@/lib/risk/load-risk-context.server";
 import { loadSurveyBundlePacket } from "@/lib/risk/load-survey-bundle";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function RiskSurveyBundlePage() {
+/** The evidence bundle view of the survey pack (COL-707); was /admin/risk/survey-bundle. */
+export async function RiskSurveyBundleSection() {
   const roleContext = await loadRiskRoleContextServer();
   const selectedFacilityId = await getServerSelectedFacilityId();
 
   if (!roleContext.ok) {
     return (
       <RiskSurveyBundlePageClient
+        embedded
         initialPacket={null}
         initialError={roleContext.error}
         initialFacilityId={selectedFacilityId}
@@ -21,6 +23,7 @@ export default async function RiskSurveyBundlePage() {
   if (!selectedFacilityId) {
     return (
       <RiskSurveyBundlePageClient
+        embedded
         initialPacket={null}
         initialError={null}
         initialFacilityId={null}
@@ -44,6 +47,7 @@ export default async function RiskSurveyBundlePage() {
 
   return (
     <RiskSurveyBundlePageClient
+        embedded
       initialPacket={initialPacket}
       initialError={initialError}
       initialFacilityId={selectedFacilityId}
