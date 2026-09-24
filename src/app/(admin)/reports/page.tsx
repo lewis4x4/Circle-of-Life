@@ -10,7 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
-import { requireCount } from "@/lib/metrics/require-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { loadReportRunHistory, type ReportRunHistoryItem } from "@/lib/reports/load-report-run-history";
@@ -177,12 +177,12 @@ export default function ReportsOverviewPage() {
       const scheduleKinds = scheduleRows.map((s) => deriveReportScheduleState(s, now).kind);
 
       setCounts({
-        templates: requireCount(templatesRes, "Report template count"),
-        saved: requireCount(savedRes, "Saved report count"),
+        templates: requireHeadCount(templatesRes, "Report template count"),
+        saved: requireHeadCount(savedRes, "Saved report count"),
         schedules: scheduleKinds.filter((k) => k === "active").length,
         schedulesNeedingAttention: scheduleKinds.filter((k) => k === "overdue" || k === "needs_setup" || k === "failed").length,
-        packs: requireCount(packsRes, "Report pack count"),
-        history: requireCount(runsTotalRes, "Report run count"),
+        packs: requireHeadCount(packsRes, "Report pack count"),
+        history: requireHeadCount(runsTotalRes, "Report run count"),
       });
       setRecentRuns(recentItems);
 

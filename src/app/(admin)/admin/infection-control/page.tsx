@@ -10,7 +10,7 @@ import {
   infectionControlHubKpiTileIsMetric,
   isPositiveCount,
 } from "@/lib/infection-control/infection-control-display-copy";
-import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { buttonVariants } from "@/components/ui/button";

@@ -152,7 +152,7 @@ describe("command-center brief missing counts (COL-708)", () => {
       if (table === "resident_observation_escalations") return { count: null, error: null };
       return isHeadCount(calls) ? { count: 0, error: null } : { data: [], count: 0, error: null };
     });
-    await expect(fetchResidentAssuranceCommandBrief(FACILITY, supabase)).rejects.toThrow(/count was not returned/);
+    await expect(fetchResidentAssuranceCommandBrief(FACILITY, supabase)).rejects.toThrow(/count unavailable/);
   });
 
   it("heat map fails instead of reporting 0 for a facility whose count is missing", async () => {
@@ -161,6 +161,6 @@ describe("command-center brief missing counts (COL-708)", () => {
       if (table === "resident_observation_integrity_flags") return { count: null, error: null };
       return isHeadCount(calls) ? { count: 0, error: null } : { data: [], count: 0, error: null };
     });
-    await expect(fetchResidentAssuranceFacilityHeatMap(supabase, "org-1")).rejects.toThrow(/count was not returned/);
+    await expect(fetchResidentAssuranceFacilityHeatMap(supabase, "org-1")).rejects.toThrow(/count unavailable/);
   });
 });

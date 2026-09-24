@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { requireCount } from "@/lib/metrics/require-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { billingNyTodayIso, daysPastDueAsOf } from "@/lib/billing/ar-aging-as-of";
 import {
   formatArAgingBucketCents,
@@ -260,7 +260,7 @@ function AdminArAgingPageContent() {
         rq = rq.in("facility_id", facilityIds);
       }
       const rcount = (await rq) as unknown as { count: number | null; error: { message: string } | null };
-      setResidentCount(requireCount(rcount, "Resident count"));
+      setResidentCount(requireHeadCount(rcount, "Resident count"));
 
       let iq = supabase
         .from("invoices" as never)
@@ -270,7 +270,7 @@ function AdminArAgingPageContent() {
         iq = iq.in("facility_id", facilityIds);
       }
       const icount = (await iq) as unknown as { count: number | null; error: { message: string } | null };
-      setAnyInvoiceCount(requireCount(icount, "Invoice count"));
+      setAnyInvoiceCount(requireHeadCount(icount, "Invoice count"));
 
       if (payerSelection.length > 0) {
         const allow = new Set(payerSelection);

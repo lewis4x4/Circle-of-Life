@@ -1,7 +1,7 @@
 import { formatShortDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { UUID_STRING_RE, isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { throwIfQueryError } from "@/lib/supabase/query-error";

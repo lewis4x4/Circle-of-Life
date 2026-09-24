@@ -14,7 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { formatMetric, metricFromRead } from "@/lib/metrics/metric-state";
-import { requireHeadCount } from "@/lib/metrics/require-head-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
 import { V2Card } from "@/components/ui/v2-card";
