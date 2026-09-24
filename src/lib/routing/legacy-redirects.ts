@@ -16,7 +16,6 @@ export const ADMIN_ALIAS_SEGMENTS = [
   // Command Deck at (dietary)/dietary/page.tsx, not a redirect to admin.
   // Admin dietary hub remains at /admin/dietary (direct path).
   "executive",
-  "family-messages",
   "finance",
   "incidents",
   "insurance",
@@ -99,6 +98,11 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   { source: "/clinical/residents", destination: "/admin/residents", permanent: true },
   { source: "/clinical/residents/:path*", destination: "/admin/residents/:path*", permanent: true },
   { source: "/clinical", destination: "/admin/residents", permanent: true },
+  // Family notes is a view of Family Connections now (COL-707, Brian 2026-09-23).
+  // Next passes the incoming query through, so ?filter=triage survives the hop.
+  { source: "/admin/family-messages", destination: "/admin/family-portal?tab=notes", permanent: true },
+  { source: "/admin/family-messages/:path*", destination: "/admin/family-portal?tab=notes", permanent: true },
+  { source: "/family-messages", destination: "/admin/family-portal?tab=notes", permanent: true },
   // Executive Reports was a second reporting surface under a "Reporting has moved" banner;
   // /admin/reports is canonical (COL-707, Brian 2026-09-23). /executive/reports already
   // 308s into /admin/executive/reports, and from there here.

@@ -43,7 +43,6 @@ import {
   ListChecks,
   ListTodo,
   Menu,
-  Megaphone,
   MessageSquare,
   Monitor,
   Moon,
@@ -406,7 +405,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "referrals", href: "/admin/referrals", label: "Referrals CRM", enabled: true, icon: UserPlus },
           { key: "admissions", href: "/pipeline/recent-admissions", label: "Admissions overview", enabled: true, icon: Home },
           { key: "discharge", href: "/admin/discharge", label: "Medication reconciliation", enabled: true, icon: DoorOpen },
-          { key: "family-messages", href: "/admin/family-messages", label: "Family notes", enabled: true, icon: Megaphone },
+          { key: "family-portal", href: "/admin/family-portal", label: "Family Connections", enabled: true, icon: Users },
         ],
       },
       {

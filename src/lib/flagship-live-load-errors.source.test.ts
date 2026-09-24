@@ -10,7 +10,7 @@ const FLAGSHIP_LOAD_SOURCES = [
   "src/app/(admin)/billing/billing-invoice-ledger.tsx",
   "src/app/(admin)/admin/dietary/page.tsx",
   "src/components/dietary/AdminDietaryPageClient.tsx",
-  "src/app/(admin)/admin/family-messages/page.tsx",
+  "src/components/family-portal/FamilyNotesPanel.tsx",
   "src/app/(admin)/executive/standup/page.tsx",
   "src/app/(admin)/executive/league/page.tsx",
   "src/app/(admin)/executive/benchmarks/page.tsx",
