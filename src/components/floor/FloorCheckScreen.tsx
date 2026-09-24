@@ -18,7 +18,7 @@ import {
   toggleValue,
   type FloorCheckDraft,
 } from "@/lib/floor/check-form";
-import { claimFloorCheck, currentRetryOwner, saveFloorCheck } from "@/lib/floor/check-submit";
+import { FloorOperatorError, claimFloorCheck, currentRetryOwner, saveFloorCheck } from "@/lib/floor/check-submit";
 import { dropFloorCache } from "@/lib/floor/memory-cache";
 import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { FLOOR_CHECK_NAME, checkTiming } from "@/lib/floor/now-rows";
@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { ChoiceChip, ChoiceGroup } from "./ChoiceChip";
 import { useFloorSession } from "./FloorContext";
 import { useFloorNow } from "./FloorClock";
+import { StatusReadError } from "./FloorResidentsRail";
 import { FloorScreenHeader } from "./FloorScreenHeader";
 import { FloorStatePanel } from "./FloorStatePanel";
 import { FLOOR_FOCUS_RING, FLOOR_OUTLINE_BUTTON, FLOOR_PRIMARY_BUTTON } from "./floor-styles";
@@ -48,10 +49,10 @@ export function FloorCheckScreen({ taskId }: { taskId: string }) {
       <FloorStatePanel state="empty" title="This check is not on the list any more." detail="It may be charted already. Go back to Now." pageTitle="Safety check" className="flex-1" />
     );
   }
-  return <CheckForm key={taskId} data={state.data} />;
+  return <CheckForm key={taskId} data={state.data} onRetry={reload} />;
 }
 
-function CheckForm({ data }: { data: FloorCheckData }) {
+function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => void }) {
   const router = useRouter();
   const { profile, facility, timeZone } = useFloorSession();
   const now = useFloorNow();
@@ -86,7 +87,7 @@ function CheckForm({ data }: { data: FloorCheckData }) {
       await claimFloorCheck(data.task.id, await ownerForThisUnlock());
       setNeedsClaim(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "The check could not be taken. Try again.");
+      setMessage(error instanceof FloorOperatorError ? error.message : "The check could not be taken. Try again.");
     } finally {
       setBusy(false);
     }
@@ -102,7 +103,7 @@ function CheckForm({ data }: { data: FloorCheckData }) {
       owner = await ownerForThisUnlock();
     } catch (error) {
       setBusy(false);
-      return setMessage(error instanceof Error ? error.message : "Your sign-in could not be confirmed.");
+      return setMessage(error instanceof FloorOperatorError ? error.message : "Your sign-in could not be confirmed. Tap Switch and unlock again.");
     }
     const result = await saveFloorCheck({
       taskId: data.task.id,
@@ -138,7 +139,7 @@ function CheckForm({ data }: { data: FloorCheckData }) {
         title={`${FLOOR_CHECK_NAME} · ${data.residentName}`}
         subtitle={
           <>
-            <span className="tabular-nums">{data.room ? `Rm ${data.room}` : "No room posted"}</span> · due <span className="tabular-nums">{dueLabel}</span>
+            <span className="tabular-nums">{!data.roomKnown ? "Room could not load" : data.room ? `Rm ${data.room}` : "No room posted"}</span> · due <span className="tabular-nums">{dueLabel}</span>
           </>
         }
         right={
@@ -165,7 +166,9 @@ function CheckForm({ data }: { data: FloorCheckData }) {
             ))}
           </ChoiceGroup>
           <ChoiceGroup id={ids.where} title={checkQuestion("where", pronoun)} hint="pick one">
-            {data.locations.length === 0 ? (
+            {data.locationsFailed ? (
+              <StatusReadError text="The places could not load." onRetry={onRetry} />
+            ) : data.locations.length === 0 ? (
               <p className="text-sm text-muted-foreground">No places are set up for this building yet.</p>
             ) : (
               data.locations.map((option) => (

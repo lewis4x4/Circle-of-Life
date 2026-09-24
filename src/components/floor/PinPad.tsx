@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -25,8 +25,9 @@ export function PinDots({ filled, length = FLOOR_PIN_LENGTH }: { filled: number;
   );
 }
 
-function KeyButton({ label, onPress, disabled, children, quiet = false }: {
+function KeyButton({ label, onPress, disabled, children, quiet = false, buttonRef }: {
   label: string;
+  buttonRef?: Ref<HTMLButtonElement>;
   onPress: () => void;
   disabled?: boolean;
   children: ReactNode;
@@ -34,6 +35,7 @@ function KeyButton({ label, onPress, disabled, children, quiet = false }: {
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       aria-label={label}
       disabled={disabled}
@@ -63,6 +65,7 @@ export function PinPad({
   helper,
   error,
   busy = false,
+  resetSignal = 0,
   onUnlock,
 }: {
   /** Avatar, name and the clocked-in line, or the employee number box. */
@@ -71,9 +74,20 @@ export function PinPad({
   /** Operator words for the last failure; announced. */
   error: string | null;
   busy?: boolean;
+  /** Changes after a failed attempt: clear the digits and put focus back on the keypad. */
+  resetSignal?: number;
   onUnlock: (pin: string) => void;
 }) {
   const [pin, setPin] = useState("");
+  const firstKey = useRef<HTMLButtonElement>(null);
+  const lastReset = useRef(resetSignal);
+  useEffect(() => {
+    if (resetSignal === lastReset.current) return;
+    lastReset.current = resetSignal;
+    setPin("");
+    // The Unlock button that had focus is gone; the keypad is where the next try starts.
+    firstKey.current?.focus();
+  }, [resetSignal]);
   const complete = pin.length === FLOOR_PIN_LENGTH;
 
   const press = useCallback((digit: string) => {
@@ -88,11 +102,12 @@ export function PinPad({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (busy || event.metaKey || event.ctrlKey || event.altKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (/^[0-9]$/.test(event.key)) press(event.key);
       else if (event.key === "Backspace") remove();
-      else if (event.key === "Enter") submit();
+      // Enter on a focused control (Delete, Clear, Not you, a key) activates that control, not Unlock.
+      else if (event.key === "Enter" && !(target && target.closest("button, a, [role='button']"))) submit();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -117,7 +132,7 @@ export function PinPad({
       </div>
       <div className="grid w-87 grid-cols-3 gap-3.5" aria-label="PIN keypad" role="group">
         {DIGITS.map((digit) => (
-          <KeyButton key={digit} label={`Digit ${digit}`} onPress={() => press(digit)} disabled={busy}>
+          <KeyButton key={digit} label={`Digit ${digit}`} onPress={() => press(digit)} disabled={busy} buttonRef={digit === "1" ? firstKey : undefined}>
             {digit}
           </KeyButton>
         ))}

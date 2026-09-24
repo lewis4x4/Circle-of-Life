@@ -6,7 +6,7 @@ import { fetchFloorCensus, fetchResidentStatusSignals, flagFor } from "@/lib/flo
 import { cn } from "@/lib/utils";
 
 import { useFloorSession } from "./FloorContext";
-import { railNote } from "./FloorResidentsRail";
+import { StatusReadError, railNote } from "./FloorResidentsRail";
 import { FloorStatePanel } from "./FloorStatePanel";
 import { FLOOR_FOCUS_RING } from "./floor-styles";
 import { ResidentRailTile } from "./ResidentRailTile";
@@ -59,6 +59,9 @@ export function FloorResidentsScreen() {
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+        {census.state.status === "success" && signals.state.status === "error" ? (
+          <StatusReadError text="Watch and alert status could not load." onRetry={signals.reload} className="mb-2" />
+        ) : null}
         {census.state.status === "error" ? (
           <FloorStatePanel state="error" title="The residents could not load." onRetry={census.reload} />
         ) : census.state.status !== "success" ? (

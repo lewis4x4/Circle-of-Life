@@ -16,6 +16,10 @@ export type FloorCheckData = {
   room: string | null;
   gender: string | null;
   locations: ObservationVocabOption[];
+  /** False when the census could not be read: the room is unknown, not missing. */
+  roomKnown: boolean;
+  /** True when the places could not be read: say so, never "none set up". */
+  locationsFailed: boolean;
 };
 
 
@@ -36,7 +40,10 @@ export function useFloorCheckData(taskId: string) {
         // The same six in-building places the report flow offers (observation_vocab, no out-of-facility codes).
         fetchLocationChips(supabase, facilityId)
           .then((chips) => chips.map((chip) => ({ code: chip.code, label: chip.label })))
-          .catch(() => [] as ObservationVocabOption[]),
+          .catch((error: unknown) => {
+            console.error("[floor] location chips", error);
+            return null;
+          }),
       ]);
       const task = rows[0];
       const residentId = task?.residents?.id;
@@ -44,8 +51,11 @@ export function useFloorCheckData(taskId: string) {
       const censusKey = `census:${facilityId}`;
       let census = readFloorCache<Awaited<ReturnType<typeof fetchFloorCensus>>>(censusKey, 12 * 60 * 60_000);
       if (!census) {
-        census = await fetchFloorCensus(supabase, facilityId).catch(() => []);
-        if (census.length > 0) writeFloorCache(censusKey, census);
+        census = await fetchFloorCensus(supabase, facilityId).catch((error: unknown) => {
+          console.error("[floor] census", error);
+          return null;
+        });
+        if (census) writeFloorCache(censusKey, census);
       }
       // No recorded gender (or no network) keeps the questions neutral.
       const gender = await supabase
@@ -58,9 +68,11 @@ export function useFloorCheckData(taskId: string) {
         task,
         residentId,
         residentName: residentNameOf(task.residents),
-        room: census.find((row) => row.id === residentId)?.room ?? null,
+        room: census?.find((row) => row.id === residentId)?.room ?? null,
+        roomKnown: census !== null,
+        locationsFailed: locations === null,
         gender,
-        locations,
+        locations: locations ?? [],
       };
     },
     5_000,

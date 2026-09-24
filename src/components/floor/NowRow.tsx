@@ -24,6 +24,7 @@ export type NowRowProps = {
   doneHref?: string;
   onDone?: () => void;
   doneExpanded?: boolean;
+  /** Accessible name; starts with the visible "Done" (WCAG 2.5.3 label in name). */
   doneLabel?: string;
 };
 

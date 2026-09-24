@@ -22,7 +22,7 @@ import { formatDisplayTime } from "@/lib/format/datetime";
 import { useFloorSession } from "./FloorContext";
 import { FloorReportPick, WHO_CHIP_LIMIT } from "./FloorReportPick";
 import { FloorReportQuestion, FloorReportSend } from "./FloorReportQuestion";
-import { FloorReportSent } from "./FloorReportSent";
+import { FloorReportSent, reportSentAnnouncement } from "./FloorReportSent";
 import { FloorScreenHeader } from "./FloorScreenHeader";
 import { FloorStatePanel } from "./FloorStatePanel";
 import { useFloorQuery } from "./useFloorQuery";
@@ -83,14 +83,32 @@ export function FloorReportScreen({ prefillResidentId, prefillKind, onStartOver 
 
   if (data.status === "loading") return <FloorStatePanel state="loading" title="Loading your residents" pageTitle="Something happened" className="flex-1" />;
   if (data.status === "error" || !ready) {
-    return <FloorStatePanel state="error" title={data.status === "error" ? data.message : "Something happened could not open."} onRetry={retry} pageTitle="Something happened" className="flex-1" />;
+    // The flow's own message is written for the caregiver app; the tablet uses its own words.
+    return (
+      <FloorStatePanel
+        state="error"
+        title="Something happened could not open."
+        detail="Check the Wi-Fi, then try again. If it still will not open, tell the administrator in person."
+        onRetry={retry}
+        pageTitle="Something happened"
+        className="flex-1"
+      />
+    );
   }
 
   const view = floorReportView(state, questionIndex);
+  // One live region for every screen of the flow, mounted before the receipt
+  // appears, so "Report sent" is announced (a region mounted with its text is not).
+  const liveRegion = (
+    <p role="status" aria-live="polite" className="sr-only">
+      {view.screen === "sent" ? reportSentAnnouncement(state.submitStatus === "queued") : ""}
+    </p>
+  );
 
   if (view.screen === "pick") {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
+        {liveRegion}
         <FloorScreenHeader
           back={{ href: "/floor", label: "Back to Now" }}
           title="Something happened"
@@ -128,6 +146,7 @@ export function FloorReportScreen({ prefillResidentId, prefillKind, onStartOver 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {liveRegion}
       <FloorScreenHeader
         back={{ onClick: back, label: view.screen === "sent" ? "Start over" : "Back" }}
         title={title}

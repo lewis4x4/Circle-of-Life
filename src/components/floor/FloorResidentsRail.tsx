@@ -30,6 +30,22 @@ export function railNote(
   return nextDueAt ? `Next check ${formatDisplayTime(nextDueAt, { timeZone })}` : null;
 }
 
+/** One line saying a supporting read failed, with a way to ask again (DESIGN.md §2.5). */
+export function StatusReadError({ text, onRetry, className }: { text: string; onRetry: () => void; className?: string }) {
+  return (
+    <div role="alert" className={cn("flex flex-wrap items-center justify-between gap-2 text-[13px] text-foreground", className)}>
+      <span>{text}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className={cn("inline-flex min-h-11 items-center rounded-[8px] border border-input px-3 text-[13px] font-medium hover:bg-muted", FLOOR_FOCUS_RING)}
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
 /** "Something happened": the one event-colored action (DESIGN.md §3). */
 export function SomethingHappenedButton({ href, className }: { href: string; className?: string }) {
   return (
@@ -59,6 +75,8 @@ export function FloorResidentsRail({
   nextDueByResident,
   timeZone,
   onRetry,
+  signalsState,
+  onRetrySignals,
 }: {
   census: readonly FloorResident[];
   censusState: "loading" | "error" | "ready";
@@ -66,6 +84,9 @@ export function FloorResidentsRail({
   nextDueByResident: ReadonlyMap<string, string>;
   timeZone: string;
   onRetry: () => void;
+  /** The alert and watch reads; failed is said, never shown as "all stable". */
+  signalsState: "loading" | "error" | "ready";
+  onRetrySignals: () => void;
 }) {
   const withFlags = census.map((resident) => ({
     ...resident,
@@ -94,6 +115,9 @@ export function FloorResidentsRail({
           </p>
         ) : null}
       </div>
+      {censusState === "ready" && signalsState === "error" ? (
+        <StatusReadError text="Watch and alert status could not load." onRetry={onRetrySignals} className="mx-4 mb-2" />
+      ) : null}
       {censusState === "loading" ? (
         <FloorStatePanel state="loading" title="Loading residents" />
       ) : censusState === "error" ? (

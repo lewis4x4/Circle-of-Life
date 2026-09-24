@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Check, Phone } from "lucide-react";
 
@@ -14,6 +15,10 @@ import { FLOOR_OUTLINE_BUTTON, FLOOR_PRIMARY_BUTTON } from "./floor-styles";
  * answers, where it went, Start over and Back to Now. Saved offline, it says so
  * instead, and an Urgent or Emergency event shows the on-call phone.
  */
+export function reportSentAnnouncement(offline: boolean): string {
+  return offline ? "Saved on this tablet." : "Report sent.";
+}
+
 export function FloorReportSent({
   answers,
   offline,
@@ -27,12 +32,18 @@ export function FloorReportSent({
   onCallPhone: string | null;
   onStartOver: () => void;
 }) {
+  // The report screen's persistent live region announces the result; focus
+  // moves here so the next tap starts from the receipt, not a vanished button.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4.5 overflow-y-auto px-6 py-8" role="status" aria-live="polite">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4.5 overflow-y-auto px-6 py-8">
       <span className="flex size-22 items-center justify-center rounded-full border-2 border-primary" aria-hidden>
         <Check className="size-11 text-primary" />
       </span>
-      <h2 className="text-center text-[32px] font-semibold text-foreground">{offline ? "Saved on this tablet" : "Report sent"}</h2>
+      <h2 ref={headingRef} tabIndex={-1} className="text-center text-[32px] font-semibold text-foreground focus:outline-none">{reportSentAnnouncement(offline).replace(/\.$/, "")}</h2>
       <dl className="w-140 max-w-full rounded-[12px] border border-border bg-card px-5 py-2">
         {answers.map((line) => (
           <div key={line.prompt} className="flex justify-between gap-4 border-b border-border py-2.5 last:border-b-0">

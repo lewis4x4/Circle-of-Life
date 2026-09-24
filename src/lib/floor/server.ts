@@ -17,12 +17,12 @@ export function floorJson(body: unknown, init: { status?: number; headers?: Reco
   return NextResponse.json(body, { status: init.status ?? 200, headers: { ...NO_STORE, ...(init.headers ?? {}) } });
 }
 
-export function floorErrorResponse(dbCode: string): NextResponse {
+export function floorErrorResponse(dbCode: string, extra: { tries_left?: number } = {}): NextResponse {
   const code: FloorErrorCode = publicFloorErrorCode(dbCode);
   const headers: Record<string, string> = {};
   if (code === "device_throttled") headers["Retry-After"] = "300";
   if (code === "locked") headers["Retry-After"] = "900";
-  return floorJson({ error: code }, { status: FLOOR_ERROR_STATUS[code], headers });
+  return floorJson({ error: code, ...extra }, { status: FLOOR_ERROR_STATUS[code], headers });
 }
 
 type CookieLike = { name: string; value: string };

@@ -37,6 +37,7 @@ export function FloorNowList({
   tasksState,
   counts,
   onRetryChecks,
+  onRetryTasks,
   onTaskDone,
 }: {
   now: Date;
@@ -48,6 +49,7 @@ export function FloorNowList({
   tasksState: "loading" | "error" | "ready";
   counts: readonly CountSegment[];
   onRetryChecks: () => void;
+  onRetryTasks: () => void;
   onTaskDone: () => void;
 }) {
   const [openTask, setOpenTask] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export function FloorNowList({
               bar={check.timing.bar}
               primaryAction={check.timing.primaryAction}
               doneHref={`/floor/check/${check.id}`}
-              doneLabel={`Chart ${FLOOR_CHECK_NAME.toLowerCase()} for ${check.residentName}`}
+              doneLabel={`Done: chart ${FLOOR_CHECK_NAME.toLowerCase()} for ${check.residentName}`}
             />
           ))
         )}
@@ -104,7 +106,7 @@ export function FloorNowList({
         {tasksState === "loading" ? (
           <FloorStatePanel state="loading" title="Loading your tasks" />
         ) : tasksState === "error" ? (
-          <FloorStatePanel state="error" title="Your tasks could not load." />
+          <FloorStatePanel state="error" title="Your tasks could not load." detail="Check the Wi-Fi, then try again." onRetry={onRetryTasks} />
         ) : tasks.length === 0 ? (
           <FloorStatePanel state="empty" title="No tasks for you right now." detail="Witness statements you are asked for show here." />
         ) : (
@@ -122,7 +124,7 @@ export function FloorNowList({
                   primaryAction={timing.primaryAction}
                   onDone={() => setOpenTask((current) => (current === task.id ? null : task.id))}
                   doneExpanded={openTask === task.id}
-                  doneLabel={`Answer the witness statement${task.incidentNumber ? ` for ${task.incidentNumber}` : ""}`}
+                  doneLabel={`Done: answer the witness statement${task.incidentNumber ? ` for ${task.incidentNumber}` : ""}`}
                 />
                 {openTask === task.id ? (
                   <div className="border-b border-border py-4 pr-4">

@@ -108,12 +108,15 @@ export function FloorNowScreen() {
           tasksState={simpleState(witness.state)}
           counts={nowCountSegments(checks, openWitness.length)}
           onRetryChecks={tasks.reload}
+          onRetryTasks={witness.reload}
           onTaskDone={witness.reload}
         />
         <FloorResidentsRail
           census={censusRows}
           censusState={simpleState(census.state)}
           signals={signals.state.status === "success" ? signals.state.data : null}
+          signalsState={simpleState(signals.state)}
+          onRetrySignals={signals.reload}
           nextDueByResident={nextDueByResident}
           timeZone={timeZone}
           onRetry={census.reload}
@@ -127,6 +130,10 @@ export function FloorNowScreen() {
         handoffAt={windowStart.endIso}
         timeZone={timeZone}
         state={activity.state.status === "error" || staffIds.state.status === "error" ? "error" : simpleState(activity.state)}
+        onRetry={() => {
+          staffIds.reload();
+          activity.reload();
+        }}
       />
     </div>
   );

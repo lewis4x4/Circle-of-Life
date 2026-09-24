@@ -55,7 +55,17 @@ export async function POST(request: NextRequest) {
     return floorErrorResponse("unavailable");
   }
   const result = isRecord(data) ? data : {};
-  if (result.ok !== true) return floorErrorResponse(String(result.error ?? "not_recognized"));
+  if (result.ok !== true) {
+    const code = String(result.error ?? "not_recognized");
+    // A roster PIN miss says how many tries are left before the 15 minute lock
+    // (spec 40 §6 screen 2). The employee-number path stays generic: it must
+    // not confirm that a typed number belongs to someone.
+    const triesLeft = Number(result.tries_left);
+    if (code === "not_recognized" && staffId && Number.isInteger(triesLeft) && triesLeft >= 0) {
+      return floorErrorResponse(code, { tries_left: triesLeft });
+    }
+    return floorErrorResponse(code);
+  }
 
   const unlockId = String(result.unlock_id ?? "");
   const userId = String(result.user_id ?? "");

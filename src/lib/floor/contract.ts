@@ -39,7 +39,8 @@ export type FloorErrorCode =
   | "invalid_input"
   | "unavailable";
 
-export type FloorErrorResponse = { error: FloorErrorCode };
+/** `tries_left` only on a roster PIN miss (`not_recognized`), never on the employee-number path. */
+export type FloorErrorResponse = { error: FloorErrorCode; tries_left?: number };
 
 /** HTTP status for each floor error code. */
 export const FLOOR_ERROR_STATUS: Record<FloorErrorCode, number> = {
@@ -92,6 +93,12 @@ export const FLOOR_ERROR_COPY: Record<FloorErrorCode, string> = {
   invalid_input: "Something was missing. Try again.",
   unavailable: "Haven could not be reached. Try again.",
 };
+
+/** "That PIN did not match. 3 tries left." when the count is known, else the plain line. */
+export function floorPinMismatchCopy(triesLeft: number | null | undefined): string {
+  if (typeof triesLeft !== "number" || !Number.isInteger(triesLeft) || triesLeft < 0) return FLOOR_ERROR_COPY.not_recognized;
+  return `${FLOOR_ERROR_COPY.not_recognized} ${triesLeft} ${triesLeft === 1 ? "try" : "tries"} left.`;
+}
 
 export function floorErrorCopy(code: string): string {
   return FLOOR_ERROR_COPY[publicFloorErrorCode(code)];

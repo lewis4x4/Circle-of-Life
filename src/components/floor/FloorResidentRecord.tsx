@@ -17,16 +17,19 @@ import { FloorStatePanel } from "./FloorStatePanel";
 export function FloorResidentRecord({ residentId }: { residentId: string }) {
   const { supabase } = useFloorSession();
   const [scope, setScope] = useState<CaregiverResidentScope | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setScope(null);
     void checkCaregiverResidentScope(supabase, residentId).then((result) => {
+      if (!result.ok) console.error("[floor] record scope", result.error);
       if (active) setScope(result);
     });
     return () => {
       active = false;
     };
-  }, [supabase, residentId]);
+  }, [supabase, residentId, attempt]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -41,7 +44,12 @@ export function FloorResidentRecord({ residentId }: { residentId: string }) {
         ) : scope.ok ? (
           <ResidentTimeline residentId={residentId} workspace="floor" />
         ) : (
-          <FloorStatePanel state="empty" title={scope.error} />
+          <FloorStatePanel
+            state={scope.outOfScope ? "empty" : "error"}
+            title={scope.outOfScope ? "This resident is not in this building." : "This record could not load."}
+            detail={scope.outOfScope ? "Go back to Residents and pick again." : "Check the Wi-Fi, then try again."}
+            onRetry={scope.outOfScope ? undefined : () => setAttempt((value) => value + 1)}
+          />
         )}
       </div>
     </div>

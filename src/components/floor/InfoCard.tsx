@@ -14,11 +14,13 @@ export function InfoCard({
   items,
   state,
   emptyText,
+  onRetry,
 }: {
   title: string;
   items: readonly InfoItem[];
   state: "loading" | "error" | "ready";
   emptyText: string;
+  onRetry?: () => void;
 }) {
   const headingId = `floor-card-${title.toLowerCase().replace(/[^a-z]+/g, "-")}`;
   return (
@@ -29,7 +31,7 @@ export function InfoCard({
       {state === "loading" ? (
         <FloorStatePanel state="loading" title="Loading" className="py-6" />
       ) : state === "error" ? (
-        <FloorStatePanel state="error" title="This could not load." className="py-6" />
+        <FloorStatePanel state="error" title="This could not load." detail="Check the Wi-Fi, then try again." onRetry={onRetry} className="py-6" />
       ) : items.length === 0 ? (
         <p className="py-3 text-sm text-muted-foreground">{emptyText}</p>
       ) : (

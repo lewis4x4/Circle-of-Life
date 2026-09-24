@@ -21,11 +21,13 @@ import { forgetFloorPerson } from "@/lib/floor/lock-client";
 import { setFloorUnlockId } from "@/lib/floor/session-context";
 import { initialsFromDisplayName, setFloorUnlockProfile } from "@/lib/floor/unlock-profile";
 
-export type FloorCallResult<T> = { ok: true; value: T } | { ok: false; code: FloorErrorCode };
+export type FloorCallResult<T> = { ok: true; value: T } | { ok: false; code: FloorErrorCode; triesLeft?: number };
 
-async function errorCodeOf(response: Response): Promise<FloorErrorCode> {
-  const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
-  return publicFloorErrorCode(typeof body?.error === "string" ? body.error : response.status >= 500 ? "unavailable" : "not_recognized");
+async function errorOf(response: Response): Promise<{ ok: false; code: FloorErrorCode; triesLeft?: number }> {
+  const body = (await response.json().catch(() => null)) as { error?: unknown; tries_left?: unknown } | null;
+  const code = publicFloorErrorCode(typeof body?.error === "string" ? body.error : response.status >= 500 ? "unavailable" : "not_recognized");
+  const triesLeft = typeof body?.tries_left === "number" ? body.tries_left : undefined;
+  return triesLeft === undefined ? { ok: false, code } : { ok: false, code, triesLeft };
 }
 
 export async function fetchFloorRoster(device: FloorDevice, fetchImpl: typeof fetch = fetch): Promise<FloorCallResult<FloorRosterResponse>> {
@@ -35,7 +37,7 @@ export async function fetchFloorRoster(device: FloorDevice, fetchImpl: typeof fe
       cache: "no-store",
       credentials: "omit",
     });
-    if (!response.ok) return { ok: false, code: await errorCodeOf(response) };
+    if (!response.ok) return await errorOf(response);
     return { ok: true, value: (await response.json()) as FloorRosterResponse };
   } catch {
     return { ok: false, code: "unavailable" };
@@ -54,7 +56,7 @@ export async function requestFloorUnlock(
       body: JSON.stringify(request),
       cache: "no-store",
     });
-    if (!response.ok) return { ok: false, code: await errorCodeOf(response) };
+    if (!response.ok) return await errorOf(response);
     return { ok: true, value: (await response.json()) as FloorUnlockResponse };
   } catch {
     return { ok: false, code: "unavailable" };

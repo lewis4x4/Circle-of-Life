@@ -162,6 +162,20 @@ describe("POST /api/floor/unlock", () => {
     expect(mock.generateLink).not.toHaveBeenCalled();
   });
 
+  it("says how many tries are left on a roster PIN miss, and never on the employee-number path", async () => {
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "not_recognized", tries_left: 3 }, error: null });
+    const roster = await POST(request({ staff_id: STAFF, pin: "123456" }));
+    expect(roster.status).toBe(401);
+    expect(await roster.json()).toEqual({ error: "not_recognized", tries_left: 3 });
+
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "not_recognized", tries_left: 3 }, error: null });
+    const byNumber = await POST(request({ employee_number: "E-1001", pin: "123456" }));
+    expect(await byNumber.json()).toEqual({ error: "not_recognized" });
+
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "locked", tries_left: 0 }, error: null });
+    expect(await (await POST(request({ staff_id: STAFF, pin: "123456" }))).json()).toEqual({ error: "locked" });
+  });
+
   it("refuses a bad body before the database", async () => {
     expect((await POST(request({ staff_id: STAFF, employee_number: "E-1", pin: "123456" }))).status).toBe(400);
     expect((await POST(request({ pin: "123456" }))).status).toBe(400);

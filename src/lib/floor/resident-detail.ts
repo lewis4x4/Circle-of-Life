@@ -185,7 +185,7 @@ export function todayCheckItems(input: {
       const timing = checkTiming(task.derived_status, task.due_at, input.now);
       const detail =
         timing.kind === "over"
-          ? `Not charted · ${timing.minutes} minutes over`
+          ? `Not charted · ${timing.minutes} ${timing.minutes === 1 ? "minute" : "minutes"} over`
           : timing.kind === "due"
             ? "Due now"
             : timing.kind === "done"

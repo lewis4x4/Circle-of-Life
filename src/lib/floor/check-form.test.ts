@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { floorPinMismatchCopy } from "./contract";
+import { checkFailureCopy } from "./check-submit";
 import { buildFloorCompletionPayload, checkQuestion, emptyFloorCheckDraft, floorCheckGaps, residentPronoun, toggleValue } from "./check-form";
 
 describe("floor check form", () => {
@@ -55,5 +57,20 @@ describe("floor check form", () => {
   it("toggles an any-of chip on and off", () => {
     expect(toggleValue(["pain_concern"], "skin_concern_observed")).toEqual(["pain_concern", "skin_concern_observed"]);
     expect(toggleValue(["pain_concern"], "pain_concern")).toEqual([]);
+  });
+});
+
+describe("operator copy for refusals", () => {
+  it("counts the PIN tries left, singular and plural, and stays plain without a count", () => {
+    expect(floorPinMismatchCopy(3)).toBe("That PIN did not match. 3 tries left.");
+    expect(floorPinMismatchCopy(1)).toBe("That PIN did not match. 1 try left.");
+    expect(floorPinMismatchCopy(undefined)).toBe("That PIN did not match.");
+  });
+
+  it("maps a refused check save by status, never by the route's text", () => {
+    expect(checkFailureCopy(400)).toBe("This check could not be saved as charted. Check the answers, then try again.");
+    expect(checkFailureCopy(403)).toContain("another sign-in");
+    expect(checkFailureCopy(404)).toContain("not on the list");
+    expect(checkFailureCopy(500)).toBe("The check was not saved. Try again, or tell the administrator.");
   });
 });

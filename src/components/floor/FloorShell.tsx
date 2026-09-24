@@ -27,6 +27,8 @@ import { FLOOR_PRIMARY_BUTTON } from "./floor-styles";
 import { useFloorLockTriggers } from "./useFloorLockTriggers";
 import { useFloorSyncState } from "./useFloorSyncState";
 
+const FLOOR_FACILITY_UNAVAILABLE_COPY = "This tablet could not open your building. Check the Wi-Fi, then lock the tablet and unlock again.";
+
 type ShellState =
   | { status: "checking" }
   | { status: "not-a-tablet" }
@@ -167,7 +169,12 @@ export function FloorShell({ children }: { children: ReactNode }) {
       }
       const resolved = await loadCaregiverFacilityContext(supabase);
       if (!active) return;
-      if (!resolved.ok) return setState({ status: "facility-error", message: resolved.error, device, profile });
+      if (!resolved.ok) {
+        // The caregiver lookup's words are for the caregiver header ("choose your
+        // working facility"); the tablet says what the operator can do instead.
+        console.error("[floor] facility context failed", resolved.error);
+        return setState({ status: "facility-error", message: FLOOR_FACILITY_UNAVAILABLE_COPY, device, profile });
+      }
       if (resolved.ctx.facilityId !== device.facilityId) {
         return setState({
           status: "facility-error",

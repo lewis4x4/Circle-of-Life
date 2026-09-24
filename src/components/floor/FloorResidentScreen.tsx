@@ -14,6 +14,7 @@ import { useFloorNow } from "./FloorClock";
 import { FloorStatePanel } from "./FloorStatePanel";
 import { FLOOR_OUTLINE_BUTTON } from "./floor-styles";
 import { InfoCard } from "./InfoCard";
+import { StatusReadError } from "./FloorResidentsRail";
 import { ResidentHeader } from "./ResidentHeader";
 import { useFloorQuery } from "./useFloorQuery";
 
@@ -87,19 +88,25 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
         reason={reason}
         nextCheck={next ? { taskId: next.id, timeLabel: clockWithoutDayHalf(next.due_at, timeZone) } : null}
       />
+      {signals.state.status === "error" ? <StatusReadError text="Watch and alert status could not load." onRetry={signals.reload} /> : null}
       <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
         <InfoCard
           title="Today's checks"
           state={tasks.state.status === "error" || detail.state.status === "error" ? "error" : stateOf(detailData ? tasks.state.status : detail.state.status)}
           items={detailData ? todayCheckItems({ tasks: taskRows, logs: detailData.logsToday, dayStartIso: dayStart, now, timeZone }) : []}
           emptyText="No checks are set for today."
+          onRetry={() => {
+            tasks.reload();
+            detail.reload();
+          }}
         />
-        <InfoCard title="Watch and follow-ups" state={stateOf(detail.state.status)} items={followUps} emptyText="No watch or open follow-up." />
+        <InfoCard title="Watch and follow-ups" state={stateOf(detail.state.status)} items={followUps} emptyText="No watch or open follow-up." onRetry={detail.reload} />
         <InfoCard
           title="Know before you go in"
           state={stateOf(detail.state.status)}
           items={detailData ? knowBeforeItems(detailData.record) : []}
           emptyText="Nothing special is on the record."
+          onRetry={detail.reload}
         />
       </div>
       <Link href={`/floor/residents/${resident.id}/record`} className={cn(FLOOR_OUTLINE_BUTTON, "h-11 w-fit px-4 text-sm text-muted-foreground")}>

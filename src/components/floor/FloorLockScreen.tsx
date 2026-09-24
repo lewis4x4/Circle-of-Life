@@ -8,6 +8,7 @@ import {
   FLOOR_HOME_PATH,
   FLOOR_LOCKED_COPY,
   FLOOR_SETUP_PATH,
+  floorPinMismatchCopy,
   type FloorInactiveReason,
   type FloorRosterPerson,
 } from "@/lib/floor/contract";
@@ -94,7 +95,8 @@ export function FloorLockScreen({ reason }: { reason?: FloorInactiveReason | nul
     );
     if (!result.ok) {
       setBusy(false);
-      setError(FLOOR_ERROR_COPY[result.code]);
+      // Only a roster miss carries the count; the employee-number path stays generic.
+      setError(result.code === "not_recognized" && selection.kind === "roster" ? floorPinMismatchCopy(result.triesLeft) : FLOOR_ERROR_COPY[result.code]);
       setAttempt((value) => value + 1);
       return;
     }
@@ -111,7 +113,7 @@ export function FloorLockScreen({ reason }: { reason?: FloorInactiveReason | nul
         <FloorLockBar left={<NotYouButton onClick={() => choose(null)} />} />
         <main className="flex flex-1 items-center justify-center px-6 py-8">
           <PinPad
-            key={attempt}
+            resetSignal={attempt}
             busy={busy}
             error={error ?? throttled}
             helper={PIN_HELPER}

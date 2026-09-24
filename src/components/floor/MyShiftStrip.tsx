@@ -23,12 +23,14 @@ export function MyShiftStrip({
   handoffAt,
   timeZone,
   state,
+  onRetry,
 }: {
   items: readonly ShiftStripItem[];
   /** When the shift in force ends, or null when the facility has no shift definitions. */
   handoffAt: string | null;
   timeZone: string;
   state: "loading" | "error" | "ready";
+  onRetry: () => void;
 }) {
   return (
     <section aria-label="My shift" className="flex h-16 shrink-0 items-center gap-2.5 border-t border-border bg-chrome-secondary pl-6">
@@ -37,7 +39,16 @@ export function MyShiftStrip({
         {state === "loading" ? (
           <span className="text-[13px] text-muted-foreground" role="status">Loading your shift</span>
         ) : state === "error" ? (
-          <span className="text-[13px] text-muted-foreground" role="status">Your shift so far could not load.</span>
+          <span role="alert" className="flex items-center gap-2.5 text-[13px] text-foreground">
+            Your shift so far could not load.
+            <button
+              type="button"
+              onClick={onRetry}
+              className={cn("inline-flex h-11 items-center rounded-[8px] border border-input px-3 text-[13px] font-medium hover:bg-muted", FLOOR_FOCUS_RING)}
+            >
+              Try again
+            </button>
+          </span>
         ) : items.length === 0 ? (
           <span className="text-[13px] text-muted-foreground">Nothing charted or filed yet this shift.</span>
         ) : (

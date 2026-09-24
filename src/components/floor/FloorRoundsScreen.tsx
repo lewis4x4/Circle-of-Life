@@ -34,7 +34,7 @@ function Group({ title, checks, rooms, timeZone }: { title: string; checks: read
             bar={check.timing.bar}
             primaryAction={check.timing.primaryAction}
             doneHref={check.timing.kind === "done" ? undefined : `/floor/check/${check.id}`}
-            doneLabel={`Chart ${FLOOR_CHECK_NAME.toLowerCase()} for ${check.residentName}`}
+            doneLabel={`Done: chart ${FLOOR_CHECK_NAME.toLowerCase()} for ${check.residentName}`}
           />
         ))}
       </div>
