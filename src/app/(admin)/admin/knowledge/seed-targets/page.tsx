@@ -4,7 +4,12 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { formatSeedTargetCoveragePct } from "@/lib/knowledge/seed-targets-display-copy";
+import {
+  formatSeedTargetCoveragePct,
+  linkableDocuments,
+  seedTargetStatusActions,
+  type SeedTargetEffectiveStatus,
+} from "@/lib/knowledge/seed-targets-display-copy";
 
 type SeedTarget = {
   id: string;
@@ -23,6 +28,25 @@ type SeedTarget = {
   updated_at: string;
 };
 
+type TargetStatusRow = {
+  seed_target_id: string;
+  effective_status: SeedTargetEffectiveStatus;
+  published_documents: number;
+};
+
+type TopicLink = {
+  id: string;
+  seed_target_id: string;
+  document_id: string;
+};
+
+type KbDocument = {
+  id: string;
+  title: string;
+  status: string;
+  deleted_at: string | null;
+};
+
 type CoverageRollup = {
   workspace_id: string;
   covered_count: number;
@@ -37,16 +61,22 @@ type CoverageRollup = {
  * KB-NEXT-09: owner-curated corpus seed (engineering shell).
  *
  * Read-mostly: lists the global default targets + any org-specific overrides,
- * shows the rollup, and lets owners change status / link covered_document_id
- * / write notes inline. New org targets can be added via the form at the
+ * shows the rollup, and lets owners link published documents to any topic
+ * (COL-710). A topic is covered while a linked document is published and not
+ * deleted — never by a hand-set status. New org targets can be added via the form at the
  * top. The page is owner/org_admin only — RLS rejects anyone else even if
  * they navigate here.
  */
 export default function SeedTargetsRoute() {
   const supabase = useMemo(() => createClient(), []);
-  const { user, organizationId } = useHavenAuth();
+  const { user, organizationId, appRole } = useHavenAuth();
+  const canEdit = appRole === "owner" || appRole === "org_admin";
   const [targets, setTargets] = useState<SeedTarget[]>([]);
   const [rollup, setRollup] = useState<CoverageRollup | null>(null);
+  const [statusById, setStatusById] = useState<Map<string, TargetStatusRow>>(new Map());
+  const [links, setLinks] = useState<TopicLink[]>([]);
+  const [documents, setDocuments] = useState<KbDocument[]>([]);
+  const [linkChoice, setLinkChoice] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "uncovered" | "wip" | "covered" | "retired">("all");
@@ -61,18 +91,34 @@ export default function SeedTargetsRoute() {
     setLoading(true);
     setError(null);
     try {
-      const [targetsRes, rollupRes] = await Promise.all([
+      const [targetsRes, rollupRes, statusRes, linksRes, docsRes] = await Promise.all([
         supabase
           .from("kb_seed_targets" as never)
           .select("*")
           .order("priority", { ascending: false } as never),
         supabase.from("vw_kb_seed_target_coverage" as never).select("*").maybeSingle(),
+        supabase.from("vw_kb_seed_target_status" as never).select("seed_target_id, effective_status, published_documents"),
+        supabase
+          .from("kb_seed_target_links" as never)
+          .select("id, seed_target_id, document_id")
+          .is("deleted_at" as never, null as never),
+        supabase
+          .from("documents" as never)
+          .select("id, title, status, deleted_at")
+          .is("deleted_at" as never, null as never)
+          .order("title" as never, { ascending: true } as never),
       ]);
       if (targetsRes.error) throw targetsRes.error;
+      if (statusRes.error) throw statusRes.error;
+      if (linksRes.error) throw linksRes.error;
+      if (docsRes.error) throw docsRes.error;
       setTargets((targetsRes.data ?? []) as unknown as SeedTarget[]);
-      if (!rollupRes.error && rollupRes.data) {
-        setRollup(rollupRes.data as unknown as CoverageRollup);
-      }
+      setStatusById(
+        new Map(((statusRes.data ?? []) as unknown as TargetStatusRow[]).map((row) => [row.seed_target_id, row])),
+      );
+      setLinks((linksRes.data ?? []) as unknown as TopicLink[]);
+      setDocuments((docsRes.data ?? []) as unknown as KbDocument[]);
+      setRollup(!rollupRes.error && rollupRes.data ? (rollupRes.data as unknown as CoverageRollup) : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load seed targets");
     } finally {
@@ -97,6 +143,49 @@ export default function SeedTargetsRoute() {
       await load();
     },
     [supabase, load],
+  );
+
+  const linkDocument = useCallback(
+    async (targetId: string) => {
+      const documentId = linkChoice[targetId];
+      if (!documentId || !organizationId) return;
+      setError(null);
+      const { error: lErr } = await supabase.from("kb_seed_target_links" as never).insert({
+        workspace_id: organizationId,
+        seed_target_id: targetId,
+        document_id: documentId,
+      } as never);
+      if (lErr) {
+        setError(lErr.message);
+        return;
+      }
+      setLinkChoice((prev) => ({ ...prev, [targetId]: "" }));
+      await load();
+    },
+    [linkChoice, organizationId, supabase, load],
+  );
+
+  const unlinkDocument = useCallback(
+    async (linkId: string) => {
+      setError(null);
+      const { error: uErr } = await supabase
+        .from("kb_seed_target_links" as never)
+        .update({ deleted_at: new Date().toISOString() } as never)
+        .eq("id" as never, linkId as never);
+      if (uErr) {
+        setError(uErr.message);
+        return;
+      }
+      await load();
+    },
+    [supabase, load],
+  );
+
+  const documentsById = useMemo(() => new Map(documents.map((d) => [d.id, d])), [documents]);
+
+  const effectiveStatus = useCallback(
+    (t: SeedTarget): SeedTargetEffectiveStatus => statusById.get(t.id)?.effective_status ?? "uncovered",
+    [statusById],
   );
 
   const addTarget = useCallback(
@@ -145,8 +234,8 @@ export default function SeedTargetsRoute() {
   );
 
   const filtered = useMemo(
-    () => (filter === "all" ? targets : targets.filter((t) => t.status === filter)),
-    [targets, filter],
+    () => (filter === "all" ? targets : targets.filter((t) => effectiveStatus(t) === filter)),
+    [targets, filter, effectiveStatus],
   );
 
   return (
@@ -163,8 +252,9 @@ export default function SeedTargetsRoute() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Topics Haven should be able to answer. Global defaults plus your org-specific additions.
-          Mark a target <strong>wip</strong> when you start writing the doc; <strong>covered</strong>{" "}
-          once the document is published.
+          A topic is <strong>covered</strong> while a published document is linked to it; archive or
+          delete the document and the topic is uncovered again. Org topics can be marked{" "}
+          <strong>wip</strong> while the document is being written.
         </p>
       </div>
 
@@ -278,16 +368,16 @@ export default function SeedTargetsRoute() {
                     <span
                       className={[
                         "text-xs rounded px-1.5 py-0.5",
-                        t.status === "covered"
+                        effectiveStatus(t) === "covered"
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200"
-                          : t.status === "wip"
+                          : effectiveStatus(t) === "wip"
                             ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200"
-                            : t.status === "retired"
+                            : effectiveStatus(t) === "retired"
                               ? "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-300"
                               : "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-200",
                       ].join(" ")}
                     >
-                      {t.status}
+                      {effectiveStatus(t)}
                     </span>
                     <span className="text-xs text-muted-foreground">priority {t.priority}</span>
                     {t.expected_compliance_category ? (
@@ -306,27 +396,28 @@ export default function SeedTargetsRoute() {
                       ))}
                     </ul>
                   ) : null}
-                  {t.covered_document_id ? (
-                    <Link
-                      href={`/admin/knowledge/documents/${t.covered_document_id}`}
-                      className="mt-2 inline-block text-xs text-blue-600 hover:underline dark:text-blue-400"
-                    >
-                      View covered document →
-                    </Link>
-                  ) : null}
+                  <TopicLinks
+                    topicLabel={t.topic_label}
+                    links={links.filter((l) => l.seed_target_id === t.id)}
+                    documentsById={documentsById}
+                    documents={documents}
+                    canEdit={canEdit}
+                    choice={linkChoice[t.id] ?? ""}
+                    onChoose={(value) => setLinkChoice((prev) => ({ ...prev, [t.id]: value }))}
+                    onLink={() => void linkDocument(t.id)}
+                    onUnlink={(linkId) => void unlinkDocument(linkId)}
+                  />
                 </div>
                 <div className="flex flex-col gap-1 shrink-0">
-                  {(["uncovered", "wip", "covered", "retired"] as const)
-                    .filter((s) => s !== t.status)
-                    .map((s) => (
+                  {(canEdit
+                    ? seedTargetStatusActions({ isGlobal: t.workspace_id == null, storedStatus: t.status })
+                    : []
+                  ).map((s) => (
                       <button
                         key={s}
                         type="button"
                         onClick={() => updateStatus(t.id, s)}
-                        disabled={t.workspace_id == null}
-                        title={
-                          t.workspace_id == null ? "Global defaults aren't editable" : `Mark ${s}`
-                        }
+                        title={`Mark ${s}`}
                         className="text-xs rounded border border-slate-300 dark:border-zinc-700 px-2 py-1 text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         → {s}
@@ -338,6 +429,90 @@ export default function SeedTargetsRoute() {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function TopicLinks({
+  topicLabel,
+  links,
+  documentsById,
+  documents,
+  canEdit,
+  choice,
+  onChoose,
+  onLink,
+  onUnlink,
+}: {
+  topicLabel: string;
+  links: TopicLink[];
+  documentsById: Map<string, KbDocument>;
+  documents: KbDocument[];
+  canEdit: boolean;
+  choice: string;
+  onChoose: (value: string) => void;
+  onLink: () => void;
+  onUnlink: (linkId: string) => void;
+}) {
+  const options = linkableDocuments(documents, new Set(links.map((l) => l.document_id)));
+  return (
+    <div className="mt-2 space-y-1 text-xs">
+      {links.length === 0 ? (
+        <p className="text-muted-foreground">No document linked.</p>
+      ) : (
+        <ul className="space-y-1">
+          {links.map((l) => {
+            const doc = documentsById.get(l.document_id);
+            return (
+              <li key={l.id} className="flex items-center gap-2">
+                <Link
+                  href={`/admin/knowledge/documents/${l.document_id}`}
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {doc?.title ?? "Document no longer available"}
+                </Link>
+                {doc && doc.status !== "published" ? (
+                  <span className="text-muted-foreground">({doc.status} — does not count)</span>
+                ) : null}
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => onUnlink(l.id)}
+                    className="text-muted-foreground hover:text-foreground underline"
+                  >
+                    Unlink
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {canEdit && options.length > 0 ? (
+        <div className="flex items-center gap-2">
+          <select
+            aria-label={`Published document for ${topicLabel}`}
+            value={choice}
+            onChange={(e) => onChoose(e.target.value)}
+            className="rounded border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1"
+          >
+            <option value="">Link a published document…</option>
+            {options.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.title}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={!choice}
+            onClick={onLink}
+            className="rounded border border-slate-300 dark:border-zinc-700 px-2 py-1 disabled:opacity-40"
+          >
+            Link
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
