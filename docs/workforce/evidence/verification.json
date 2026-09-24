@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-09-24T00:54:40.326526+00:00",
-  "source_base": "093f4ada",
-  "source_state": "Working tree review fixes; final source integration and release gates pending",
+  "checked_at": "2026-09-24T01:03:36.859822+00:00",
+  "source_base": "9c8b5831164354508dd41387db5ec23a6a3acd5c",
+  "source_state": "Review fixes committed and pushed; full native replay and application compilation pass; production release remains blocked by source migration sequence",
   "migration": "497_workforce_in_place.sql",
   "full_release_ready": false,
   "review_fixes": [
@@ -56,7 +56,7 @@
     "canonical_typecheck": {
       "result": "passed",
       "command": "npm run typecheck",
-      "scope": "Repeated successfully after the shared route-leave follow-up"
+      "scope": "Integrated main shell/routing tree; Next route types regenerated after upstream route deletions"
     },
     "targeted_sql": {
       "result": "passed",
@@ -83,7 +83,21 @@
         "ESLint",
         "constitution"
       ],
-      "constitution_files": 63
+      "constitution_files": 62
+    },
+    "standalone_next_build": {
+      "result": "passed",
+      "command": "npx next build",
+      "exit_code": 0,
+      "scope": "Compilation only; does not override the sequence-gated production build"
+    },
+    "native_postgres": {
+      "exit_code": 0,
+      "migration_files": 488,
+      "sql_probes": 113,
+      "acceptance_suites": 7,
+      "care_event_parity_cases": 105,
+      "repair": "Early audit_log lock in drill-generator fixture prevents autovacuum deadlock; assertions and autovacuum unchanged"
     }
   },
   "additional_fix": {
@@ -91,23 +105,26 @@
     "source_fix": "Parent schedule FOR UPDATE NOWAIT returns55P03 for reload/retry"
   },
   "canonical_gate": {
-    "verdict": "PENDING",
-    "scope": "Final integrated migration497 tree",
-    "pending": [
-      "Main migration sequence reconciliation",
-      "Full repository and release-sensitive gates",
+    "verdict": "FAIL",
+    "artifact": "test-results/agent-gates/2026-09-24T00-55-21-746Z-COL-715-WORKFORCE-REVIEW-FIXES.json",
+    "blocking_failures": [
+      "Migration sequence expected485, found497",
+      "Production build and managed UI preview require the source migration sequence"
+    ],
+    "remaining_release_gates": [
       "Current-base required CI",
       "Merge and post-merge CI",
-      "Production migration and application deployment",
-      "Hosted revision and smoke verification"
+      "Production migration and deployment",
+      "Hosted exact-revision readback"
     ],
-    "prior_failed_artifact": "test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json"
+    "prior_failed_artifact": "test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json",
+    "resolved_after_run": "Native replay passed after the drill-generator fixture lock-order repair; historical failed receipt retained"
   },
   "predecessor_sequence": [
     {
       "migrations": "483-484",
       "pr": 847,
-      "state": "merged; integration reconciliation in progress"
+      "state": "merged and integrated"
     },
     {
       "migrations": "485",
@@ -245,5 +262,13 @@
       "browser_login_checks_passed": 3,
       "unresolved_finding": "COL-729"
     }
+  },
+  "staging_installed_predecessors": {
+    "versions": [
+      "494",
+      "495"
+    ],
+    "production_installed": false,
+    "hold": "PR814 do-not-merge/no-auto-merge remains in force"
   }
 }

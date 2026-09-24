@@ -1,9 +1,9 @@
 -- COL-715: Workforce schedule and time-record integrity.
--- Predecessors 483-486 are owned by other PRs; do not bypass the sequence gate.
+-- Predecessors 485-496 are owned by other PRs; do not bypass the sequence gate.
 
 -- Workforce: legacy staff punches must never confer payroll approval authority.
--- Integrate this fragment into a migration after 478. The separate floor-kiosk
--- cutover adds RESTRICTIVE policies; keep those policies and their ownership.
+-- The separate floor-kiosk cutover adds RESTRICTIVE policies; keep those
+-- policies and their ownership when this later migration is applied.
 
 ALTER POLICY staff_see_own_time_records ON public.time_records TO authenticated
   USING (
