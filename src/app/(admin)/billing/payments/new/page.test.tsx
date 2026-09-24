@@ -134,7 +134,9 @@ describe("HFA-007 HFA-008 payment command and prefill reconciliation", () => {
   it("names every field by its visible label (COL-658)", async () => {
     render(<AdminNewPaymentPage />);
     await waitFor(() => expect(screen.getByRole("button", { name: "Record payment" })).toBeEnabled());
-    expect(screen.getByRole("combobox", { name: /Resident/ })).toBeInTheDocument();
+    // The resident select replaces its loading row only after the roster read settles,
+    // which can land after the button enables from the prefilled resident.
+    expect(await screen.findByRole("combobox", { name: /Resident/ })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /Payment method/ })).toBeInTheDocument();
     expect(screen.getByLabelText(/Amount/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Notes/)).toBeInTheDocument();
