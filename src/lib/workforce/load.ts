@@ -116,14 +116,12 @@ async function loadWorkforceStaff(client: SupabaseClient<Database>, organization
   const assignedIds = [...new Set(assignments.filter((assignment) => isCurrentAssignment(assignment, asOf)).map((assignment) => assignment.staff_id))];
   const homeStaff = await allRows<EmployeeSummary>((from, to) => client.from("staff")
     .select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" })
-    .eq("organization_id", organizationId)
     .in("facility_id", facilityIds)
     .is("deleted_at", null)
     .order("id")
     .range(from, to));
   const assignedStaff = assignedIds.length === 0 ? [] : await allRows<EmployeeSummary>((from, to) => client.from("staff")
     .select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" })
-    .eq("organization_id", organizationId)
     .in("id", assignedIds)
     .is("deleted_at", null)
     .order("id")
