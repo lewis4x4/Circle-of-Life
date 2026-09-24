@@ -176,7 +176,7 @@ describe("AppShell all-sections jump list", () => {
     const jumpList = screen.getByTestId("all-sections-jump-list");
     expect(within(jumpList).getByPlaceholderText("Search all sections…")).toHaveFocus();
     expect(within(jumpList).getByText("Executive")).toBeInTheDocument();
-    expect(within(jumpList).getByText("Family notes")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Family Connections")).toBeInTheDocument();
     expect(within(jumpList).getByText("Live rounding")).toBeInTheDocument();
     expect(within(jumpList).getByText("Snack pass")).toBeInTheDocument();
     expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
@@ -252,7 +252,7 @@ describe("AppShell all-sections jump list", () => {
 
     expect(within(jumpList).getByText("Billing & AR")).toBeInTheDocument();
     expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Family notes")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Family Connections")).not.toBeInTheDocument();
   });
 
   it("still surfaces non-common destinations when the operator searches", async () => {

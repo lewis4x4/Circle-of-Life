@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -52,11 +53,9 @@ import { ADMIN_STAFFING_ROUTE_LOADING_MESSAGE } from "@/lib/admin/named-admin-ro
 import { AdminEmptyState, AdminErrorState } from "@/components/common/admin-list-patterns";
 import { enumLabel } from "@/lib/display/enum-label";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
+import { STAFFING_RATIO_CHECK_OFF_COPY, fetchStaffingRatioCheckOn } from "@/lib/staffing/ratio-check";
 
 type WindowFilter = "all" | "24h";
-
-/** Brian, 2026-09-23 (COL-675). */
-export const STAFFING_RATIO_CHECK_OFF_COPY = "Staffing ratio check is off. Ratios are recorded for reference, never scored.";
 
 type StaffingSnapshotCsvRow = Database["public"]["Tables"]["staffing_ratio_snapshots"]["Row"];
 type QueryError = { message: string };
@@ -71,8 +70,8 @@ function buildStaffingSnapshotsCsv(rows: StaffingSnapshotCsvRow[]): string {
     "residents_present",
     "staff_on_duty",
     "ratio",
-    "required_ratio",
-    "is_compliant",
+    "required_ratio (reference only)",
+    "is_compliant (reference only)",
     "staff_detail_json",
     "created_at",
   ].join(",");
@@ -104,6 +103,8 @@ type AdminStaffingConsolePageClientProps = {
   initialAttendance: AttendanceEventRow[];
   /** Omitted/null = unknown: panels say "could not be checked", never "Clear". */
   initialCoverageScope?: StaffingCoverageScope | null;
+  /** The facility's staffing-ratio check (ratio rule set assigned). Off unless known on. */
+  initialRatioCheckOn?: boolean;
   initialError: string | null;
   initialFacilityId: string | null;
 };
@@ -129,6 +130,7 @@ export function AdminStaffingConsolePageClient({
   initialRequisitions,
   initialAttendance,
   initialCoverageScope = null,
+  initialRatioCheckOn = false,
   initialError,
   initialFacilityId,
 }: AdminStaffingConsolePageClientProps) {
@@ -139,6 +141,7 @@ export function AdminStaffingConsolePageClient({
   const [certWarnings, setCertWarnings] = useState<CertWarning[]>(initialCertWarnings);
   const [shiftGaps, setShiftGaps] = useState<ShiftGap[]>(initialShiftGaps);
   const [coverageScope, setCoverageScope] = useState<StaffingCoverageScope | null>(initialCoverageScope);
+  const [ratioCheckOn, setRatioCheckOn] = useState(initialRatioCheckOn);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -186,6 +189,7 @@ export function AdminStaffingConsolePageClient({
         liveRequisitions,
         liveAttendance,
         liveCoverageScope,
+        liveRatioCheckOn,
       ] = await Promise.all([
         fetchSnapshotsFromSupabase(selectedFacilityId),
         fetchExpiredCertificationWarnings(selectedFacilityId),
@@ -194,6 +198,7 @@ export function AdminStaffingConsolePageClient({
         fetchStaffRequisitions(selectedFacilityId),
         fetchAttendanceEvents(selectedFacilityId),
         fetchCoverageScopeOrNull(selectedFacilityId),
+        fetchStaffingRatioCheckOn(selectedFacilityId),
       ]);
       if (!isCurrent()) return;
       setSnapshots(liveSnapshots);
@@ -203,6 +208,7 @@ export function AdminStaffingConsolePageClient({
       setRequisitionRows(liveRequisitions);
       setAttendanceRows(liveAttendance);
       setCoverageScope(liveCoverageScope);
+      setRatioCheckOn(liveRatioCheckOn);
       setRequisitionStatusDrafts(
         Object.fromEntries(liveRequisitions.map((row) => [row.id, row.status])),
       );
@@ -242,9 +248,8 @@ export function AdminStaffingConsolePageClient({
     });
   }, [snapshots, windowFilter]);
 
-  // Brian, 2026-09-23 (COL-675): the staffing ratio check is off — salaried staff do not
-  // clock in and Med-Techs carry the floor. Snapshots are shown for reference; nothing on
-  // this page says pass, fail, compliant or non-compliant.
+  // COL-675: pass/fail shows only while the facility's staffing-ratio check is on (a ratio
+  // rule set is assigned). Brian turned it off, so by default nothing here says compliant.
   const visibleSnapshots = windowScopedSnapshots;
 
   const exportStaffingSnapshotsCsv = useCallback(async () => {
@@ -294,7 +299,23 @@ export function AdminStaffingConsolePageClient({
   const currentRatio = latestVisibleSnapshot?.ratio ?? null;
   const currentRatioMainValue = formatStaffingConsoleCurrentRatioMainValue(currentRatio);
   const currentRatioMainIsNumeric = staffingConsoleCurrentRatioMainIsNumeric(currentRatioMainValue);
-  const ratioStatusCopy = STAFFING_RATIO_CHECK_OFF_COPY;
+  const requiredRatio = ratioCheckOn ? latestVisibleSnapshot?.requiredRatio ?? null : null;
+  const ratioDelta = currentRatio != null && requiredRatio != null ? currentRatio - requiredRatio : null;
+  const ratioCardTone =
+    !ratioCheckOn || latestVisibleSnapshot == null
+      ? "text-foreground"
+      : latestVisibleSnapshot.isCompliant
+        ? "text-success"
+        : "text-warning";
+  const ratioStatusCopy = !ratioCheckOn
+    ? STAFFING_RATIO_CHECK_OFF_COPY
+    : latestVisibleSnapshot == null
+      ? "No staffing snapshot has been recorded for this view."
+      : ratioDelta != null && ratioDelta > 0
+        ? `${ratioDelta.toFixed(1)} above the required ratio on the latest ${enumLabel(latestVisibleSnapshot.shift, { case: "lower" })} snapshot.`
+        : ratioDelta != null
+          ? `${Math.abs(ratioDelta).toFixed(1)} at or below the required ratio on the latest ${enumLabel(latestVisibleSnapshot.shift, { case: "lower" })} snapshot.`
+          : "Latest staffing snapshot loaded for this view.";
   const openShiftShortage = shiftGaps.reduce((sum, gap) => sum + gap.shortage, 0);
   const shiftPanel = describeShiftGapPanel({
     scope: coverageScope,
@@ -390,7 +411,7 @@ export function AdminStaffingConsolePageClient({
                 currentRatioMainIsNumeric
                   ? "text-3xl font-semibold tabular-nums"
                   : "text-lg font-semibold leading-snug",
-                "text-foreground",
+                ratioCardTone,
               )}
             >
               {currentRatioMainIsNumeric
@@ -398,7 +419,11 @@ export function AdminStaffingConsolePageClient({
                 : currentRatioMainValue}
             </span>
             <span className="pb-1 text-sm text-muted-foreground">
-              {latestVisibleSnapshot != null ? "residents per staff" : "no live snapshot"}
+              {latestVisibleSnapshot == null
+                ? "no live snapshot"
+                : requiredRatio != null
+                  ? `required ${requiredRatio.toFixed(1)}`
+                  : "residents per staff"}
             </span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">{ratioStatusCopy}</p>
@@ -859,16 +884,25 @@ export function AdminStaffingConsolePageClient({
             <h3 className="text-base font-semibold text-foreground">
               {windowFilter === "24h" ? "Recent ratio snapshots (24h)" : "Recent ratio snapshots"}
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">{STAFFING_RATIO_CHECK_OFF_COPY}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {ratioCheckOn ? "Each snapshot against the facility's staffing ratio rule." : STAFFING_RATIO_CHECK_OFF_COPY}
+            </p>
           </div>
         </div>
         <div className={cn(listShellClass, "mt-4 divide-y divide-border")}>
           {visibleSnapshots.slice(0, 5).map((snap) => (
             <div key={snap.id} className={cn(listRowClass, "grid gap-2 text-sm sm:grid-cols-[1fr_auto] sm:items-center")}>
               <div className="font-medium text-foreground">
-                {new Date(snap.snapshotAt).toLocaleDateString()} / {snap.shift}
+                {formatDisplayDate(snap.snapshotAt)} / {snap.shift}
               </div>
-              <div className="text-muted-foreground">Ratio {snap.ratio.toFixed(1)}</div>
+              <div className="text-muted-foreground">
+                Ratio {snap.ratio.toFixed(1)}
+                {ratioCheckOn ? (
+                  <Badge className="ml-2" variant={snap.isCompliant ? "secondary" : "destructive"}>
+                    {snap.isCompliant ? "Within ratio" : "Over ratio"}
+                  </Badge>
+                ) : null}
+              </div>
             </div>
           ))}
           {visibleSnapshots.length === 0 ? (

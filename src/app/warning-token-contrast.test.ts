@@ -151,7 +151,7 @@ const STATUS_PILL_TINT_PERCENT = 10;
 const STATUS_PILL_TINT = STATUS_PILL_TINT_PERCENT / 100;
 
 /** Opaque surfaces a StatusPill is placed on in the admin/detail shells. */
-const PILL_SURFACES = ["background", "card"] as const;
+const PILL_SURFACES = ["background", "card", "muted", "secondary"] as const;
 
 /**
  * Tone → token, matching `pillVariants`. `muted` is excluded: it renders

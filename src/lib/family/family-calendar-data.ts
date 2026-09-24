@@ -30,6 +30,7 @@ function formatDayLabel(ymd: string): string {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(d);
 }
 

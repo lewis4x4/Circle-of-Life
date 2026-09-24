@@ -1,4 +1,5 @@
 "use client";
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { ShiftHandoffBoard } from "@/components/caregiver/ShiftHandoffBoard";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -331,7 +332,5 @@ function humanizeKey(k: string): string {
 }
 
 function formatHandoffDate(ymd: string): string {
-  const d = new Date(`${ymd}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return ymd;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(ymd.slice(0, 10), { fallback: ymd });
 }

@@ -44,24 +44,24 @@ function shiftCurrentResidentNameParts(
   return { lastName, firstName };
 }
 
-/** Full resident label for med passes — "Last, First" when posted. */
+/** Full resident label for med passes — "First Last" when posted (COL-686). */
 export function formatShiftCurrentResidentName(
   resident: ShiftCurrentResidentFields | null | undefined,
 ): string {
   if (!resident) return SHIFT_CURRENT_NO_RESIDENT_COPY;
   const parts = shiftCurrentResidentNameParts(resident);
   if (!parts) return SHIFT_CURRENT_NO_NAME_COPY;
-  return `${parts.lastName}, ${parts.firstName}`;
+  return `${parts.firstName} ${parts.lastName}`;
 }
 
-/** Compact resident label for the rail — "Last, F." when posted. */
+/** Compact resident label for the rail — "First L." when posted (COL-686). */
 export function formatShiftCurrentResidentCompactName(
   resident: ShiftCurrentResidentFields | null | undefined,
 ): string {
   if (!resident) return SHIFT_CURRENT_NO_RESIDENT_COPY;
   const parts = shiftCurrentResidentNameParts(resident);
   if (!parts) return SHIFT_CURRENT_NO_NAME_COPY;
-  return `${parts.lastName}, ${parts.firstName.charAt(0)}.`;
+  return `${parts.firstName} ${parts.lastName.charAt(0)}.`;
 }
 
 /** Medication label on a pass row when the join or fields are unset. */

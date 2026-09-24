@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import Link from "next/link";
 import { Landmark } from "lucide-react";
 
@@ -46,7 +47,7 @@ export default function AdminFinanceHubPageClient({
   });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <FinanceHubNav />
         <div className="flex items-center gap-3">
@@ -68,7 +69,7 @@ export default function AdminFinanceHubPageClient({
           {[
             { title: "Executive alerts", description: "Return to the leadership exception queue after checking the ledger context.", href: "/admin/executive/alerts" },
             { title: "Insurance & risk", description: "Open policies and claims when a finance issue has risk or reserve implications.", href: "/admin/insurance" },
-            { title: "Executive reports", description: `Move into saved executive reporting without leaving the ${roleLabel.toLowerCase()} decision lane.`, href: "/admin/executive/reports" },
+            { title: "Reports", description: "Report templates, saved views, schedules and packs.", href: "/admin/reports" },
           ].map((item) => (
             <Link
               key={item.title}
@@ -133,7 +134,7 @@ export default function AdminFinanceHubPageClient({
                 </p>
                 {postedLookbackStart ? (
                   <p className="text-xs text-muted-foreground">
-                    Includes entries dated on or after {postedLookbackStart} Eastern.
+                    Includes entries dated on or after {formatDisplayDate(postedLookbackStart)}.
                   </p>
                 ) : null}
               </div>

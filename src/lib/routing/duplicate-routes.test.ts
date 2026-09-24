@@ -91,8 +91,9 @@ export function liveDuplicatePages(): string[] {
  */
 const KNOWN_DUPLICATES: Record<string, string> = {
   // Role shells deliberately share the self-service page inside their own chrome.
-  "/admin/acknowledgments/my = /caregiver/acknowledgments = /dietary/acknowledgments":
-    "one self-service page mounted in three role shells",
+  // The floor app's copy is the Required reading page now (COL-707), which embeds it.
+  "/admin/acknowledgments/my = /dietary/acknowledgments":
+    "one self-service page mounted in two role shells",
 };
 
 describe("duplicate URL trees (COL-654)", () => {

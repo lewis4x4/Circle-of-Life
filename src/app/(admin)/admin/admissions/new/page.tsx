@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPersonName } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -319,7 +320,7 @@ function referralSourceLookup(
 }
 
 function residentPickerLine(r: ResidentOption, referralSources: ReferralSourceOpt[]): string {
-  const nm = `${r.last_name}, ${r.first_name}`;
+  const nm = formatPersonName(r);
   const da = dobOrAgeLine(r.date_of_birth);
   const inq = formatAdmissionsNewPostedDate(formatIsoDate(r.created_at.split("T")[0]));
   const srcNm = referralSourceLookup(referralSources, r.referral_source_id);
@@ -329,7 +330,7 @@ function residentPickerLine(r: ResidentOption, referralSources: ReferralSourceOp
 
 /** Combobox row: lead display name · attribution · inquiry date · CRM stage */
 function leadComboboxLine(l: LeadOption, referralSources: ReferralSourceOpt[]): string {
-  const name = `${l.last_name}, ${l.first_name}`;
+  const name = formatPersonName(l);
   const src = formatReferralsHubReferralSource(
     referralSourceLookup(referralSources, l.referral_source_id),
   );
@@ -818,9 +819,9 @@ function AdmissionsNewInner() {
     const lead = leads.find((x) => x.id === referralLeadId);
     return formatAdmissionsNewIntakeSummarySubject(origin === "packet" ? "inquiry" : origin, {
       residentId,
-      residentLabel: resident ? `${resident.last_name}, ${resident.first_name}` : null,
+      residentLabel: resident ? formatPersonName(resident) : null,
       leadId: referralLeadId,
-      leadLabel: lead ? `${lead.last_name}, ${lead.first_name}` : null,
+      leadLabel: lead ? formatPersonName(lead) : null,
       directName: `${directFirstName.trim()} ${directLastName.trim()}`,
     });
   }, [origin, residentId, residents, referralLeadId, leads, directFirstName, directLastName]);

@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import type { SurveyBundlePacket } from "@/lib/risk/survey-bundle";
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
 import {
@@ -55,7 +56,7 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
               <td>${escapeHtml(formatLevelWord(row.severity))}</td>
               <td>${escapeHtml(row.status)}</td>
               <td>${row.ahcaReportable ? "Yes" : "No"}</td>
-              <td>${escapeHtml(new Date(row.occurredAt).toLocaleString())}</td>
+              <td>${escapeHtml(formatDisplayDateTime(row.occurredAt))}</td>
             </tr>`,
         )
         .join("")
@@ -110,7 +111,7 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
   </head>
   <body>
     <h1>AHCA Survey Bundle</h1>
-    <p>${escapeHtml(packet.facility.name)} · Generated ${escapeHtml(new Date(packet.generatedAt).toLocaleString())}</p>
+    <p>${escapeHtml(packet.facility.name)} · Generated ${escapeHtml(formatDisplayDateTime(packet.generatedAt))}</p>
     <div class="meta-grid">
       <div class="card"><strong>Entity</strong><br />${escapeHtml(formatSurveyBundlePrintEntityName(packet.facility.entityName))}</div>
       <div class="card"><strong>Administrator</strong><br />${escapeHtml(formatSurveyBundlePrintAdministratorName(packet.facility.administratorName))}</div>

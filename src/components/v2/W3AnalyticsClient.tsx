@@ -20,7 +20,7 @@ import {
 const DASHBOARD_PATH: Record<V2AnalyticsId, string> = {
   "executive-standup": "/admin/executive/standup",
   "facility-deep-dive": "/admin/executive/facility",
-  "executive-reports": "/admin/executive/reports",
+  "executive-reports": "/admin/reports",
   "executive-benchmarks": "/admin/executive/benchmarks",
   "finance-hub": "/admin/finance",
   "finance-labor": "/admin/finance/ledger",

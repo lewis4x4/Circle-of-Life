@@ -40,7 +40,7 @@ export function formatCarePlanDateOnly(iso: string | null | undefined): string {
   if (!iso || !iso.trim()) return CARE_PLAN_NO_DATE_COPY;
   const parsed = new Date(`${iso.trim()}T12:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return CARE_PLAN_NO_DATE_COPY;
-  return new Intl.DateTimeFormat("en-US", CARE_PLAN_DATE_ONLY_FORMAT).format(parsed);
+  return new Intl.DateTimeFormat("en-US", { ...CARE_PLAN_DATE_ONLY_FORMAT, timeZone: "UTC" }).format(parsed);
 }
 
 /** Goal / intervention title when unset or blank. */

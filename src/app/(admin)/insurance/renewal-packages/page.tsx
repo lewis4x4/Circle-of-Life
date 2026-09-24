@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -304,13 +305,7 @@ export default function InsuranceRenewalPackagesPage() {
                 {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="text-sm text-slate-600 dark:text-slate-400">
-                      {new Intl.DateTimeFormat("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      }).format(new Date(r.generated_at))}
+                      {formatDisplayDateTime(r.generated_at)}
                     </TableCell>
                     <TableCell>
                       {formatRenewalPackagePolicyNumber(r.insurance_policies?.policy_number)}

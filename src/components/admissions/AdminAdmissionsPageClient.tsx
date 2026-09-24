@@ -919,7 +919,7 @@ export function AdminAdmissionsPageClient({
           <p className="text-sm text-muted-foreground">Loading family connections…</p>
         ) : triage.length === 0 && conferences.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            No items need attention. <QuietInlineArrowLink href="/admin/family-messages">View all family conversations →</QuietInlineArrowLink>
+            No items need attention. <QuietInlineArrowLink href="/admin/family-portal?tab=notes">View all family conversations →</QuietInlineArrowLink>
           </p>
         ) : (
           <div className="space-y-3">

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, AlertTriangle, Clock, Filter, Calendar, ChevronLeft } from "lucide-react";
@@ -216,7 +217,7 @@ export default function MissedTasksPage() {
                   <p className="text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {new Date(task.assigned_shift_date).toLocaleDateString()}
+                      {formatDisplayDate(task.assigned_shift_date)}
                     </span>
                     <span className="ml-3">
                       {task.assigned_shift} shift
@@ -227,7 +228,7 @@ export default function MissedTasksPage() {
                   </p>
                   {task.missed_at && (
                     <p className="text-red-600 dark:text-red-400 text-xs">
-                      Missed: {new Date(task.missed_at).toLocaleString()}
+                      Missed: {formatDisplayDateTime(task.missed_at)}
                     </p>
                   )}
                 </div>
@@ -277,7 +278,7 @@ export default function MissedTasksPage() {
                 <h3 className="font-semibold mb-1">{task.template_name}</h3>
                 <div className="text-sm space-y-1">
                   <p className="text-muted-foreground">
-                    {new Date(task.assigned_shift_date).toLocaleDateString()} · {task.assigned_shift}
+                    {formatDisplayDate(task.assigned_shift_date)} · {task.assigned_shift}
                   </p>
                   <p className="text-muted-foreground">
                     {task.assigned_to_name || "Unassigned"}
@@ -339,7 +340,7 @@ export default function MissedTasksPage() {
                 </div>
                 <div>
                   <div className="text-muted-foreground">Scheduled Date</div>
-                  <div>{new Date(selectedTask.assigned_shift_date).toLocaleDateString()}</div>
+                  <div>{formatDisplayDate(selectedTask.assigned_shift_date)}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">Missed At</div>
@@ -349,7 +350,7 @@ export default function MissedTasksPage() {
               {selectedTask.due_at && (
                 <div>
                   <div className="text-muted-foreground">Due At</div>
-                  <div>{new Date(selectedTask.due_at).toLocaleString()}</div>
+                  <div>{formatDisplayDateTime(selectedTask.due_at)}</div>
                 </div>
               )}
               {selectedTask.license_threatening && (

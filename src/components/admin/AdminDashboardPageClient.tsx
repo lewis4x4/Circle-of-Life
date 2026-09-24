@@ -333,7 +333,7 @@ export function AdminDashboardPageClient({
         : "/admin/referrals/in-admissions?phase=ready";
   const familyPrimaryHref =
     workflows.familyTriagePending > 0
-      ? "/admin/family-messages?filter=triage"
+      ? "/admin/family-portal?tab=notes&filter=triage"
       : "/admin/family-portal?conference=upcoming#care-conferences";
   const familyPrimaryTitle =
     workflows.familyTriagePending > 0 ? "Family Triage" : "Care Conferences";

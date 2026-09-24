@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -303,7 +304,7 @@ export default function AdminCertificationsPage() {
   const expiredCount = filteredRows.filter((r) => r.timeline === "expired").length;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
@@ -596,9 +597,7 @@ async function fetchCertificationsFromSupabase(selectedFacilityId: string | null
 }
 
 function formatIsoDate(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 /**

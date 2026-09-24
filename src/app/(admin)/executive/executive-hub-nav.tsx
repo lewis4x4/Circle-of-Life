@@ -27,18 +27,21 @@ import {
  * everything into a Sheet-driven nav drawer. Total strip height: h-9.
  *
  * This is the one executive strip (COL-655): the CEO / CFO / COO boards,
- * scenarios, entities and settings render it instead of their own tab rows,
- * and Stand Up has one primary entry — the weekly form — with the executive
- * pack, history and compare views under More.
+ * scenarios, entities and settings render it instead of their own tab rows.
+ * Stand Up is one entry (COL-707): it opens the weekly form, stays lit on the
+ * executive roll-up, history and compare views, and those views are reached
+ * from Stand Up's own view strip rather than from More. Executive Reports is
+ * retired; its URL 308s to /admin/reports.
  */
 const PRIMARY = [
   { href: "/admin/executive", label: "Overview" },
-  { href: "/admin/stand-up", label: "Weekly Stand Up" },
-  { href: "/admin/executive/reports", label: "Reports" },
+  { href: "/admin/stand-up", label: "Stand Up" },
   { href: "/admin/executive/nlq", label: "Haven Insight" },
 ] as const;
 
 const SECONDARY = [
+  // What a building's administrator sees, read-only (COL-707).
+  { href: "/admin/executive/preview-facility-home", label: "Preview as facility admin" },
   { href: "/admin/executive/ceo", label: "CEO" },
   { href: "/admin/executive/cfo", label: "CFO" },
   { href: "/admin/executive/coo", label: "COO" },
@@ -47,9 +50,6 @@ const SECONDARY = [
   { href: "/admin/executive/benchmarks", label: "Benchmarks" },
   { href: "/admin/executive/scenarios", label: "Scenarios" },
   { href: "/admin/executive/entity", label: "Entities" },
-  { href: "/admin/executive/standup", label: "Stand Up pack" },
-  { href: "/admin/executive/standup/history", label: "Stand Up history" },
-  { href: "/admin/executive/standup/compare", label: "Stand Up compare" },
   { href: "/admin/executive/settings", label: "Executive settings" },
 ] as const;
 
@@ -60,6 +60,8 @@ function isStandUpHref(href: string) {
 
 function isHrefActive(pathname: string, href: string) {
   if (href === "/admin/executive") return pathname === "/admin/executive";
+  // The one Stand Up entry covers the executive roll-up views too.
+  if (href === "/admin/stand-up") return isStandUpHref(pathname);
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

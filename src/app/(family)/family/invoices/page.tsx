@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileText, Loader2 } from "lucide-react";
@@ -28,9 +29,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function formatDue(ymd: string): string {
-  const d = new Date(`${ymd}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return ymd;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(ymd.slice(0, 10), { fallback: ymd });
 }
 
 export default function FamilyInvoicesPage() {

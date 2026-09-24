@@ -127,7 +127,7 @@ export default function AdminAdmissionsOnboardingPage() {
                 ? `/admin/residents/${residentId}/medications`
                 : missingItems[0] === "resident payer"
                   ? `/admin/residents/${residentId}/billing`
-                  : "/admin/family-messages"
+                  : "/admin/family-portal?tab=notes"
             : "/admin/admissions";
           const nextActionLabel =
             missingItems[0] === "care plan"
@@ -334,7 +334,7 @@ export default function AdminAdmissionsOnboardingPage() {
                       </Link>
                     </>
                   ) : null}
-                  <Link href="/admin/family-messages" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+                  <Link href="/admin/family-portal?tab=notes" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
                     Family coordination
                   </Link>
                 </div>

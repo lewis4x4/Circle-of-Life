@@ -13,6 +13,7 @@ import type {
 } from "@/lib/staffing/load-staffing-console";
 
 import * as staffingLoader from "@/lib/staffing/load-staffing-console";
+import * as ratioCheck from "@/lib/staffing/ratio-check";
 
 const mocks = vi.hoisted(() => ({
   useFacilityStoreMock: vi.fn(),
@@ -262,6 +263,14 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.queryByText(/above the required ratio|below the required ratio/i)).not.toBeInTheDocument();
   });
 
+  it("brings pass/fail back only when the facility's ratio check is switched on (COL-675)", () => {
+    render(<AdminStaffingConsolePageClient {...loadedProps} initialRatioCheckOn />);
+
+    expect(screen.queryByText(/Staffing ratio check is off/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Over ratio|Within ratio/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/required 6\.0/)).toBeInTheDocument();
+  });
+
   it("names the current ratio gap instead of a dash glyph when no snapshot is in scope", () => {
     render(
       <AdminStaffingConsolePageClient
@@ -327,6 +336,7 @@ describe("<AdminStaffingConsolePageClient />", () => {
     vi.spyOn(staffingLoader, "fetchStaffOptions").mockResolvedValue(loadedProps.initialStaffOptions);
     vi.spyOn(staffingLoader, "fetchStaffRequisitions").mockResolvedValue(loadedProps.initialRequisitions);
     vi.spyOn(staffingLoader, "fetchCoverageScopeOrNull").mockResolvedValue(null);
+    vi.spyOn(ratioCheck, "fetchStaffingRatioCheckOn").mockResolvedValue(false);
     const reload = vi.spyOn(staffingLoader, "fetchAttendanceEvents").mockResolvedValue([
       ...loadedProps.initialAttendance,
       { id: "new-event", event_type: "callout", occurred_at: "2026-08-20T20:06:00.000Z", reason: "Reviewed command test", staff: { first_name: "Ava", last_name: "Lopez" } },

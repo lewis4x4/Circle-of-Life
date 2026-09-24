@@ -70,7 +70,7 @@ export default function VendorInvoicesPage() {
         : null;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <VendorHubNav />
 

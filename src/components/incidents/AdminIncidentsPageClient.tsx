@@ -255,7 +255,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/overdue-followups?severity=${severityFilter}`
               : `/admin/incidents/overdue-followups?severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-warning/30 bg-warning/10 text-foreground hover:bg-warning/20 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.overdueFollowups, 0)} Overdue follow-ups
             </Badge>
           </Link>
@@ -266,7 +266,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}`
               : `/admin/incidents/overdue-followups?filter=escalated&severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-warning/30 bg-warning/10 text-foreground hover:bg-warning/20 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.escalatedFollowups, 0)} Escalated follow-ups
             </Badge>
           </Link>
@@ -277,7 +277,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/followups?severity=${severityFilter}`
               : `/admin/incidents/followups?severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-info/30 bg-info/10 text-info hover:bg-info/20 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-info/30 bg-info/10 text-foreground hover:bg-info/20 cursor-pointer">
               {visibleRows.reduce((sum, row) => sum + row.openFollowups, 0)} Open follow-ups
             </Badge>
           </Link>
@@ -288,7 +288,7 @@ export function AdminIncidentsPageClient({
             : scopeFilter === "all"
               ? `/admin/incidents/obligations?severity=${severityFilter}`
               : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`}>
-            <Badge variant="outline" className="h-8 px-3 border-info/30 bg-info/10 text-info hover:bg-info/20 cursor-pointer">
+            <Badge variant="outline" className="h-8 px-3 border-info/30 bg-info/10 text-foreground hover:bg-info/20 cursor-pointer">
               {visibleRows.filter((row) => row.openObligations > 0 || row.rootCausePending || row.carePlanPending).length} Lifecycle blockers
             </Badge>
           </Link>
@@ -346,7 +346,7 @@ export function AdminIncidentsPageClient({
                 <Badge variant="outline" className="bg-warning/10 text-warning border border-warning/30">
                   {followupPressure.length} incident{followupPressure.length === 1 ? "" : "s"} need attention
                 </Badge>
-                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-warning/30 bg-warning/10 text-warning hover:bg-warning/20")}>
+                <Link href={pressureBacklogHref} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-warning/30 bg-warning/10 text-foreground hover:bg-warning/20")}>
                   Open backlog
                 </Link>
                 <Link
@@ -359,7 +359,7 @@ export function AdminIncidentsPageClient({
                         ? `/admin/incidents/obligations?severity=${severityFilter}`
                         : `/admin/incidents/obligations?severity=${severityFilter}&scope=${scopeFilter}`
                   }
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-info/30 bg-info/10 text-info hover:bg-info/20")}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-info/30 bg-info/10 text-foreground hover:bg-info/20")}
                 >
                   Work obligations
                 </Link>
@@ -459,7 +459,7 @@ export function AdminIncidentsPageClient({
                    <div className="mt-8 text-center text-muted-foreground px-2">
                      <CheckCircle2 className="w-8 h-8 opacity-20 mx-auto mb-2" />
                      <p className="text-xs font-medium">{adminIncidentsKanbanColumnEmptyTitle()}</p>
-                     <p className="mt-1 text-[11px] text-muted-foreground/80">{adminIncidentsKanbanColumnEmptyHelper()}</p>
+                     <p className="mt-1 text-[11px] text-muted-foreground">{adminIncidentsKanbanColumnEmptyHelper()}</p>
                    </div>
                  ) : (
                    <MotionList className="flex flex-col gap-3">

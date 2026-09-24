@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 /**
  * Quiet Operator copy for risk command surfaces (`/admin/risk`).
  * Missing scores and timestamps name real gaps — never fabricate values.
@@ -19,7 +20,7 @@ export function formatRiskScore(value: number | null | undefined): string {
 /** ISO timestamp on risk command rows when unset or blank. */
 export function formatRiskDateTime(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return RISK_NO_TIMESTAMP_POSTED_COPY;
-  return new Date(value).toLocaleString();
+  return formatDisplayDateTime(value);
 }
 
 /**
