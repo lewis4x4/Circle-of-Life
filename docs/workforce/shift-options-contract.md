@@ -39,3 +39,22 @@ A new group request stores every requested/offered block in server-created snaps
 ## Verification boundaries
 
 Local browser fixtures use explicitly synthetic identities and in-memory persistence. They exercise the actual UI and interval helpers without hosted staff, payroll or clinical writes. Database replay and scoped authorization probes supply separate real SQL evidence. A technical release does not establish staff training, provider acceptance or a real payroll submission.
+
+## Operator workflow
+
+1. Select one facility and open Workforce → Schedule → Shift options.
+2. Choose New shift option. Enter its label, color, display order, explicit start/finish blocks and eligible staff job roles. Add work blocks for split shifts; leave the gap between blocks unscheduled.
+3. Enable resident check coverage only when this work option should supply rounding staff. Existing clinical authorization still applies. Save the option.
+4. In a draft week, click a cell through that person’s eligible options, then Custom, then Off. The Custom editor has Set off even when its time fields are blank. Save the draft before publishing.
+5. Edit or deactivate an option for future selections. Existing saved assignments keep their original work details. Review published work in My Schedule, kiosk context, attendance/payroll comparison, staffing and shift swaps.
+
+Administrators and Assistant Administrators use the existing facility_admin/manager authority model; organization administrators and owners also manage choices. The separate Administrative Assistant login role is not automatically granted scheduling authority.
+
+## Current verification evidence
+
+- [Schedule preview](shift-options-evidence/schedule-DEMO.png), [option editor](shift-options-evidence/options-DEMO.png), [landscape print](shift-options-evidence/schedule-print-DEMO.png). All identities and settings in these captures are fictional.
+- [Actual-component browser receipt](shift-options-evidence/browser-proof.json): five workflow groups passed, no page errors, no external requests, zero axe violations. Desktop, phone, printing, Custom-to-Off, role choices, saved split history, downstream planned context and full-group review were exercised.
+- Focused application evidence: 121 changed Workforce tests, 89 integrated Stand Up/printing tests, 18 visitor-resolution tests and 11 observation-generator Edge tests passed. Full database replay and production evidence are recorded separately at release.
+- A concurrent older split-shift release introduced migration 514. Its historical file is retained; forward migration 516 restores the shared configurable grid RPCs after it. Fixed universal color/hour helpers are superseded by the preset model. The original bundle budget is retained.
+
+Mission alignment: pass. Facility-specific work choices remain editable and auditable, while resident policy, clinical permission, actual attendance and paid-time evidence stay independently enforced.

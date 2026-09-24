@@ -81,6 +81,9 @@ const nextConfig: NextConfig = {
   // Match npm run typecheck; Vitest executes test fixtures independently.
   typescript: { tsconfigPath: "tsconfig.typecheck.json" },
   experimental: {
+    // Keep shared modules reusable instead of copying them into route bundles.
+    // Default merge heuristics duplicated >2.6 MB across this route set.
+    turbopackChunking: { minChunkSize: 25_000 },
     optimizePackageImports: [
       "lucide-react",
       "recharts",
