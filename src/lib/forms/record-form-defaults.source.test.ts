@@ -55,6 +55,10 @@ const RECORD_FORMS: Record<string, { uiState?: string[]; forbidden?: RegExp[] }>
   "src/app/(admin)/admin/admissions/[id]/page.tsx": {
     forbidden: [/setRateCareLevelDraft\("[123]"\)/, /setRateAccommodationDraft\("private"\)/, /\?\? "pending"\)/, /\?\? "prospect"\)/],
   },
+  // COL-332: a tour's time, who gives it and its result are chosen, never defaulted.
+  "src/components/referrals/ReferralTours.tsx": {
+    forbidden: [/outcome:\s*"(completed|cancelled|no_show)"/, /ownerUserId:\s*self/],
+  },
   "src/app/(admin)/residents/[id]/billing/page.tsx": {
     forbidden: [/"legacy_rate_lock" :/, /setRoomClass\("private"\)/, /Imported from current Homewood A\/R/],
   },

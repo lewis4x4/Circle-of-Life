@@ -12,6 +12,9 @@ const loadModelMock = vi.hoisted(() => vi.fn());
 const loadHistoryMock = vi.hoisted(() => vi.fn());
 const runCommandMock = vi.hoisted(() => vi.fn());
 const loadOwnersMock = vi.hoisted(() => vi.fn());
+const loadToursMock = vi.hoisted(() => vi.fn());
+const runTourCommandMock = vi.hoisted(() => vi.fn());
+const updateLeadMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: LEAD_ID }),
@@ -47,7 +50,9 @@ vi.mock("@/lib/referrals/referral-authority", () => ({
   loadReferralEpisodeHistory: loadHistoryMock,
   runReferralEpisodeCommand: runCommandMock,
   loadReferralEpisodeOwners: loadOwnersMock,
-  updateAuthorizedReferralLead: vi.fn(),
+  loadReferralEpisodeTours: loadToursMock,
+  runReferralTourCommand: runTourCommandMock,
+  updateAuthorizedReferralLead: updateLeadMock,
 }));
 
 function lead() {
@@ -108,7 +113,48 @@ beforeEach(() => {
   runCommandMock.mockReset();
   loadOwnersMock.mockReset();
   loadOwnersMock.mockResolvedValue(owners());
+  loadToursMock.mockReset();
+  loadToursMock.mockResolvedValue(tours());
+  runTourCommandMock.mockReset();
+  updateLeadMock.mockReset();
 });
+
+function tours(overrides: Record<string, unknown> = {}) {
+  return {
+    self_user_id: "33333333-3333-4333-8333-333333333333",
+    can_write: true,
+    episode_revision: "e".repeat(64),
+    facility_id: "22222222-2222-4222-8222-222222222222",
+    facility_name: "Homewood Lodge",
+    tours: [],
+    eligible_owners: [
+      { user_id: "33333333-3333-4333-8333-333333333333", full_name: "Robin Recruiter" },
+      { user_id: "44444444-4444-4444-8444-444444444444", full_name: "Morgan Admin" },
+    ],
+    ...overrides,
+  };
+}
+
+function tour(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "tour-1",
+    replaces_tour_id: null,
+    replaced_by_tour_id: null,
+    scheduled_for: "2026-10-01T14:00:00Z",
+    owner_user_id: "33333333-3333-4333-8333-333333333333",
+    owner_name: "Robin Recruiter",
+    outcome: "scheduled",
+    completed_at: null,
+    feedback_note: null,
+    feedback_restricted: false,
+    recorded_at: "2026-09-24T14:00:00Z",
+    recorded_by_name: "Robin Recruiter",
+    outcome_recorded_at: null,
+    outcome_recorded_by_name: null,
+    backfilled: false,
+    ...overrides,
+  };
+}
 
 const SELF = "33333333-3333-4333-8333-333333333333";
 const OTHER = "44444444-4444-4444-8444-444444444444";
@@ -413,5 +459,254 @@ describe("Lead detail — owner", () => {
     await waitFor(() => expect(runCommandMock).toHaveBeenCalledTimes(1));
     expect(runCommandMock.mock.calls[0][1].command).toEqual({ kind: "accept_coverage" });
     expect(await screen.findByText("You now own this lead.")).toBeInTheDocument();
+  });
+});
+
+describe("Lead detail — tours (COL-332)", () => {
+  it("lists every tour with its building, who gives it and what happened; a reschedule chain counts once", async () => {
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    loadToursMock.mockResolvedValue(
+      tours({
+        tours: [
+          tour({ id: "tour-3", scheduled_for: "2026-10-10T14:00:00Z", owner_name: "Morgan Admin" }),
+          tour({
+            id: "tour-2",
+            replaces_tour_id: "tour-1",
+            scheduled_for: "2026-09-20T14:00:00Z",
+            outcome: "completed",
+            completed_at: "2026-09-20T15:00:00Z",
+            feedback_note: "Loved the garden.",
+            outcome_recorded_at: "2026-09-20T16:00:00Z",
+            outcome_recorded_by_name: "Morgan Admin",
+          }),
+          tour({
+            id: "tour-1",
+            replaced_by_tour_id: "tour-2",
+            scheduled_for: "2026-09-18T14:00:00Z",
+            outcome: "rescheduled",
+            feedback_note: null,
+            feedback_restricted: true,
+          }),
+          tour({
+            id: "tour-0",
+            scheduled_for: "2026-08-01T14:00:00Z",
+            owner_user_id: null,
+            owner_name: null,
+            recorded_by_name: null,
+            backfilled: true,
+          }),
+        ],
+      }),
+    );
+
+    render(<AdminReferralLeadDetailPage />);
+
+    const list = await screen.findByRole("list", { name: "Tours" });
+    const items = within(list).getAllByRole("listitem");
+    expect(items).toHaveLength(4);
+    expect(screen.getByText(/Every tour of Homewood Lodge/)).toBeInTheDocument();
+    expect(screen.getByText("3 tours; a rescheduled tour counts once.")).toBeInTheDocument();
+    expect(items[0]).toHaveTextContent("Given by Morgan Admin");
+    expect(items[1]).toHaveTextContent("Completed");
+    expect(items[1]).toHaveTextContent("Loved the garden.");
+    expect(items[1]).toHaveTextContent("Rescheduled from");
+    expect(items[1]).toHaveTextContent("result recorded by Morgan Admin");
+    expect(items[2]).toHaveTextContent("Rescheduled");
+    expect(items[2]).toHaveTextContent("Moved to");
+    expect(items[2]).toHaveTextContent("The feedback on this tour is restricted for your role.");
+    expect(items[3]).toHaveTextContent("Result not recorded");
+    expect(items[3]).toHaveTextContent("Given by no one recorded");
+    expect(items[3]).toHaveTextContent("Copied from this lead's earlier tour fields");
+    // The old single-tour form is gone.
+    expect(screen.queryByRole("button", { name: "Save tour details" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Tour scheduled for (Eastern Time)")).not.toBeInTheDocument();
+  });
+
+  it("adds a tour through the tour command without wiping an unsaved contact-log entry", async () => {
+    const user = userEvent.setup();
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    runTourCommandMock.mockResolvedValue({
+      episode_id: LEAD_ID,
+      episode_revision: "b".repeat(64),
+      status: "tour_scheduled",
+      event_kind: "tour_recorded",
+      tour_id: "tour-9",
+    });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    const logForm = await screen.findByRole("form", { name: "Log a contact" });
+    const what = within(logForm).getByLabelText("What was said or done") as HTMLTextAreaElement;
+    await user.type(what, "Half-written note about the daughter.");
+
+    await user.click(await screen.findByRole("button", { name: "Add a tour" }));
+    const form = screen.getByRole("form", { name: "Add a tour" });
+    const when = within(form).getByLabelText("Tour time (Eastern Time)") as HTMLInputElement;
+    const owner = within(form).getByLabelText("Who gives the tour") as HTMLSelectElement;
+    expect(when.value).toBe("");
+    expect(owner.value).toBe("");
+
+    await user.click(within(form).getByRole("button", { name: "Save tour" }));
+    expect(runTourCommandMock).not.toHaveBeenCalled();
+    expect(within(form).getByText("Enter when the tour is scheduled.")).toBeInTheDocument();
+    expect(within(form).getByText("Choose who gives the tour.")).toBeInTheDocument();
+
+    await user.type(when, "2026-10-01T10:00");
+    await user.selectOptions(owner, "44444444-4444-4444-8444-444444444444");
+    const historyCallsBefore = loadHistoryMock.mock.calls.length;
+    await user.click(within(form).getByRole("button", { name: "Save tour" }));
+
+    await waitFor(() => expect(runTourCommandMock).toHaveBeenCalledTimes(1));
+    const [, input] = runTourCommandMock.mock.calls[0];
+    expect(input).toMatchObject({
+      episodeId: LEAD_ID,
+      expectedRevision: REVISION,
+      command: {
+        kind: "schedule",
+        scheduled_for: "2026-10-01T14:00:00.000Z",
+        owner_user_id: "44444444-4444-4444-8444-444444444444",
+      },
+    });
+    expect(input.requestKey).toMatch(/^tour:/);
+    expect(await screen.findByText("Tour saved. The lead moved to Tour scheduled.")).toBeInTheDocument();
+    expect(updateLeadMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(loadHistoryMock.mock.calls.length).toBeGreaterThan(historyCallsBefore));
+    expect((within(screen.getByRole("form", { name: "Log a contact" })).getByLabelText("What was said or done") as HTMLTextAreaElement).value).toBe(
+      "Half-written note about the daughter.",
+    );
+  });
+
+  it("reschedules a tour, keeping its owner unless another is chosen", async () => {
+    const user = userEvent.setup();
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    loadToursMock.mockResolvedValue(tours({ tours: [tour()] }));
+    runTourCommandMock.mockResolvedValue({
+      episode_id: LEAD_ID,
+      episode_revision: "b".repeat(64),
+      status: "new",
+      event_kind: "tour_recorded",
+      tour_id: "tour-2",
+    });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Reschedule" }));
+    const form = screen.getByRole("form", { name: "Reschedule the tour" });
+    const owner = within(form).getByLabelText("Who gives the rescheduled tour") as HTMLSelectElement;
+    expect(owner.value).toBe("");
+    expect(within(owner).getByRole("option", { name: "Keep Robin Recruiter" })).toBeInTheDocument();
+    await user.type(within(form).getByLabelText("New tour time (Eastern Time)"), "2026-10-02T09:30");
+    await user.type(within(form).getByLabelText("Why the tour moved"), "Daughter asked for Friday.");
+    await user.click(within(form).getByRole("button", { name: "Save new time" }));
+
+    await waitFor(() => expect(runTourCommandMock).toHaveBeenCalledTimes(1));
+    expect(runTourCommandMock.mock.calls[0][1].command).toEqual({
+      kind: "reschedule",
+      tour_id: "tour-1",
+      scheduled_for: "2026-10-02T13:30:00.000Z",
+      feedback_note: "Daughter asked for Friday.",
+    });
+    expect(await screen.findByText("Tour rescheduled.")).toBeInTheDocument();
+  });
+
+  it("records a completed result with its time and feedback, and requires the completion time", async () => {
+    const user = userEvent.setup();
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    loadToursMock.mockResolvedValue(tours({ tours: [tour({ scheduled_for: "2026-09-20T14:00:00Z" })] }));
+    runTourCommandMock.mockResolvedValue({
+      episode_id: LEAD_ID,
+      episode_revision: "b".repeat(64),
+      status: "tour_completed",
+      event_kind: "tour_recorded",
+      tour_id: "tour-1",
+    });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Record result" }));
+    const form = screen.getByRole("form", { name: "Record the tour result" });
+    const outcome = within(form).getByLabelText("What happened on the tour") as HTMLSelectElement;
+    expect(outcome.value).toBe("");
+    expect(within(outcome).getByRole("option", { name: "No-show" })).toBeInTheDocument();
+    await user.selectOptions(outcome, "completed");
+    await user.click(within(form).getByRole("button", { name: "Save result" }));
+    expect(runTourCommandMock).not.toHaveBeenCalled();
+    expect(within(form).getByText("Enter when the tour was completed.")).toBeInTheDocument();
+
+    await user.type(within(form).getByLabelText("When the tour was completed (Eastern Time)"), "2026-09-20T11:15");
+    await user.type(within(form).getByLabelText("Tour feedback"), "Loved the garden; worried about stairs.");
+    await user.click(within(form).getByRole("button", { name: "Save result" }));
+
+    await waitFor(() => expect(runTourCommandMock).toHaveBeenCalledTimes(1));
+    expect(runTourCommandMock.mock.calls[0][1].command).toEqual({
+      kind: "record_outcome",
+      tour_id: "tour-1",
+      outcome: "completed",
+      completed_at: "2026-09-20T15:15:00.000Z",
+      feedback_note: "Loved the garden; worried about stairs.",
+    });
+    expect(await screen.findByText("Tour result saved. The lead moved to Tour completed.")).toBeInTheDocument();
+  });
+
+  it("keeps a typed tour and asks for a fresh save when the lead changed underneath", async () => {
+    const user = userEvent.setup();
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    runTourCommandMock.mockRejectedValueOnce({ code: "40001", message: "Referral episode changed; reload before saving" });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Add a tour" }));
+    const form = screen.getByRole("form", { name: "Add a tour" });
+    await user.type(within(form).getByLabelText("Tour time (Eastern Time)"), "2026-10-01T10:00");
+    await user.selectOptions(within(form).getByLabelText("Who gives the tour"), "33333333-3333-4333-8333-333333333333");
+    await user.click(within(form).getByRole("button", { name: "Save tour" }));
+
+    expect(await screen.findByText(/Someone else updated this lead while you were writing/)).toBeInTheDocument();
+    expect((within(form).getByLabelText("Tour time (Eastern Time)") as HTMLInputElement).value).toBe("2026-10-01T10:00");
+    const firstKey = runTourCommandMock.mock.calls[0][1].requestKey;
+    runTourCommandMock.mockResolvedValueOnce({ episode_id: LEAD_ID, episode_revision: "c".repeat(64), status: "tour_scheduled", event_kind: "tour_recorded", tour_id: "t" });
+    await user.click(within(form).getByRole("button", { name: "Save tour" }));
+    await waitFor(() => expect(runTourCommandMock).toHaveBeenCalledTimes(2));
+    expect(runTourCommandMock.mock.calls[1][1].requestKey).not.toBe(firstKey);
+  });
+
+  it("offers no tour actions to a role that may only read tours", async () => {
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    loadToursMock.mockResolvedValue(tours({ can_write: false, eligible_owners: [], tours: [tour()] }));
+
+    render(<AdminReferralLeadDetailPage />);
+
+    expect(await screen.findByRole("list", { name: "Tours" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add a tour" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record result" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reschedule" })).not.toBeInTheDocument();
+  });
+
+  it("shows tours in the history with their result and feedback", async () => {
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode() });
+    loadHistoryMock.mockResolvedValue({
+      events: [
+        historyEvent({
+          event_kind: "tour_recorded",
+          from_status: "tour_scheduled",
+          to_status: "tour_completed",
+          details: {
+            action: "record_outcome",
+            outcome: "no_show",
+            scheduled_for: "2026-09-20T14:00:00Z",
+            feedback_note: "Family did not come.",
+          },
+        }),
+      ],
+      next_before_sequence: null,
+    });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    const history = await screen.findByRole("list", { name: "Referral history" });
+    const [entry] = within(history).getAllByRole("listitem");
+    expect(entry).toHaveTextContent("Tour result: No-show");
+    expect(entry).toHaveTextContent("Family did not come.");
+    expect(entry).toHaveTextContent("Status: Tour scheduled to Tour completed");
   });
 });
