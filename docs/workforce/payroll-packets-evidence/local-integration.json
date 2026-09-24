@@ -1,0 +1,45 @@
+{
+  "startedAt": "2026-09-24T17:57:53.374Z",
+  "database": "payroll_packet_verify_71966_1790272673374",
+  "template": "packets",
+  "syntheticOnly": true,
+  "status": "pass",
+  "checks": [
+    "paginated RPC source to real compute",
+    "45 worked hours split into regular and overtime",
+    "training reclassification and holiday/dollar separation",
+    "stale source approval refused",
+    "real PDF/HTML/CSV approval persisted",
+    "phone handoff with difference and reconciliation",
+    "amendment requires renewed review",
+    "RUN amendment handoff",
+    "original document bytes and SHA256 retained",
+    "historical actor names retained"
+  ],
+  "totals": {
+    "regularMinutes": 2340,
+    "overtimeMinutes": 300,
+    "holidayMinutes": 60,
+    "personalMinutes": 0,
+    "trainingMinutes": 60,
+    "paidMinutes": 2760,
+    "workedMinutes": 2700,
+    "onCallCents": 1250,
+    "bonusCents": 2500,
+    "salaryCents": 0
+  },
+  "originalStatus": "reconciled",
+  "amendmentStatus": "reported",
+  "originalDocumentHash": "f91f364343a09af8efbcebf3fd7f681410f9aedd409cf55ec9a5b5139e716103",
+  "pdfBytes": 6515,
+  "eventActions": [
+    "create",
+    "edit",
+    "approve",
+    "report",
+    "difference",
+    "reconcile"
+  ],
+  "finishedAt": "2026-09-24T17:57:55.691Z",
+  "databaseRemoved": true
+}
