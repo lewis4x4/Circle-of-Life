@@ -21,9 +21,8 @@ export type AuthorizedReferralLeadRow = ReferralLeadRow & {
   can_write: boolean;
 };
 
-export type ReferralLeadUpdatePatch = Partial<
-  Pick<ReferralLeadRow, "status" | "tour_scheduled_for" | "tour_completed_at">
->;
+/** Tours are their own records now (COL-332); the lead update carries status only. */
+export type ReferralLeadUpdatePatch = Partial<Pick<ReferralLeadRow, "status">>;
 
 export type ReferralDuplicateCandidate = Pick<
   ReferralLeadRow,
@@ -545,5 +544,84 @@ export function loadReferralEpisodeOwners(
 ): Promise<ReferralEpisodeOwners> {
   return invokeReferralRpc<ReferralEpisodeOwners>(client, "referral_episode_owner_read", {
     p_episode_id: episodeId,
+  });
+}
+
+export type ReferralTourOutcome = "scheduled" | "completed" | "cancelled" | "no_show" | "rescheduled";
+
+export type ReferralTour = {
+  id: string;
+  replaces_tour_id: string | null;
+  replaced_by_tour_id: string | null;
+  scheduled_for: string | null;
+  owner_user_id: string | null;
+  owner_name: string | null;
+  outcome: ReferralTourOutcome;
+  completed_at: string | null;
+  /** Null when there is none or the reader may not see it; `feedback_restricted` says which. */
+  feedback_note: string | null;
+  feedback_restricted: boolean;
+  recorded_at: string;
+  recorded_by_name: string | null;
+  outcome_recorded_at: string | null;
+  outcome_recorded_by_name: string | null;
+  /** Copied from the lead's old single-tour fields; only what was recorded there. */
+  backfilled: boolean;
+};
+
+export type ReferralEpisodeTours = {
+  self_user_id: string | null;
+  /** Whether the reader may record tours on this lead (tour roles, lead not closed). */
+  can_write: boolean;
+  episode_revision: string;
+  facility_id: string;
+  facility_name: string | null;
+  tours: ReferralTour[];
+  /** People who may give a tour at this building; names only. Empty for readers who cannot write. */
+  eligible_owners: ReferralOwnerPerson[];
+};
+
+export type ReferralTourCommand =
+  | { kind: "schedule"; scheduled_for: string; owner_user_id: string }
+  | { kind: "reschedule"; tour_id: string; scheduled_for: string; owner_user_id?: string | null; feedback_note?: string | null }
+  | {
+      kind: "record_outcome";
+      tour_id: string;
+      outcome: "completed" | "cancelled" | "no_show";
+      completed_at?: string | null;
+      feedback_note?: string | null;
+    };
+
+export type ReferralTourReply = ReferralEpisodeReply & { tour_id: string };
+
+export function loadReferralEpisodeTours(
+  client: SupabaseClient<Database>,
+  episodeId: string,
+): Promise<ReferralEpisodeTours> {
+  return invokeReferralRpc<ReferralEpisodeTours>(client, "referral_episode_tours_read", {
+    p_episode_id: episodeId,
+  });
+}
+
+export function runReferralTourCommand(
+  client: SupabaseClient<Database>,
+  input: {
+    episodeId: string;
+    requestKey: string;
+    expectedRevision: string;
+    command: ReferralTourCommand;
+  },
+): Promise<ReferralTourReply> {
+  const payload = { ...input.command } as Record<string, unknown>;
+  delete payload.kind;
+  for (const key of Object.keys(payload)) {
+    if (payload[key] === undefined || payload[key] === null) delete payload[key];
+  }
+  return invokeReferralRpc<ReferralTourReply>(client, "referral_tour_command", {
+    p_episode_id: input.episodeId,
+    p_request_key: input.requestKey,
+    p_expected_revision: input.expectedRevision,
+    p_command: input.command.kind,
+    p_payload: payload,
   });
 }

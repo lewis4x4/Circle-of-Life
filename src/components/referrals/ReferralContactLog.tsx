@@ -65,6 +65,8 @@ export type ReferralContactLogProps = {
   contacts: ReferralEpisodeModel["contacts"];
   /** Re-read the episode after a save so the revision and next step stay current. */
   onEpisodeChanged: () => Promise<void>;
+  /** Changes when something else on the page (a tour) added to the history; the typed entry stays. */
+  historyRefreshKey?: number;
 };
 
 export function ReferralContactLog({
@@ -74,6 +76,7 @@ export function ReferralContactLog({
   episode,
   contacts,
   onEpisodeChanged,
+  historyRefreshKey = 0,
 }: ReferralContactLogProps) {
   const supabase = useMemo(() => createClient(), []);
   const [history, setHistory] = useState<HistoryState>({ status: "loading" });
@@ -121,6 +124,11 @@ export function ReferralContactLog({
   useEffect(() => {
     void Promise.resolve().then(() => Promise.all([loadHistory(), loadOwners()]));
   }, [loadHistory, loadOwners]);
+
+  useEffect(() => {
+    if (historyRefreshKey === 0) return;
+    void Promise.resolve().then(() => loadHistory());
+  }, [historyRefreshKey, loadHistory]);
 
   const refreshAll = useCallback(
     () => Promise.all([onEpisodeChanged(), loadHistory(), loadOwners()]).then(() => undefined),

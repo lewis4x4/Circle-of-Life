@@ -10,6 +10,7 @@
 import { enumLabel } from "@/lib/display/enum-label";
 import { ROLE_LABELS } from "@/lib/rbac";
 import { facilityDatetimeLocalToUtcIso, formatFacilityTimestampEt } from "@/lib/facility-wall-clock";
+import { describeTourEvent } from "@/lib/referrals/tours";
 import type {
   ReferralEpisodeCommand,
   ReferralEpisodeHistory,
@@ -155,6 +156,7 @@ const EVENT_TITLES: Record<string, string> = {
   identity_undo: "Record correction undone",
   compatibility_updated: "Status or tour updated",
   admission_transition: "Moved to admission",
+  tour_recorded: "Tour",
 };
 
 function text(value: unknown): string | null {
@@ -219,6 +221,14 @@ export function describeContactLogEvent(event: ContactLogEvent): ContactLogEntry
     const next = nextStepLine(details);
     if (next) lines.push(next);
     else restricted = true;
+  } else if (event.event_kind === "tour_recorded") {
+    if (hasDetails) {
+      const tour = describeTourEvent(details);
+      title = tour.title;
+      lines.push(...tour.lines);
+    } else {
+      restricted = true;
+    }
   } else if (event.event_kind === "waiting_started" || event.event_kind === "review_started") {
     const reason = text(details.reason);
     if (reason) lines.push(reason);

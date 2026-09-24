@@ -21,10 +21,6 @@ import {
   formatReferralDetailTimestamp,
 } from "@/lib/admissions/referral-detail-display-copy";
 import {
-  facilityDatetimeLocalToUtcIso,
-  utcIsoToFacilityDatetimeLocal,
-} from "@/lib/facility-wall-clock";
-import {
   loadAuthorizedReferralLeads,
   loadReferralEpisodeModel,
   updateAuthorizedReferralLead,
@@ -34,6 +30,7 @@ import {
 } from "@/lib/referrals/referral-authority";
 import { enumLabel } from "@/lib/display/enum-label";
 import { ReferralContactLog } from "@/components/referrals/ReferralContactLog";
+import { ReferralTours } from "@/components/referrals/ReferralTours";
 
 type LeadDetail = AuthorizedReferralLeadRow;
 
@@ -80,19 +77,6 @@ function formatStatus(s: string) {
   return enumLabel(s);
 }
 
-function syncTourStatus(
-  currentStatus: EditableLeadStatus,
-  scheduledIso: string | null,
-  completedIso: string | null,
-): EditableLeadStatus {
-  if (["application_pending", "waitlisted", "converted", "lost"].includes(currentStatus)) {
-    return currentStatus;
-  }
-  if (completedIso) return "tour_completed";
-  if (scheduledIso) return currentStatus === "new" ? "tour_scheduled" : currentStatus === "contacted" ? "tour_scheduled" : currentStatus;
-  return currentStatus;
-}
-
 export default function AdminReferralLeadDetailPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -104,12 +88,11 @@ export default function AdminReferralLeadDetailPage() {
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [linkedAdmissionCaseId, setLinkedAdmissionCaseId] = useState<string | null>(null);
   const [statusDraft, setStatusDraft] = useState<EditableLeadStatus>("new");
-  const [tourScheduledDraft, setTourScheduledDraft] = useState("");
-  const [tourCompletedDraft, setTourCompletedDraft] = useState("");
   const [actionLoading, setActionLoading] = useState<"status" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [contactsState, setContactsState] = useState<ContactsState>({ status: "loading" });
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const load = useCallback(async (options: { quiet?: boolean } = {}) => {
     if (!id) {
@@ -127,12 +110,6 @@ export default function AdminReferralLeadDetailPage() {
       });
       setLead(leadRow);
       setStatusDraft((leadRow?.status as EditableLeadStatus | undefined) ?? "new");
-      setTourScheduledDraft(
-        leadRow?.tour_scheduled_for ? utcIsoToFacilityDatetimeLocal(leadRow.tour_scheduled_for) : "",
-      );
-      setTourCompletedDraft(
-        leadRow?.tour_completed_at ? utcIsoToFacilityDatetimeLocal(leadRow.tour_completed_at) : "",
-      );
       if (leadRow) {
         const { data: admissionCase } = await supabase
           .from("admission_cases")
@@ -190,6 +167,12 @@ export default function AdminReferralLeadDetailPage() {
       });
     }
   }, [supabase, id]);
+
+  /** A tour save can move the lead status and adds to the history; the contact log keeps its entry. */
+  const handleToursChanged = useCallback(async () => {
+    await load({ quiet: true });
+    setHistoryRefreshKey((current) => current + 1);
+  }, [load]);
 
   const wrongFacility =
     lead &&
@@ -433,65 +416,15 @@ export default function AdminReferralLeadDetailPage() {
             episode={contactsState.status === "loaded" ? contactsState.episode : null}
             contacts={contactsState.status === "loaded" ? contactsState.contacts : []}
             onEpisodeChanged={refreshEpisode}
+            historyRefreshKey={historyRefreshKey}
           />
 
-          <RecordDetailSection title="Tour workflow">
-            <div className="space-y-4 text-sm">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour scheduled for (ET)</span>
-                  <input
-                    type="datetime-local"
-                    value={tourScheduledDraft}
-                    disabled={!canEditLead}
-                    onChange={(event) => setTourScheduledDraft(event.target.value)}
-                    aria-label="Tour scheduled for (Eastern Time)"
-                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tour completed at (ET)</span>
-                  <input
-                    type="datetime-local"
-                    value={tourCompletedDraft}
-                    disabled={!canEditLead}
-                    onChange={(event) => setTourCompletedDraft(event.target.value)}
-                    aria-label="Tour completed at (Eastern Time)"
-                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </label>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!canEditLead || actionLoading === "status"}
-                  onClick={() =>
-                    void (() => {
-                      const scheduledIso = tourScheduledDraft
-                        ? facilityDatetimeLocalToUtcIso(tourScheduledDraft)
-                        : null;
-                      const completedIso = tourCompletedDraft
-                        ? facilityDatetimeLocalToUtcIso(tourCompletedDraft)
-                        : null;
-                      const nextStatus = syncTourStatus(statusDraft, scheduledIso, completedIso);
-                      return updateLead(
-                        {
-                          status: nextStatus,
-                          tour_scheduled_for: scheduledIso,
-                          tour_completed_at: completedIso,
-                        },
-                        "status",
-                        nextStatus === statusDraft ? "Tour workflow saved." : `Tour workflow saved and status moved to ${formatStatus(nextStatus)}.`,
-                      );
-                    })()
-                  }
-                >
-                  {actionLoading === "status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save tour details"}
-                </Button>
-              </div>
-            </div>
-          </RecordDetailSection>
+          <ReferralTours
+            leadId={lead.id}
+            leadStatus={lead.status}
+            episodeRevision={contactsState.status === "loaded" ? contactsState.episode?.episode_revision ?? null : null}
+            onChanged={handleToursChanged}
+          />
 
           <RecordDetailSection title="Notes">
             {lead.can_read_clinical ? (
