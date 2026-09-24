@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Database } from "@/types/database";
 import type { TimeclockPeriodData } from "@/lib/timeclock/load";
 
-import { loadWorkforce } from "./load";
+import { loadAllFacilitiesWorkforce, loadWorkforce } from "./load";
 
 const clock = vi.hoisted(() => ({ enabled: vi.fn(), period: vi.fn(), settings: vi.fn() }));
 vi.mock("@/lib/timeclock/load", () => ({ loadFacilityTimeclockEnabled: clock.enabled, loadOrganizationPayPeriod: clock.settings, loadTimeclockPeriod: clock.period }));
@@ -21,9 +21,7 @@ let ledger: TimeclockPeriodData;
 /** Real query filters and exact page counts, without any production connection. */
 function database(overrides: Record<string, Row[]> = {}) {
   const tables: Record<string, Row[]> = { staff: [staff], schedules: [schedule("last-week", "2026-09-14"), schedule("this-week", "2026-09-21")], ...overrides };
-  return {
-    rpc: () => ({ order() { return this; }, range: async () => ({ data: tables.schedule_people_for_week ?? [], count: (tables.schedule_people_for_week ?? []).length, error: null }) }),
-    from(table: string) {
+  const from = (table: string) => {
       const filters: ((row: Row) => boolean)[] = [];
       const apply = (fn: (row: Row) => boolean) => { filters.push(fn); return query; };
       const rows = () => (tables[table] ?? []).filter((row) => filters.every((fn) => fn(row)));
@@ -40,8 +38,8 @@ function database(overrides: Record<string, Row[]> = {}) {
         then: (resolve: (result: { data: Row[]; error: null }) => unknown) => Promise.resolve({ data: rows(), error: null }).then(resolve),
       };
       return query;
-    },
-  } as unknown as SupabaseClient<Database>;
+  };
+  return { from, rpc: (name: string) => from(name) } as unknown as SupabaseClient<Database>;
 }
 
 beforeEach(() => {
@@ -132,6 +130,27 @@ describe("Workforce source loading", () => {
     const result = await loadWorkforce(database({ employee_file_requirements: [requirement] }), FACILITY, "org", NOW);
     expect(result.people.find((person) => person.id === "visitor")).toMatchObject({ fileStatus: "Employee file unavailable here", due: [] });
     expect(result.people.find((person) => person.id === staff.id)?.due).toEqual([{ title: "Orientation", date: "2026-01-04" }]);
+  });
+
+  it("shows a secondary-location employee without inventing employee-file evidence", async () => {
+    const result = await loadWorkforce(database({
+      workforce_assigned_roster: [{ staff_id: "visitor", facility_id: FACILITY.id, first_name: "Visiting", last_name: "Staff", staff_role: "resident_aide" }],
+    }), FACILITY, "org", NOW);
+    expect(result.people.find((person) => person.id === "visitor")).toMatchObject({
+      name: "Visiting Staff",
+      profileAvailable: false,
+      fileStatus: "Employee file unavailable here",
+    });
+  });
+
+  it("lists a visitor once across the facilities visible to the actor", async () => {
+    const result = await loadAllFacilitiesWorkforce(database({
+      staff: [],
+      facilities: [{ id: FACILITY.id, name: FACILITY.name, organization_id: "org", deleted_at: null }],
+      workforce_assigned_roster: [{ staff_id: "visitor", facility_id: FACILITY.id, first_name: "Visiting", last_name: "Staff", staff_role: "resident_aide" }],
+    }), "org", NOW);
+    expect(result.people).toHaveLength(1);
+    expect(result.people[0]).toMatchObject({ name: "Visiting Staff", facilityNames: [FACILITY.name], profileAvailable: false });
   });
 
   it.each(["submitted", "rejected"])("keeps an overdue completion in the due queue when %s evidence names a future expiry", async (status) => {
