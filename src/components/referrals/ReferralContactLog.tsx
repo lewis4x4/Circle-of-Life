@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatFacilityTimestampEt } from "@/lib/facility-wall-clock";
 import {
   INTERACTION_METHOD_OPTIONS,
+  buildAssignCommand,
   buildNextActionCommand,
   buildRecordInteractionCommand,
   contactLogPeople,
@@ -25,9 +26,16 @@ import {
 } from "@/lib/referrals/contact-log";
 import {
   loadReferralEpisodeHistory,
+  loadReferralEpisodeOwners,
   runReferralEpisodeCommand,
   type ReferralEpisodeModel,
+  type ReferralEpisodeOwners,
 } from "@/lib/referrals/referral-authority";
+
+type OwnersState =
+  | { status: "loading" }
+  | { status: "loaded"; owners: ReferralEpisodeOwners }
+  | { status: "failed"; message: string };
 
 type HistoryState =
   | { status: "loading" }
@@ -71,7 +79,12 @@ export function ReferralContactLog({
   const [history, setHistory] = useState<HistoryState>({ status: "loading" });
   const [draft, setDraft] = useState<ContactLogDraft>(emptyContactLogDraft);
   const [errors, setErrors] = useState<ContactLogErrors>({});
-  const [saving, setSaving] = useState<"log" | "next" | null>(null);
+  const [saving, setSaving] = useState<"log" | "next" | "owner" | null>(null);
+  const [owners, setOwners] = useState<OwnersState>({ status: "loading" });
+  const [ownerChoice, setOwnerChoice] = useState("");
+  const [ownerError, setOwnerError] = useState<string | null>(null);
+  const [ownerMessage, setOwnerMessage] = useState<string | null>(null);
+  const ownerKeyRef = useRef<string>(newContactLogRequestKey());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [nextDraft, setNextDraft] = useState<NextStepDraft>({ nextAction: "", nextActionDue: "" });
@@ -97,9 +110,22 @@ export function ReferralContactLog({
     }
   }, [supabase, leadId]);
 
+  const loadOwners = useCallback(async () => {
+    try {
+      setOwners({ status: "loaded", owners: await loadReferralEpisodeOwners(supabase, leadId) });
+    } catch (loadError) {
+      setOwners({ status: "failed", message: errorMessage(loadError, "The owner could not be read.") });
+    }
+  }, [supabase, leadId]);
+
   useEffect(() => {
-    void Promise.resolve().then(() => loadHistory());
-  }, [loadHistory]);
+    void Promise.resolve().then(() => Promise.all([loadHistory(), loadOwners()]));
+  }, [loadHistory, loadOwners]);
+
+  const refreshAll = useCallback(
+    () => Promise.all([onEpisodeChanged(), loadHistory(), loadOwners()]).then(() => undefined),
+    [onEpisodeChanged, loadHistory, loadOwners],
+  );
 
   function update<K extends keyof ContactLogDraft>(key: K, value: ContactLogDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -124,13 +150,13 @@ export function ReferralContactLog({
       logKeyRef.current = newContactLogRequestKey();
       setDraft(emptyContactLogDraft());
       setSaveMessage("Contact logged.");
-      await Promise.all([onEpisodeChanged(), loadHistory()]);
+      await refreshAll();
     } catch (saveFailure) {
       if (isRevisionConflict(saveFailure)) {
         // A different revision is a different request: mint a new key, keep the words.
         logKeyRef.current = newContactLogRequestKey();
         setSaveError("Someone else updated this lead while you were writing. Your entry is still here. Check the history, then save again.");
-        await Promise.all([onEpisodeChanged(), loadHistory()]);
+        await refreshAll();
       } else {
         // Keep the key: if the save did land, saving again replays it instead of logging twice.
         setSaveError(`The contact was not saved: ${errorMessage(saveFailure, "try again.")}`);
@@ -159,12 +185,12 @@ export function ReferralContactLog({
       setNextDraft({ nextAction: "", nextActionDue: "" });
       setEditingNext(false);
       setSaveMessage("Next step saved.");
-      await Promise.all([onEpisodeChanged(), loadHistory()]);
+      await refreshAll();
     } catch (saveFailure) {
       if (isRevisionConflict(saveFailure)) {
         nextKeyRef.current = newContactLogRequestKey();
         setSaveError("Someone else updated this lead while you were writing. Your next step is still here. Check it, then save again.");
-        await Promise.all([onEpisodeChanged(), loadHistory()]);
+        await refreshAll();
       } else {
         setSaveError(`The next step was not saved: ${errorMessage(saveFailure, "try again.")}`);
       }
@@ -173,8 +199,141 @@ export function ReferralContactLog({
     }
   }
 
+  async function runOwnerCommand(kind: "assign" | "accept") {
+    if (!episode || owners.status !== "loaded") return;
+    setOwnerError(null);
+    setOwnerMessage(null);
+    if (kind === "assign" && !ownerChoice) {
+      setOwnerError("Choose who owns this lead.");
+      return;
+    }
+    const current = owners.owners;
+    setSaving("owner");
+    try {
+      const reply = await runReferralEpisodeCommand(supabase, {
+        episodeId: leadId,
+        requestKey: ownerKeyRef.current,
+        expectedRevision: episode.episode_revision,
+        command:
+          kind === "accept"
+            ? { kind: "accept_coverage" }
+            : buildAssignCommand({
+                ownerUserId: ownerChoice,
+                episode,
+                eligibleUserIds: current.eligible.map((person) => person.user_id),
+              }),
+      });
+      ownerKeyRef.current = newContactLogRequestKey();
+      setOwnerChoice("");
+      const chosen = current.eligible.find((person) => person.user_id === ownerChoice)?.full_name ?? "them";
+      setOwnerMessage(
+        kind === "accept"
+          ? "You now own this lead."
+          : reply.event_kind === "ownership_handoff_requested"
+            ? `Handoff sent. It completes when ${chosen} accepts it.`
+            : "Owner saved.",
+      );
+      await refreshAll();
+    } catch (saveFailure) {
+      ownerKeyRef.current = newContactLogRequestKey();
+      setOwnerError(
+        isRevisionConflict(saveFailure)
+          ? "Someone else updated this lead. The owner shown is current; choose again if it still needs to change."
+          : `The owner was not saved: ${errorMessage(saveFailure, "try again.")}`,
+      );
+      if (isRevisionConflict(saveFailure)) await refreshAll();
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  const ownerView = owners.status === "loaded" ? owners.owners : null;
+  const selfId = ownerView?.self_user_id ?? null;
+  const nameOf = (person: { user_id: string; full_name: string } | null) =>
+    person ? (person.user_id === selfId ? `${person.full_name} (you)` : person.full_name) : null;
+
   return (
     <>
+      <RecordDetailSection title="Owner" description="Who is accountable for following up with this prospective resident.">
+        <div className="space-y-4 text-sm">
+          {owners.status === "loading" ? (
+            <p className="text-muted-foreground">Loading owner…</p>
+          ) : owners.status === "failed" ? (
+            <p className="text-muted-foreground" role="status">
+              The owner could not be read: {owners.message}
+            </p>
+          ) : (
+            <>
+              <dl className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <dt className={LABEL_CLASS}>Owner</dt>
+                  <dd className="mt-0.5 text-foreground">{nameOf(owners.owners.owner) ?? "No owner yet"}</dd>
+                </div>
+                <div>
+                  <dt className={LABEL_CLASS}>Backup</dt>
+                  <dd className="mt-0.5 text-foreground">{nameOf(owners.owners.backup) ?? "No backup"}</dd>
+                </div>
+              </dl>
+              {owners.owners.pending_owner ? (
+                <p className="text-muted-foreground">
+                  Handoff to {nameOf(owners.owners.pending_owner)} is waiting for them to accept it.
+                </p>
+              ) : null}
+              {ownerMessage ? (
+                <p className="text-success" role="status">
+                  {ownerMessage}
+                </p>
+              ) : null}
+              {ownerError ? (
+                <p className="text-destructive" role="alert">
+                  {ownerError}
+                </p>
+              ) : null}
+              {writable && owners.owners.pending_owner && owners.owners.pending_owner.user_id === selfId ? (
+                <Button type="button" size="sm" onClick={() => void runOwnerCommand("accept")} disabled={saving !== null}>
+                  {saving === "owner" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                  Accept this lead
+                </Button>
+              ) : null}
+              {writable && owners.owners.can_assign ? (
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="min-w-[220px] flex-1 space-y-1">
+                    <span className={LABEL_CLASS}>{owners.owners.owner ? "Change owner" : "Assign owner"}</span>
+                    <select
+                      value={ownerChoice}
+                      onChange={(event) => {
+                        setOwnerChoice(event.target.value);
+                        setOwnerError(null);
+                      }}
+                      aria-label="Who owns this lead"
+                      className={FIELD_CLASS}
+                    >
+                      <option value="">Choose who</option>
+                      {owners.owners.eligible
+                        .filter((person) => person.user_id !== owners.owners.owner?.user_id)
+                        .map((person) => (
+                          <option key={person.user_id} value={person.user_id}>
+                            {nameOf(person)}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <Button type="button" variant="outline" onClick={() => void runOwnerCommand("assign")} disabled={saving !== null}>
+                    {saving === "owner" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                    Save owner
+                  </Button>
+                </div>
+              ) : null}
+              {writable && owners.owners.owner && owners.owners.can_assign ? (
+                <p className="text-xs text-muted-foreground">
+                  Changing an owner sends a handoff; the new owner accepts it before it takes effect.
+                </p>
+              ) : null}
+            </>
+          )}
+        </div>
+      </RecordDetailSection>
+
       <RecordDetailSection
         title="Next step"
         description="What happens next with this prospective resident, and when it is due."

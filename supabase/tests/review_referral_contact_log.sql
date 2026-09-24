@@ -1,7 +1,8 @@
 -- Referral contact log rollback-only probe.
--- A recruiter logs a contact (how, with whom, what was said, next step) and reads
--- the full history back; a manager reads it too; public_summary leads stay closed;
--- bad methods and foreign contacts are refused.
+-- A recruiter logs a contact (how, with whom, what was said, next step), reads the
+-- full history back and can own a lead; a manager reads the notes; a coordinator and
+-- a med-tech see the history without the notes (Brian, 2026-09-24); public_summary
+-- leads stay closed; bad methods and foreign contacts are refused.
 BEGIN;
 
 GRANT USAGE ON SCHEMA auth, haven TO authenticated;
@@ -23,6 +24,12 @@ SELECT
   gen_random_uuid() manager_user,
   gen_random_uuid() manager_session,
   NULL::integer manager_version,
+  gen_random_uuid() coordinator_user,
+  gen_random_uuid() coordinator_session,
+  NULL::integer coordinator_version,
+  gen_random_uuid() med_tech_user,
+  gen_random_uuid() med_tech_session,
+  NULL::integer med_tech_version,
   NULL::uuid episode_id,
   NULL::uuid other_episode_id,
   NULL::uuid person_contact_id,
@@ -45,6 +52,12 @@ SELECT recruiter_user, recruiter_user || '@contact-log.invalid', '{}'::jsonb, '{
 FROM contact_log_fixture
 UNION ALL
 SELECT manager_user, manager_user || '@contact-log.invalid', '{}'::jsonb, '{}'::jsonb
+FROM contact_log_fixture
+UNION ALL
+SELECT coordinator_user, coordinator_user || '@contact-log.invalid', '{}'::jsonb, '{}'::jsonb
+FROM contact_log_fixture
+UNION ALL
+SELECT med_tech_user, med_tech_user || '@contact-log.invalid', '{}'::jsonb, '{}'::jsonb
 FROM contact_log_fixture;
 
 INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active)
@@ -54,23 +67,33 @@ FROM contact_log_fixture
 UNION ALL
 SELECT manager_user, organization_id, manager_user || '@contact-log.invalid',
   'Morgan Manager', 'manager'::public.app_role, true
+FROM contact_log_fixture
+UNION ALL
+SELECT coordinator_user, organization_id, coordinator_user || '@contact-log.invalid',
+  'Casey Coordinator', 'coordinator'::public.app_role, true
+FROM contact_log_fixture
+UNION ALL
+SELECT med_tech_user, organization_id, med_tech_user || '@contact-log.invalid',
+  'Mel MedTech', 'med_tech'::public.app_role, true
 FROM contact_log_fixture;
 
 INSERT INTO auth.sessions (id, user_id)
 SELECT recruiter_session, recruiter_user FROM contact_log_fixture
-UNION ALL SELECT manager_session, manager_user FROM contact_log_fixture;
+UNION ALL SELECT manager_session, manager_user FROM contact_log_fixture
+UNION ALL SELECT coordinator_session, coordinator_user FROM contact_log_fixture
+UNION ALL SELECT med_tech_session, med_tech_user FROM contact_log_fixture;
 
 INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
 SELECT recruiter_user, facility_a, organization_id, true FROM contact_log_fixture
-UNION ALL SELECT manager_user, facility_a, organization_id, true FROM contact_log_fixture;
+UNION ALL SELECT manager_user, facility_a, organization_id, true FROM contact_log_fixture
+UNION ALL SELECT coordinator_user, facility_a, organization_id, true FROM contact_log_fixture
+UNION ALL SELECT med_tech_user, facility_a, organization_id, true FROM contact_log_fixture;
 
 UPDATE contact_log_fixture AS fixture
-SET recruiter_version = recruiter_profile.auth_claim_version,
-    manager_version = manager_profile.auth_claim_version
-FROM public.user_profiles AS recruiter_profile,
-     public.user_profiles AS manager_profile
-WHERE recruiter_profile.id = fixture.recruiter_user
-  AND manager_profile.id = fixture.manager_user;
+SET recruiter_version = (SELECT auth_claim_version FROM public.user_profiles WHERE id = fixture.recruiter_user),
+    manager_version = (SELECT auth_claim_version FROM public.user_profiles WHERE id = fixture.manager_user),
+    coordinator_version = (SELECT auth_claim_version FROM public.user_profiles WHERE id = fixture.coordinator_user),
+    med_tech_version = (SELECT auth_claim_version FROM public.user_profiles WHERE id = fixture.med_tech_user);
 
 GRANT SELECT, INSERT, UPDATE ON contact_log_fixture TO authenticated;
 
@@ -208,7 +231,59 @@ BEGIN
   END IF;
 END $$;
 
--- A manager (contact_read, not lead_write) reads the same notes.
+-- Recruiters can own leads (Brian, 2026-09-24: "Yes").
+DO $$
+DECLARE
+  fixture contact_log_fixture%ROWTYPE;
+  owners jsonb;
+  model jsonb;
+  assigned jsonb;
+BEGIN
+  SELECT * INTO STRICT fixture FROM contact_log_fixture;
+  owners := public.referral_episode_owner_read(fixture.episode_id);
+  IF (owners ->> 'self_user_id')::uuid IS DISTINCT FROM fixture.recruiter_user
+     OR (owners ->> 'can_assign')::boolean IS DISTINCT FROM true
+     OR owners -> 'owner' <> 'null'::jsonb
+     OR NOT EXISTS (
+       SELECT 1 FROM pg_catalog.jsonb_array_elements(owners -> 'eligible') AS person
+       WHERE person ->> 'user_id' = fixture.recruiter_user::text
+         AND person ->> 'full_name' = 'Robin Recruiter'
+     )
+     OR NOT EXISTS (
+       SELECT 1 FROM pg_catalog.jsonb_array_elements(owners -> 'eligible') AS person
+       WHERE person ->> 'user_id' = fixture.med_tech_user::text
+     )
+     OR EXISTS (
+       SELECT 1 FROM pg_catalog.jsonb_array_elements(owners -> 'eligible') AS person
+       WHERE person ->> 'user_id' IN (fixture.manager_user::text, fixture.coordinator_user::text)
+     )
+     OR EXISTS (
+       SELECT 1 FROM pg_catalog.jsonb_array_elements(owners -> 'eligible') AS person
+       WHERE person ?| ARRAY['email', 'app_role', 'phone']
+     ) THEN
+    RAISE EXCEPTION 'Eligible owner read is wrong for a recruiter: %', owners;
+  END IF;
+
+  model := public.referral_episode_model_read(fixture.episode_id);
+  assigned := public.referral_episode_command(
+    fixture.episode_id, 'contact-log:assign:self', model -> 'episode' ->> 'episode_revision', 'assign',
+    pg_catalog.jsonb_build_object('owner_user_id', fixture.recruiter_user,
+      'next_action', model -> 'episode' ->> 'next_action',
+      'next_action_at', model -> 'episode' ->> 'next_action_at'));
+  IF assigned ->> 'event_kind' IS DISTINCT FROM 'assigned' THEN
+    RAISE EXCEPTION 'Recruiter could not take ownership: %', assigned;
+  END IF;
+  owners := public.referral_episode_owner_read(fixture.episode_id);
+  IF owners -> 'owner' ->> 'full_name' IS DISTINCT FROM 'Robin Recruiter' THEN
+    RAISE EXCEPTION 'Recruiter ownership did not read back: %', owners;
+  END IF;
+  model := public.referral_episode_model_read(fixture.episode_id);
+  IF model -> 'episode' ->> 'next_action' IS DISTINCT FROM 'Send the brochure' THEN
+    RAISE EXCEPTION 'Assigning an owner lost the next step: %', model -> 'episode';
+  END IF;
+END $$;
+
+-- A manager (work_note_read, not lead_write) reads the same notes.
 RESET ROLE;
 SELECT pg_temp.set_contact_log_claims(f.manager_user, f.manager_session, f.manager_version)
 FROM contact_log_fixture AS f;
@@ -228,6 +303,55 @@ BEGIN
       AND event ->> 'actor_name' = 'Robin Recruiter'
   ) THEN
     RAISE EXCEPTION 'Manager cannot read the contact log: %', history;
+  END IF;
+END $$;
+
+-- Brian, 2026-09-24: coordinators and med-techs are not in the notes set.
+RESET ROLE;
+SELECT pg_temp.set_contact_log_claims(f.coordinator_user, f.coordinator_session, f.coordinator_version)
+FROM contact_log_fixture AS f;
+SET LOCAL ROLE authenticated;
+
+DO $$
+DECLARE
+  fixture contact_log_fixture%ROWTYPE;
+  history jsonb;
+BEGIN
+  SELECT * INTO STRICT fixture FROM contact_log_fixture;
+  history := public.referral_episode_history_read(fixture.episode_id, NULL, 100);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.jsonb_array_elements(history -> 'events') AS event
+    WHERE event ->> 'event_kind' = 'interaction_recorded'
+  ) OR EXISTS (
+    SELECT 1 FROM pg_catalog.jsonb_array_elements(history -> 'events') AS event
+    WHERE event ->> 'event_kind' IN ('interaction_recorded', 'next_action_set', 'assigned')
+      AND event -> 'details' <> '{}'::jsonb
+  ) THEN
+    RAISE EXCEPTION 'Coordinator read contact-log notes: %', history;
+  END IF;
+END $$;
+
+RESET ROLE;
+SELECT pg_temp.set_contact_log_claims(f.med_tech_user, f.med_tech_session, f.med_tech_version)
+FROM contact_log_fixture AS f;
+SET LOCAL ROLE authenticated;
+
+DO $$
+DECLARE
+  fixture contact_log_fixture%ROWTYPE;
+  history jsonb;
+BEGIN
+  SELECT * INTO STRICT fixture FROM contact_log_fixture;
+  history := public.referral_episode_history_read(fixture.episode_id, NULL, 100);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.jsonb_array_elements(history -> 'events') AS event
+    WHERE event ->> 'event_kind' = 'interaction_recorded'
+  ) OR EXISTS (
+    SELECT 1 FROM pg_catalog.jsonb_array_elements(history -> 'events') AS event
+    WHERE event ->> 'event_kind' IN ('interaction_recorded', 'next_action_set', 'assigned')
+      AND event -> 'details' <> '{}'::jsonb
+  ) THEN
+    RAISE EXCEPTION 'Med-tech read contact-log notes: %', history;
   END IF;
 END $$;
 

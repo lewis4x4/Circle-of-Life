@@ -241,3 +241,27 @@ export function describeContactLogEvent(event: ContactLogEvent): ContactLogEntry
 
   return { id: event.id, title, when, by, lines, restricted };
 }
+
+/**
+ * Assign keeps what the lead already has: the command replaces backup and next step
+ * with whatever it is sent, so the current ones travel with a change of owner.
+ */
+export function buildAssignCommand(input: {
+  ownerUserId: string;
+  episode: { backup_user_id: string | null; next_action: string | null; next_action_at: string | null };
+  eligibleUserIds: ReadonlyArray<string>;
+}): Extract<ReferralEpisodeCommand, { kind: "assign" }> {
+  const { ownerUserId, episode, eligibleUserIds } = input;
+  const keepBackup =
+    episode.backup_user_id && episode.backup_user_id !== ownerUserId && eligibleUserIds.includes(episode.backup_user_id)
+      ? episode.backup_user_id
+      : null;
+  return {
+    kind: "assign",
+    owner_user_id: ownerUserId,
+    backup_user_id: keepBackup,
+    ...(episode.next_action && episode.next_action_at
+      ? { next_action: episode.next_action, next_action_at: episode.next_action_at }
+      : {}),
+  };
+}

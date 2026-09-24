@@ -525,3 +525,25 @@ export function loadReferralEpisodeModel(
     p_episode_id: episodeId,
   });
 }
+
+export type ReferralOwnerPerson = { user_id: string; full_name: string };
+
+export type ReferralEpisodeOwners = {
+  self_user_id: string | null;
+  owner: ReferralOwnerPerson | null;
+  backup: ReferralOwnerPerson | null;
+  pending_owner: ReferralOwnerPerson | null;
+  /** Whether the reader may assign this lead (unowned, their own, or a supervisor). */
+  can_assign: boolean;
+  /** Staff who may own a lead at its facility; names only. */
+  eligible: ReferralOwnerPerson[];
+};
+
+export function loadReferralEpisodeOwners(
+  client: SupabaseClient<Database>,
+  episodeId: string,
+): Promise<ReferralEpisodeOwners> {
+  return invokeReferralRpc<ReferralEpisodeOwners>(client, "referral_episode_owner_read", {
+    p_episode_id: episodeId,
+  });
+}

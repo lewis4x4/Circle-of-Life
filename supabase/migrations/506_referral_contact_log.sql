@@ -1,22 +1,28 @@
--- Referral contact log: recruiters and referral staff log every contact with a
--- prospective resident (how, with whom, what was said, what happens next), and
--- read the whole history back on the lead.
+-- Referral contact log (COL-331 slice 1). Brian's rulings, 2026-09-24:
+--   * Who reads contact-log notes: "Recruiters, Administrators and Asst.
+--     Admins/managers, All Corporate officers/Executive and above." That is
+--     owner, org_admin, facility_admin, manager, admin_assistant, recruiter;
+--     not coordinator, not med_tech. Clinical-tier rules are unchanged.
+--   * Recruiters can own leads: "Yes".
 --
--- 1. record_interaction gains three optional payload keys, stored in the
---    immutable event details: method (how the contact happened), contacted_name
---    (who was reached, as said by the person logging it) and person_contact_id
---    (a contact already linked to this prospective resident). Earlier callers
---    that send none of them keep working unchanged.
--- 2. referral_episode_history_read returns each event's actor_name (the reader
---    may not be able to read other staff profiles directly) and shows work-note
---    details (interactions, next steps, ownership, waiting/review) to the
---    people who may already read the prospect's phone and email
---    (contact_read), on every lead that is not public_summary. Clinical-tier
---    gating of lead notes, date of birth and clinical_precheck details is
---    unchanged.
+-- 1. haven.referral_capability gains 'work_note_read' with exactly that set.
+-- 2. haven.referral_staff_current_for_facility accepts recruiter as an owner or
+--    backup (it still requires the person to be active with access to the
+--    lead's facility, or to be owner/org_admin).
+-- 3. record_interaction gains three optional payload keys, stored in the
+--    immutable event details: method, contacted_name and person_contact_id (a
+--    contact linked to this prospective resident). Earlier callers that send
+--    none of them keep working unchanged.
+-- 4. referral_episode_history_read returns each event's actor_name and shows
+--    work-note details (interactions, next steps, ownership, waiting/review)
+--    to work_note_read holders on every lead that is not public_summary.
+-- 5. public.referral_episode_owner_read(uuid): the lead's owner, backup and
+--    pending owner by name, the eligible owners for its facility (names only),
+--    and whether the reader may assign.
 --
--- Both functions are replaced from their 380 text with only the changes above;
--- comments (COL-37 rulings) and grants survive CREATE OR REPLACE.
+-- The replaced functions are copied from their current text (380, 468, 469)
+-- with only the changes above; comments (COL-37 rulings) and grants survive
+-- CREATE OR REPLACE.
 
 BEGIN;
 
@@ -34,6 +40,63 @@ BEGIN
   END IF;
 END
 $$;
+
+CREATE OR REPLACE FUNCTION haven.referral_capability(p_capability text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  SELECT COALESCE((
+    SELECT CASE p_capability
+      WHEN 'lead_read' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','manager','admin_assistant','coordinator','med_tech','recruiter'])
+      WHEN 'contact_read' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','manager','admin_assistant','coordinator','med_tech','recruiter'])
+      WHEN 'clinical_read' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','med_tech'])
+      WHEN 'lead_write' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','med_tech','recruiter'])
+      WHEN 'lead_export' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','manager','admin_assistant','coordinator','med_tech','recruiter'])
+      WHEN 'duplicate_review' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','med_tech'])
+      WHEN 'triage_submit' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','manager','admin_assistant','coordinator','med_tech','recruiter'])
+      WHEN 'work_note_read' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin','facility_admin','manager','admin_assistant','recruiter'])
+      WHEN 'triage_read' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin'])
+      WHEN 'source_manage' THEN actor.actor_role_text = ANY (ARRAY['owner','org_admin'])
+      ELSE false
+    END
+    FROM haven.current_authorized_actor() AS actor
+    WHERE actor.actor_is_managed
+    LIMIT 1
+  ), false)
+$function$;
+
+CREATE OR REPLACE FUNCTION haven.referral_staff_current_for_facility(p_user_id uuid, p_organization_id uuid, p_facility_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_profiles AS profile
+    WHERE profile.id = p_user_id
+      AND profile.organization_id = p_organization_id
+      AND profile.is_active
+      AND profile.deleted_at IS NULL
+      AND profile.app_role IN ('owner', 'org_admin', 'facility_admin', 'med_tech', 'recruiter')
+      AND (
+        profile.app_role IN ('owner', 'org_admin')
+        OR EXISTS (
+          SELECT 1
+          FROM public.user_facility_access AS access
+          JOIN public.facilities AS facility ON facility.id = access.facility_id
+          WHERE access.user_id = profile.id
+            AND access.organization_id = profile.organization_id
+            AND access.facility_id = p_facility_id
+            AND access.revoked_at IS NULL
+            AND facility.organization_id = profile.organization_id
+            AND facility.deleted_at IS NULL
+        )
+      )
+  )
+$function$;
 
 CREATE OR REPLACE FUNCTION public.referral_episode_command(
   p_episode_id uuid,
@@ -1342,7 +1405,7 @@ DECLARE
   v_can_contact boolean := haven.referral_capability('contact_read');
   v_can_duplicate boolean := haven.referral_capability('duplicate_review');
   v_can_source boolean := haven.referral_capability('source_manage');
-  v_can_work_notes boolean := haven.referral_capability('contact_read');
+  v_can_work_notes boolean := haven.referral_capability('work_note_read');
 BEGIN
   IF NOT haven.referral_capability('lead_read') THEN
     RAISE EXCEPTION 'Referral read authority required' USING ERRCODE = '42501';
@@ -1427,6 +1490,83 @@ BEGIN
   RETURN v_result;
 END;
 $function$;
+
+
+CREATE OR REPLACE FUNCTION public.referral_episode_owner_read(p_episode_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_episode public.referral_leads;
+  v_actor_id uuid := haven.authorized_user_id();
+BEGIN
+  IF NOT haven.referral_capability('lead_read') THEN
+    RAISE EXCEPTION 'Referral read authority required' USING ERRCODE = '42501';
+  END IF;
+  SELECT lead.* INTO v_episode
+  FROM public.referral_leads AS lead
+  WHERE lead.id = p_episode_id
+    AND lead.organization_id = haven.organization_id()
+    AND lead.deleted_at IS NULL
+    AND haven.has_facility_access(lead.facility_id);
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Referral episode unavailable' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN pg_catalog.jsonb_build_object(
+    'self_user_id', v_actor_id,
+    'owner', (
+      SELECT pg_catalog.jsonb_build_object('user_id', profile.id, 'full_name', profile.full_name)
+      FROM public.user_profiles AS profile
+      WHERE profile.id = v_episode.owner_user_id
+        AND profile.organization_id = v_episode.organization_id
+    ),
+    'backup', (
+      SELECT pg_catalog.jsonb_build_object('user_id', profile.id, 'full_name', profile.full_name)
+      FROM public.user_profiles AS profile
+      WHERE profile.id = v_episode.backup_user_id
+        AND profile.organization_id = v_episode.organization_id
+    ),
+    'pending_owner', (
+      SELECT pg_catalog.jsonb_build_object('user_id', profile.id, 'full_name', profile.full_name)
+      FROM public.user_profiles AS profile
+      WHERE profile.id = v_episode.pending_owner_user_id
+        AND profile.organization_id = v_episode.organization_id
+    ),
+    -- Mirrors the assign command: anyone with lead_write may assign an
+    -- unowned lead; changing an existing owner needs the owner or a supervisor.
+    'can_assign', haven.referral_capability('lead_write')
+      AND v_episode.work_state <> 'closed'
+      AND (
+        v_episode.owner_user_id IS NULL
+        OR v_episode.owner_user_id = v_actor_id
+        OR haven.app_role() IN ('owner', 'org_admin', 'facility_admin')
+      ),
+    'eligible', COALESCE((
+      SELECT pg_catalog.jsonb_agg(
+        pg_catalog.jsonb_build_object('user_id', profile.id, 'full_name', profile.full_name)
+        ORDER BY profile.full_name, profile.id
+      )
+      FROM public.user_profiles AS profile
+      WHERE profile.organization_id = v_episode.organization_id
+        AND profile.deleted_at IS NULL
+        AND profile.is_active
+        AND haven.referral_staff_current_for_facility(
+          profile.id, v_episode.organization_id, v_episode.facility_id
+        )
+    ), '[]'::jsonb)
+  );
+END;
+$function$;
+
+COMMENT ON FUNCTION public.referral_episode_owner_read(uuid) IS
+  'Owner, backup, pending owner and eligible owners (names only) for one referral lead. COL-37 ruling: definer required -- recruiters and most referral staff cannot read other user_profiles rows under RLS, yet must see who owns a lead and pick an eligible owner; referral_leads ownership columns and haven.referral_staff_current_for_facility are the authority. Gated on lead_read and the lead''s facility; returns ids and full names only.';
+
+REVOKE ALL ON FUNCTION public.referral_episode_owner_read(uuid) FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.referral_episode_owner_read(uuid) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 

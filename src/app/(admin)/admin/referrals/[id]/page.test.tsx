@@ -11,6 +11,7 @@ const loadLeadsMock = vi.hoisted(() => vi.fn());
 const loadModelMock = vi.hoisted(() => vi.fn());
 const loadHistoryMock = vi.hoisted(() => vi.fn());
 const runCommandMock = vi.hoisted(() => vi.fn());
+const loadOwnersMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: LEAD_ID }),
@@ -45,6 +46,7 @@ vi.mock("@/lib/referrals/referral-authority", () => ({
   loadReferralEpisodeModel: loadModelMock,
   loadReferralEpisodeHistory: loadHistoryMock,
   runReferralEpisodeCommand: runCommandMock,
+  loadReferralEpisodeOwners: loadOwnersMock,
   updateAuthorizedReferralLead: vi.fn(),
 }));
 
@@ -104,7 +106,27 @@ beforeEach(() => {
   loadHistoryMock.mockReset();
   loadHistoryMock.mockResolvedValue({ events: [], next_before_sequence: null });
   runCommandMock.mockReset();
+  loadOwnersMock.mockReset();
+  loadOwnersMock.mockResolvedValue(owners());
 });
+
+const SELF = "33333333-3333-4333-8333-333333333333";
+const OTHER = "44444444-4444-4444-8444-444444444444";
+
+function owners(overrides: Record<string, unknown> = {}) {
+  return {
+    self_user_id: SELF,
+    owner: null,
+    backup: null,
+    pending_owner: null,
+    can_assign: true,
+    eligible: [
+      { user_id: SELF, full_name: "Robin Recruiter" },
+      { user_id: OTHER, full_name: "Morgan Admin" },
+    ],
+    ...overrides,
+  };
+}
 
 describe("Lead detail — contacts", () => {
   it("shows a linked primary contact with relationship and unrecorded permissions", async () => {
@@ -335,5 +357,61 @@ describe("Lead detail — contact log", () => {
     render(<AdminReferralLeadDetailPage />);
     expect(await screen.findByText("This referral is closed. Reopen it to log another contact.")).toBeInTheDocument();
     expect(screen.queryByRole("form", { name: "Log a contact" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Lead detail — owner", () => {
+  it("lets a recruiter take an unowned lead, keeping its next step", async () => {
+    const user = userEvent.setup();
+    loadModelMock.mockResolvedValue({
+      contacts: [],
+      episode: episode({ backup_user_id: null, next_action: "Send the brochure", next_action_at: "2026-09-25T13:00:00+00:00" }),
+    });
+    runCommandMock.mockResolvedValue({ episode_id: LEAD_ID, episode_revision: "e".repeat(64), event_kind: "assigned" });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    expect(await screen.findByText("No owner yet")).toBeInTheDocument();
+    const picker = screen.getByLabelText("Who owns this lead") as HTMLSelectElement;
+    expect(picker.value).toBe("");
+    expect(within(picker).getByRole("option", { name: "Robin Recruiter (you)" })).toBeInTheDocument();
+    await user.selectOptions(picker, SELF);
+    await user.click(screen.getByRole("button", { name: "Save owner" }));
+
+    await waitFor(() => expect(runCommandMock).toHaveBeenCalledTimes(1));
+    expect(runCommandMock.mock.calls[0][1]).toMatchObject({
+      expectedRevision: REVISION,
+      command: {
+        kind: "assign",
+        owner_user_id: SELF,
+        backup_user_id: null,
+        next_action: "Send the brochure",
+        next_action_at: "2026-09-25T13:00:00+00:00",
+      },
+    });
+    expect(await screen.findByText("Owner saved.")).toBeInTheDocument();
+  });
+
+  it("offers no owner change to someone who may not reassign, and lets a pending owner accept", async () => {
+    const user = userEvent.setup();
+    loadModelMock.mockResolvedValue({ contacts: [], episode: episode({ work_state: "assigned" }) });
+    loadOwnersMock.mockResolvedValue(
+      owners({
+        owner: { user_id: OTHER, full_name: "Morgan Admin" },
+        pending_owner: { user_id: SELF, full_name: "Robin Recruiter" },
+        can_assign: false,
+      }),
+    );
+    runCommandMock.mockResolvedValue({ episode_id: LEAD_ID, episode_revision: "f".repeat(64), event_kind: "coverage_accepted" });
+
+    render(<AdminReferralLeadDetailPage />);
+
+    expect(await screen.findByText("Morgan Admin")).toBeInTheDocument();
+    expect(screen.getByText("Handoff to Robin Recruiter (you) is waiting for them to accept it.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Who owns this lead")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Accept this lead" }));
+    await waitFor(() => expect(runCommandMock).toHaveBeenCalledTimes(1));
+    expect(runCommandMock.mock.calls[0][1].command).toEqual({ kind: "accept_coverage" });
+    expect(await screen.findByText("You now own this lead.")).toBeInTheDocument();
   });
 });
