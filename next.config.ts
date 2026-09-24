@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import { LEGACY_REDIRECTS } from "./src/lib/routing/legacy-redirects";
+import { SHARED_DEVICE_NO_STORE_HEADERS } from "./src/lib/routing/shared-device-headers";
 import { supabaseCspOrigins } from "./src/lib/supabase/env";
 
 // `__dirname` is undefined when this file is loaded as ESM (Next 16 + .ts config).
@@ -107,6 +108,9 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [...securityHeaders],
       },
+      // Shared floor tablets and the front-door kiosk: no page is ever cached.
+      // See src/lib/routing/shared-device-headers.ts.
+      ...SHARED_DEVICE_NO_STORE_HEADERS,
     ];
   },
 };

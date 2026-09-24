@@ -8,7 +8,7 @@ import {
   facilityDatetimeLocalToUtcIso,
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
-import { requireHeadCount, type HeadCountResponse } from "@/lib/metrics/require-head-count";
+import { requireHeadCount, type HeadCountReply } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 
@@ -105,10 +105,10 @@ export async function fetchDietaryDashboardBrief(
     .sort((a, b) => b.count - a.count);
 
   return {
-    censusCount: requireHeadCount(censusRes as HeadCountResponse, "Census"),
-    specialDiets: requireHeadCount(specialDietsRes as HeadCountResponse, "Special diets"),
-    mealsToday: requireHeadCount(mealsRes as HeadCountResponse, "Meals today"),
-    dietChanges48h: requireHeadCount(changesRes as HeadCountResponse, "Diet changes"),
+    censusCount: requireHeadCount(censusRes as HeadCountReply, "Census"),
+    specialDiets: requireHeadCount(specialDietsRes as HeadCountReply, "Special diets"),
+    mealsToday: requireHeadCount(mealsRes as HeadCountReply, "Meals today"),
+    dietChanges48h: requireHeadCount(changesRes as HeadCountReply, "Diet changes"),
     recentDietChanges,
     specialDietBreakdown,
   };

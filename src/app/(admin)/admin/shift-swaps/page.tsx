@@ -326,8 +326,8 @@ export default function AdminShiftSwapsPage() {
             Shift swaps {pendingCount > 0 ? <></> : null}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Oversight queue for COL’s shift swap workflow. Facility admins and med-techs can approve or deny pending
-            requests. Export supports audits.
+            Review shift swap requests after both employees confirm. An administrator or manager reviews
+            eligibility before approving coverage. Export supports audits.
           </p>
         </header>
 

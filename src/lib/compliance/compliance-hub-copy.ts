@@ -112,6 +112,21 @@ export function complianceDeficienciesAllClear(input: {
   });
 }
 
+/**
+ * Header alert for a low compliance-rule pass rate. The threshold is the
+ * `compliance.score_alert_below_pct` operating rule (COL-710), off unless an
+ * owner or org admin sets it; the old fixed `score < 75` trigger was removed
+ * in COL-649. Null when the rule is off, unreadable, or the score is not in.
+ */
+export function complianceScoreAlert(
+  score: { percentage: number } | null,
+  rule: { off: true } | { off: false; belowPct: number } | null,
+): string | null {
+  if (!score || !rule || rule.off) return null;
+  if (score.percentage >= rule.belowPct) return null;
+  return `Compliance pass rate is ${score.percentage}%, below the ${rule.belowPct}% alert level.`;
+}
+
 /** Header alert for overdue emergency drills and checks; null when none are overdue. */
 export function complianceOverdueEmergencyAlert(items: ReadonlyArray<{ overdue: boolean }>): string | null {
   const overdue = items.filter((i) => i.overdue).length;

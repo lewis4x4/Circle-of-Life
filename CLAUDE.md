@@ -138,7 +138,7 @@ Owner rulings by Brian, 2026-09-22. This is the login-role model (`app_role`). S
 | `manager` | Manager | `/admin` | |
 | `admin_assistant` | Admin Assistant | `/admin/assistant-dashboard` | |
 | `coordinator` | Service Coordinator | `/admin/coordinator-dashboard` | |
-| `med_tech` | Med-Tech | `/med-tech` | Holds everything the retired `nurse` and `caregiver` roles held. Uses both the med-tech app (`/med-tech`) and the floor app (`/caregiver`; the route keeps its name). |
+| `med_tech` | Med-Tech | `/floor` | Holds everything the retired `nurse` and `caregiver` roles held. Lands on the shared floor tablet app (`/floor`, COL-677, spec 40) and also uses the caregiver app (`/caregiver`). Their tabs are the one Med-Tech app (COL-714, `src/lib/navigation/role-app-tabs.ts`): Meds is `/med-tech`, the rest live under `/caregiver`. |
 | `cook` | Cook | `/dietary` | Holds everything the retired `dietary` and `dietary_aide` roles held. |
 | `housekeeper` | Housekeeper | `/caregiver/housekeeper` | Floor app housekeeper paths only (plus clock, schedules, me, policies, acknowledgments, shift swaps). Never clinical. Unlicensed staff who are not Med-Techs are Housekeeping. |
 | `maintenance_role` | Maintenance | `/admin/facilities` | |

@@ -133,7 +133,7 @@ export const PILLARS: Pillar[] = [
       { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
       { key: "benefits", href: "/admin/benefits", label: "Medicaid & benefits", icon: ClipboardCheck },
       { key: "discharge", href: "/admin/discharge", label: "Medication reconciliation", icon: DoorOpen },
-      { key: "family-messages", href: "/admin/family-messages", label: "Family notes", icon: Megaphone },
+      { key: "family-portal", href: "/admin/family-portal", label: "Family Connections", icon: Users },
     ],
   },
   {
@@ -169,15 +169,11 @@ export const PILLARS: Pillar[] = [
     label: "Workforce",
     icon: UserCog,
     items: [
-      { key: "staff", href: "/admin/staff", label: "Staff roster", icon: UserCog },
-      { key: "schedules", href: "/admin/schedules", label: "Schedules", icon: CalendarDays },
-      { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift swaps", icon: ArrowLeftRight },
-      { key: "staffing", href: "/admin/staffing", label: "Staffing alerts", icon: Activity },
-      { key: "certifications", href: "/admin/certifications", label: "Certifications", icon: Award },
-      { key: "training", href: "/admin/training", label: "Training", icon: GraduationCap },
-      { key: "time-records", href: "/admin/time-records", label: "Time records", icon: Clock },
+      { key: "staffing", href: "/admin/staffing", label: "Today", icon: Activity },
+      { key: "schedules", href: "/admin/schedules", label: "Schedule", icon: CalendarDays, owns: ["/admin/shift-swaps"] },
+      { key: "timecards", href: "/admin/timecards", label: "Timecards", icon: Clock, owns: ["/admin/timeclock", "/admin/time-records"] },
       { key: "payroll", href: "/admin/payroll", label: "Payroll", icon: Banknote },
-      { key: "timeclock", href: "/admin/timeclock", label: "Timeclock", icon: Timer },
+      { key: "staff", href: "/admin/staff", label: "People", icon: UserCog, owns: ["/admin/certifications", "/admin/training"] },
     ],
   },
   {
@@ -222,6 +218,11 @@ export const PILLARS: Pillar[] = [
  * inside a pillar item's tree nor listed here.
  */
 export const AUXILIARY_ROUTES: AuxiliaryRoute[] = [
+  { key: "certifications", href: "/admin/certifications", label: "Certifications", icon: Award, pillar: "workforce" },
+  { key: "training", href: "/admin/training", label: "Training", icon: GraduationCap, pillar: "workforce" },
+  { key: "timeclock", href: "/admin/timeclock", label: "Kiosk ledger", icon: Timer, pillar: "workforce" },
+  { key: "time-records", href: "/admin/time-records", label: "Legacy time records", icon: Clock, pillar: "workforce" },
+  { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift requests", icon: ArrowLeftRight, pillar: "workforce" },
   { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye, pillar: "clinical" },
   { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie, pillar: "clinical" },
   { key: "policies", href: "/admin/compliance/policies", label: "Policies", icon: BookOpen, pillar: "quality" },
@@ -255,8 +256,7 @@ export const ANCHOR_ONLY_ROUTES: AuxiliaryRoute[] = [
   { key: "nurse-dashboard", href: "/admin/nurse-dashboard", label: "Nurse dashboard", icon: Stethoscope, pillar: "clinical" },
   { key: "handoff", href: "/admin/handoff", label: "Shift handoff", icon: ArrowLeftRight, pillar: "clinical" },
   { key: "activities", href: "/admin/activities", label: "Activities", icon: CalendarDays, pillar: "clinical" },
-  { key: "family-portal", href: "/admin/family-portal", label: "Family connections", icon: Users, pillar: "pipeline" },
-  { key: "survey-binder", href: "/admin/survey-binder", label: "Survey binder", icon: ClipboardCheck, pillar: "quality" },
+  { key: "survey-pack", href: "/admin/compliance/survey-pack", label: "Survey pack", icon: ClipboardCheck, pillar: "quality" },
   { key: "operations", href: "/admin/operations", label: "Facility operations", icon: ClipboardList, pillar: "command" },
   { key: "reputation", href: "/admin/reputation", label: "Reputation", icon: Megaphone, pillar: "pipeline" },
   { key: "approvals", href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck, pillar: "command" },
@@ -340,7 +340,7 @@ export const SECTION_JUMP_QUICK_KEYS = [
   "executive",
   "residents",
   "billing",
-  "family-messages",
+  "family-portal",
   "rounding-live",
   "snack-pass",
 ] as const;

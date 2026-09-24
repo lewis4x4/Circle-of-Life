@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { URGENT_JOBS } from './linear-alert.mjs';
 
 function cronFieldMatches(field, value, min, max, { sundaySeven = false } = {}) {
   const normalize = input => sundaySeven && input === 7 ? 0 : input;
@@ -52,6 +53,7 @@ export function assessJob(job, now = new Date()) {
   if (job.monitoring_mode === 'cron') {
     const runs = [...(job.cron_runs ?? [])].sort((a,b)=>Date.parse(b.start_time)-Date.parse(a.start_time));
     const newest = runs[0];
+    base.last_success_at = runs.find(run => run.status === 'succeeded')?.start_time ?? null;
     if (due.getTime() >= Date.parse(job.installed_at) && (!newest || Date.parse(newest.start_time)<due.getTime())) {
       return { ...base,state:'did_not_run',alert:true,expected_at:due.toISOString() };
     }
@@ -66,6 +68,7 @@ export function assessJob(job, now = new Date()) {
   }
   const runs = [...(job.runs ?? [])].sort((a,b)=>Date.parse(b.requested_at)-Date.parse(a.requested_at));
   const newest = runs[0];
+  base.last_success_at = runs.find(r => r.outcome === 'success')?.requested_at ?? null;
   if (due.getTime() >= Date.parse(job.installed_at) && (!newest || Date.parse(newest.requested_at)<due.getTime())) {
     return { ...base,state:'did_not_run',alert:true,expected_at:due.toISOString() };
   }
@@ -83,6 +86,73 @@ export function assessJob(job, now = new Date()) {
     latest_request_pending:newest.outcome==='pending',
     consecutive_failures: eligible.findIndex(r => r.outcome==='success') < 0
       ? eligible.length : eligible.findIndex(r => r.outcome==='success') };
+}
+
+// COL-547: assess before alerting. assessJob reports what happened; applyAlertPolicy
+// decides whether it pages. Configuration and auth failures cannot heal on their own and
+// page at once. Transient failures (timeouts, 5xx, 429, network) get one re-check inside
+// the monitor run and then wait for the job's own next run; they page only once
+// CONSECUTIVE_FAILURE_THRESHOLD runs fail in a row or the failure outlives TRANSIENT_HOLD_MS.
+// Urgent jobs (URGENT_JOBS: resident safety, eMAR, escalation, the monitor) get the same
+// re-check but skip the hold: still failing after it (outcome.rechecked) pages that run.
+export const ALERT_POLICY = Object.freeze({
+  // Two failed runs in a row: the job's own next run was the retry and it failed too.
+  consecutiveFailureThreshold: 2,
+  // Monitor runs every 5 minutes; 20 minutes gives a 5-15 minute job its next run and
+  // keeps a single failed daily/monthly run from waiting a whole day to page.
+  transientHoldMs: 20 * 60000,
+  // One re-check per monitor run, after this delay (JOB_MONITOR_RECHECK_DELAY_MS overrides).
+  recheckRetries: 1,
+  recheckDelayMs: 30000,
+});
+
+const TRANSIENT_HTTP = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+// Likely cause is derived only from state and HTTP status; no response body is read.
+export function classifyFailure(outcome) {
+  const status = outcome.http_status;
+  switch (outcome.state) {
+    case 'removed': return { transient:false, cause:'Cron job was unscheduled while still registered for monitoring' };
+    case 'disabled': return { transient:false, cause:'Cron job is disabled' };
+    case 'not_monitored': return { transient:false, cause:'Job command changed or was never instrumented, so outcomes are not recorded' };
+    case 'unsupported_schedule': return { transient:false, cause:'Schedule uses cron syntax the monitor cannot evaluate' };
+    case 'did_not_run': return { transient:false, cause:'pg_cron did not start the job at its scheduled time' };
+    case 'response_missing': return { transient:true, cause:'No HTTP response before the deadline (function timeout or cold start)' };
+  }
+  // Native SQL cron outcomes carry started_at, never requested_at.
+  if (outcome.started_at && !outcome.requested_at) {
+    return { transient:true, cause:'SQL job failed or hit its statement timeout' };
+  }
+  if (status == null) return { transient:true, cause:'Request failed without an HTTP response (network or timeout)' };
+  if (status === 401 || status === 403) return { transient:false, cause:`Function refused the call (HTTP ${status}); cron secret is likely out of sync` };
+  if (status === 404) return { transient:false, cause:'Function endpoint not found (not deployed or renamed)' };
+  if (status === 408 || status === 504) return { transient:true, cause:`Function timed out (HTTP ${status})` };
+  if (status === 429) return { transient:true, cause:'Function was rate limited (HTTP 429)' };
+  if (TRANSIENT_HTTP.has(status)) return { transient:true, cause:`Function returned a server error (HTTP ${status})` };
+  if (status >= 500) return { transient:false, cause:`Function returned HTTP ${status}` };
+  return { transient:false, cause:`Function rejected the request (HTTP ${status})` };
+}
+
+export function applyAlertPolicy(outcome, now = new Date(), policy = ALERT_POLICY, urgent = URGENT_JOBS) {
+  if (!outcome.alert) return { ...outcome, severity:'none' };
+  const { transient, cause } = classifyFailure(outcome);
+  const assessed = { ...outcome, likely_cause:cause, transient };
+  if (!transient) return { ...assessed, severity:'alert', alert:true, alert_reason:'Not self-healing' };
+  const count = outcome.consecutive_failures ?? 1;
+  if (count >= policy.consecutiveFailureThreshold) {
+    return { ...assessed, severity:'alert', alert:true, alert_reason:`${count} consecutive failures` };
+  }
+  const failedAt = Date.parse(outcome.requested_at ?? outcome.started_at ?? '');
+  const held = Number.isFinite(failedAt) ? now.getTime() - failedAt : Infinity;
+  if (held >= policy.transientHoldMs) {
+    return { ...assessed, severity:'alert', alert:true,
+      alert_reason:`Still failing ${Math.round(policy.transientHoldMs / 60000)} minutes after the failed run` };
+  }
+  if (outcome.rechecked && urgent.test(outcome.jobname ?? '')) {
+    return { ...assessed, severity:'alert', alert:true, alert_reason:'Urgent job still failing after re-check' };
+  }
+  return { ...assessed, severity:'quiet', alert:false, held:true,
+    hold_until:new Date(failedAt + policy.transientHoldMs).toISOString() };
 }
 
 export const secretMapping = {
@@ -107,6 +177,7 @@ export const secretMapping = {
   'care-event-dispatcher':['care_event_dispatcher_cron_secret','CARE_EVENT_DISPATCHER_SECRET'],
   'cadence-version-activator':['cadence_version_activator_secret','CADENCE_VERSION_ACTIVATOR_SECRET'],
   'watchlist-signal-engine':['watchlist_signal_secret','WATCHLIST_SIGNAL_SECRET'],
+  'oce-task-scheduler':['oce_task_scheduler_secret','OCE_TASK_SCHEDULER_SECRET'],
 };
 
 export function compareSecrets(jobs, vault, edge, projectRef) {

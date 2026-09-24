@@ -16,33 +16,77 @@ import {
 import {
   canClaimAllClear,
   metricNoData,
+  metricNotConfigured,
   metricUnavailable,
   metricValue,
   type MetricState,
 } from "@/lib/metrics/metric-state";
+import { loadCertificationRules } from "@/lib/staff/certification-policy";
+import {
+  summarizeCertificationScope,
+  type CertificationScopeSummary,
+  type ScopeCert,
+  type ScopeStaff,
+} from "@/lib/staff/certification-scope";
 import { createClient } from "@/lib/supabase/client";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
 export type StaffingCoverageScope = {
   /** Shift assignments of any status in the same 48-hour window the gap list reads. */
   shiftsInWindow: number;
-  /** Certifications on file (any status) in scope. */
-  certificationsOnFile: number;
-  /** Expired or revoked certifications, or past their expiration date — the true count, not the 10-row list. */
-  expiredCertifications: number;
-  /** Active or on-leave staff with no certification on file at all. */
-  staffWithoutCertifications: number;
+  /** Certification requirements applied to the active and on-leave staff in scope (COL-709). */
+  credentials: CredentialScope;
 };
+
+export type CredentialScope = Omit<CertificationScopeSummary, "evaluations">;
 
 type QueryError = { message: string };
 type CountResult = { count: number | null; error: QueryError | null };
 type ListResult<T> = { data: T[] | null; error: QueryError | null };
 
-function requireCount(res: CountResult): number {
-  if (res.error) throw res.error;
-  if (typeof res.count !== "number") throw new Error("Count was not returned");
-  return res.count;
+const PAGE = 1000;
+
+/** Every row of a list read, page by page, so a large scope is never silently cut at the API row cap. */
+async function readAllPages<T>(page: (from: number, to: number) => PromiseLike<ListResult<T>>): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const res = await page(from, from + PAGE - 1);
+    if (res.error) throw res.error;
+    const data = res.data ?? [];
+    rows.push(...data);
+    if (data.length < PAGE) return rows;
+  }
+}
+
+/** Active and on-leave staff in scope with their certifications, as the requirements see them. */
+export async function fetchCertificationScope(
+  facilityId: string | null,
+  supabase: SupabaseClient<Database>,
+): Promise<{ staff: ScopeStaff[]; certs: ScopeCert[] }> {
+  const [staff, certs] = await Promise.all([
+    readAllPages<ScopeStaff>((from, to) => {
+      let q = supabase
+        .from("staff" as never)
+        .select("id, staff_role, facility_id")
+        .is("deleted_at", null)
+        .in("employment_status", ["active", "on_leave"])
+        .order("id", { ascending: true });
+      if (facilityId) q = q.eq("facility_id", facilityId);
+      return q.range(from, to) as unknown as PromiseLike<ListResult<ScopeStaff>>;
+    }),
+    readAllPages<ScopeCert>((from, to) => {
+      let q = supabase
+        .from("staff_certifications" as never)
+        .select("id, staff_id, certification_type, status, expiration_date")
+        .is("deleted_at", null)
+        .order("id", { ascending: true });
+      if (facilityId) q = q.eq("facility_id", facilityId);
+      return q.range(from, to) as unknown as PromiseLike<ListResult<ScopeCert>>;
+    }),
+  ]);
+  return { staff, certs };
 }
 
 export async function fetchStaffingCoverageScope(
@@ -60,58 +104,25 @@ export async function fetchStaffingCoverageScope(
     .is("deleted_at", null)
     .gte("shift_date", todayIso)
     .lte("shift_date", endDateIso);
-  let expiredQ = supabase
-    .from("staff_certifications" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null)
-    .or(`status.in.(expired,revoked),expiration_date.lt.${todayIso}`);
-  let certCountQ = supabase
-    .from("staff_certifications" as never)
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
-  let certStaffQ = supabase
-    .from("staff_certifications" as never)
-    .select("staff_id")
-    .is("deleted_at", null);
-  let staffQ = supabase
-    .from("staff" as never)
-    .select("id")
-    .is("deleted_at", null)
-    .in("employment_status", ["active", "on_leave"]);
+  if (facilityId) shiftsQ = shiftsQ.eq("facility_id", facilityId);
 
-  if (facilityId) {
-    shiftsQ = shiftsQ.eq("facility_id", facilityId);
-    expiredQ = expiredQ.eq("facility_id", facilityId);
-    certCountQ = certCountQ.eq("facility_id", facilityId);
-    certStaffQ = certStaffQ.eq("facility_id", facilityId);
-    staffQ = staffQ.eq("facility_id", facilityId);
-  }
+  const [shiftsRes, scope, rules] = await Promise.all([
+    shiftsQ as unknown as PromiseLike<CountResult>,
+    fetchCertificationScope(facilityId, supabase),
+    loadCertificationRules(supabase as unknown as SupabaseClient),
+  ]);
 
-  const [shiftsRes, expiredRes, certCountRes, certStaffRes, staffRes] = (await Promise.all([
-    shiftsQ,
-    expiredQ,
-    certCountQ,
-    certStaffQ,
-    staffQ,
-  ])) as unknown as [
-    CountResult,
-    CountResult,
-    CountResult,
-    ListResult<{ staff_id: string }>,
-    ListResult<{ id: string }>,
-  ];
-
-  if (certStaffRes.error) throw certStaffRes.error;
-  if (staffRes.error) throw staffRes.error;
-  const certRows = certStaffRes.data ?? [];
-  const staffWithCerts = new Set(certRows.map((row) => row.staff_id));
-
-  return {
-    shiftsInWindow: requireCount(shiftsRes),
-    certificationsOnFile: requireCount(certCountRes),
-    expiredCertifications: requireCount(expiredRes),
-    staffWithoutCertifications: (staffRes.data ?? []).filter((row) => !staffWithCerts.has(row.id)).length,
+  const summary = summarizeCertificationScope({ ...scope, rules, now });
+  const credentials: CredentialScope = {
+    requirementsSetUp: summary.requirementsSetUp,
+    staffJudged: summary.staffJudged,
+    requiredChecks: summary.requiredChecks,
+    expiredRequired: summary.expiredRequired,
+    staffMissingRequired: summary.staffMissingRequired,
+    expiredRequiredCertIds: summary.expiredRequiredCertIds,
+    expiredOnFile: summary.expiredOnFile,
   };
+  return { shiftsInWindow: requireHeadCount(shiftsRes, "Shifts in the window"), credentials };
 }
 
 export type ShiftGapPanelCopy = {
@@ -181,10 +192,12 @@ export type CredentialPanelCopy = {
   tileCopy: string;
 };
 
-function withoutCertsSentence(count: number): string {
+function missingSentence(count: number): string {
   if (count === 0) return "";
-  return ` ${count} active ${count === 1 ? "staff member has" : "staff members have"} no certification on file.`;
+  return ` ${count} ${count === 1 ? "staff member is" : "staff members are"} missing a required certification.`;
 }
+
+export const CERT_REQUIREMENTS_HREF = "/admin/certifications/requirements";
 
 export function describeCredentialPanel(scope: StaffingCoverageScope | null): CredentialPanelCopy {
   if (scope === null) {
@@ -196,31 +209,53 @@ export function describeCredentialPanel(scope: StaffingCoverageScope | null): Cr
       tileCopy: "Certifications could not be read.",
     };
   }
-  const expired = scope.expiredCertifications;
-  const missing = withoutCertsSentence(scope.staffWithoutCertifications);
-  if (expired > 0) {
+  const c = scope.credentials;
+  if (!c.requirementsSetUp) {
+    const lapsed =
+      c.expiredOnFile > 0
+        ? ` ${c.expiredOnFile} ${c.expiredOnFile === 1 ? "certification" : "certifications"} on file ${c.expiredOnFile === 1 ? "has" : "have"} lapsed.`
+        : "";
+    return {
+      clear: false,
+      emptyTitle: "Certification requirements not set up",
+      emptyDescription: `No job role has a certification requirement yet, so nobody is flagged. Set them under Certification requirements.${lapsed}`,
+      tile: metricNotConfigured("Requirements not set up"),
+      tileCopy: `No job role has a certification requirement yet.${lapsed}`,
+    };
+  }
+  const missing = missingSentence(c.staffMissingRequired);
+  if (c.expiredRequired > 0) {
     return {
       clear: false,
       emptyTitle: "",
       emptyDescription: "",
-      tile: metricValue(expired),
-      tileCopy: `${expired} expired ${expired === 1 ? "credential" : "credentials"} require review.${missing}`,
+      tile: metricValue(c.expiredRequired),
+      tileCopy: `${c.expiredRequired} expired required ${c.expiredRequired === 1 ? "credential needs" : "credentials need"} review.${missing}`,
     };
   }
-  if (canClaimAllClear({ scopeSize: scope.certificationsOnFile, issueCount: expired })) {
+  if (canClaimAllClear({ scopeSize: c.requiredChecks, issueCount: c.expiredRequired + c.staffMissingRequired })) {
     return {
       clear: true,
       emptyTitle: "No credential blockers",
-      emptyDescription: `There are no expired credentials among ${scope.certificationsOnFile} on file in the current staffing scope.${missing}`,
+      emptyDescription: `All ${c.requiredChecks} required certifications in the current staffing scope are on file and in date.`,
       tile: metricValue(0),
-      tileCopy: `No expired credentials among ${scope.certificationsOnFile} on file.${missing}`,
+      tileCopy: `No expired credentials among ${c.requiredChecks} required.`,
+    };
+  }
+  if (c.requiredChecks === 0) {
+    return {
+      clear: false,
+      emptyTitle: "No certifications required here",
+      emptyDescription: "No job role in this scope needs a certification, so there is nothing to check.",
+      tile: metricNoData("None required"),
+      tileCopy: "No job role in this scope needs a certification.",
     };
   }
   return {
     clear: false,
-    emptyTitle: "No certifications on file",
-    emptyDescription: `No credentials are recorded in this scope, so none can be checked. This is not an all-clear.${missing}`,
-    tile: metricNoData("No certs on file"),
-    tileCopy: `No certifications are on file in this scope.${missing}`,
+    emptyTitle: "Required certifications missing",
+    emptyDescription: `No required certification has expired, but some are not on file.${missing}`,
+    tile: metricValue(0),
+    tileCopy: `No expired required credentials.${missing}`,
   };
 }

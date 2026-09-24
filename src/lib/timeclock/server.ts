@@ -35,7 +35,8 @@ export function badgeLookupHmac(badgeValue: string): string | null {
 export function kioskErrorResponse(dbCode: string, extra?: Record<string, unknown>): NextResponse {
   const code: KioskErrorCode = publicKioskErrorCode(dbCode);
   const status = KIOSK_ERROR_STATUS[code];
-  const headers: Record<string, string> = {};
+  // A kiosk answer is about one person at one moment; no cache may keep it.
+  const headers: Record<string, string> = { "Cache-Control": "no-store" };
   if (code === "device_throttled") headers["Retry-After"] = "300";
   if (code === "locked") headers["Retry-After"] = "900";
   return NextResponse.json({ error: code, ...(extra ?? {}) }, { status, headers });

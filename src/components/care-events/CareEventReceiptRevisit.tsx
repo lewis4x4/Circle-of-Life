@@ -20,7 +20,15 @@ type RevisitData =
  * `/caregiver/report/[careEventId]`: reopen a receipt to add a photo or voice
  * note and watch the acknowledgment (spec 07A §6.4).
  */
-export function CareEventReceiptRevisit({ careEventId }: { careEventId: string }) {
+export function CareEventReceiptRevisit({
+  careEventId,
+  doneHref,
+  doneLabel,
+}: {
+  careEventId: string;
+  doneHref?: string;
+  doneLabel?: string;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const [data, setData] = useState<RevisitData>({ status: "loading" });
 
@@ -103,6 +111,8 @@ export function CareEventReceiptRevisit({ careEventId }: { careEventId: string }
         receipt={receipt}
         offline={false}
         onCallPhone={readCachedOnCallPhone(ctx.facilityId)}
+        doneHref={doneHref}
+        doneLabel={doneLabel}
       />
     </div>
   );

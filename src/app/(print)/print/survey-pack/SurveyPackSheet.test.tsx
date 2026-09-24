@@ -7,10 +7,13 @@ import { SurveyPackSheet } from "./SurveyPackSheet";
 
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
+  kioskDetails: vi.fn(),
   searchParams: new URLSearchParams("from=2026-01-01&to=2026-06-30&sections=register,census,visitors&holds=1"),
 }));
 
-vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ rpc: mocks.rpc, from: () => ({ select: () => ({ in: mocks.kioskDetails }) }) }),
+}));
 vi.mock("next/navigation", () => ({ useSearchParams: () => mocks.searchParams }));
 
 const REGISTER_ROW = {
@@ -65,6 +68,8 @@ function routeRpc(name: string) {
 }
 
 beforeEach(() => {
+  mocks.kioskDetails.mockReset();
+  mocks.kioskDetails.mockResolvedValue({ data: [], error: null });
   mocks.rpc.mockReset();
   mocks.rpc.mockImplementation((name: string) => Promise.resolve(routeRpc(name)));
   vi.stubGlobal("print", vi.fn());
@@ -131,6 +136,24 @@ describe("the sheet", () => {
     expect(screen.getByText("Visitor log")).toBeTruthy();
     expect(screen.getAllByText("Test Resident A").length).toBeGreaterThan(0);
     expect(screen.getByText("Test Visitor One")).toBeTruthy();
+  });
+
+  it("prints a kiosk sign-in with the company, the typed resident and the kiosk as signer (COL-692)", async () => {
+    mocks.rpc.mockImplementation((name: string) =>
+      Promise.resolve(
+        name === "visitor_log"
+          ? { data: [{ ...VISITOR_ROW, id: "k1", visitor_name: "Dana Reyes", visitor_type: "healthcare_provider", visiting_type: null, signed_in_by_name: null }], error: null }
+          : routeRpc(name),
+      ),
+    );
+    mocks.kioskDetails.mockResolvedValue({
+      data: [{ id: "k1", kiosk_device_id: "dev-1", visitor_company: "Sunshine Hospice", visiting_name_text: "Mrs Carter" }],
+      error: null,
+    });
+    renderSheet();
+    expect(await screen.findByText("Dana Reyes · Sunshine Hospice")).toBeTruthy();
+    expect(screen.getByText("Mrs Carter (typed at the kiosk)")).toBeTruthy();
+    expect(screen.getByText("Front-door kiosk")).toBeTruthy();
   });
 
   it("keeps physical presence and billable days in separate columns", async () => {

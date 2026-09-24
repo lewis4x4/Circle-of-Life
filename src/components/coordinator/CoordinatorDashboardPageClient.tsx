@@ -174,7 +174,7 @@ export function CoordinatorDashboardPageClient({
           icon={MessageSquare}
           urgency="normal"
           subLabel={bulletinTile.subLabel}
-          href="/admin/family-messages"
+          href="/admin/family-portal?tab=notes"
         />
       </div>
 
@@ -183,7 +183,7 @@ export function CoordinatorDashboardPageClient({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Care Plans" href="/admin/care-plans/reviews-due" />
         <ActionTile label="Assessments" href="/admin/assessments/overdue" />
-        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-messages" />
+        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-portal?tab=notes" />
         <ActionTile label="Admissions" href="/admin/admissions" />
       </div>
 

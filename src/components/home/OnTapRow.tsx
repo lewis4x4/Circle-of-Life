@@ -19,6 +19,8 @@ export type OnTapRowProps = {
   onClear: (clearTarget: string, action: HomeRowAction, note: string) => void;
   /** Uncovered-shift rows (COL-596) open the cover screen. */
   onCover?: (assignmentId: string) => void;
+  /** Owner preview (COL-707): only navigation shows; no claim or clearance control. */
+  readOnly?: boolean;
 };
 
 /**
@@ -26,7 +28,7 @@ export type OnTapRowProps = {
  * always on the row (COL-593 rule 5); a negative outcome asks for its note in
  * place rather than in a dialog, so a phone can finish it in three taps.
  */
-export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear, onCover }: OnTapRowProps) {
+export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear, onCover, readOnly = false }: OnTapRowProps) {
   const [noteFor, setNoteFor] = useState<HomeRowAction | null>(null);
   const [note, setNote] = useState("");
   const noteId = useId();
@@ -90,7 +92,7 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear,
         ) : null}
       </div>
       <div className="col-span-2 flex flex-wrap items-center justify-end gap-1.5 md:col-span-1">
-        {claimable ? (
+        {claimable && !readOnly ? (
           <Button
             type="button"
             variant="ghost"
@@ -106,7 +108,7 @@ export function OnTapRow({ row, position, currentUserId, busy, onClaim, onClear,
             {row.disabledReason}
           </Button>
         ) : null}
-        {row.actions.map((action) =>
+        {row.actions.filter((action) => !readOnly || (action.key === "open" && action.href)).map((action) =>
           action.key === "open" && action.href ? (
             <Link
               key={action.key}

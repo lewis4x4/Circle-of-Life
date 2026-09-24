@@ -10,6 +10,7 @@ import type {
   CareEventDeliveryStatus,
   CareEventReceiptDelivery,
 } from "./submit";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const RECEIPT_OFFLINE_SAVED_LINE = "Saved on this device, sending when back online.";
 export const RECEIPT_ON_CALL_UNAVAILABLE_LINE = "On-call phone not available on this device.";
@@ -86,7 +87,7 @@ export function targetWord(delivery: Pick<CareEventReceiptDelivery, "target_name
   if (TARGET_WORDS[key]) return TARGET_WORDS[key];
   // A person's full name or a route's display name: keep the server's casing.
   if (!/_/.test(raw) && !/\bnurse\b/i.test(raw)) return raw;
-  const words = key.replace(/_/g, " ").replace(/\bnurse\b/g, "Administrator or Assistant");
+  const words = enumLabel(key, { case: "lower" }).replace(/\bnurse\b/g, "Administrator or Assistant");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 

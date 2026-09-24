@@ -357,7 +357,7 @@ export default function AdminFrontDeskPage() {
               <select value={pResident} onChange={(e) => { setPResident(e.target.value); const r = residents.find((x) => x.id === e.target.value); if (r) setPRecipient(`${r.first_name} ${r.last_name}`); }} aria-label="Resident" className={inputCls}>
                 <option value="">Resident (optional)…</option>
                 {residents.map((r) => (
-                  <option key={r.id} value={r.id}>{r.last_name}, {r.first_name}</option>
+                  <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>
                 ))}
               </select>
               <select value={pType} onChange={(e) => setPType(e.target.value as PackageType)} aria-label="Package type" className={inputCls}>
@@ -409,7 +409,7 @@ export default function AdminFrontDeskPage() {
               <select value={cResident} onChange={(e) => setCResident(e.target.value)} aria-label="Resident" className={inputCls}>
                 <option value="">Resident…</option>
                 {residents.map((r) => (
-                  <option key={r.id} value={r.id}>{r.last_name}, {r.first_name}</option>
+                  <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>
                 ))}
               </select>
               <input type="text" value={cCaller} onChange={(e) => setCCaller(e.target.value)} placeholder="Caller name" aria-label="Caller name" className={inputCls} />

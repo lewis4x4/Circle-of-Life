@@ -13,6 +13,7 @@ const tables = vi.hoisted(() => ({
   staff: [] as Record<string, unknown>[],
   time_punch_corrections: [] as Record<string, unknown>[],
   timeclock_sync_rejections: [] as Record<string, unknown>[],
+  floor_unlocks: [] as Record<string, unknown>[],
 }));
 const download = vi.hoisted(() => ({ triggerCsvDownload: vi.fn() }));
 

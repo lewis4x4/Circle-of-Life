@@ -73,12 +73,20 @@ export function reportsLogDateLabel(logDate: string | null | undefined): string 
   return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }).format(noon);
 }
 
-/** One row's cells in column order; the screen table and the CSV both use this. */
-export function incidentReportsLogCells(row: IncidentReportsLogRow): string[] {
+/**
+ * One row's cells in column order; the screen table and the CSV both use this.
+ * The screen names the resident "First Last" like every Haven screen; the CSV
+ * keeps the paper log's "Last, First", which surveyors read and sort by surname (COL-686).
+ */
+export function incidentReportsLogCells(
+  row: IncidentReportsLogRow,
+  { surface = "screen" }: { surface?: "screen" | "csv" } = {},
+): string[] {
+  const resident = surface === "csv" ? row.resident : row.resident_display?.trim() || row.resident;
   return [
     reportsLogDateLabel(row.log_date),
     row.room?.trim() || INCIDENT_REPORTS_LOG_NO_ROOM_COPY,
-    row.resident?.trim() || INCIDENT_REPORTS_LOG_NO_RESIDENT_COPY,
+    resident?.trim() || INCIDENT_REPORTS_LOG_NO_RESIDENT_COPY,
     reportsLogMark(row.fall),
     reportsLogMark(row.bruise),
     reportsLogMark(row.scrapes_or_burn),
@@ -93,7 +101,7 @@ export function incidentReportsLogCells(row: IncidentReportsLogRow): string[] {
 
 export function buildIncidentReportsLogCsv(rows: readonly IncidentReportsLogRow[]): string {
   const header = INCIDENT_REPORTS_LOG_COLUMNS.map((column) => csvEscapeCell(column)).join(",");
-  const body = rows.map((row) => incidentReportsLogCells(row).map((cell) => csvEscapeCell(cell)).join(","));
+  const body = rows.map((row) => incidentReportsLogCells(row, { surface: "csv" }).map((cell) => csvEscapeCell(cell)).join(","));
   return [header, ...body].join("\r\n");
 }
 

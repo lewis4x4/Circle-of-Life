@@ -30,7 +30,7 @@ import {
   admissionOnboardingChecklist,
   type AdmissionOnboardingCounts,
 } from "@/lib/admissions/admission-onboarding-checklist";
-import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
@@ -145,7 +145,7 @@ function onboardingLinks(residentId: string | null) {
     { label: "Care plan workspace", href: `/admin/residents/${residentId}/care-plan` },
     { label: "Medication setup", href: `/admin/residents/${residentId}/medications` },
     { label: "Resident billing", href: `/admin/residents/${residentId}/billing` },
-    { label: "Family coordination", href: "/admin/family-messages" },
+    { label: "Family coordination", href: "/admin/family-portal?tab=notes" },
   ];
 }
 

@@ -64,6 +64,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     facilityOptions: [{ id: FACILITY, name: "Sample Lodge" }],
     census: null,
     releasedModules: [],
+    openInspections: [],
     pastDue: null,
     notesOnTap: [],
     shiftsToday: null,
@@ -165,6 +166,25 @@ describe("FacilityOperatorHomePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("home_claim_task", { p_instance_id: "gen", p_claim: true }));
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  });
+
+  it("raises a banner while an inspector is signed in at this facility (COL-692)", async () => {
+    const { unmount } = render(
+      <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.queryByTestId("inspector-on-site")).toBeNull();
+    unmount();
+    render(
+      <FacilityOperatorHomePageClient
+        initial={initial({ openInspections: [{ id: "v1", checkedInAt: "2026-09-22T14:12:00Z", agency: "AHCA" }] })}
+        initialFacilityId={FACILITY}
+        currentUserId="me"
+        fullName={null}
+      />,
+    );
+    const banner = await screen.findByTestId("inspector-on-site");
+    expect(banner).toHaveTextContent("An inspector from AHCA signed in at the front door at 10:12 AM.");
+    expect(within(banner).getByRole("link", { name: "Open the visitor log" })).toHaveAttribute("href", "/admin/front-desk");
   });
 
   it("keeps Record payment dark until it is released for this facility, then opens it (COL-594)", async () => {
@@ -352,5 +372,30 @@ describe("FacilityOperatorHomePageClient", () => {
         p_facility_id: FACILITY, p_census_month: "2026-09-01", p_outcome: "flagged", p_note: "Two move-outs not yet entered.",
       }),
     );
+  });
+
+  it("renders a read-only preview for owners: no claim, clear, quick action or note control, and writes refuse (COL-707)", () => {
+    const queueRow = row({ id: "oti:queue" });
+    render(
+      <FacilityOperatorHomePageClient
+        initial={initial({
+          feed: feed({ rows: [generator, queueRow] }),
+          releasedModules: ["record_payment", "quick_note", "call_out", "collections_log", "past_due"],
+        })}
+        initialFacilityId={FACILITY}
+        currentUserId="owner"
+        fullName={null}
+        readOnly
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Facility admin Home — preview");
+    expect(screen.getByTestId("home-preview-note")).toBeInTheDocument();
+    expect(screen.getByText("Generator weekly run — listen and confirm it ran")).toBeInTheDocument();
+    for (const name of ["Claim", "It ran", "Did not run"]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: /record payment|quick note|call-out|call out/i })).not.toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

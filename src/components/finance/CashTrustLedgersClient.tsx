@@ -439,7 +439,7 @@ export function CashTrustLedgersClient() {
                   <input type="text" value={pDesc} onChange={(e) => setPDesc(e.target.value)} placeholder="Description" aria-label="Description" className={cn(inputCls, "lg:col-span-2")} />
                   <select value={pResident} onChange={(e) => setPResident(e.target.value)} aria-label="Resident (optional)" className={inputCls}>
                     <option value="">Resident (optional)…</option>
-                    {residents.map((r) => <option key={r.id} value={r.id}>{r.last_name}, {r.first_name}</option>)}
+                    {residents.map((r) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}
                   </select>
                   <Button type="button" disabled={busy} onClick={() => void postPetty()} className="gap-2 lg:col-span-3">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
@@ -482,7 +482,7 @@ export function CashTrustLedgersClient() {
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Open trust account</p>
                 <select value={newTrustResident} onChange={(e) => setNewTrustResident(e.target.value)} aria-label="Resident" className={cn(inputCls, "w-full")}>
                   <option value="">Resident…</option>
-                  {residentsWithoutTrust.map((r) => <option key={r.id} value={r.id}>{r.last_name}, {r.first_name}</option>)}
+                  {residentsWithoutTrust.map((r) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}
                 </select>
                 <label className="flex items-center gap-2 text-sm text-foreground">
                   <input type="checkbox" checked={newRepPayee} onChange={(e) => setNewRepPayee(e.target.checked)} /> Facility is Rep Payee

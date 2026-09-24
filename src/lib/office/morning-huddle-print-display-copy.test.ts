@@ -56,8 +56,8 @@ describe("formatMorningHuddlePrintAssignedShift", () => {
   });
 
   it("humanizes a posted shift value", () => {
-    expect(formatMorningHuddlePrintAssignedShift("day_shift")).toBe("day shift");
-    expect(formatMorningHuddlePrintAssignedShift("  night_shift  ")).toBe("night shift");
+    expect(formatMorningHuddlePrintAssignedShift("day_shift")).toBe("Day shift");
+    expect(formatMorningHuddlePrintAssignedShift("  night_shift  ")).toBe("Night shift");
   });
 });
 

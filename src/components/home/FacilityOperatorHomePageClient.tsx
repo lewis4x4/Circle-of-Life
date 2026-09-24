@@ -38,6 +38,11 @@ export type FacilityOperatorHomePageClientProps = {
   initialFacilityId: string;
   currentUserId: string;
   fullName: string | null;
+  /**
+   * Owner / org admin preview (COL-707). Mounts no control that writes and makes the
+   * write handlers refuse, so a preview cannot claim, clear, record or post anything.
+   */
+  readOnly?: boolean;
 };
 
 const REFRESH_TICK_MS = 60_000;
@@ -70,6 +75,11 @@ const ContactLogDialog = dynamic(
   () => import("./ContactLogDialog").then((module) => module.ContactLogDialog),
   { ssr: false },
 );
+// Shown only while an inspector is signed in (COL-692); most days it never
+// mounts, so it stays out of the /admin first load (450 kB gzip hard cap).
+const InspectorOnSiteBanner = dynamic(
+  () => import("./InspectorOnSiteBanner").then((module) => module.InspectorOnSiteBanner),
+);
 // W4 (call-out) ships dark too.
 const CallOutDialog = dynamic(
   () => import("./CallOutDialog").then((module) => module.CallOutDialog),
@@ -88,7 +98,7 @@ function formatTime(iso: string, timeZone: string) {
  * writes go through the claim RPC and the operations completion route, and the
  * page then refreshes from the server so nothing is re-derived on the client.
  */
-export function FacilityOperatorHomePageClient({ initial, initialFacilityId, currentUserId, fullName }: FacilityOperatorHomePageClientProps) {
+export function FacilityOperatorHomePageClient({ initial, initialFacilityId, currentUserId, fullName, readOnly = false }: FacilityOperatorHomePageClientProps) {
   const router = useRouter();
   const [isRefreshing, startRefresh] = useTransition();
   const data = initial;
@@ -118,10 +128,10 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
 
   const fyi = useMemo(() => (data.snapshot ? buildFyiRows(data.snapshot.workflowQueues) : []), [data.snapshot]);
   const pastDueLive = data.releasedModules.includes("past_due");
-  const paymentLive = data.releasedModules.includes("record_payment");
+  const paymentLive = !readOnly && data.releasedModules.includes("record_payment");
   const rent = useMemo(() => (pastDueLive ? buildRentRows(data.pastDue) : []), [pastDueLive, data.pastDue]);
   const notesLive = data.releasedModules.includes("quick_note");
-  const contactLive = data.releasedModules.includes("collections_log");
+  const contactLive = !readOnly && data.releasedModules.includes("collections_log");
   const noteRows = useMemo(() => (notesLive ? buildNoteRows(data.notesOnTap, currentUserId) : []), [notesLive, data.notesOnTap, currentUserId]);
   const callOutLive = data.releasedModules.includes("call_out");
   const uncovered = useMemo(() => (callOutLive ? buildUncoveredShiftRows(data.shiftsToday) : []), [callOutLive, data.shiftsToday]);
@@ -141,6 +151,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
   const executiveFirst = feed.escalatesTo?.displayName?.split(/\s+/)[0] ?? null;
 
   const onClaim = useCallback(async (instanceId: string, claim: boolean) => {
+    if (readOnly) return;
     setBusyRow(instanceId);
     try {
       await claimHomeTask(supabase(), instanceId, claim);
@@ -151,9 +162,10 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
     } finally {
       setBusyRow(null);
     }
-  }, [refresh]);
+  }, [readOnly, refresh]);
 
   const onClear = useCallback(async (clearTarget: string, action: HomeRowAction, note: string) => {
+    if (readOnly) return;
     setBusyRow(clearTarget);
     try {
       if (clearTarget.startsWith(CENSUS_CLEAR_PREFIX)) {
@@ -188,13 +200,15 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
     } finally {
       setBusyRow(null);
     }
-  }, [facilityId, refresh]);
+  }, [facilityId, readOnly, refresh]);
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-6 sm:px-6 lg:px-8" data-testid="facility-operator-home">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-foreground">{greetingLine(fullName)}</h1>
+          <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-foreground">
+            {readOnly ? "Facility admin Home — preview" : greetingLine(fullName)}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{formatLocalDateLong(feed.localDate, feed.timezone)}</span>
             <span className="mx-1.5 text-border">·</span>
@@ -219,11 +233,19 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         ) : null}
       </header>
 
-      <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => {
+      {data.openInspections.length > 0 ? <InspectorOnSiteBanner inspections={data.openInspections} timeZone={feed.timezone} /> : null}
+
+      {readOnly ? (
+        <p role="note" className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground" data-testid="home-preview-note">
+          Read-only preview of what this building&apos;s administrator sees. Nothing here can be claimed, cleared, recorded or posted.
+        </p>
+      ) : (
+        <QuickActions facilityId={facilityId} released={data.releasedModules} onAction={(key) => {
           if (key === "record_payment") { setPaymentResident(null); setPaymentOpen(true); }
           if (key === "quick_note") setNoteOpen(true);
           if (key === "call_out") setCallOut({ cover: null });
         }} />
+      )}
       {paymentLive ? (
         <RecordPaymentDialog
           key={paymentResident ?? "any"}
@@ -249,7 +271,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           onLogContact={contactLive ? (id, name) => setContactFor({ id, name }) : undefined}
         />
       ) : null}
-      {callOutLive && callOut ? (
+      {callOutLive && !readOnly && callOut ? (
         <CallOutDialog
           key={callOut.cover ?? "new"}
           open
@@ -259,7 +281,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           onChanged={refresh}
         />
       ) : null}
-      {notesLive ? (
+      {notesLive && !readOnly ? (
         <QuickNoteDialog open={noteOpen} onOpenChange={setNoteOpen} facilityId={facilityId} localDate={feed.localDate} onSaved={refresh} />
       ) : null}
       {contactLive && contactFor ? (
@@ -316,6 +338,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
                   onClaim={onClaim}
                   onClear={onClear}
                   onCover={(id) => setCallOut({ cover: id })}
+                  readOnly={readOnly}
                 />
               ))}
             </ol>
@@ -364,6 +387,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
                     onClaim={onClaim}
                     onClear={onClear}
                     onCover={(id) => setCallOut({ cover: id })}
+                    readOnly={readOnly}
                   />
                 ))}
               </ol>
@@ -382,7 +406,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
             facilityName={feed.facilityName}
           />
           <FacilityRoundingCard facilityId={facilityId} facilityName={feed.facilityName} timeZone={feed.timezone} rounding={data.rounding} />
-          {notesLive ? <NotesPanel facilityId={facilityId} currentUserId={currentUserId} onTap={data.notesOnTap} onChanged={refresh} /> : null}
+          {notesLive && !readOnly ? <NotesPanel facilityId={facilityId} currentUserId={currentUserId} onTap={data.notesOnTap} onChanged={refresh} /> : null}
         </div>
       </div>
     </div>

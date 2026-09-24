@@ -1,23 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAccessibleRoundingFacilityIds, getRoundingRequestContext, revalidateRoundingRequestContext, type RoundingRequestContext } from "@/lib/rounding/auth";
 import { logError } from "@/lib/observability/logger";
-import type { CompletionPayload, ObservationExceptionType, ObservationQuickStatus } from "@/lib/rounding/types";
-
-function inferExceptionType(payload: CompletionPayload): ObservationExceptionType | null {
-  if (payload.exceptionType) {
-    return payload.exceptionType;
-  }
-  if (payload.quickStatus === "not_found") {
-    return "resident_not_found";
-  }
-  if (payload.quickStatus === "refused") {
-    return "resident_declined_interaction";
-  }
-  if (payload.fallHazardObserved) {
-    return "environmental_hazard_present";
-  }
-  return null;
-}
+import { buildRoundingReviewPayload, completionChoiceError, completionFieldError } from "@/lib/rounding/review-payload";
+import type { CompletionPayload } from "@/lib/rounding/types";
 
 function retryOwnerMatches(owner: NonNullable<CompletionPayload["retryOwner"]>, context: RoundingRequestContext) {
   return owner.userId === context.userId && owner.sessionId === context.sessionId
@@ -62,46 +47,20 @@ export async function POST(
   if (typeof body.observedAt !== "string" || Number.isNaN(new Date(body.observedAt).getTime())) {
     return NextResponse.json({ error: "A valid observedAt timestamp is required" }, { status: 400 });
   }
-  for (const field of ["residentLocation", "residentPosition", "residentState", "note", "lateReason"] as const) {
-    if (body[field] != null && typeof body[field] !== "string") {
-      return NextResponse.json({ error: `${field} must be text` }, { status: 400 });
-    }
-  }
-  for (const field of ["distressPresent", "breathingConcern", "painConcern", "toiletingAssisted", "hydrationOffered", "repositioned", "skinConcernObserved", "fallHazardObserved", "refusedAssistance"] as const) {
-    if (body[field] !== undefined && typeof body[field] !== "boolean") {
-      return NextResponse.json({ error: `${field} must be a boolean` }, { status: 400 });
-    }
+  const fieldError = completionFieldError(body);
+  if (fieldError) {
+    return NextResponse.json({ error: fieldError }, { status: 400 });
   }
 
-  const VALID_QUICK_STATUSES = new Set<ObservationQuickStatus>([
-    "awake", "asleep", "calm", "agitated", "confused", "distressed", "not_found", "refused",
-  ]);
   if (request.headers.get("x-haven-sync") === "service-worker" && !body.offline) {
     return NextResponse.json({ error: "Offline observation has no original operator. Reconciliation required." }, { status: 409 });
   }
   if (body.offline && (body.offline.ownerUserId !== context.userId || body.offline.organizationId !== context.organizationId)) {
     return NextResponse.json({ error: "Sign in as the original operator to send this observation." }, { status: 403 });
   }
-  if (!body.quickStatus || !VALID_QUICK_STATUSES.has(body.quickStatus)) {
-    return NextResponse.json({ error: "A valid quickStatus is required" }, { status: 400 });
-  }
-
-  const VALID_EXCEPTION_TYPES = new Set<ObservationExceptionType>([
-    "resident_not_found", "resident_declined_interaction", "resident_appears_ill",
-    "resident_appears_injured", "environmental_hazard_present", "family_concern_reported",
-    "assignment_impossible", "other",
-  ]);
-  if (body.exceptionType && !VALID_EXCEPTION_TYPES.has(body.exceptionType)) {
-    return NextResponse.json({ error: "Invalid exceptionType" }, { status: 400 });
-  }
-
-  const VALID_SEVERITIES = new Set(["low", "medium", "high", "critical"]);
-  if (body.exceptionSeverity && !VALID_SEVERITIES.has(body.exceptionSeverity)) {
-    return NextResponse.json({ error: "Invalid exceptionSeverity" }, { status: 400 });
-  }
-
-  if (body.interventionCodes !== undefined && (!Array.isArray(body.interventionCodes) || body.interventionCodes.some((code) => typeof code !== "string"))) {
-    return NextResponse.json({ error: "interventionCodes must be an array" }, { status: 400 });
+  const choiceError = completionChoiceError(body);
+  if (choiceError) {
+    return NextResponse.json({ error: choiceError }, { status: 400 });
   }
 
   // Chip capture. Presence of this key is what routes the write through the
@@ -143,7 +102,6 @@ export async function POST(
   // The locked command checks receipts before terminal/time-dependent rules.
   // An acknowledged-lost live submission must still replay hours later.
   const observedAt = new Date(body.observedAt);
-  const exceptionType = inferExceptionType(body);
 
   const freshAuth = await revalidateRoundingRequestContext(context, { facilityId: task.facility_id });
   if ("response" in freshAuth) return freshAuth.response;
@@ -189,30 +147,7 @@ export async function POST(
       p_organization_id: context.organizationId,
       p_facility_id: task.facility_id,
       p_actual_staff_id: freshStaffId,
-      p_payload: {
-        request_id: requestId,
-        observed_at: observedAt.toISOString(),
-        offline: !!body.offline,
-        quick_status: body.quickStatus,
-        resident_location: body.residentLocation ?? null,
-        resident_position: body.residentPosition ?? null,
-        resident_state: body.residentState ?? null,
-        distress_present: body.distressPresent ?? false,
-        breathing_concern: body.breathingConcern ?? false,
-        pain_concern: body.painConcern ?? false,
-        toileting_assisted: body.toiletingAssisted ?? false,
-        hydration_offered: body.hydrationOffered ?? false,
-        repositioned: body.repositioned ?? false,
-        skin_concern_observed: body.skinConcernObserved ?? false,
-        fall_hazard_observed: body.fallHazardObserved ?? false,
-        refused_assistance: body.refusedAssistance ?? false,
-        intervention_codes: body.interventionCodes ?? [],
-        exception_present: !!exceptionType,
-        exception_type: exceptionType,
-        exception_severity: body.exceptionSeverity ?? "medium",
-        note: body.note ?? null,
-        late_reason: body.lateReason ?? null,
-      },
+      p_payload: buildRoundingReviewPayload(body, { requestId, observedAt, offline: !!body.offline }),
     } as never,
   );
   const completion = completionData as {

@@ -6,6 +6,7 @@
 export const MORNING_HUDDLE_NO_RESIDENT_POSTED_COPY = "No resident posted";
 export const MORNING_HUDDLE_NO_STAFF_POSTED_COPY = "No staff posted";
 export const MORNING_HUDDLE_NO_NAME_POSTED_COPY = "No name posted";
+export const MORNING_HUDDLE_NO_FACILITY_NAME_COPY = "No facility name posted";
 
 const EM_DASH = "—";
 const LEGACY_UNKNOWN = "Unknown";
@@ -46,4 +47,13 @@ export function formatMorningHuddleStaffName(
   const name = personNameFromFields(staff);
   if (!name) return MORNING_HUDDLE_NO_NAME_POSTED_COPY;
   return name;
+}
+
+/** Print / title facility label — never fabricates a name or says "Selected facility". */
+export function formatMorningHuddleFacilityName(
+  name: string | null | undefined,
+): string {
+  const trimmed = name?.trim();
+  if (trimmed) return trimmed;
+  return MORNING_HUDDLE_NO_FACILITY_NAME_COPY;
 }

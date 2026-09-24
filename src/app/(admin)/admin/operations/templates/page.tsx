@@ -53,6 +53,7 @@ import {
   type OperationTemplateRecord,
   type OperationTemplateScope,
 } from "@/lib/operations/templates";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type FacilityOption = { id: string; name: string };
 type LinkOption = { id: string; name: string };
@@ -475,7 +476,7 @@ export default function OperationsTemplatesPage() {
                   <option value="">Unassigned</option>
                   {OCE_TEMPLATE_ASSIGNEE_ROLES.map((role) => (
                     <option key={role} value={role}>
-                      {role.replaceAll("_", " ")}
+                      {enumLabel(role, { case: "lower" })}
                     </option>
                   ))}
                 </select>
@@ -489,7 +490,7 @@ export default function OperationsTemplatesPage() {
                   <option value="">None</option>
                   {OCE_TEMPLATE_ASSIGNEE_ROLES.map((role) => (
                     <option key={role} value={role}>
-                      {role.replaceAll("_", " ")}
+                      {enumLabel(role, { case: "lower" })}
                     </option>
                   ))}
                 </select>
@@ -723,8 +724,8 @@ export default function OperationsTemplatesPage() {
                   <p className="text-sm text-muted-foreground">{template.description}</p>
 
                   <div className="grid gap-2 text-sm md:grid-cols-2 xl:grid-cols-3">
-                    <MetaItem label="Assignee" value={template.assignee_role?.replaceAll("_", " ") || "Unassigned"} />
-                    <MetaItem label="Fallback" value={template.required_role_fallback?.replaceAll("_", " ") || "None"} />
+                    <MetaItem label="Assignee" value={(template.assignee_role ? enumLabel(template.assignee_role) : "Unassigned")} />
+                    <MetaItem label="Fallback" value={(template.required_role_fallback ? enumLabel(template.required_role_fallback) : "None")} />
                     <MetaItem label="Priority" value={template.priority} />
                     <MetaItem label="Shift scope" value={template.shift_scope || "Not set"} />
                     <MetaItem

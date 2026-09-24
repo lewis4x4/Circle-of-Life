@@ -19,6 +19,9 @@ describe("caregiver schedule Eastern window", () => {
     const source = fs.readFileSync(__filename.replace(/\.test\.tsx$/, ".tsx"), "utf8");
 
     expect(source).toContain('.gte("shift_date", start)');
+    expect(source).toContain('.eq("schedules.status", "published")');
+    expect(source).toContain('.is("schedules.deleted_at", null)');
+    expect(source).toContain("formatScheduleTimes(r.custom_start_time, r.custom_end_time)");
     expect(source).toContain('.lte("shift_date", end)');
     expect(source).toContain("Loading your schedule…");
     expect(source).toContain("No shift assignments from");

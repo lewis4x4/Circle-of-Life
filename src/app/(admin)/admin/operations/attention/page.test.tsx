@@ -124,7 +124,7 @@ describe("Needs attention", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Status: open · Severity: high"),
+      screen.getByText("Status: Open · Severity: High"),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("Exact receipt chain: exact-occurrence"),
@@ -323,5 +323,29 @@ describe("Needs attention", () => {
       ).getAllByText(/Unavailable/),
     ).toHaveLength(2);
     expect((await axe.run(container)).violations).toEqual([]);
+  });
+
+  it("labels an orphan facility id as No facility posted, never Selected facility", async () => {
+    const orphanId = "11111111-1111-4111-8111-111111111111";
+    env.query = `facility_id=${orphanId}`;
+    vi.mocked(fetch).mockResolvedValue(
+      ok(
+        reply({
+          facility_id: orphanId,
+          facilities: [{ id: "site", name: "Homewood" }],
+          items: [],
+          total: 0,
+        }),
+      ) as Response,
+    );
+    render(<NeedsAttentionPage />);
+    const select = await screen.findByLabelText("Facility");
+    const orphanOption = within(select).getByRole("option", {
+      name: "No facility posted",
+    });
+    expect(orphanOption).toHaveValue(orphanId);
+    expect(
+      within(select).queryByRole("option", { name: "Selected facility" }),
+    ).not.toBeInTheDocument();
   });
 });

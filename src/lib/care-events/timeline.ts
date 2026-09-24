@@ -14,7 +14,7 @@ import { careEventTileWord } from "./tiles";
 
 export type ResidentTimelineRow = Database["public"]["Views"]["v_resident_timeline"]["Row"];
 
-export type TimelineWorkspace = "admin" | "caregiver";
+export type TimelineWorkspace = "admin" | "caregiver" | "floor";
 
 export type TimelineDayGroup = {
   /** Facility-local calendar day, `yyyy-mm-dd`, or `"unknown"` for entries with no time posted. */
@@ -141,7 +141,10 @@ export function timelineRowLabel(row: ResidentTimelineRow, timeZone: string): Ti
   };
 }
 
-/** Where a row can go. Admin opens the incident and the card; caregiver opens the receipt. */
+/**
+ * Where a row can go. Admin opens the incident and the card; caregiver opens
+ * the receipt; the floor tablet opens the receipt inside its own shell.
+ */
 export function timelineLinkFor(workspace: TimelineWorkspace, row: ResidentTimelineRow): TimelineLink[] {
   const links: TimelineLink[] = [];
   if (workspace === "admin") {
@@ -149,7 +152,8 @@ export function timelineLinkFor(workspace: TimelineWorkspace, row: ResidentTimel
     if (row.care_event_id) links.push({ label: "Open card", href: `/admin/care-events/${row.care_event_id}` });
     return links;
   }
-  if (row.care_event_id) links.push({ label: "Open receipt", href: `/caregiver/report/${row.care_event_id}` });
+  const receiptBase = workspace === "floor" ? "/floor/report" : "/caregiver/report";
+  if (row.care_event_id) links.push({ label: "Open receipt", href: `${receiptBase}/${row.care_event_id}` });
   return links;
 }
 

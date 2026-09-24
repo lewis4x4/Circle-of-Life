@@ -13,7 +13,7 @@
     "smoke:sentry": "node scripts/agent-gates/sentry-smoke.mjs",
     "smoke:ui-v2-issues": "node scripts/agent-gates/ui-v2-issue-acceptance.mjs",
     "test": "vitest run && node scripts/care-events/verify-level-parity.mjs",
-    "test:edge": "deno test --quiet --config supabase/functions/deno.json supabase/functions/observation-escalation-engine/ supabase/functions/watchlist-signal-engine/ supabase/functions/cadence-version-activator/",
+    "test:edge": "deno test --quiet --config supabase/functions/deno.json supabase/functions/observation-escalation-engine/ supabase/functions/watchlist-signal-engine/ supabase/functions/cadence-version-activator/ supabase/functions/observation-task-generator/",
     "smart-rounding:literals": "node scripts/smart-rounding/config-literals.mjs",
     "smart-rounding:phi-scan": "node scripts/smart-rounding/phi-scan.mjs",
     "smart-rounding:rls-check": "node scripts/smart-rounding/rls-check.mjs",

@@ -9,7 +9,8 @@
     "**/*.mts",
     "tests/homewood-launch/**/*.ts",
     "tests/care-events/**/*.ts",
-    "tests/smart-rounding/**/*.ts"
+    "tests/smart-rounding/**/*.ts",
+    "tests/floor-kiosk/**/*.ts"
   ],
   "exclude": [
     "node_modules",

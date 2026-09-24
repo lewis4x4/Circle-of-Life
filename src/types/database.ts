@@ -1364,6 +1364,7 @@ export type Database = {
       }
       timeclock_devices: {
         Row: {
+          device_kind: string
           enrolled_at: string
           enrolled_by: string
           facility_id: string
@@ -1375,10 +1376,15 @@ export type Database = {
           organization_id: string
           revoked_at: string | null
           revoked_by: string | null
+          roster_roles: string[] | null
           throttled_until: string | null
           token_hash: string
+          visitor_failure_count: number
+          visitor_failure_window_started_at: string | null
+          visitor_throttled_until: string | null
         }
         Insert: {
+          device_kind?: string
           enrolled_at?: string
           enrolled_by: string
           facility_id: string
@@ -1390,10 +1396,15 @@ export type Database = {
           organization_id: string
           revoked_at?: string | null
           revoked_by?: string | null
+          roster_roles?: string[] | null
           throttled_until?: string | null
           token_hash: string
+          visitor_failure_count?: number
+          visitor_failure_window_started_at?: string | null
+          visitor_throttled_until?: string | null
         }
         Update: {
+          device_kind?: string
           enrolled_at?: string
           enrolled_by?: string
           facility_id?: string
@@ -1405,8 +1416,12 @@ export type Database = {
           organization_id?: string
           revoked_at?: string | null
           revoked_by?: string | null
+          roster_roles?: string[] | null
           throttled_until?: string | null
           token_hash?: string
+          visitor_failure_count?: number
+          visitor_failure_window_started_at?: string | null
+          visitor_throttled_until?: string | null
         }
         Relationships: []
       }
@@ -1415,6 +1430,7 @@ export type Database = {
           code_hash: string
           created_at: string
           created_by: string
+          device_kind: string
           expires_at: string
           facility_id: string
           id: string
@@ -1426,6 +1442,7 @@ export type Database = {
           code_hash: string
           created_at?: string
           created_by: string
+          device_kind?: string
           expires_at: string
           facility_id: string
           id?: string
@@ -1437,6 +1454,7 @@ export type Database = {
           code_hash?: string
           created_at?: string
           created_by?: string
+          device_kind?: string
           expires_at?: string
           facility_id?: string
           id?: string
@@ -1449,24 +1467,39 @@ export type Database = {
       timeclock_facility_settings: {
         Row: {
           facility_id: string
+          floor_idle_lock_minutes: number
+          floor_roster_roles: string[]
           id: string
+          kiosk_visitor_sign_ins_per_10_minutes: number
           organization_id: string
+          rounding_clock_in_lead_minutes: number
+          rounding_owner_roles: string[]
           timeclock_enabled: boolean
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           facility_id: string
+          floor_idle_lock_minutes?: number
+          floor_roster_roles?: string[]
           id?: string
+          kiosk_visitor_sign_ins_per_10_minutes?: number
           organization_id: string
+          rounding_clock_in_lead_minutes?: number
+          rounding_owner_roles?: string[]
           timeclock_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           facility_id?: string
+          floor_idle_lock_minutes?: number
+          floor_roster_roles?: string[]
           id?: string
+          kiosk_visitor_sign_ins_per_10_minutes?: number
           organization_id?: string
+          rounding_clock_in_lead_minutes?: number
+          rounding_owner_roles?: string[]
           timeclock_enabled?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -1536,6 +1569,48 @@ export type Database = {
           punch_type?: string
           reason?: string
           staff_id?: string | null
+        }
+        Relationships: []
+      }
+      floor_unlocks: {
+        Row: {
+          device_id: string
+          end_reason: string | null
+          ended_at: string | null
+          facility_id: string
+          id: string
+          method: string
+          on_clock: boolean
+          organization_id: string
+          staff_id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          device_id: string
+          end_reason?: string | null
+          ended_at?: string | null
+          facility_id: string
+          id?: string
+          method: string
+          on_clock: boolean
+          organization_id: string
+          staff_id: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          device_id?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          facility_id?: string
+          id?: string
+          method?: string
+          on_clock?: boolean
+          organization_id?: string
+          staff_id?: string
+          started_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -20912,6 +20987,7 @@ export type Database = {
           organization_id: string | null
           other: boolean | null
           resident: string | null
+          resident_display: string | null
           room: string | null
           scrapes_or_burn: boolean | null
           severity: Database["public"]["Enums"]["incident_severity"] | null
@@ -21462,6 +21538,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      assign_unowned_observation_tasks: {
+        Args: { p_at?: string; p_facility_id: string }
+        Returns: number
+      }
+      resolve_observation_staffing_gap: {
+        Args: {
+          p_facility_id: string
+          p_service_date: string
+          p_shift_key: string
+        }
+        Returns: boolean
+      }
       submit_observation: {
         Args: {
           p_actor_id?: string
@@ -21571,10 +21659,9 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: Database["public"]["Tables"]["staff_check_sessions"]["Row"]
       }
-      timeclock_enroll_device: {
-        Args: { p_code: string; p_label: string }
-        Returns: Json
-      }
+      timeclock_enroll_device:
+        | { Args: { p_code: string; p_label: string }; Returns: Json }
+        | { Args: { p_code: string; p_device_kind: string; p_label: string }; Returns: Json }
       timeclock_identify: {
         Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string }
         Returns: Json
@@ -21584,7 +21671,11 @@ export type Database = {
         Returns: Json
       }
       timeclock_create_enrollment_code: {
-        Args: { p_facility_id: string }
+        Args: { p_facility_id: string; p_device_kind?: string }
+        Returns: Json
+      }
+      timeclock_set_device_roster_roles: {
+        Args: { p_device_id: string; p_roster_roles: string[] | null }
         Returns: Json
       }
       timeclock_revoke_device: {
@@ -21609,6 +21700,57 @@ export type Database = {
       }
       timeclock_employee_numbers: {
         Args: { p_staff_ids: string[] }
+        Returns: Json
+      }
+      floor_staff_display_names: {
+        Args: { p_staff_ids: string[] }
+        Returns: {
+          display_name: string
+          staff_id: string
+        }[]
+      }
+      floor_roster: {
+        Args: { p_device_token: string }
+        Returns: Json
+      }
+      floor_verify_unlock: {
+        Args: { p_device_token: string; p_staff_id: string | null; p_employee_number: string | null; p_pin: string }
+        Returns: Json
+      }
+      floor_heartbeat: {
+        Args: { p_device_token: string; p_unlock_id: string }
+        Returns: Json
+      }
+      floor_end_unlock: {
+        Args: { p_device_token: string; p_unlock_id: string; p_reason: string }
+        Returns: Json
+      }
+      floor_unlock_for_replay: {
+        Args: { p_device_token: string; p_unlock_id: string; p_owner_user_id: string; p_captured_at: string }
+        Returns: Json
+      }
+      floor_replay_complete_rounding_task: {
+        Args: { p_device_token: string; p_unlock_id: string; p_owner_user_id: string; p_captured_at: string; p_task_id: string; p_payload: Json }
+        Returns: Json
+      }
+      floor_replay_submit_care_event: {
+        Args: { p_device_token: string; p_unlock_id: string; p_owner_user_id: string; p_captured_at: string; p_payload: Json }
+        Returns: Json
+      }
+      visitor_kiosk_sign_in: {
+        Args: { p_device_token: string; p_client_entry_id: string; p_visitor_type: string; p_visitor_name: string; p_visitor_phone: string | null; p_visitor_company: string | null; p_visiting_name_text: string | null; p_purpose: string | null; p_symptoms_reported: boolean }
+        Returns: Json
+      }
+      visitor_kiosk_open_matches: {
+        Args: { p_device_token: string; p_prefix: string }
+        Returns: Json
+      }
+      visitor_kiosk_sign_out: {
+        Args: { p_device_token: string; p_entry_id: string }
+        Returns: Json
+      }
+      visitor_match_resident: {
+        Args: { p_entry_id: string; p_resident_id: string }
         Returns: Json
       }
       acknowledge_care_event: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { currentFloorUnlockId } from "@/lib/floor/session-context";
 import type { CompletionPayload } from "@/lib/rounding/types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,6 +20,12 @@ export type RoundingOfflineQueueItem = {
   queuedAt: string;
   retryCount: number;
   lastError: string | null;
+  /**
+   * The floor tablet unlock this was captured under (COL-690), or null off a
+   * floor tablet. Lets the device replay write it as its owner after someone
+   * else unlocks the tablet (src/lib/floor/replay.ts).
+   */
+  unlockId?: string | null;
 };
 
 export type RoundingSyncState = {
@@ -129,7 +136,7 @@ function isLikelyNetworkError(error: unknown) {
 }
 
 export async function queueRoundingCompletion(taskId: string, residentId: string, payload: CompletionPayload,
-  owner: { ownerUserId: string; organizationId: string; facilityId: string }) {
+  owner: { ownerUserId: string; organizationId: string; facilityId: string; unlockId?: string | null }) {
   if (!supportsRoundingOfflineSync()) {
     throw new Error("Offline sync is not supported in this browser.");
   }
@@ -140,6 +147,7 @@ export async function queueRoundingCompletion(taskId: string, residentId: string
     taskId,
     residentId,
     ...owner,
+    unlockId: owner.unlockId ?? currentFloorUnlockId(),
     payload: { ...payload, requestId: payload.requestId ?? queueId, observedAt: payload.observedAt ?? new Date().toISOString() },
     queuedAt: new Date().toISOString(),
     retryCount: 0,

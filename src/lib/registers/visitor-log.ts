@@ -1,10 +1,12 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * The front desk visitor log.
  *
- * Staff operated: somebody at the desk signs a visitor in and out. There is no
- * self service kiosk here, and no free text field — a notes box on a log that
- * every aide can read is how a resident's health details end up on a visitor
- * record. Nothing is ever corrected in place: a wrong entry is voided with a
+ * Staff sign visitors in and out at the desk, and visitors sign themselves in
+ * at the front-door kiosk (COL-692), where they type who they are seeing and
+ * the desk matches it to the resident afterwards. There is no notes box — a
+ * notes box on a log that every aide can read is how a resident's health
+ * details end up on a visitor record. Nothing is ever corrected in place: a wrong entry is voided with a
  * coded reason and stays visible.
  */
 
@@ -34,7 +36,7 @@ const LEGACY_VISITOR_TYPE_LABELS: Record<string, string> = {
 export function visitorTypeLabel(id: string): string {
   const current = VISITOR_TYPES.find((type) => type.id === id);
   if (current) return current.label;
-  return LEGACY_VISITOR_TYPE_LABELS[id] ?? id.replace(/_/g, " ");
+  return LEGACY_VISITOR_TYPE_LABELS[id] ?? enumLabel(id);
 }
 
 export const VISITING_TYPES = [
@@ -55,7 +57,7 @@ export type VoidReasonId = (typeof VOID_REASONS)[number]["id"];
 
 export function voidReasonLabel(id: string | null): string {
   if (!id) return "";
-  return VOID_REASONS.find((reason) => reason.id === id)?.label ?? id.replace(/_/g, " ");
+  return VOID_REASONS.find((reason) => reason.id === id)?.label ?? enumLabel(id);
 }
 
 /** The statuses that mean a resident can be visited: they hold a bed here. */
@@ -77,6 +79,10 @@ export type VisitorLogRow = {
   voidedAt: string | null;
   voidReason: string | null;
   leftOpen: boolean;
+  /** Kiosk entries (COL-692): company or agency, and the resident name as typed at the door. */
+  visitorCompany?: string | null;
+  visitingNameText?: string | null;
+  fromKiosk?: boolean;
 };
 
 export type VisitorSignInDraft = {
@@ -130,6 +136,28 @@ export function openVisitorCount(rows: VisitorLogRow[]): number {
 export function signOutEveryoneConfirmation(count: number): string {
   if (count === 1) return "Sign out the 1 visitor still in the building?";
   return `Sign out all ${count} visitors still in the building?`;
+}
+
+/** "Carol Parker" or, for a provider, vendor or inspector, "Dana Reyes · Sunshine Hospice". */
+export function visitorDisplayName(row: VisitorLogRow): string {
+  return row.visitorCompany ? `${row.visitorName} · ${row.visitorCompany}` : row.visitorName;
+}
+
+/** Who the visit was for: the matched resident, else what the visitor typed at the kiosk. */
+export function visitingDisplay(row: VisitorLogRow): string {
+  if (row.visitingResidentName) return row.visitingResidentName;
+  if (row.visitingNameText) return `${row.visitingNameText} (typed at the kiosk)`;
+  return row.visitingType ?? "";
+}
+
+/** Who signed the entry in: the staff member, or the kiosk for a self sign-in. */
+export function signedInByDisplay(row: VisitorLogRow): string {
+  return row.signedInByName ?? (row.fromKiosk ? "Front-door kiosk" : "");
+}
+
+/** A kiosk entry whose typed resident the desk has not matched yet (visitor_match_resident). */
+export function needsResidentMatch(row: VisitorLogRow): boolean {
+  return Boolean(row.fromKiosk && row.visitingNameText && !row.visitingResidentId && !row.voidedAt);
 }
 
 export const VISITOR_LOG_EMPTY_COPY = "Nobody is signed in right now.";

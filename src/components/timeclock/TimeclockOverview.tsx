@@ -120,7 +120,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
     const at = now();
     return data.staff
       .map((s) => {
-        const sheet = computeTimesheet({ staffId: s.id, punches: data.punches, corrections: data.corrections, rejections: data.rejections, periodStart: period.start, periodEnd: period.end, now: at });
+        const sheet = computeTimesheet({ staffId: s.id, punches: data.punches, corrections: data.corrections, rejections: data.rejections, floorUnlocks: data.floorUnlocks, periodStart: period.start, periodEnd: period.end, now: at });
         const hasActivity = sheet.effective.length > 0 || sheet.exceptions.length > 0;
         if (!hasActivity && s.employmentStatus !== "active") return null;
         return {

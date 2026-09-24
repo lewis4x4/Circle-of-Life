@@ -24,8 +24,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { STAND_UP_WORKBOOK_URL, STAND_UP_WORKBOOK_LINK_TEXT } from "@/lib/stand-up/model";
 import { Card, CardContent } from "@/components/ui/card";
-import { BackLink } from "@/design-system/components/BackLink";
-import { PUBLIC_SITE_HOME_HREF } from "@/lib/routing/public-site";
 
 const SIGN_IN_UNAVAILABLE_MESSAGE =
   "Sign-in is temporarily unavailable. Contact your facility administrator or support.";
@@ -67,7 +65,7 @@ export default function LoginPage() {
   const resolveRouteFromRole = useCallback(async (candidateUser?: Pick<User, "app_metadata" | "user_metadata"> | null) => {
     const mapRoleToRoute = (role: ReturnType<typeof getAppRoleFromClaims>) => {
       if (isOnboardingAppRole(role)) return "/onboarding";
-      if (isMedTechRole(role)) return "/med-tech";
+      if (isMedTechRole(role)) return getDashboardRouteForRole(role);
       if (isDietaryRole(role)) return "/dietary";
       if (role === "housekeeper") return getDashboardRouteForRole(role);
       if (role === "family") return "/family";
@@ -256,8 +254,9 @@ export default function LoginPage() {
           </div>
           <span className="font-serif text-2xl tracking-tight text-white drop-shadow-md">Haven</span>
         </div>
-        {/* Staff reach sign-in from the public site; give them the way back (COL-662). */}
-        <BackLink label="Circle of Life website" href={PUBLIC_SITE_HOME_HREF} className="text-chrome-foreground-muted hover:text-white" />
+        <p className="hidden text-xs uppercase tracking-[0.22em] text-chrome-foreground-muted sm:block">
+          Operations Platform
+        </p>
       </header>
 
       {/* Centered hero + form */}

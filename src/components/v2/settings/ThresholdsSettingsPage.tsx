@@ -2,11 +2,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { SettingsShell } from "@/components/v2/settings/SettingsShell";
+import { OperatingRulesEditor } from "@/components/v2/settings/OperatingRulesEditor";
 import { ThresholdsEditor } from "@/components/v2/settings/ThresholdsEditor";
+import { loadOperatingRulesSettings } from "@/lib/operating-rules/load-operating-rules-settings.server";
 import { loadV2Thresholds } from "@/lib/v2-thresholds";
 
 export async function ThresholdsSettingsPage() {
-  const load = await loadV2Thresholds();
+  const [load, operatingRules] = await Promise.all([loadV2Thresholds(), loadOperatingRulesSettings()]);
 
   return (
     <div className="space-y-3">
@@ -28,6 +30,13 @@ export async function ThresholdsSettingsPage() {
             description:
               "Only an owner or org admin can edit these; changes show the next time a dashboard loads.",
             body: <ThresholdsEditor load={load} />,
+          },
+          {
+            id: "operating-rules",
+            label: "Organization rules",
+            description:
+              "Dated rules for the whole organization: risk score bands, the survey binder look-ahead, and the compliance pass-rate alert. A change takes effect on the date you choose and keeps its history.",
+            body: <OperatingRulesEditor load={operatingRules} />,
           },
         ]}
       />

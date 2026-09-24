@@ -161,8 +161,19 @@ const eslintConfig = defineConfig([
   {
     // COL-656: one back-link style. Pre-existing ad-hoc back links are
     // baselined in `eslint-suppressions.json`; convert them to BackLink and prune.
+    // The rule covers the admin and caregiver apps. The shared-device floor
+    // tablet and front-door kiosk apps follow docs/designs/floor-tablet-kiosk/DESIGN.md
+    // (52px Back, 44px+ touch targets), which BackLink's small text link cannot meet.
     files: ["src/**/*.{tsx,jsx}"],
-    ignores: ["src/**/*.test.tsx", "src/**/*.spec.tsx", "src/design-system/components/BackLink/**"],
+    ignores: [
+      "src/**/*.test.tsx",
+      "src/**/*.spec.tsx",
+      "src/design-system/components/BackLink/**",
+      "src/app/(floor)/**",
+      "src/components/floor/**",
+      "src/app/kiosk/**",
+      "src/components/kiosk/**",
+    ],
     plugins: {
       "haven-back-link": havenBackLinkPlugin,
     },

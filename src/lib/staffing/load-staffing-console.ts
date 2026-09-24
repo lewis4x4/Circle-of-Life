@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
+import { fetchFacilityShiftDefinitions } from "@/lib/caregiver/shift";
+import { assignmentSpan } from "@/lib/workforce/model";
 
 import {
   facilityDateIsoDaysFromToday,
@@ -13,11 +15,15 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatStaffingConsoleExpiredCertStaffName } from "@/lib/staffing/staffing-console-display-copy";
+import { loadCertificationRules } from "@/lib/staff/certification-policy";
+import { summarizeCertificationScope } from "@/lib/staff/certification-scope";
 import {
+  fetchCertificationScope,
   fetchStaffingCoverageScope,
   type StaffingCoverageScope,
 } from "@/lib/staffing/staffing-coverage-scope";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 import { fetchStaffingRatioCheckOn } from "@/lib/staffing/ratio-check";
 
 export type SnapshotRow = {
@@ -115,6 +121,10 @@ type SupabaseStaffWarningMini = {
 
 type SupabaseShiftGapRow = {
   id: string;
+  facility_id: string;
+  schedule_id: string;
+  custom_start_time: string | null;
+  custom_end_time: string | null;
   staff_id: string;
   shift_date: string;
   shift_type: Database["public"]["Enums"]["shift_type"];
@@ -157,23 +167,30 @@ export async function fetchSnapshotsFromSupabase(
   }));
 }
 
+/**
+ * Expired certifications that block someone: required for their job role and
+ * not replaced by an in-date one (COL-709). With no requirements recorded,
+ * nobody is flagged; the credential panel says the requirements are not set up.
+ */
 export async function fetchExpiredCertificationWarnings(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<CertWarning[]> {
-  const todayIso = todayFacilityDateIso();
+  const facilityId = isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : null;
+  const [scope, rules] = await Promise.all([
+    fetchCertificationScope(facilityId, supabase),
+    loadCertificationRules(supabase as unknown as SupabaseClient),
+  ]);
+  const blocking = summarizeCertificationScope({ ...scope, rules }).expiredRequiredCertIds;
+  if (blocking.length === 0) return [];
 
-  let certsQuery = supabase
+  const certsQuery = supabase
     .from("staff_certifications" as never)
     .select("id, staff_id, certification_name, expiration_date, status")
+    .in("id", blocking)
     .is("deleted_at", null)
-    .or(`status.in.(expired,revoked),expiration_date.lt.${todayIso}`)
     .order("expiration_date", { ascending: true })
     .limit(10);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    certsQuery = certsQuery.eq("facility_id", selectedFacilityId);
-  }
 
   const certsRes = (await certsQuery) as unknown as QueryResult<SupabaseExpiredCertRow>;
   const certs = certsRes.data ?? [];
@@ -211,7 +228,7 @@ function mapDbStaffRoleToLabel(role: string): string {
   if (normalized === "cna") return "CNA";
   if (normalized === "rn") return "RN";
   if (normalized === "lpn") return "LPN";
-  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return enumLabel(normalized, { case: "title" });
 }
 
 /**
@@ -242,7 +259,7 @@ export async function fetchShiftAssignmentGaps(
 
   let shiftsQuery = supabase
     .from("shift_assignments" as never)
-    .select("id, staff_id, shift_date, shift_type, status")
+    .select("id, staff_id, facility_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time")
     .is("deleted_at", null)
     .gte("shift_date", todayIso)
     .lte("shift_date", endDateIso)
@@ -267,6 +284,7 @@ export async function fetchShiftAssignmentGaps(
   const staffRows = staffRes.data ?? [];
   if (staffRes.error) throw staffRes.error;
 
+  const definitions = await fetchFacilityShiftDefinitions(supabase, [...new Set(shiftRows.map((row) => row.facility_id))]);
   const roleByStaffId = new Map(staffRows.map((row) => [row.id, mapDbStaffRoleToLabel(row.staff_role)] as const));
   const grouped = new Map<string, ShiftGap>();
 
@@ -274,7 +292,8 @@ export async function fetchShiftAssignmentGaps(
     const urgency = shiftGapUrgency(row.status);
     if (!urgency) continue;
     const role = roleByStaffId.get(row.staff_id) ?? "Staff";
-    const key = `${row.shift_date}:${row.shift_type}:${role}:${urgency}`;
+    const shiftLabel = assignmentSpan(row, definitions.get(row.facility_id) ?? [])?.label ?? `${row.shift_type} · times not configured`;
+    const key = `${row.facility_id}:${row.shift_date}:${shiftLabel}:${role}:${urgency}`;
     const existing = grouped.get(key);
     if (existing) {
       existing.shortage += 1;
@@ -283,7 +302,7 @@ export async function fetchShiftAssignmentGaps(
     grouped.set(key, {
       id: key,
       date: formatShiftDateLabel(row.shift_date),
-      shift: formatShiftTypeLabel(row.shift_type),
+      shift: shiftLabel,
       role,
       shortage: 1,
       urgency,
@@ -304,12 +323,6 @@ function formatShiftDateLabel(shiftDate: string, now: Date = new Date()): string
   return format(new Date(`${shiftDate}T12:00:00`), "MMM d");
 }
 
-function formatShiftTypeLabel(shiftType: Database["public"]["Enums"]["shift_type"]): string {
-  if (shiftType === "day") return "Day (7a-3p)";
-  if (shiftType === "evening") return "Evening (3p-11p)";
-  if (shiftType === "night") return "Night (11p-7a)";
-  return "Custom";
-}
 
 export async function fetchStaffOptions(
   selectedFacilityId: string | null,

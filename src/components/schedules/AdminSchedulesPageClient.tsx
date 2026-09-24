@@ -26,8 +26,8 @@ import { formatSchedulePublishedAt } from "@/lib/schedules/schedules-display-cop
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { KPITile } from "@/design-system/components/KPITile";
 import { PageHeader } from "@/design-system/components/PageHeader";
+import { KPITile } from "@/design-system/components/KPITile";
 import { metricFromCount } from "@/lib/metrics/metric-state";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
 type QueryError = { message: string };
@@ -87,11 +87,15 @@ export function AdminSchedulesPageClient({
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ScheduleRow[]>(initialRows);
+  const [loadedFacilityId, setLoadedFacilityId] = useState(initialFacilityId);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
+  const scopeMatches = loadedFacilityId === selectedFacilityId;
+  const listPending = isLoading || (!error && !scopeMatches);
+  const listReady = scopeMatches && !isLoading && !error;
 
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
@@ -112,6 +116,7 @@ export function AdminSchedulesPageClient({
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
       if (!isCurrent()) return;
       setRows(live);
+      setLoadedFacilityId(selectedFacilityId);
     } catch (err) {
       if (!isCurrent()) return;
       setError(formatLiveDataLoadError(err, "Failed to load data"));
@@ -137,6 +142,7 @@ export function AdminSchedulesPageClient({
   }, [rows, search, status]);
 
   const exportSchedulesCsv = useCallback(async () => {
+    if (!listReady) return;
     setExportingCsv(true);
     setError(null);
     try {
@@ -167,7 +173,7 @@ export function AdminSchedulesPageClient({
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, filteredRows, search, status]);
+  }, [supabase, filteredRows, search, status, listReady]);
 
   const listEmptyCopy = useMemo(
     () =>
@@ -176,8 +182,8 @@ export function AdminSchedulesPageClient({
         whenDatasetEmpty: {
           title: "No schedules in this scope",
           description: selectedFacilityId
-            ? "Live data returned no schedule weeks for the selected facility. Use New week to start one."
-            : "Live data returned no schedule weeks at any of your facilities. Use New week to start one.",
+            ? "Live data returned no schedule weeks for the selected facility. Choose Create week to start one."
+            : "Live data returned no schedule weeks at any of your facilities. Choose Create week to start one.",
         },
         whenFiltersExcludeAll: {
           title: "No schedules match the current filters",
@@ -188,6 +194,11 @@ export function AdminSchedulesPageClient({
   );
 
   const draftCount = rows.filter((r) => r.status === "draft").length;
+  const draftCountState = metricFromCount({
+    count: scopeMatches ? draftCount : null,
+    loading: listPending,
+    error,
+  });
 
   return (
     <div className="relative w-full space-y-6 pb-12">
@@ -195,23 +206,16 @@ export function AdminSchedulesPageClient({
       
       <div className="relative z-10 space-y-6">
         <PageHeader
-          className="mb-8"
-          title="Schedules"
-          subtitle="Weekly schedule containers; shift assignments roll up under each published week."
-          actions={
-            <Link href="/admin/schedules/new" className={buttonVariants({ size: "default" })}>
-              New week
-            </Link>
-          }
+          title="Schedule"
+          subtitle="Plan the week, review each person’s shifts, then publish to My schedule."
+          actions={<Link href="/admin/schedules/new" className={buttonVariants()}>Create week</Link>}
         />
-
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <KPITile
-            label="Draft weeks"
-            state={metricFromCount({ count: error ? null : draftCount, error, loading: isLoading })}
-            info="Schedule weeks in this facility that are still drafts and not yet published to staff."
-          />
-        </div>
+        <KPITile
+          label="Draft weeks"
+          state={draftCountState}
+          info="Draft weeks among the most recent 120 schedule weeks loaded for this facility scope. Search and status filters do not change this count."
+          className="max-w-xs"
+        />
 
       <AdminFilterBar
         searchValue={search}
@@ -236,14 +240,14 @@ export function AdminSchedulesPageClient({
         }}
       />
 
-      {isLoading ? <AdminTableLoadingState /> : null}
-      {!isLoading && error ? (
+      {listPending ? <AdminTableLoadingState /> : null}
+      {!listPending && error ? (
         <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
       ) : null}
-      {!isLoading && filteredRows.length === 0 ? (
+      {listReady && filteredRows.length === 0 ? (
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
-      {!isLoading && filteredRows.length > 0 ? (
+      {listReady && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
           <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>

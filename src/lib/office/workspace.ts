@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type TemplateKind =
   | "blank"
   | "shift_report"
@@ -67,7 +68,7 @@ export type QueryError = { message: string };
 export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function templateLabel(id: string): string {
-  return PAGE_TEMPLATES.find((t) => t.id === id)?.label ?? id.replace(/_/g, " ");
+  return PAGE_TEMPLATES.find((t) => t.id === id)?.label ?? enumLabel(id);
 }
 
 export function templateById(id: TemplateKind) {

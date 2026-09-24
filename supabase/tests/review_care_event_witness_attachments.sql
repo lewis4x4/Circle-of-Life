@@ -21,7 +21,7 @@ GRANT USAGE ON SCHEMA auth TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 
 CREATE TEMP TABLE wf AS
-SELECT f.id facility, f.organization_id org, f.entity_id entity,
+SELECT gen_random_uuid() facility, f.organization_id org, f.entity_id entity,
        gen_random_uuid() facility_b,
        gen_random_uuid() admin_u,  gen_random_uuid() admin_s,
        gen_random_uuid() cg_a,     gen_random_uuid() cg_a_s,
@@ -34,7 +34,8 @@ SELECT f.id facility, f.organization_id org, f.entity_id entity,
 FROM public.facilities f WHERE f.deleted_at IS NULL ORDER BY f.name LIMIT 1;
 
 INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
-  SELECT facility_b, entity, org, 'COL354 witness scope probe', 'Test', 'Test', '00000', 1 FROM wf;
+  SELECT facility_b, entity, org, 'COL354 witness scope probe', 'Test', 'Test', '00000', 1 FROM wf
+  UNION ALL SELECT facility, entity, org, 'COL354 witness primary probe', 'Test', 'Test', '00000', 1 FROM wf;
 
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
   SELECT admin_u, admin_u||'@review.invalid', jsonb_build_object('organization_id',org,'app_role','facility_admin'), '{"full_name":"Probe Administrator"}'::jsonb FROM wf
@@ -86,20 +87,38 @@ SELECT ev,
 FROM (SELECT ((date_trunc('day', now() AT TIME ZONE 'America/New_York') - interval '1 day' + interval '18 hours') AT TIME ZONE 'America/New_York') AS ev) t;
 GRANT SELECT ON wclock TO authenticated, service_role;
 
--- Three aides on that evening shift at the facility, one at the other building.
+-- The roster shift at that instant is whatever each building's configured
+-- shifts say (facility_shift_window_at; 6a-6p / 6p-6a in every seeded building),
+-- dated the evening it began. submit_care_event stamps the same shift (COL-685);
+-- the fixed 7/15/23 'evening' bucket is only the fallback for a building with no
+-- shift definitions.
+CREATE TEMP TABLE wshift AS
+SELECT v.fac,
+       COALESCE(w.roster_shift_type, 'evening'::public.shift_type) AS shift_type,
+       COALESCE(w.shift_service_date, c.shift_date) AS service_date,
+       w.roster_shift_type IS NOT NULL AS configured,
+       COALESCE((w.starts_at_utc AT TIME ZONE 'America/New_York')::time, time '15:00') AS starts_at,
+       COALESCE((w.ends_at_utc AT TIME ZONE 'America/New_York')::time, time '23:00') AS ends_at
+FROM wf
+CROSS JOIN wclock c
+CROSS JOIN LATERAL (VALUES (wf.facility), (wf.facility_b)) AS v(fac)
+LEFT JOIN LATERAL public.facility_shift_window_at(v.fac, c.ev) w ON true;
+GRANT SELECT ON wshift TO authenticated, service_role;
+
+-- Three aides on that shift at the facility, one at the other building.
 CREATE TEMP TABLE wsched AS SELECT gen_random_uuid() sched_a, gen_random_uuid() sched_b;
 INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date,status)
-  SELECT sched_a, facility, org, week_start, 'published'::public.schedule_status FROM wf, wsched, wclock
+  SELECT sched_a, facility, org, week_start, 'draft'::public.schedule_status FROM wf, wsched, wclock
   WHERE NOT EXISTS (SELECT 1 FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=(SELECT week_start FROM wclock))
-  UNION ALL SELECT sched_b, facility_b, org, week_start, 'published'::public.schedule_status FROM wf, wsched, wclock;
+  UNION ALL SELECT sched_b, facility_b, org, week_start, 'draft'::public.schedule_status FROM wf, wsched, wclock;
 UPDATE wsched SET sched_a = COALESCE(
   (SELECT s.id FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=(SELECT week_start FROM wclock) LIMIT 1), sched_a);
 
-INSERT INTO public.shift_assignments(schedule_id,organization_id,facility_id,staff_id,shift_date,shift_type,status)
-  SELECT sched_a, org, facility, staff_a, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock
-  UNION ALL SELECT sched_a, org, facility, staff_b, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock
-  UNION ALL SELECT sched_a, org, facility, staff_c, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock
-  UNION ALL SELECT sched_b, org, facility_b, staff_far, shift_date, 'evening'::public.shift_type, 'assigned'::public.shift_assignment_status FROM wf, wsched, wclock;
+INSERT INTO public.shift_assignments(schedule_id,organization_id,facility_id,staff_id,shift_date,shift_type,status,custom_start_time,custom_end_time)
+  SELECT sched_a, org, facility, staff_a, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_a, org, facility, staff_b, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_a, org, facility, staff_c, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_b, org, facility_b, staff_far, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility_b, wsched;
 
 -- The seed in 403 targets organization 00000000-...-001. Mirror it when the
 -- probe's facility belongs to another organization.
@@ -132,6 +151,8 @@ CREATE FUNCTION pg_temp.must_fail(sql text, expected text) RETURNS void LANGUAGE
 END $$;
 
 GRANT SELECT ON wf TO authenticated, service_role;
+SELECT pg_temp.actor(admin_u,admin_s) FROM wf;
+UPDATE public.schedules SET status='published' WHERE id IN (SELECT sched_a FROM wsched UNION ALL SELECT sched_b FROM wsched);
 
 -- ===========================================================================
 -- Witness statements
@@ -158,6 +179,16 @@ BEGIN
   SELECT ce.incident_id INTO v_incident FROM public.care_events ce
   WHERE ce.id = (SELECT (r->>'care_event_id')::uuid FROM w_l2);
   IF v_incident IS NULL THEN RAISE EXCEPTION 'Level 2 fall produced no incident'; END IF;
+
+  -- COL-685: the event and its incident carry the building's configured shift.
+  IF (SELECT ce.shift FROM public.care_events ce WHERE ce.id = (SELECT (r->>'care_event_id')::uuid FROM w_l2))
+     IS DISTINCT FROM (SELECT ws.shift_type FROM wshift ws JOIN wf ON ws.fac = wf.facility) THEN
+    RAISE EXCEPTION 'care_events.shift does not match the facility''s configured shift at occurred_at';
+  END IF;
+  IF (SELECT i.shift FROM public.incidents i WHERE i.id = v_incident)
+     IS DISTINCT FROM (SELECT ws.shift_type FROM wshift ws JOIN wf ON ws.fac = wf.facility) THEN
+    RAISE EXCEPTION 'incidents.shift does not match the facility''s configured shift at occurred_at';
+  END IF;
 
   SELECT count(*) INTO v_n FROM public.incident_followups f
   WHERE f.incident_id = v_incident AND f.task_type = 'witness_statement' AND f.deleted_at IS NULL;

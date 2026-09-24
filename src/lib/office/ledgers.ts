@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type PettyCashDirection = "credit" | "debit";
 export type TrustDirection = "deposit" | "withdrawal";
 
@@ -64,7 +65,7 @@ export type QueryError = { message: string };
 export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function categoryLabel(list: { id: string; label: string }[], id: string): string {
-  return list.find((c) => c.id === id)?.label ?? id.replace(/_/g, " ");
+  return list.find((c) => c.id === id)?.label ?? enumLabel(id);
 }
 
 /** Signed delta for a petty-cash post (credit adds, debit subtracts). */

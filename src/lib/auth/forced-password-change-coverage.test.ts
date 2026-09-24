@@ -16,6 +16,7 @@ import { isAdminShellPath } from "@/lib/auth/admin-shell";
 import { isCaregiverShellPath } from "@/lib/auth/caregiver-shell";
 import { isDietaryShellPath } from "@/lib/auth/dietary-shell";
 import { isFamilyShellPath } from "@/lib/auth/family-shell";
+import { isFloorShellPath } from "@/lib/auth/floor-shell";
 import { isMedTechShellPath } from "@/lib/auth/med-tech-shell";
 import { isOnboardingShellPath } from "@/lib/auth/onboarding-shell";
 
@@ -60,6 +61,7 @@ describe("every authenticated route group is gated", () => {
       "(caregiver)",
       "(dietary)",
       "(family)",
+      "(floor)",
       "(med-tech)",
       "(onboarding)",
       "(print)",
@@ -122,6 +124,8 @@ describe("proxy redirects a pending user from every shell", () => {
     "/tasks",
     "/schedules",
     "/reports",
+    "/floor",
+    "/floor/rounds",
   ];
 
   it.each(shellPaths)("%s redirects to /change-password", async (pathname) => {
@@ -129,6 +133,16 @@ describe("proxy redirects a pending user from every shell", () => {
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost/change-password");
   });
+
+  it.each(["/floor/lock", "/floor/setup"])(
+    "%s stays reachable: a shared tablet's lock and setup screens never wait on a session (COL-690)",
+    async (pathname) => {
+      const response = await proxy(new NextRequest(`http://localhost${pathname}`));
+      expect(response.headers.get("location")).toBeNull();
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      expect(state.updateSession).not.toHaveBeenCalled();
+    },
+  );
 
   it("drops the query string so a next= param cannot bounce the user back", async () => {
     const response = await proxy(
@@ -215,6 +229,9 @@ describe("the proxy matcher reaches every path the shells claim", () => {
     "/med-tech",
     "/family",
     "/onboarding",
+    "/floor",
+    "/floor/lock",
+    "/floor/residents/abc",
   ];
 
   it.each(shellPaths)("%s is claimed by a shell predicate", (pathname) => {
@@ -224,7 +241,8 @@ describe("the proxy matcher reaches every path the shells claim", () => {
       isDietaryShellPath(pathname) ||
       isMedTechShellPath(pathname) ||
       isFamilyShellPath(pathname) ||
-      isOnboardingShellPath(pathname);
+      isOnboardingShellPath(pathname) ||
+      isFloorShellPath(pathname);
     expect(claimed).toBe(true);
   });
 
@@ -241,6 +259,9 @@ describe("the proxy matcher reaches every path the shells claim", () => {
       "/about",
       "/admin/app.css",
       "/admin/chunk.js",
+      "/kiosk",
+      "/kiosk/staff",
+      "/floorplan",
     ]) {
       expect(matcher.test(pathname), pathname).toBe(false);
     }

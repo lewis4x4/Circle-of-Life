@@ -60,13 +60,13 @@ INSERT INTO user_facility_access (user_id, facility_id, organization_id, granted
   SELECT nurse_user, fac, org, nurse_user FROM fx
   UNION ALL SELECT caregiver_user, fac, org, caregiver_user FROM fx;
 
--- The hold itself is seeded by the migration, not by this file. Assert that
--- before anything here touches held_reason, so the check is about migration
--- 410 and not about this file's own bookkeeping.
+-- The hold itself is seeded by the migrations, not by this file (410 set it; 490
+-- reworded it for staff, COL-689). Assert that before anything here touches
+-- held_reason, so the check is about the migrations and not this file's bookkeeping.
 DO $$ BEGIN
   IF (SELECT held_reason FROM assessment_templates WHERE assessment_type='phq9')
-     IS DISTINCT FROM 'PHQ-9 on hold until safety follow-up is added' THEN
-    RAISE EXCEPTION 'migration 410 did not seed the PHQ-9 hold'; END IF;
+     IS DISTINCT FROM 'PHQ-9 cannot be recorded in Haven yet.' THEN
+    RAISE EXCEPTION 'migrations 410/490 did not seed the PHQ-9 hold'; END IF;
   IF EXISTS (SELECT 1 FROM assessment_templates WHERE assessment_type<>'phq9' AND held_reason IS NOT NULL) THEN
     RAISE EXCEPTION 'the hold reached an instrument other than PHQ-9'; END IF;
 END $$;
@@ -82,7 +82,7 @@ INSERT INTO assessments (id, resident_id, facility_id, organization_id, assessme
   SELECT legacy_phq9, res, fac, org, 'phq9', '2026-09-01'::date, 12, 'moderate',
          '{"interest":2}'::jsonb, nurse_user FROM fx;
 UPDATE assessment_templates
-  SET held_reason='PHQ-9 on hold until safety follow-up is added' WHERE assessment_type='phq9';
+  SET held_reason='PHQ-9 cannot be recorded in Haven yet.' WHERE assessment_type='phq9';
 
 -- Sign in as a given role for the rest of the current statement block.
 CREATE OR REPLACE FUNCTION pg_temp.sign_in(p_user uuid, p_session uuid, p_role text) RETURNS void
@@ -132,7 +132,7 @@ BEGIN
       END IF;
       IF v_sqlstate <> 'P0001' THEN
         RAISE EXCEPTION 'role % got sqlstate % not P0001', r.role, v_sqlstate; END IF;
-      IF v_detail <> 'PHQ-9 on hold until safety follow-up is added' THEN
+      IF v_detail <> 'PHQ-9 cannot be recorded in Haven yet.' THEN
         RAISE EXCEPTION 'role % got no usable detail: %', r.role, v_detail; END IF;
       v_blocked := v_blocked + 1;
     END;
@@ -187,7 +187,7 @@ DO $$ DECLARE v_ok boolean := FALSE; BEGIN
   RESET ROLE;
   v_ok := TRUE;
   UPDATE assessment_templates
-    SET held_reason='PHQ-9 on hold until safety follow-up is added' WHERE assessment_type='phq9';
+    SET held_reason='PHQ-9 cannot be recorded in Haven yet.' WHERE assessment_type='phq9';
   IF NOT v_ok THEN RAISE EXCEPTION 'clearing held_reason did not restore the instrument'; END IF;
 END $$;
 

@@ -30,7 +30,7 @@ import {
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { currentShiftFor, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { formatDisplayDate } from "@/lib/format/datetime";
-import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/display/enum-label";

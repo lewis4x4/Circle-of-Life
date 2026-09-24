@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   formatIncidentFollowupDue,
   formatIncidentOccurredAt,
+  formatIncidentReporterName,
   formatIncidentResidentName,
   INCIDENTS_NO_DATE_POSTED_COPY,
 } from "@/lib/incidents/incidents-display-copy";
@@ -126,7 +127,7 @@ export async function fetchIncidentsFromSupabase(
   // None of these four secondary fetches depend on each other — run them in
   // parallel instead of chaining four serial round-trips after the primary
   // incidents query. Saves ~3 RTTs on every load.
-  const [residentsResult, profilesResult, followupsResult, rcaResult, careEventsResult] = await Promise.all([
+  const [residentsResult, profilesResult, followupsResult, rcaResult, careEventsResult, reporterStaffResult] = await Promise.all([
     residentIds.length
       ? supabase.from("residents" as never).select("id, first_name, last_name").in("id", residentIds)
       : Promise.resolve({ data: [] }),
@@ -153,6 +154,14 @@ export async function fetchIncidentsFromSupabase(
           .in("incident_id", incidentIds)
           .is("deleted_at", null)
       : Promise.resolve({ data: [] as SupabaseCareEventMini[] }),
+    // COL-689: a reporter reads by their staff-record name, not a login handle.
+    reporterIds.length
+      ? supabase
+          .from("staff" as never)
+          .select("user_id, first_name, last_name")
+          .in("user_id", reporterIds)
+          .is("deleted_at", null)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const residentById = new Map(
@@ -160,6 +169,11 @@ export async function fetchIncidentsFromSupabase(
   );
   const reporterById = new Map(
     ((profilesResult.data ?? []) as SupabaseProfileMini[]).map((p) => [p.id, p] as const)
+  );
+  const reporterStaffByUserId = new Map(
+    ((reporterStaffResult.data ?? []) as Array<{ user_id: string; first_name: string | null; last_name: string | null }>).map(
+      (row) => [row.user_id, row] as const,
+    ),
   );
   const rcaByIncidentId = new Map(
     (((rcaResult.data ?? []) as Array<{ incident_id: string; investigation_status: string }>)).map((row) => [row.incident_id, row.investigation_status] as const),
@@ -202,7 +216,7 @@ export async function fetchIncidentsFromSupabase(
     const resident = row.resident_id ? residentById.get(row.resident_id) ?? null : null;
     const residentName = formatIncidentResidentName(resident);
     const reporter = reporterById.get(row.reported_by);
-    const reportedBy = reporter?.full_name?.trim() || "Staff";
+    const reportedBy = formatIncidentReporterName(reporterStaffByUserId.get(row.reported_by) ?? null, reporter?.full_name);
     const openFollowups = openFollowupsByIncident.get(row.id) ?? 0;
     const overdueFollowups = overdueFollowupsByIncident.get(row.id) ?? 0;
     const unassignedFollowups = unassignedFollowupsByIncident.get(row.id) ?? 0;

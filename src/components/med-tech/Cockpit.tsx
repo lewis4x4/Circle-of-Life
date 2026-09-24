@@ -20,7 +20,7 @@ export function Cockpit() {
   const [activeResident, setActiveResident] = useState<ResidentItem | null>(null);
   const [incidentOpen, setIncidentOpen]     = useState(false);
 
-  const { userId, shift, passes, residents, tape, shiftId, loading, error, refresh } = useShiftCurrent();
+  const { userId, shift, passes, residents, tape, shiftId, shiftContext, loading, error, refresh } = useShiftCurrent();
 
   if (loading) {
     return (
@@ -51,7 +51,7 @@ export function Cockpit() {
                 : "text-lg font-semibold text-rose-300 mb-2"
             }
           >
-            {noShift ? "Cockpit is waiting on a shift" : "Shift Not Available"}
+            {noShift ? "No shift open yet" : "Your shift could not be loaded"}
           </h2>
           <p className="text-sm text-muted-foreground">
             {noShift
@@ -126,6 +126,7 @@ export function Cockpit() {
           userId={userId}
           shiftId={shiftId}
           shiftType={shift.shiftType}
+          shiftContext={shiftContext}
           residents={residents}
           onClose={() => setIncidentOpen(false)}
         />

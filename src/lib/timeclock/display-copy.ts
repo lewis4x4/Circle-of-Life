@@ -29,6 +29,7 @@ export const EXCEPTION_LABELS: Record<ExceptionType, string> = {
   offline_capture: "Captured offline",
   rejected_offline_sync: "Offline punch refused at sync",
   short_turnaround: "Under 8 hours between shifts",
+  unlock_without_punch: "Used a floor tablet without clocking in",
 };
 
 export const CORRECTION_TYPE_LABELS: Record<Exclude<CorrectionType, "acknowledge">, string> = {

@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { expect, it, vi, beforeAll } from "vitest";
 import { ExecutiveOverviewPageClient } from "./ExecutiveOverviewPageClient";
 import type { ExecutiveOverviewData } from "@/lib/executive/load-executive-overview";
@@ -25,6 +25,8 @@ vi.mock("@/lib/executive/load-executive-overview", () => ({ loadExecutiveOvervie
 vi.mock("@/app/(admin)/executive/executive-hub-nav", () => ({ ExecutiveHubNav: () => null }));
 
 it("discards an old organization's result after a newer request completes", async () => {
+  mocks.load.mockReset();
+  mocks.organizationId = "org-old";
   let finishOld!: (data: ExecutiveOverviewData) => void;
   let finishNew!: (data: ExecutiveOverviewData) => void;
   mocks.load
@@ -48,8 +50,10 @@ it("discards an old organization's result after a newer request completes", asyn
     todayIsoDate: "2026-09-15",
   };
   const { rerender } = render(<ExecutiveOverviewPageClient {...props} />);
+  await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(1));
   mocks.organizationId = "org-new";
   rerender(<ExecutiveOverviewPageClient {...props} />);
+  await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(2));
   await act(async () => finishNew({ ...data, facilities: [{ id: "new", name: "Current facility", metrics: {} }] }));
   expect(screen.getByText("Current facility")).toBeInTheDocument();
   await act(async () => finishOld({ ...data, facilities: [{ id: "old", name: "Stale facility", metrics: {} }] }));

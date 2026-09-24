@@ -271,7 +271,7 @@ export default function AdminGenerateLetterPage() {
                     <option value="">Select a resident…</option>
                     {residents.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.last_name}, {r.first_name}
+                        {r.first_name} {r.last_name}
                       </option>
                     ))}
                   </select>

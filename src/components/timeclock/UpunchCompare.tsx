@@ -106,7 +106,7 @@ export function UpunchCompare({ now: nowProp, readFile }: UpunchCompareProps) {
           staffId: s.id,
           name: s.name,
           employeeNumber: numbers.get(s.id) ?? null,
-          weeks: computeTimesheet({ staffId: s.id, punches: data.punches, corrections: data.corrections, rejections: data.rejections, periodStart: period.start, periodEnd: period.end, now: at }).weeks,
+          weeks: computeTimesheet({ staffId: s.id, punches: data.punches, corrections: data.corrections, rejections: data.rejections, floorUnlocks: data.floorUnlocks, periodStart: period.start, periodEnd: period.end, now: at }).weeks,
         })),
       );
     } catch (e) {

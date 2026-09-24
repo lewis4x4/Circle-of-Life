@@ -25,6 +25,11 @@ describe("floor-app Required reading (COL-707)", () => {
     expect(existsSync(path.join(CAREGIVER, "policies/[id]/page.tsx"))).toBe(true);
   });
 
+  it("nothing in the floor app still links to the old policies list", () => {
+    const me = readFileSync(path.resolve(import.meta.dirname, "../../app/(caregiver)/me/page.tsx"), "utf8");
+    expect(me).not.toContain('"/caregiver/policies"');
+  });
+
   it("renders both lists on the acknowledgments page", () => {
     const page = readFileSync(path.join(CAREGIVER, "acknowledgments/page.tsx"), "utf8");
     expect(page).toContain("<CaregiverPendingPoliciesList />");

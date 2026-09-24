@@ -49,6 +49,7 @@ describe("POST /api/kiosk/timeclock/punch", () => {
   it("refuses without a device header before touching the database (401)", async () => {
     const response = await POST(request(GOOD, null));
     expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({ error: "device_unknown" });
     expect(mock.rpc).not.toHaveBeenCalled();
   });
@@ -111,5 +112,22 @@ describe("POST /api/kiosk/timeclock/punch", () => {
     mock.rpc.mockResolvedValue({ data: null, error: { message: "connection refused" } });
     const response = await POST(request(GOOD));
     expect(response.status).toBe(503);
+  });
+});
+
+describe("punch: front-door kiosk display fields (COL-692)", () => {
+  it("carries display_name on the receipt when the database returns it, and adds nothing when it does not", async () => {
+    mock.rpc.mockResolvedValueOnce({
+      data: { ok: true, replayed: false, punch_id: "p1", first_name: "Ashley", display_name: "Ashley W.", last_out_at: null, punch_type: "in", punched_at: "2026-10-01T10:58:00Z", flags: [], state: "in", next_actions: ["out"], today_worked_minutes: 0 },
+      error: null,
+    });
+    expect(await (await POST(request(GOOD))).json()).toMatchObject({ display_name: "Ashley W.", last_out_at: null });
+    mock.rpc.mockResolvedValueOnce({
+      data: { ok: true, replayed: false, punch_id: "p1", first_name: "Ashley", punch_type: "in", punched_at: "2026-10-01T10:58:00Z", flags: [], state: "in", next_actions: ["out"], today_worked_minutes: 0 },
+      error: null,
+    });
+    const older = await (await POST(request(GOOD))).json();
+    expect(older).not.toHaveProperty("display_name");
+    expect(older).not.toHaveProperty("last_out_at");
   });
 });

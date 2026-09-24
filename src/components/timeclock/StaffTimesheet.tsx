@@ -28,6 +28,7 @@ import {
   type PayPeriod,
   type PayPeriodSettings,
   type RawCorrection,
+  type RawFloorUnlock,
   type RawPunch,
   type RawSyncRejection,
   type TimesheetException,
@@ -79,6 +80,8 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
   const { appRole, organizationId, user } = useHavenAuth();
   const searchParams = useSearchParams();
   const requestedStart = searchParams?.get("period_start") ?? null;
+  const requestedEnd = searchParams?.get("period_end") ?? null;
+  const workweekMode = searchParams?.get("period_mode") === "workweek";
   const canReview = canReviewTimeclock(appRole);
 
   const [settings, setSettings] = useState<PayPeriodSettings | null>(null);
@@ -87,6 +90,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
   const [punches, setPunches] = useState<RawPunch[]>([]);
   const [corrections, setCorrections] = useState<RawCorrection[]>([]);
   const [rejections, setRejections] = useState<RawSyncRejection[]>([]);
+  const [floorUnlocks, setFloorUnlocks] = useState<RawFloorUnlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -100,19 +104,35 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
     let cancelled = false;
     void (async () => {
       try {
+        if (workweekMode) {
+          if (!requestedStart || !requestedEnd || !/^\d{4}-\d{2}-\d{2}$/.test(requestedStart) || !/^\d{4}-\d{2}-\d{2}$/.test(requestedEnd)) {
+            throw new Error("The workweek link must include a Monday start and the following Monday as its end.");
+          }
+          const week = payPeriodContaining(facilityDayStart(requestedStart), null);
+          if (week.startIso !== requestedStart || week.endIso !== requestedEnd) {
+            throw new Error("The workweek link must include a Monday start and the following Monday as its end.");
+          }
+          setSettings(null);
+          setPeriod(week);
+          return;
+        }
         const loaded = await loadOrganizationPayPeriod(createClient(), organizationId);
         if (cancelled) return;
         setSettings(loaded);
         const anchor = requestedStart && /^\d{4}-\d{2}-\d{2}$/.test(requestedStart) ? facilityDayStart(requestedStart) : now();
         setPeriod(payPeriodContaining(anchor, loaded));
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Could not load the pay period");
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Could not load the pay period");
+          setPeriod(null);
+          setLoading(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [organizationId, requestedStart, now]);
+  }, [organizationId, requestedStart, requestedEnd, workweekMode, now]);
 
   const load = useCallback(async () => {
     if (!period) return;
@@ -133,6 +153,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
       setPunches(loaded.punches);
       setCorrections(loaded.corrections);
       setRejections(loaded.rejections);
+      setFloorUnlocks(loaded.floorUnlocks);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load the timesheet");
     } finally {
@@ -146,8 +167,8 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
 
   const sheet = useMemo(() => {
     if (!period) return null;
-    return computeTimesheet({ staffId, punches, corrections, rejections, periodStart: period.start, periodEnd: period.end, now: now() });
-  }, [staffId, punches, corrections, rejections, period, now]);
+    return computeTimesheet({ staffId, punches, corrections, rejections, floorUnlocks, periodStart: period.start, periodEnd: period.end, now: now() });
+  }, [staffId, punches, corrections, rejections, floorUnlocks, period, now]);
 
   const facilityForTarget = useCallback(
     (target: string): string | null => {
@@ -265,8 +286,8 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
     <div className="space-y-6 p-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href={`/admin/timeclock${periodQuery}`} className="text-sm text-muted-foreground hover:text-foreground">
-            ← Timeclock
+          <Link href={workweekMode ? "/admin/timecards" : `/admin/timeclock${periodQuery}`} className="text-sm text-muted-foreground hover:text-foreground">
+            ← {workweekMode ? "Timecards" : "Timeclock"}
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{staff?.name ?? "Timesheet"}</h1>
           {sheet ? (
@@ -276,7 +297,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
           ) : null}
         </div>
         {period ? (
-          <div className="flex items-center gap-1" role="group" aria-label="Pay period">
+          <div className="flex items-center gap-1" role="group" aria-label={workweekMode ? "Workweek" : "Pay period"}>
             <Button type="button" variant="outline" size="sm" onClick={() => setPeriod(shiftPayPeriod(period, settings, -1))} aria-label="Previous period">
               ←
             </Button>
@@ -297,7 +318,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
         </p>
       ) : null}
 
-      {loading || !sheet ? (
+      {error && !sheet ? null : loading || !sheet ? (
         <AdminTableLoadingState />
       ) : (
         <>

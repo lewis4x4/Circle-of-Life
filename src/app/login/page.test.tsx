@@ -60,7 +60,7 @@ describe("login credential safety before hydration", () => {
     fireEvent.change(password, { target: { value: "SyntheticTestOnly123!" } });
     expect(fireEvent.submit(container.querySelector("form")!)).toBe(false);
     await waitFor(() => expect(mocks.auth.signInWithPassword).toHaveBeenCalledWith({ email: "synthetic@example.test", password: "SyntheticTestOnly123!" }));
-    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/med-tech"));
+    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/floor"));
   });
   it("preserves the hydrated password-reset flow without submitting credentials", async () => {
     prerender(); await hydrate();
@@ -69,14 +69,5 @@ describe("login credential safety before hydration", () => {
     await screen.findByText("If that account exists, a password reset link has been sent.");
     expect(mocks.auth.resetPasswordForEmail).toHaveBeenCalledWith("synthetic@example.test", { redirectTo: `${window.location.origin}/reset-password` });
     expect(mocks.auth.signInWithPassword).not.toHaveBeenCalled();
-  });
-});
-
-describe("login way back to the public site (COL-662)", () => {
-  it("links to the public site's front page, not the apex that redirects to sign-in", () => {
-    prerender();
-    const link = Array.from(container.querySelectorAll("a")).find((a) => a.textContent?.includes("Circle of Life website"));
-    expect(link).toBeTruthy();
-    expect(link).toHaveAttribute("href", "/campuses");
   });
 });

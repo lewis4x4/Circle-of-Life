@@ -21,6 +21,8 @@ import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { SITE_AUTHORITY_CLASSES } from "../_shared/operation-authority.ts";
 import { judgeDue } from "../../../src/lib/operations/schedule-evaluator.ts";
+// COL-710: the level cut-offs are the `risk.score_bands` operating rule, read per facility per night.
+import { parseRiskScoreBands, riskAlertThresholdJson, riskLevelFromBands, type RiskScoreBands } from "../../../src/lib/operating-rules/risk-bands.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIVE_DEFICIENCY_STATUSES = new Set(["open", "poc_submitted", "poc_accepted", "recited"]);
@@ -81,13 +83,6 @@ type FacilityScoreResult = {
   alertBody: string;
 };
 
-function riskLevel(score: number): "low" | "moderate" | "high" | "critical" {
-  if (score >= 85) return "low";
-  if (score >= 70) return "moderate";
-  if (score >= 50) return "high";
-  return "critical";
-}
-
 function severityForRisk(level: "low" | "moderate" | "high" | "critical") {
   return level === "critical" ? "critical" : "warning";
 }
@@ -139,6 +134,7 @@ function buildFacilityRiskScore(args: {
   deficiencies: DeficiencyRow[];
   incidents: IncidentRow[];
   safetyRows: SafetyRow[];
+  bands: RiskScoreBands;
 }): FacilityScoreResult {
   // COL-137: the shared evaluator is the only source of an overdue judgment; a
   // task with no due instant is an unknown schedule, never overdue.
@@ -231,7 +227,7 @@ function buildFacilityRiskScore(args: {
 
   const totalPenalty = drivers.reduce((sum, driver) => sum + driver.penalty, 0);
   const riskScore = clampScore(100 - totalPenalty);
-  const level = riskLevel(riskScore);
+  const level = riskLevelFromBands(riskScore, args.bands);
   const previousLevel = args.previous?.risk_level ?? null;
   const scoreDelta = args.previous ? riskScore - args.previous.risk_score : null;
   const thresholdBreached = level === "high" || level === "critical";
@@ -289,6 +285,7 @@ function buildFacilityRiskScore(args: {
     },
     summary: {
       top_drivers: topDrivers,
+      score_bands: args.bands,
       overdue_task_count: overdueTasks.length,
       license_threatening_count: licenseThreateningTasks.length,
       staffing_non_compliant_count: nonCompliantStaffing.length,
@@ -577,7 +574,21 @@ Deno.serve(async (req) => {
       const timezone = facility.timezone || "America/New_York";
       const snapshotDate = currentDateInTimezone(timezone);
       const previous = previousMap.get(facility.id) ?? null;
+      const { data: bandRows, error: bandError } = await admin.rpc("haven_operating_rule" as never, {
+        p_organization_id: org.id,
+        p_facility_id: facility.id,
+        p_rule_key: "risk.score_bands",
+        p_as_of: snapshotDate,
+      } as never);
+      const bandRow = Array.isArray(bandRows) ? (bandRows as Array<{ value: unknown }>)[0] : null;
+      const bands = bandError ? null : parseRiskScoreBands(bandRow?.value);
+      if (!bands) {
+        // No guessed cut-offs: a facility whose rule cannot be read is not scored tonight.
+        results.push({ organization_id: org.id, facility_id: facility.id, error: "Risk score bands unavailable" });
+        continue;
+      }
       const score = buildFacilityRiskScore({
+        bands,
         facility,
         previous,
         tasks: tasks.filter((row) => row.facility_id === facility.id),
@@ -642,7 +653,7 @@ Deno.serve(async (req) => {
                   risk_level: score.riskLevel,
                   summary: score.summary,
                 },
-                threshold_json: { alert_level: "high", score_lte: 69, critical_score_lte: 49 },
+                threshold_json: riskAlertThresholdJson(bands),
                 last_evaluated_at: now.toISOString(),
                 updated_at: now.toISOString(),
                 status: "open",
@@ -673,7 +684,7 @@ Deno.serve(async (req) => {
                   risk_level: score.riskLevel,
                   summary: score.summary,
                 },
-                threshold_json: { alert_level: "high", score_lte: 69, critical_score_lte: 49 },
+                threshold_json: riskAlertThresholdJson(bands),
                 status: "open",
                 last_evaluated_at: now.toISOString(),
                 related_link_json: {

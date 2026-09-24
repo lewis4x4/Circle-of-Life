@@ -14,11 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   HANDOFF_NO_EVENTS_COPY,
   buildShiftHandoffAutoSummary,
-  currentShiftWindowFor,
   loadOutgoingShiftCareEvents,
+  shiftWindowOf,
   type HandoffAutoSummary,
-  type HandoffShift,
 } from "@/lib/caregiver/handoff-summary";
+import { currentShiftFor, handoffShiftOf, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 
@@ -29,22 +29,24 @@ type SummaryState =
   | { status: "success-empty"; shiftWord: string }
   | { status: "success-populated"; shiftWord: string; summary: HandoffAutoSummary };
 
-const SHIFT_WORDS: Record<HandoffShift, string> = { day: "Day", evening: "Evening", night: "Night" };
-
 type ShiftEventsSummaryProps = {
   facilityId: string;
   timeZone: string;
+  /** The facility's configured shifts (`CaregiverFacilityContext.shifts`); the header and the handoff record read the same ones. */
+  shifts?: readonly FacilityShiftDefinition[] | null;
 };
 
-export function ShiftEventsSummary({ facilityId, timeZone }: ShiftEventsSummaryProps) {
+export function ShiftEventsSummary({ facilityId, timeZone, shifts }: ShiftEventsSummaryProps) {
   const supabase = useMemo(() => createClient(), []);
   const [state, setState] = useState<SummaryState>({ status: "idle" });
 
   const load = useCallback(() => {
     setState({ status: "loading" });
-    const { shift, date } = currentShiftWindowFor(timeZone);
-    const shiftWord = SHIFT_WORDS[shift];
-    loadOutgoingShiftCareEvents(supabase, facilityId, timeZone, shift, date)
+    const current = currentShiftFor({ timeZone, shifts }, new Date());
+    const shift = handoffShiftOf(current, timeZone);
+    const date = current.serviceDate;
+    const shiftWord = current.label;
+    loadOutgoingShiftCareEvents(supabase, facilityId, shiftWindowOf(current))
       .then((careEvents) => {
         if (careEvents.length === 0) {
           setState({ status: "success-empty", shiftWord });
@@ -59,7 +61,7 @@ export function ShiftEventsSummary({ facilityId, timeZone }: ShiftEventsSummaryP
       .catch((error: unknown) => {
         setState({ status: "error", message: formatLiveDataLoadError(error, "This shift's events are unavailable right now.") });
       });
-  }, [facilityId, supabase, timeZone]);
+  }, [facilityId, shifts, supabase, timeZone]);
 
   useEffect(() => {
     // Defer so the loading transition happens in a callback, not in the effect body.

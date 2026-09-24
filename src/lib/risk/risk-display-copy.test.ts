@@ -5,6 +5,7 @@ import {
   RISK_NO_TIMESTAMP_POSTED_COPY,
   formatRiskDateTime,
   formatRiskScore,
+  formatRiskBandsLine,
   riskPortfolioTone,
 } from "./risk-display-copy";
 
@@ -45,14 +46,27 @@ describe("formatRiskDateTime", () => {
 });
 
 describe("riskPortfolioTone (COL-649)", () => {
+  const bands = { critical_below: 50, high_below: 70, moderate_below: 85 };
+
   it("is neutral, not green, when no score was posted", () => {
-    expect(riskPortfolioTone(null)).toBe("indigo");
-    expect(riskPortfolioTone(undefined)).toBe("indigo");
+    expect(riskPortfolioTone(null, bands)).toBe("indigo");
+    expect(riskPortfolioTone(undefined, bands)).toBe("indigo");
   });
 
-  it("keeps the existing bands for a real score", () => {
-    expect(riskPortfolioTone(40)).toBe("red");
-    expect(riskPortfolioTone(60)).toBe("amber");
-    expect(riskPortfolioTone(90)).toBe("emerald");
+  it("colours a real score by the configured bands", () => {
+    expect(riskPortfolioTone(40, bands)).toBe("red");
+    expect(riskPortfolioTone(60, bands)).toBe("amber");
+    expect(riskPortfolioTone(90, bands)).toBe("emerald");
+  });
+
+  it("follows a changed rule instead of fixed cut-offs (COL-710)", () => {
+    const stricter = { critical_below: 65, high_below: 80, moderate_below: 90 };
+    expect(riskPortfolioTone(60, stricter)).toBe("red");
+    expect(riskPortfolioTone(75, stricter)).toBe("amber");
+  });
+
+  it("stays neutral when the bands could not be read", () => {
+    expect(riskPortfolioTone(40, null)).toBe("indigo");
+    expect(formatRiskBandsLine(null)).toMatch(/could not be read/);
   });
 });

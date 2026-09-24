@@ -1,0 +1,132 @@
+{
+  "segment": "COL-715-WORKFORCE-REVIEW-FIXES",
+  "timestamp": "2026-09-24T00:55:21.746Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "id": "hygiene.package-manager",
+      "required": true,
+      "command": "npm run check:package-manager",
+      "status": "passed",
+      "duration_ms": 199,
+      "stdout": "[check:package-manager] PASS: package-lock.json is the only JavaScript package-manager lockfile\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.env-example",
+      "required": true,
+      "command": "node scripts/check-env-example.mjs",
+      "status": "passed",
+      "duration_ms": 31,
+      "stdout": "[check:env-example] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.tracked-secrets-scan",
+      "required": true,
+      "command": "node scripts/check-tracked-secrets.mjs",
+      "status": "passed",
+      "duration_ms": 714,
+      "stdout": "[check:secrets] PASS\n",
+      "stderr": ""
+    },
+    {
+      "id": "hygiene.npm-audit",
+      "required": true,
+      "command": "npm run audit:ci",
+      "status": "passed",
+      "duration_ms": 676,
+      "stdout": "found 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "id": "security.gitleaks",
+      "required": true,
+      "command": "npm run secrets:gitleaks",
+      "status": "passed",
+      "duration_ms": 19507,
+      "stdout": "[gitleaks] detector regression PASS: generic-api-key remains active\n[gitleaks] allowlist PASS: exempted files are still scanned for real credentials\n[gitleaks] PASS\n",
+      "stderr": "\n    ○\n    │╲\n    │ ○\n    ○ ░\n    ░    gitleaks\n\n8:55PM INF 2658 commits scanned.\n8:55PM INF scanned ~116724942 bytes (116.72 MB) in 19.1s\n8:55PM INF no leaks found\n"
+    },
+    {
+      "id": "qa.eslint",
+      "required": true,
+      "command": "npm run lint",
+      "status": "passed",
+      "duration_ms": 58843,
+      "stdout": "Constitution lint passed for smart-rounding scope (62 files).\n",
+      "stderr": "[BABEL] Note: The code generator has deoptimised the styling of /Users/brianlewis/Circle of Life/Haven Workforce In Place/src/types/database.ts as it exceeds the max of 500KB.\n"
+    },
+    {
+      "id": "qa.migration-sequence",
+      "required": true,
+      "command": "npm run migrations:check",
+      "status": "failed",
+      "duration_ms": 131,
+      "stdout": "",
+      "stderr": "[migrations:check] FAIL: gap in migration sequence: expected 485, found 497\n"
+    },
+    {
+      "id": "qa.migrations-apply-postgres",
+      "required": true,
+      "command": "npm run migrations:verify:pg",
+      "status": "failed",
+      "duration_ms": 94180,
+      "stdout": "[care-events:parity] PASS (105 cases, psql)\n",
+      "stderr": "file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:128\n      if (result.status !== 0) throw new Error(`${path.basename(file)}: ${result.stderr || result.error?.message || \"SQL failed\"}`);\n                                     ^\n\nError: review_hfo_drill_generator_sources.sql: psql:/Users/brianlewis/Circle of Life/Haven Workforce In Place/supabase/tests/review_hfo_drill_generator_sources.sql:525: ERROR:  deadlock detected\nDETAIL:  Process 1608 waits for ShareRowExclusiveLock on relation 17308 of database 16388; blocked by process 1423.\nProcess 1423 waits for ShareLock on transaction 8568; blocked by process 1608.\nHINT:  See server log for query details.\n\n    at applyFile (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:128:38)\n    at nativeVerification (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:137:64)\n    at main (file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:155:46)\n    at file:///Users/brianlewis/Circle%20of%20Life/Haven%20Workforce%20In%20Place/scripts/pg-verify-migrations.mjs:281:7\n    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)\n\nNode.js v22.22.3\n"
+    },
+    {
+      "id": "qa.root-build",
+      "required": true,
+      "command": "npm run build",
+      "status": "failed",
+      "duration_ms": 1278,
+      "stdout": "[check:package-manager] PASS: package-lock.json is the only JavaScript package-manager lockfile\n",
+      "stderr": "[migrations:check] FAIL: gap in migration sequence: expected 485, found 497\n"
+    },
+    {
+      "id": "hygiene.nextjs-deprecation-signal",
+      "required": false,
+      "status": "passed",
+      "command": "(derived from npm run build output)",
+      "stdout": "No tracked Next.js middleware deprecation signal in build output."
+    },
+    {
+      "id": "qa.web-build",
+      "required": false,
+      "status": "skipped",
+      "command": "npm run build (apps/web)",
+      "stdout": "apps/web/package.json not found"
+    },
+    {
+      "id": "chaos.stress-suite",
+      "required": true,
+      "command": "npm run stress:test",
+      "status": "passed",
+      "duration_ms": 818,
+      "stdout": "PASS\t18,000 compliance rows retained through 132 capped pages; every cut excludes configuration gaps\nPASS\tChanging or interrupted pagination fails instead of presenting partial compliance\n",
+      "stderr": ""
+    },
+    {
+      "id": "cdo.preview-prerequisite",
+      "required": true,
+      "status": "failed",
+      "command": "start verified UI preview",
+      "stderr": "UI verification cannot start because the production build failed."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 4,
+    "skipped": 1,
+    "blocking_failures": [
+      "qa.migration-sequence",
+      "qa.migrations-apply-postgres",
+      "qa.root-build",
+      "cdo.preview-prerequisite"
+    ]
+  },
+  "artifacts": [
+    "/Users/brianlewis/Circle of Life/Haven Workforce In Place/test-results/agent-gates/2026-09-24T00-55-21-746Z-COL-715-WORKFORCE-REVIEW-FIXES.json"
+  ]
+}

@@ -761,11 +761,6 @@
       "count": 2
     }
   },
-  "src/app/(caregiver)/caregiver/policies/page.tsx": {
-    "haven-back-link/no-adhoc-back-link": {
-      "count": 2
-    }
-  },
   "src/app/(caregiver)/caregiver/resident/[id]/timeline/page.tsx": {
     "haven-back-link/no-adhoc-back-link": {
       "count": 2
@@ -779,14 +774,6 @@
   "src/app/(caregiver)/caregiver/schedules/page.tsx": {
     "haven-back-link/no-adhoc-back-link": {
       "count": 1
-    }
-  },
-  "src/app/(caregiver)/clock/page.tsx": {
-    "haven-back-link/no-adhoc-back-link": {
-      "count": 1
-    },
-    "haven-ui/no-mono-prose": {
-      "count": 8
     }
   },
   "src/app/(caregiver)/followups/page.tsx": {
@@ -934,11 +921,6 @@
       "count": 1
     }
   },
-  "src/components/care-events/ReportReceipt.tsx": {
-    "haven-back-link/no-adhoc-back-link": {
-      "count": 1
-    }
-  },
   "src/components/care-events/admin/AdminCareEventPageClient.tsx": {
     "haven-back-link/no-adhoc-back-link": {
       "count": 1
@@ -962,6 +944,14 @@
   "src/components/care-plans/care-plan-diff-modal.tsx": {
     "haven-ui/no-mono-prose": {
       "count": 3
+    }
+  },
+  "src/components/caregiver/CaregiverClockPanel.tsx": {
+    "haven-back-link/no-adhoc-back-link": {
+      "count": 1
+    },
+    "haven-ui/no-mono-prose": {
+      "count": 8
     }
   },
   "src/components/caregiver/MyShiftSwaps.tsx": {
@@ -1161,11 +1151,6 @@
     },
     "haven-ui/no-mono-prose": {
       "count": 1
-    }
-  },
-  "src/components/timeclock/TimeclockKiosk.tsx": {
-    "haven-ui/no-mono-prose": {
-      "count": 2
     }
   },
   "src/components/timeclock/TimeclockOverview.tsx": {

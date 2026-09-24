@@ -46,12 +46,15 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SYSTEM_ALERT_EMAIL_FROM: ${{ vars.SYSTEM_ALERT_EMAIL_FROM }}
           JOB_MONITOR_EMAIL_ENABLED: ${{ vars.JOB_MONITOR_EMAIL_ENABLED }}
+          LINEAR_MONITOR_CLIENT_ID: ${{ secrets.LINEAR_MONITOR_CLIENT_ID }}
+          LINEAR_MONITOR_CLIENT_SECRET: ${{ secrets.LINEAR_MONITOR_CLIENT_SECRET }}
         shell: bash
         run: |
           report=$(mktemp "${RUNNER_TEMP}/haven-job-monitor-report.XXXXXX")
           trap 'rm -f -- "$report"; if [[ -n "${errors:-}" ]]; then rm -f -- "$errors"; fi' EXIT
           errors=$(mktemp "${RUNNER_TEMP}/haven-job-monitor-errors.XXXXXX")
-          args=()
+          # Linear is the alert destination (COL-547): one issue per flagged job.
+          args=(--send-linear)
           if [[ "${JOB_MONITOR_EMAIL_ENABLED:-}" == "true" ]]; then args+=(--send-email); fi
           if [[ -n "${SENTRY_DSN_JOB_MONITOR:-}" ]]; then args+=(--send-sentry); fi
           if node scripts/scheduled-jobs/check.mjs "${args[@]}" >"$report" 2>"$errors"; then

@@ -9,7 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { mapWithConcurrency } from "@/lib/rounding/compliance-day-chunks";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
-import type { PayPeriodSettings, RawCorrection, RawPunch, RawSyncRejection } from "@/lib/timeclock/compute";
+import type { PayPeriodSettings, RawCorrection, RawFloorUnlock, RawPunch, RawSyncRejection } from "@/lib/timeclock/compute";
 import type { Database } from "@/types/database";
 
 export type TimeclockStaff = {
@@ -26,6 +26,7 @@ export type TimeclockPeriodData = {
   punches: RawPunch[];
   corrections: RawCorrection[];
   rejections: RawSyncRejection[];
+  floorUnlocks: RawFloorUnlock[];
 };
 
 type Client = SupabaseClient<Database>;
@@ -37,6 +38,7 @@ const PUNCH_COLUMNS = "id, staff_id, facility_id, punch_type, punched_at, device
 const CORRECTION_COLUMNS = "id, staff_id, facility_id, correction_type, target_punch_id, target_correction_id, punch_type, corrected_punched_at, exception_key, reason, note, corrected_by, corrected_at";
 const STAFF_COLUMNS = "id, first_name, last_name, preferred_name, employment_status, facility_id";
 const REJECTION_COLUMNS = "id, staff_id, facility_id, punch_type, device_time, reason, created_at";
+const FLOOR_UNLOCK_COLUMNS = "id, staff_id, started_at, on_clock";
 
 type PageQuery<T> = { range: (from: number, to: number) => PromiseLike<{ data: T[] | null; count: number | null; error: { message: string } | null }> };
 
@@ -66,6 +68,8 @@ async function loadPeriodLedger(supabase: Client, scope: LedgerScope, periodStar
   const correctionQuery = () => supabase.from("time_punch_corrections").select(CORRECTION_COLUMNS, { count: "exact" }).eq(scope.column, scope.id).order("corrected_at").order("id");
   const punches = await allPages(() => punchQuery().gte("punched_at", from).lt("punched_at", to)) as RawPunch[];
   const rejections = await allPages(() => supabase.from("timeclock_sync_rejections").select(REJECTION_COLUMNS, { count: "exact" }).eq(scope.column, scope.id).gte("created_at", from).lt("created_at", to).order("created_at").order("id")) as RawSyncRejection[];
+  // Only off-clock floor unlocks become exceptions (unlock_without_punch, COL-690).
+  const floorUnlocks = await allPages(() => supabase.from("floor_unlocks").select(FLOOR_UNLOCK_COLUMNS, { count: "exact" }).eq(scope.column, scope.id).eq("on_clock", false).gte("started_at", from).lt("started_at", to).order("started_at").order("id")) as RawFloorUnlock[];
 
   // Seed by the time worked, never corrected_at: late corrections still affect old periods.
   // Voids/acknowledgements have no corrected time, so retrieve them by their anchors below.
@@ -81,11 +85,13 @@ async function loadPeriodLedger(supabase: Client, scope: LedgerScope, periodStar
   const exceptionTypes = ["missing_out", "missing_meal_end", "long_shift", "clock_skew", "offline_capture", "short_turnaround"];
   const exceptionKeys = [...punches.map((row) => row.id), ...addedIds].flatMap((id) => exceptionTypes.map((type) => `${type}:${id}`));
   exceptionKeys.push(...rejections.map((row) => `rejected_offline_sync:${row.id}`));
+  exceptionKeys.push(...floorUnlocks.map((row) => `unlock_without_punch:${row.id}`));
   corrections.push(...await byIds(exceptionKeys, (keys) => correctionQuery().in("exception_key", keys)) as RawCorrection[]);
   return {
     punches: punches.sort((a, b) => a.punched_at.localeCompare(b.punched_at) || a.id.localeCompare(b.id)),
     corrections: [...new Map(corrections.map((row) => [row.id, row])).values()].sort((a, b) => a.corrected_at.localeCompare(b.corrected_at) || a.id.localeCompare(b.id)),
     rejections,
+    floorUnlocks,
   };
 }
 
@@ -127,7 +133,7 @@ export async function loadTimeclockPeriod(
   const home = await allPages(() => supabase.from("staff").select(STAFF_COLUMNS, { count: "exact" }).eq("facility_id", input.facilityId).is("deleted_at", null).order("last_name").order("id"));
   const homeIds = new Set(home.map((row) => row.id));
   // A visitor may have only an added punch or a rejected sync in this period.
-  const visitorIds = [...ledger.punches, ...ledger.corrections, ...ledger.rejections].flatMap((row) => row.staff_id && !homeIds.has(row.staff_id) ? [row.staff_id] : []);
+  const visitorIds = [...ledger.punches, ...ledger.corrections, ...ledger.rejections, ...ledger.floorUnlocks].flatMap((row) => row.staff_id && !homeIds.has(row.staff_id) ? [row.staff_id] : []);
   const visitors = await byIds(visitorIds, (ids) => supabase.from("staff").select(STAFF_COLUMNS, { count: "exact" }).in("id", ids).is("deleted_at", null).order("id"));
   const staff = [...home, ...visitors].map((row) => ({ id: row.id, name: staffName(row), firstName: row.first_name, lastName: row.last_name, employmentStatus: row.employment_status, facilityId: row.facility_id }));
   return { staff: staff.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName) || a.id.localeCompare(b.id)), ...ledger };
@@ -137,7 +143,7 @@ export async function loadTimeclockPeriod(
 export async function loadStaffTimeclock(
   supabase: Client,
   input: { staffId: string; periodStart: Date; periodEnd: Date },
-): Promise<{ staff: TimeclockStaff | null; punches: RawPunch[]; corrections: RawCorrection[]; rejections: RawSyncRejection[] }> {
+): Promise<{ staff: TimeclockStaff | null; punches: RawPunch[]; corrections: RawCorrection[]; rejections: RawSyncRejection[]; floorUnlocks: RawFloorUnlock[] }> {
   const staffRes = await supabase.from("staff").select(STAFF_COLUMNS).eq("id", input.staffId).is("deleted_at", null).maybeSingle();
   fail(staffRes.error);
   const staff = staffRes.data

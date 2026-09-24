@@ -4,6 +4,7 @@
  * pure mappers are exported for tests and never touch IO.
  */
 
+import { formatProfileName } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatCaregiverFacilityResidentRoomLabel } from "@/lib/caregiver/facility-residents-display-copy";
@@ -22,6 +23,7 @@ import {
 } from "./admin-copy";
 import { emptyCareEventFlags, isCareEventKind, type CareEventFlags } from "./level-engine";
 import { careEventTileWord } from "./tiles";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Client = SupabaseClient<Database>;
 type CareEventRow = Database["public"]["Tables"]["care_events"]["Row"];
@@ -355,7 +357,7 @@ function toCard(
     id: row.id,
     status: parseCareEventStatus(row.status),
     kind,
-    tileWord: isCareEventKind(kind) ? careEventTileWord(kind) : kind.replace(/_/g, " "),
+    tileWord: isCareEventKind(kind) ? careEventTileWord(kind) : enumLabel(kind),
     level: levelNumberFromSeverity(row.final_level) ?? 1,
     derivedLevel: levelNumberFromSeverity(row.derived_level) ?? 1,
     levelChangeReason: row.level_change_reason,
@@ -413,8 +415,8 @@ export async function loadCareEventCard(
     resident,
     reporter: {
       id: row.reported_by,
-      fullName: reporter.data?.full_name ?? null,
-      firstName: firstNameOf(reporter.data?.full_name ?? null),
+      fullName: formatProfileName(reporter.data?.full_name, { fallback: "" }) || null,
+      firstName: firstNameOf(formatProfileName(reporter.data?.full_name, { fallback: "" }) || null),
       phone: reporter.data?.phone?.trim() || null,
     },
     incident,

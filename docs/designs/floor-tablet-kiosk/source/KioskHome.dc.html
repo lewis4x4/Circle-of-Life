@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Front door kiosk</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F2F3F5;font-family:'IBM Plex Sans', system-ui, sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0B1D34}a:hover{color:#0B1D34}
+button{font-family:'IBM Plex Sans', system-ui, sans-serif}
+input{font-family:'IBM Plex Sans', system-ui, sans-serif}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; display: flex; flex-direction: column; background: #F2F3F5; color: #121820; font-family: 'IBM Plex Sans', system-ui, sans-serif; box-sizing: border-box;">
+<div style="height: 128px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; background: #0B1D34; box-sizing: border-box;">
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<span style="font-size: 15px; letter-spacing: 0.1em; color: #B8C4D4;">CIRCLE OF LIFE</span>
+<span style="font-size: 36px; font-weight: 600; color: #FFFFFF;">Homewood Lodge</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 40px; font-weight: 500; color: #FFFFFF;">6:58 AM</span>
+<span style="font-size: 16px; color: #B8C4D4;">Thursday, October 1</span>
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 22px; padding: 28px 40px 24px; box-sizing: border-box;">
+<h1 style="margin: 0; font-size: 30px; font-weight: 600; color: #121820;">Welcome. Tap who you are.</h1>
+<div style="flex-grow: 1; display: flex; gap: 20px; min-height: 0;">
+<a href="KioskStaff.dc.html" style="width: 330px; flex-shrink: 0; border-radius: 16px; background: #0B1D34; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; text-decoration: none; box-sizing: border-box;">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+<div style="display: flex; flex-direction: column; gap: 8px;"><span style="font-size: 34px; font-weight: 600; color: #FFFFFF;">Staff</span><span style="font-size: 18px; color: #C9D3E0;">Clock in, meal, clock out</span></div>
+</a>
+<div style="flex-grow: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 20px;">
+<a href="KioskVisitor.dc.html" style="border-radius: 16px; background: #FFFFFF; border: 1.5px solid #D5DAE1; display: flex; align-items: center; gap: 20px; padding: 0 28px; text-decoration: none; text-align: left; box-sizing: border-box; cursor: pointer;"><div style="width: 64px; height: 64px; flex-shrink: 0; border-radius: 14px; background: #E7ECF3; display: flex; align-items: center; justify-content: center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B1D34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 24px; font-weight: 600; color: #121820;">Visiting a resident</span><span style="font-size: 16px; color: #4A5461;">Family and friends</span></div></a><a href="KioskProvider.dc.html" style="border-radius: 16px; background: #FFFFFF; border: 1.5px solid #D5DAE1; display: flex; align-items: center; gap: 20px; padding: 0 28px; text-decoration: none; text-align: left; box-sizing: border-box; cursor: pointer;"><div style="width: 64px; height: 64px; flex-shrink: 0; border-radius: 14px; background: #E7ECF3; display: flex; align-items: center; justify-content: center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B1D34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 24px; font-weight: 600; color: #121820;">Healthcare provider</span><span style="font-size: 16px; color: #4A5461;">Doctors, nurses, hospice, home health, therapy</span></div></a><button type="button" style="border-radius: 16px; background: #FFFFFF; border: 1.5px solid #D5DAE1; display: flex; align-items: center; gap: 20px; padding: 0 28px; text-decoration: none; text-align: left; box-sizing: border-box; cursor: pointer;"><div style="width: 64px; height: 64px; flex-shrink: 0; border-radius: 14px; background: #E7ECF3; display: flex; align-items: center; justify-content: center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B1D34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 24px; font-weight: 600; color: #121820;">Vendor or contractor</span><span style="font-size: 16px; color: #4A5461;">Deliveries, repairs, service</span></div></button><button type="button" style="border-radius: 16px; background: #FFFFFF; border: 1.5px solid #D5DAE1; display: flex; align-items: center; gap: 20px; padding: 0 28px; text-decoration: none; text-align: left; box-sizing: border-box; cursor: pointer;"><div style="width: 64px; height: 64px; flex-shrink: 0; border-radius: 14px; background: #E7ECF3; display: flex; align-items: center; justify-content: center;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0B1D34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 24px; font-weight: 600; color: #121820;">Inspector or official</span><span style="font-size: 16px; color: #4A5461;">AHCA surveyors, fire marshal</span></div></button>
+</div>
+</div>
+<a href="KioskLeaving.dc.html" style="height: 76px; flex-shrink: 0; border-radius: 16px; background: #FFFFFF; border: 1.5px solid #D5DAE1; display: flex; align-items: center; justify-content: center; gap: 14px; font-size: 22px; font-weight: 600; color: #121820; text-decoration: none; box-sizing: border-box;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B1D34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Leaving? Sign out here</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1180, "height": 820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

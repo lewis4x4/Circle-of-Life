@@ -6,6 +6,7 @@ import { fetchHomeCensus, type HomeCensusOnTap } from "@/lib/home/census";
 import { fetchHomeOnTap, type HomeOnTapPayload } from "@/lib/home/on-tap";
 import { fetchShiftsToday, type HomeShiftsToday } from "@/lib/home/call-out";
 import { fetchNotesOnTap, type HomeNoteOnTap } from "@/lib/home/notes";
+import { fetchOpenInspections, type HomeOpenInspection } from "@/lib/home/inspector-on-site";
 import { fetchHomePastDue, type HomePastDue } from "@/lib/home/past-due";
 import { fetchLiveBoardEscalations, fetchLiveBoardTasks } from "@/lib/rounding/live-board-fetch";
 import { deriveLiveBoardCounts } from "@/lib/rounding/live-board-state";
@@ -45,6 +46,8 @@ export type HomeInitialData = {
   notesOnTap: HomeNoteOnTap[];
   /** Today's shifts and roster for call-out and cover (COL-596); only when call_out is released. */
   shiftsToday: HomeShiftsToday | null;
+  /** Inspectors or officials signed in and not out (COL-692); empty when none or when the read fails. */
+  openInspections: HomeOpenInspection[];
 };
 
 const EMPTY_ROUNDING: HomeRoundingSummary = { available: false, missedToday: 0, openEscalations: 0, lastEntryAt: null, lastEntryBy: null };
@@ -153,9 +156,10 @@ export async function loadHome(
     feedPromise.then((feed) => loadRounding(supabase, args.facilityId, feed.localDate)),
     loadFacilityOptions(supabase),
     fetchHomeCensus(supabase, args.facilityId, args.now),
+    fetchOpenInspections(supabase, args.facilityId, args.now),
   ]);
   // The feed is required: its rejection still rejects loadHome.
-  const [feed, [snapshot, presence, standUp, rounding, facilityOptions, census], released, [pastDue, notesOnTap, shiftsToday]] =
+  const [feed, [snapshot, presence, standUp, rounding, facilityOptions, census, inspections], released, [pastDue, notesOnTap, shiftsToday]] =
     await Promise.all([feedPromise, settledPromise, releasedPromise, releasedReadsPromise]);
   return {
     feed,
@@ -170,5 +174,6 @@ export async function loadHome(
     pastDue,
     notesOnTap,
     shiftsToday,
+    openInspections: inspections.status === "fulfilled" ? inspections.value : [],
   };
 }
