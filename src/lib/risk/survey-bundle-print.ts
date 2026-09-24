@@ -7,6 +7,7 @@ import {
   formatSurveyBundlePrintPocSubmissionDueDate,
   formatSurveyBundlePrintRiskScore,
 } from "@/lib/risk/survey-bundle-print-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 function escapeHtml(value: string) {
   return value
@@ -39,7 +40,7 @@ export function buildSurveyBundlePrintHtml(packet: SurveyBundlePacket) {
           (row) => `
             <tr>
               <td>${escapeHtml(row.name)}</td>
-              <td>${escapeHtml(row.category.replaceAll("_", " "))}</td>
+              <td>${escapeHtml(enumLabel(row.category, { case: "lower" }))}</td>
               <td>${escapeHtml(row.expirationDate ?? "Missing")}</td>
               <td>${escapeHtml(row.status)}</td>
             </tr>`,

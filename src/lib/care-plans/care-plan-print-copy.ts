@@ -6,6 +6,7 @@
  */
 
 import { formatCarePlanDateOnly } from "./care-plan-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const CARE_PLAN_PRINT_TITLE = "Resident Care Plan";
 export const CARE_PLAN_PRINT_NO_TIMESTAMP_COPY = "No date posted";
@@ -70,8 +71,7 @@ export function formatCarePlanPrintDateOfBirth(iso: string | null | undefined): 
 }
 
 function titleCaseSnake(value: string): string {
-  return value
-    .replace(/_/g, " ")
+  return enumLabel(value)
     .split(" ")
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

@@ -8,6 +8,7 @@
  */
 
 import { formatLevelWord } from "@/lib/incidents/incidents-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type CodeOption = { code: string; label: string };
 
@@ -72,7 +73,7 @@ export function lowerLevelReasonLabel(code: string | null | undefined): string {
 }
 
 export function correctiveActionLabel(code: string): string {
-  return labelFor(correctiveActionChips, code) ?? code.replace(/_/g, " ");
+  return labelFor(correctiveActionChips, code) ?? enumLabel(code);
 }
 
 export function familyMethodLabel(code: string | null | undefined): string | null {
@@ -130,7 +131,7 @@ export function isCloseGateItem(value: unknown): value is CloseGateItem {
 
 /** "Still needed: family decision, physician decision, AHCA decision" or null when nothing is missing. */
 export function careEventCloseGateLine(missing: readonly string[]): string | null {
-  const words = missing.map((item) => (isCloseGateItem(item) ? CLOSE_GATE_WORDS[item] : item.replace(/_/g, " ")));
+  const words = missing.map((item) => (isCloseGateItem(item) ? CLOSE_GATE_WORDS[item] : enumLabel(item, { case: "lower" })));
   if (words.length === 0) return null;
   return `Still needed: ${words.join(", ")}`;
 }
@@ -183,7 +184,7 @@ export function deliverySkipReasonLine(reason: string | null | undefined, channe
     case "no_target":
       return "Nobody is subscribed to this route";
     default:
-      return `Skipped: ${reason.replace(/_/g, " ")}`;
+      return `Skipped: ${enumLabel(reason, { case: "lower" })}`;
   }
 }
 
@@ -209,7 +210,7 @@ export function deliveryTargetWord(targetName: string | null | undefined, target
   const role = targetRole?.trim().toLowerCase() ?? "";
   if (!role) return "Administrator or Assistant";
   if (TARGET_ROLE_WORDS[role]) return TARGET_ROLE_WORDS[role];
-  const words = role.replace(/_/g, " ").replace(/\bnurse\b/g, "Administrator or Assistant");
+  const words = enumLabel(role, { case: "lower" }).replace(/\bnurse\b/g, "Administrator or Assistant");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 

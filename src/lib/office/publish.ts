@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type PublishStatus = "submitted" | "approved" | "rejected" | "published";
 
 export const PUBLISH_AUDIENCES: { id: string; label: string }[] = [
@@ -46,7 +47,7 @@ export function publishStatusTone(
 }
 
 export function audienceLabel(id: string): string {
-  return PUBLISH_AUDIENCES.find((a) => a.id === id)?.label ?? id.replace(/_/g, " ");
+  return PUBLISH_AUDIENCES.find((a) => a.id === id)?.label ?? enumLabel(id);
 }
 
 export function isReviewerRole(role: string | null): boolean {

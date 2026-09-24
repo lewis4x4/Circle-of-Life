@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import type { ConfigurationSnapshot } from "@/lib/rounding/cadence-settings";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export function CadenceConfigurationEditor({ value, onChange, disabled, onValidityChange, severityClasses, rosterShiftTypes }: {
   value: ConfigurationSnapshot; onChange: (next: ConfigurationSnapshot) => void; disabled: boolean; onValidityChange?: (valid: boolean) => void; severityClasses?: string[]; rosterShiftTypes?: string[];
@@ -27,7 +28,7 @@ export function CadenceConfigurationEditor({ value, onChange, disabled, onValidi
           <label className="text-sm">Starts locally<Input placeholder="HH:MM" value={shift.starts_at_local} onChange={(e) => update({ starts_at_local: e.target.value })} /></label>
           <label className="text-sm">Ends locally<Input placeholder="HH:MM" value={shift.ends_at_local} onChange={(e) => update({ ends_at_local: e.target.value })} /></label>
           <label className="text-sm">Roster mapping<Select value={shift.roster_shift_type} disabled={disabled} onValueChange={(roster_shift_type) => update({ roster_shift_type })}><SelectTrigger aria-label={`Roster mapping for ${shift.label}`}><SelectValue /></SelectTrigger><SelectContent>
-            {(rosterShiftTypes ?? [...new Set(value.shifts.map((row) => row.roster_shift_type))]).map((key) => <SelectItem key={key} value={key}>{key.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase())}</SelectItem>)}
+            {(rosterShiftTypes ?? [...new Set(value.shifts.map((row) => row.roster_shift_type))]).map((key) => <SelectItem key={key} value={key}>{enumLabel(key)}</SelectItem>)}
           </SelectContent></Select></label>
           <label className="flex items-center gap-2 text-sm"><Switch checked={shift.enabled} onCheckedChange={(enabled) => update({ enabled })} />Shift enabled</label>
         </div>;
@@ -50,11 +51,11 @@ export function CadenceConfigurationEditor({ value, onChange, disabled, onValidi
         const update = (patch: Partial<typeof rule>) => onChange({ ...value, watchlist_rules: value.watchlist_rules.map((row, i) => i === index ? { ...row, ...patch } : row) });
         return <div key={rule.signal_key} className="space-y-2 rounded border border-border p-3">
           <label className="flex items-center gap-2 text-sm"><Switch checked={rule.enabled} onCheckedChange={(enabled) => update({ enabled })} />{rule.label}</label>
-          {["threshold_count", "lookback_days", "baseline_days", "threshold_percent", "secondary_threshold_percent", "secondary_lookback_days", "severity_weight"].filter((key) => rule[key] != null).map((key) => <label key={key} className="block text-sm">{key.replaceAll("_", " ")}
+          {["threshold_count", "lookback_days", "baseline_days", "threshold_percent", "secondary_threshold_percent", "secondary_lookback_days", "severity_weight"].filter((key) => rule[key] != null).map((key) => <label key={key} className="block text-sm">{enumLabel(key, { case: "lower" })}
             <Input type="number" value={Number(rule[key])} onChange={(e) => update({ [key]: Number(e.target.value) })} />
           </label>)}
           <label className="block text-sm">Severity class<Select value={rule.severity_class} disabled={disabled} onValueChange={(severity_class) => update({ severity_class })}><SelectTrigger aria-label={`Severity for ${rule.label}`}><SelectValue /></SelectTrigger><SelectContent>
-            {(severityClasses ?? [...new Set(value.watchlist_rules.map((row) => row.severity_class))]).map((key) => <SelectItem key={key} value={key}>{key.replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase())}</SelectItem>)}
+            {(severityClasses ?? [...new Set(value.watchlist_rules.map((row) => row.severity_class))]).map((key) => <SelectItem key={key} value={key}>{enumLabel(key)}</SelectItem>)}
           </SelectContent></Select></label>
         </div>;
       })}

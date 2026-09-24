@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /** When `resident_medications.prn_effectiveness_check_minutes` is null or invalid. */
 export const DEFAULT_PRN_REASSESS_MINUTES = 60;
 
@@ -21,7 +22,7 @@ export function conditionChangeTypeLabel(value: string): string {
     neurologic: "Neurologic",
     other: "Other",
   };
-  return map[value] ?? value.replace(/_/g, " ");
+  return map[value] ?? enumLabel(value);
 }
 
 /** Roles that may update any eMAR row per RLS (administered_by not required). */

@@ -4,6 +4,7 @@ import {
   facilityDateIsoDaysFromToday,
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type BinderCategory =
   | "admin_records"
@@ -41,7 +42,7 @@ export type BinderItemRow = {
 };
 
 export function binderCategoryLabel(id: string): string {
-  return BINDER_CATEGORIES.find((c) => c.id === id)?.label ?? id.replace(/_/g, " ");
+  return BINDER_CATEGORIES.find((c) => c.id === id)?.label ?? enumLabel(id);
 }
 
 export function binderStatusTone(

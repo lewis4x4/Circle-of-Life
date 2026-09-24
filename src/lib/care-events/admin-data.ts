@@ -23,6 +23,7 @@ import {
 } from "./admin-copy";
 import { emptyCareEventFlags, isCareEventKind, type CareEventFlags } from "./level-engine";
 import { careEventTileWord } from "./tiles";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Client = SupabaseClient<Database>;
 type CareEventRow = Database["public"]["Tables"]["care_events"]["Row"];
@@ -356,7 +357,7 @@ function toCard(
     id: row.id,
     status: parseCareEventStatus(row.status),
     kind,
-    tileWord: isCareEventKind(kind) ? careEventTileWord(kind) : kind.replace(/_/g, " "),
+    tileWord: isCareEventKind(kind) ? careEventTileWord(kind) : enumLabel(kind),
     level: levelNumberFromSeverity(row.final_level) ?? 1,
     derivedLevel: levelNumberFromSeverity(row.derived_level) ?? 1,
     levelChangeReason: row.level_change_reason,

@@ -6,6 +6,7 @@ import { CONTROL, DateTimeInput } from "./work-inputs";
 import { localTime } from "./receipt-history";
 
 import type { HelpHandoverData as Snapshot, HelpHandoverEvent as Event } from "@/lib/operations/help-handover";
+import { enumLabel } from "@/lib/display/enum-label";
 type Props = { activityId: string; facilityId: string; occurrenceId: string; actorId: string; timezone: string };
 const endpoint = "/api/admin/operations/help-handover";
 
@@ -97,7 +98,7 @@ function HelpPanel({ activityId, facilityId, occurrenceId, actorId, timezone }: 
     return <details><summary className={`${CONTROL} cursor-pointer`}>{label}</summary>
       {rows.length === 0 ? <p>No recorded history.</p> : <ol>{rows.map((row) => <li key={row.id} className="border-l border-border pl-3">
         <p>{row.command} · {person(row.actor_id)} · {localTime(row.created_at, timezone)}</p>
-        {Object.entries(row.payload).filter(([key]) => ["how_to", "examples", "contact", "duty_scope", "note", "duty_role"].includes(key)).map(([key, value]) => <p key={key}>{key.replaceAll("_", " ")}: {String(value ?? "Unknown")}</p>)}
+        {Object.entries(row.payload).filter(([key]) => ["how_to", "examples", "contact", "duty_scope", "note", "duty_role"].includes(key)).map(([key, value]) => <p key={key}>{enumLabel(key, { case: "lower" })}: {String(value ?? "Unknown")}</p>)}
         {row.payload.owner_user_id ? <p>Owner: {person(row.payload.owner_user_id)} · Backup: {person(row.payload.backup_user_id)}</p> : null}
         {documents(row.payload.protected_documents)}
         {row.payload.effective_at ? <p>Effective: {localTime(row.payload.effective_at, timezone)}</p> : null}
@@ -122,8 +123,8 @@ function HelpPanel({ activityId, facilityId, occurrenceId, actorId, timezone }: 
       {data.governing_facility_requirement ? <div className="space-y-1">
         <h5 className="font-medium">Ownership recorded in this task’s rule version</h5>
         <p>This configured ownership is historical context. It does not establish personal acceptance or current coverage.</p>
-        <p>Configured owner role: {String(data.governing_facility_requirement.owner_role ?? "Unknown").replaceAll("_", " ")} · Person: {data.governing_facility_requirement.owner_user_id ? person(data.governing_facility_requirement.owner_user_id) : "Unknown"}</p>
-        <p>Configured backup role: {String(data.governing_facility_requirement.backup_role ?? "Unknown").replaceAll("_", " ")} · Person: {data.governing_facility_requirement.backup_user_id ? person(data.governing_facility_requirement.backup_user_id) : "Unknown"}</p>
+        <p>Configured owner role: {enumLabel(String(data.governing_facility_requirement.owner_role ?? "Unknown"), { case: "lower" })} · Person: {data.governing_facility_requirement.owner_user_id ? person(data.governing_facility_requirement.owner_user_id) : "Unknown"}</p>
+        <p>Configured backup role: {enumLabel(String(data.governing_facility_requirement.backup_role ?? "Unknown"), { case: "lower" })} · Person: {data.governing_facility_requirement.backup_user_id ? person(data.governing_facility_requirement.backup_user_id) : "Unknown"}</p>
         <p>Rule effective from: {data.governing_facility_requirement.effective_from ? localTime(data.governing_facility_requirement.effective_from, timezone) : "Unknown"} · Effective to: {data.governing_facility_requirement.effective_to ? localTime(data.governing_facility_requirement.effective_to, timezone) : "No end recorded"} ({timezone})</p>
       </div> : null}
       <h4 className="font-semibold">Current supplemental guidance</h4>

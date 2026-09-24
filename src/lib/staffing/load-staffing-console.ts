@@ -21,6 +21,7 @@ import {
   type StaffingCoverageScope,
 } from "@/lib/staffing/staffing-coverage-scope";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 import { fetchStaffingRatioCheckOn } from "@/lib/staffing/ratio-check";
 
 export type SnapshotRow = {
@@ -221,7 +222,7 @@ function mapDbStaffRoleToLabel(role: string): string {
   if (normalized === "cna") return "CNA";
   if (normalized === "rn") return "RN";
   if (normalized === "lpn") return "LPN";
-  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return enumLabel(normalized, { case: "title" });
 }
 
 /**

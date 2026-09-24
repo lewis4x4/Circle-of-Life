@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type InternalFormCategory =
   | "maintenance"
   | "supply"
@@ -60,7 +61,7 @@ export type QueryError = { message: string };
 export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function categoryLabel(id: string): string {
-  return INTERNAL_FORM_CATEGORIES.find((c) => c.id === id)?.label ?? id.replace(/_/g, " ");
+  return INTERNAL_FORM_CATEGORIES.find((c) => c.id === id)?.label ?? enumLabel(id);
 }
 
 export function submissionStatusTone(

@@ -8,6 +8,7 @@ import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-disp
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type DashboardCensusRow = {
   id: string;
@@ -153,7 +154,7 @@ function shiftSummaryForTimezone(timeZone: string): string {
 }
 
 function formatIncidentCategory(raw: string): string {
-  return raw.replace(/_/g, " ");
+  return enumLabel(raw);
 }
 
 function buildWorkflowInbox(input: {

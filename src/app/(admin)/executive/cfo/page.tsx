@@ -47,7 +47,7 @@ export default function CfoDashboardPage() {
     ? facilityName
       ? `This facility — CFO finance board for ${facilityName}, not a portfolio roll-up.`
       : "This facility — CFO finance board (facility name not loaded), not a portfolio roll-up."
-    : "CFO finance board — all facilities in your organization, not the enterprise portfolio roll-up.";
+    : "CFO finance board — all facilities in your organization.";
 
   const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
     authLoading,

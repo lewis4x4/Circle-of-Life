@@ -128,3 +128,18 @@ export function incidentSeverityOptions(withGuide: boolean): { value: IncidentSe
     label: withGuide ? formatSeverityChoice(value) : formatLevelWord(value),
   }));
 }
+
+/**
+ * Who reported an incident, in staff words (COL-689): the staff-record name first, then
+ * the profile name unless it is a login handle or an email, then "Staff".
+ */
+export function formatIncidentReporterName(
+  staff: { first_name: string | null; last_name: string | null } | null,
+  profileFullName: string | null | undefined,
+): string {
+  const staffName = [staff?.first_name, staff?.last_name].map((part) => part?.trim() ?? "").filter(Boolean).join(" ");
+  if (staffName) return staffName;
+  const profileName = profileFullName?.trim() ?? "";
+  const looksLikeHandle = profileName.includes("@") || /^[a-z0-9._-]+$/.test(profileName);
+  return profileName && !looksLikeHandle ? profileName : "Staff";
+}
