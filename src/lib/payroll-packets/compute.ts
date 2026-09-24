@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { computeTimesheet, effectivePunches, segmentMinutesWithin, type EffectivePunch, type WorkSegment } from "@/lib/timeclock/compute";
 import type { PacketInput, PacketRow, PacketSnapshot, PacketTotals, PayrollPolicy, PayrollSource } from "./types";
@@ -51,7 +52,7 @@ function sequenceIssues(punches: EffectivePunch[], from: Date, to: Date): string
   const issues: string[] = [];
   for (const punch of punches) {
     const expected = punch.punchType === "in" ? "out" : punch.punchType === "meal_end" ? "meal" : "in";
-    if (state !== expected && punch.at >= from && punch.at < to) issues.push(`Resolve the ${punch.punchType.replaceAll("_", " ")} punch sequence at ${punch.at.toISOString()}.`);
+    if (state !== expected && punch.at >= from && punch.at < to) issues.push(`Resolve the ${enumLabel(punch.punchType, { case: "lower" })} punch sequence at ${punch.at.toISOString()}.`);
     state = punch.punchType === "out" ? "out" : punch.punchType === "meal_start" ? "meal" : "in";
   }
   return issues;
@@ -173,7 +174,7 @@ export function buildPayrollSnapshot(source: PayrollSource, input: { periodStart
           if (segment.kind === "work") worked += minutes; else meal += minutes;
         }
       }
-      issues.push(...sheet.exceptions.filter((e) => !e.acknowledged && (e.at >= rangeFrom || (["missing_out", "missing_meal_end", "long_shift"].includes(e.type) && (effective.find((punch) => punch.at > e.at && ["out", "in"].includes(punch.punchType))?.at ?? input.now) > rangeFrom))).map((e) => `Resolve ${e.type.replaceAll("_", " ")} (${facilityId}, ${e.at.toISOString()}).`));
+      issues.push(...sheet.exceptions.filter((e) => !e.acknowledged && (e.at >= rangeFrom || (["missing_out", "missing_meal_end", "long_shift"].includes(e.type) && (effective.find((punch) => punch.at > e.at && ["out", "in"].includes(punch.punchType))?.at ?? input.now) > rangeFrom))).map((e) => `Resolve ${enumLabel(e.type, { case: "lower" })} (${facilityId}, ${e.at.toISOString()}).`));
       issues.push(...sequenceIssues(effective.filter((e) => e.at <= input.now), rangeFrom, rangeTo));
       if (sheet.segments.some((s) => !s.end && overlap(s, rangeFrom, rangeTo, input.now))) issues.push(`Finish or correct the open shift/meal at facility ${facilityId}.`);
       // Provenance includes boundary punches and corrections, even when their timestamps
