@@ -16,10 +16,9 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  // Temporary (COL-797, migration 512): 505-511 are held by other pull requests
+  // Temporary (COL-797, migration 512): 506-511 are held by other pull requests
   // this branch does not carry. Each entry prints a cleanup notice once its file
   // is present; delete the entry then.
-  505: "held by PR #880 (payroll), merged to main after this branch was cut; delete once main is merged in",
   506: "claimed by open PR #878 (referral contact log); temporary until it merges",
   507: "claimed by open PR #879 (benefits admission screening); temporary until it merges",
   508: "claimed by open PR #881 (benefits recheck workflow); temporary until it merges",

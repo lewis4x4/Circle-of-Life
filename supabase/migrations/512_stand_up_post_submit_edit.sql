@@ -67,8 +67,8 @@ REVOKE ALL ON public.stand_up_post_submit_changes FROM PUBLIC,anon,authenticated
 GRANT SELECT ON public.stand_up_post_submit_changes TO authenticated;
 CREATE POLICY "Stand Up administrators see post-submit changes in accessible facilities"
  ON public.stand_up_post_submit_changes FOR SELECT TO authenticated
- USING (organization_id = haven.organization_id()
-  AND haven.app_role()::text IN ('owner','org_admin','facility_admin')
+ USING (organization_id = (SELECT haven.organization_id())
+  AND (SELECT haven.app_role())::text IN ('owner','org_admin','facility_admin')
   AND facility_id IN (SELECT haven.accessible_facility_ids()));
 CREATE TRIGGER stand_up_post_submit_change_immutable BEFORE UPDATE OR DELETE ON public.stand_up_post_submit_changes
  FOR EACH ROW EXECUTE FUNCTION haven.stand_up_immutable();
