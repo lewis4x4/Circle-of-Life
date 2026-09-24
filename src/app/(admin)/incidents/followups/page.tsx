@@ -1,6 +1,6 @@
 "use client";
 
-import { formatProfileName } from "@/lib/format/datetime";
+import { formatDisplayDateTime, formatProfileName } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -572,7 +572,7 @@ export default function AdminIncidentFollowupsPage() {
                   <div className="grid gap-3 text-sm sm:grid-cols-2 pb-3">
                     <div>
                       <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Due</div>
-                      <div className="mt-1 text-foreground">{new Date(row.dueAt).toLocaleString()}</div>
+                      <div className="mt-1 text-foreground">{formatDisplayDateTime(row.dueAt)}</div>
                     </div>
                     <div>
                       <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Assignee</div>

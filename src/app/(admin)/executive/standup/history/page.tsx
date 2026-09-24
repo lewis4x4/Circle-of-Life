@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -153,7 +154,7 @@ export default function ExecutiveStandupHistoryPage() {
   }, [rows, searchParams]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
 
@@ -173,12 +174,6 @@ export default function ExecutiveStandupHistoryPage() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Refresh
             </Button>
-            {rows.length === 0 && canCreateDraft ? (
-              <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
-                {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-                Generate first draft
-              </Button>
-            ) : null}
           </div>
         </header>
 
@@ -276,8 +271,8 @@ export default function ExecutiveStandupHistoryPage() {
                         <div>
                           <CardTitle className="text-xl">{row.weekOf}</CardTitle>
                           <CardDescription className="mt-1">
-                            Generated {new Date(row.generatedAt).toLocaleString()}
-                            {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString()}` : ""}
+                            Generated {formatDisplayDateTime(row.generatedAt)}
+                            {row.publishedAt ? ` · Published ${formatDisplayDateTime(row.publishedAt)}` : ""}
                           </CardDescription>
                         </div>
                         <Badge variant="outline" className={badgeClass(row.status)}>
@@ -359,8 +354,8 @@ export default function ExecutiveStandupHistoryPage() {
                       <div>
                         <div className="font-medium text-slate-900 dark:text-white">{job.sourceFileName}</div>
                         <div className="mt-1 text-sm text-muted-foreground">
-                          Created {new Date(job.createdAt).toLocaleString()}
-                          {job.finishedAt ? ` · Finished ${new Date(job.finishedAt).toLocaleString()}` : ""}
+                          Created {formatDisplayDateTime(job.createdAt)}
+                          {job.finishedAt ? ` · Finished ${formatDisplayDateTime(job.finishedAt)}` : ""}
                         </div>
                       </div>
                       <Badge variant="outline" className={badgeClass(job.status)}>
@@ -382,7 +377,7 @@ export default function ExecutiveStandupHistoryPage() {
                       </div>
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Started</div>
-                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? new Date(job.startedAt).toLocaleString() : "Queued"}</div>
+                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? formatDisplayDateTime(job.startedAt) : "Queued"}</div>
                       </div>
                     </div>
                     {job.errorText ? (

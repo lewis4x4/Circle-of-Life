@@ -7,7 +7,7 @@ describe("FinanceOverviewPageClient cutoff stamp", () => {
     const source = fs.readFileSync(__filename.replace(/\.test\.tsx$/, ".tsx"), "utf8");
 
     expect(source).toContain(
-      "Includes entries dated on or after {postedLookbackStart} Eastern.",
+      "Includes entries dated on or after {formatDisplayDate(postedLookbackStart)}.",
     );
   });
 });

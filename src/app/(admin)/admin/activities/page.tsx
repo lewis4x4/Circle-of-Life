@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,7 @@ import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 function formatStamp(iso: string | null): string {
   if (!iso) return "Unconfirmed";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(iso));
+  return formatShortDateTime(iso);
 }
 
 export default function AdminActivitiesPage() {

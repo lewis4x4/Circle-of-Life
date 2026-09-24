@@ -18,6 +18,7 @@ import {
   type StaffingCoverageScope,
 } from "@/lib/staffing/staffing-coverage-scope";
 import type { Database } from "@/types/database";
+import { fetchStaffingRatioCheckOn } from "@/lib/staffing/ratio-check";
 
 export type SnapshotRow = {
   id: string;
@@ -82,6 +83,8 @@ export type StaffingConsoleData = {
   attendance: AttendanceEventRow[];
   /** What the gap and credential panels examined; null when that read failed. */
   coverageScope: StaffingCoverageScope | null;
+  /** Whether the facility's staffing-ratio check is on (a ratio rule set is assigned). */
+  ratioCheckOn: boolean;
 };
 
 type SupabaseSnapshotRow = {
@@ -211,6 +214,24 @@ function mapDbStaffRoleToLabel(role: string): string {
   return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+/**
+ * Which shift-assignment statuses leave a shift uncovered (COL-710).
+ * `assigned` is the default status of every scheduled shift and nothing in the
+ * app moves it to `confirmed`, so it is staffed, not a gap: counting it made
+ * every scheduled shift read "Short 1". A shift is short when its person
+ * called out or did not show (critical), or asked to swap and no one has
+ * taken it yet (warning).
+ */
+export const SHIFT_GAP_URGENCY: Readonly<Record<string, ShiftGap["urgency"]>> = {
+  called_out: "critical",
+  no_show: "critical",
+  swap_requested: "warning",
+};
+
+export function shiftGapUrgency(status: string): ShiftGap["urgency"] | null {
+  return SHIFT_GAP_URGENCY[status] ?? null;
+}
+
 export async function fetchShiftAssignmentGaps(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
@@ -225,7 +246,7 @@ export async function fetchShiftAssignmentGaps(
     .is("deleted_at", null)
     .gte("shift_date", todayIso)
     .lte("shift_date", endDateIso)
-    .in("status", ["assigned", "swap_requested", "called_out", "no_show"])
+    .in("status", Object.keys(SHIFT_GAP_URGENCY))
     .order("shift_date", { ascending: true });
 
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
@@ -250,9 +271,9 @@ export async function fetchShiftAssignmentGaps(
   const grouped = new Map<string, ShiftGap>();
 
   for (const row of shiftRows) {
+    const urgency = shiftGapUrgency(row.status);
+    if (!urgency) continue;
     const role = roleByStaffId.get(row.staff_id) ?? "Staff";
-    const urgency: ShiftGap["urgency"] =
-      row.status === "called_out" || row.status === "no_show" ? "critical" : "warning";
     const key = `${row.shift_date}:${row.shift_type}:${role}:${urgency}`;
     const existing = grouped.get(key);
     if (existing) {
@@ -339,7 +360,7 @@ export async function loadStaffingConsole(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database>,
 ): Promise<StaffingConsoleData> {
-  const [snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope] =
+  const [snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope, ratioCheckOn] =
     await Promise.all([
       fetchSnapshotsFromSupabase(selectedFacilityId, supabase),
       fetchExpiredCertificationWarnings(selectedFacilityId, supabase),
@@ -348,9 +369,10 @@ export async function loadStaffingConsole(
       fetchStaffRequisitions(selectedFacilityId, supabase),
       fetchAttendanceEvents(selectedFacilityId, supabase),
       fetchCoverageScopeOrNull(selectedFacilityId, supabase),
+      fetchStaffingRatioCheckOn(selectedFacilityId, supabase),
     ]);
 
-  return { snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope };
+  return { snapshots, certWarnings, shiftGaps, staffOptions, requisitions, attendance, coverageScope, ratioCheckOn };
 }
 
 /** A failed scope read must not blank the console; the panels say "could not be checked" instead. */

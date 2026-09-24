@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -301,7 +302,7 @@ export default function AdminTimeRecordsPage() {
   }, [load, rows, selectedFacilityId, supabase, user]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
@@ -490,12 +491,5 @@ async function fetchTimeRecordsFromSupabase(selectedFacilityId: string | null): 
 }
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatShortDateTime(iso, { fallback: iso });
 }

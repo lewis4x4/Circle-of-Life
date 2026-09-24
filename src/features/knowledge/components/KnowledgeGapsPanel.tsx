@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React from "react";
 import { HelpCircle, Check, Clock } from "lucide-react";
 import type { KnowledgeGapRow } from "../lib/types";
@@ -37,7 +38,7 @@ export function KnowledgeGapsPanel({ gaps, loading, onResolve }: KnowledgeGapsPa
                 <span>Asked {gap.frequency}x</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {new Date(gap.last_asked_at).toLocaleDateString()}
+                  {formatDisplayDate(gap.last_asked_at)}
                 </span>
               </div>
             </div>

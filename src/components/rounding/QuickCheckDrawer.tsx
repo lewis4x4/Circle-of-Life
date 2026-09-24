@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayTime } from "@/lib/format/datetime";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, X, AlertTriangle } from "lucide-react";
@@ -258,7 +259,7 @@ function ScopedQuickCheckDrawer({
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Due {Number.isNaN(new Date(task.dueAt).getTime()) ? "time unavailable" : new Date(task.dueAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  Due {formatDisplayTime(task.dueAt, { fallback: "time unavailable" })}
                   {queuePosition && (
                     <span className="ml-2 text-foreground">{queuePosition.current} of {queuePosition.total}</span>
                   )}
@@ -314,7 +315,7 @@ function ScopedQuickCheckDrawer({
 
             <ObservationCapture
               residentName={task!.residentName}
-              dueLabel={`Due ${new Date(task!.dueAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+              dueLabel={`Due ${formatDisplayTime(task!.dueAt, { fallback: "time unavailable" })}`}
               facilityId={task!.facilityId}
               submitting={submitting}
               pendingPayload={pending?.payload}

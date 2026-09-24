@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatDateTimeWith,
   formatDisplayDate,
   formatDisplayDateTime,
   formatDisplayTime,
@@ -122,5 +123,19 @@ describe("formatProfileName never shows a login identifier", () => {
   it("names the identifiers it refuses", () => {
     expect(looksLikeLoginIdentifier("j.smith")).toBe(true);
     expect(looksLikeLoginIdentifier("Jo Smith")).toBe(false);
+  });
+});
+
+describe("formatDateTimeWith (COL-684)", () => {
+  it("keeps a stored calendar day whatever the zone", () => {
+    expect(formatDateTimeWith("2026-09-27", { weekday: "short", month: "short", day: "numeric" })).toBe("Sun, Sep 27");
+  });
+  it("reads an instant in the facility zone", () => {
+    expect(formatDateTimeWith("2026-09-16T02:05:00+00:00", { month: "short", day: "numeric" })).toBe("Sep 15");
+    expect(formatDateTimeWith("2026-09-16T02:05:00+00:00", { month: "short", day: "numeric" }, { timeZone: "UTC" })).toBe("Sep 16");
+  });
+  it("falls back on a missing or invalid value", () => {
+    expect(formatDateTimeWith(null, { month: "short" })).toBe("No date posted");
+    expect(formatDateTimeWith("nope", { month: "short" }, { fallback: "—" })).toBe("—");
   });
 });

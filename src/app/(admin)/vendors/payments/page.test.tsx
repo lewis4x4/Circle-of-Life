@@ -68,3 +68,11 @@ describe("VendorPaymentsPage payment date", () => {
     );
   });
 });
+
+describe("VendorPaymentsPage empty form (COL-662)", () => {
+  it("keeps Record payment off and says what is missing", () => {
+    render(<VendorPaymentsPage />);
+    expect(screen.getByRole("button", { name: /record payment/i })).toBeDisabled();
+    expect(screen.getByText(/entity, vendor, facility, amount/i)).toBeInTheDocument();
+  });
+});

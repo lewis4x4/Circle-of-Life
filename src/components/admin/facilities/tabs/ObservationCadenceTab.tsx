@@ -19,6 +19,7 @@
  * span. All of it arrives as rows through `observation_config_overview`.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 
@@ -86,7 +87,7 @@ export function ObservationCadenceTab({ facilityId }: { facilityId: string }) {
           <p className="text-[13px] text-foreground">{templateLine(overview.cadence_template_name)}</p>
           {overview.current.cadence_effective_from ? (
             <p className="text-[13px] tabular-nums text-muted-foreground">
-              In force since {new Date(overview.current.cadence_effective_from).toLocaleString()}
+              In force since {formatDisplayDateTime(overview.current.cadence_effective_from)}
             </p>
           ) : null}
         </div>
@@ -125,7 +126,7 @@ export function ObservationCadenceTab({ facilityId }: { facilityId: string }) {
       {overview.pending_proposals?.length ? <section aria-label="Saved proposals" className="space-y-2">
         <h2 className="text-sm font-semibold">Proposals awaiting approval</h2>
         {overview.pending_proposals.map((pending) => <div key={pending.proposal_id} className="rounded border border-border p-3 text-sm">
-          <p>{pending.change_reason} — {pending.created_by_name ?? "Recorded administrator"}, {new Date(pending.created_at).toLocaleString()}</p>
+          <p>{pending.change_reason} — {pending.created_by_name ?? "Recorded administrator"}, {formatDisplayDateTime(pending.created_at)}</p>
           <Button variant="outline" size="sm" disabled={busy} onClick={() => void settings.reopenProposal({ cadenceVersionId: pending.cadence_version_id, escalationVersionId: pending.escalation_version_id })}>Review saved proposal</Button>
         </div>)}
       </section> : null}

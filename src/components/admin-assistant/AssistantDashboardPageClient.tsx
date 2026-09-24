@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -193,7 +194,7 @@ export function AssistantDashboardPageClient({
                   <span className="text-[15px] font-semibold text-foreground truncate block">{note.preview}</span>
                 </div>
                 <span className="text-xs font-medium text-muted-foreground shrink-0 ml-4">
-                  {new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {formatDateTimeWith(note.createdAt, { month: "short", day: "numeric" })}
                 </span>
               </div>
             ))}

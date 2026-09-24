@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -447,12 +448,7 @@ export default function CaregiverResidentBehaviorPage() {
                     </p>
                     <p className="mt-1 text-muted-foreground">{row.behavior}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(row.occurred_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatShortDateTime(row.occurred_at)}{" "}
                       · {row.shift}
                     </p>
                     {row.antecedent ? <p className="mt-1 text-xs text-muted-foreground">Before: {row.antecedent}</p> : null}

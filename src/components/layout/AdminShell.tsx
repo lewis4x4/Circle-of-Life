@@ -381,7 +381,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           { key: "acknowledgments", href: "/admin/acknowledgments", label: "Policy acknowledgments", enabled: true, icon: FileCheck2 },
           { key: "contacts", href: "/admin/contacts", label: "Contacts & on-call", enabled: true, icon: Contact },
           { key: "front-desk", href: "/admin/front-desk", label: "Front desk", enabled: true, icon: Users },
-          { key: "cash-trust", href: "/admin/cash", label: "Cash & resident trust", enabled: true, icon: Wallet },
+          { key: "cash-trust", href: "/admin/finance/trust", label: "Cash & resident trust", enabled: true, icon: Wallet },
           { key: "survey-binder", href: "/admin/survey-binder", label: "Survey binder", enabled: true, icon: BookCheck },
           { key: "drive-import", href: "/admin/drive-import", label: "Drive import", enabled: true, icon: CloudUpload },
           { key: "drive-cutover", href: "/admin/drive-cutover", label: "Drive cutover", enabled: true, icon: ShieldCheck },

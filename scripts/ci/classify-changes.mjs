@@ -28,7 +28,6 @@ const financeRules = [
   (file) => file.startsWith("src/lib/platform-audit/"),
   (file) => file.startsWith("src/lib/billing/"),
   (file) => file.startsWith("src/components/billing/"),
-  (file) => file.startsWith("src/app/(admin)/admin/cash/"),
   (file) => file.includes("/finance/"),
   (file) => file.includes("/billing/"),
   (file) => file.includes("/invoices/"),
