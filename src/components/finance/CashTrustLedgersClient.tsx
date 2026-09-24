@@ -40,7 +40,7 @@ const ET_FMT = new Intl.DateTimeFormat("en-US", {
 
 type Tab = "petty" | "trust";
 
-export default function AdminCashLedgersPage() {
+export function CashTrustLedgersClient() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
