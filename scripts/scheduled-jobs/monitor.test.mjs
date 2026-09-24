@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assessJob, latestDue, compareSecrets, sendSentry } from './monitor.mjs';
+import { assessJob, latestDue, compareSecrets, sendSentry, applyAlertPolicy, classifyFailure, ALERT_POLICY } from './monitor.mjs';
 const now=new Date('2026-09-14T12:45:00Z');
 const job={jobid:1,jobname:'test',endpoint:'ar-aging-check',active:true,schedule:'*/30 * * * *',
   installed_at:'2026-09-13T00:00:00Z',command_matches:true,runs:[]};
@@ -81,4 +81,43 @@ test('Sentry delivery is awaited and HTTP acceptance never claims recipient rece
   assert.equal(sent.url,'https://sentry.example/api/123/envelope/');
   assert.ok(!sent.opts.body.includes('publickey'));
   await assert.rejects(sendSentry('https://publickey@sentry.example/123','test',[],async()=>({ok:false,status:429})),/HTTP 429/);
+});
+
+test('alert policy constants are the documented COL-547 values',()=>{
+  assert.equal(ALERT_POLICY.consecutiveFailureThreshold,2);
+  assert.equal(ALERT_POLICY.transientHoldMs,20*60000);
+  assert.equal(ALERT_POLICY.recheckRetries,1);
+});
+test('a single transient failure is held quietly until the hold expires',()=>{
+  const blip={jobid:1,jobname:'test',state:'error',alert:true,http_status:503,consecutive_failures:1,
+    requested_at:'2026-09-14T12:40:00Z'};
+  const held=applyAlertPolicy(blip,now);
+  assert.equal(held.alert,false);assert.equal(held.severity,'quiet');assert.equal(held.held,true);
+  assert.equal(held.hold_until,'2026-09-14T13:00:00.000Z');
+  const expired=applyAlertPolicy(blip,new Date('2026-09-14T13:00:00Z'));
+  assert.equal(expired.alert,true);assert.match(expired.alert_reason,/Still failing 20 minutes/);
+});
+test('transient failures page at the consecutive-failure threshold',()=>{
+  const result=applyAlertPolicy({state:'response_missing',alert:true,consecutive_failures:2,
+    requested_at:'2026-09-14T12:40:00Z'},now);
+  assert.equal(result.alert,true);assert.equal(result.alert_reason,'2 consecutive failures');
+  assert.match(result.likely_cause,/No HTTP response/);
+});
+test('failures that cannot heal on their own page at once with a likely cause',()=>{
+  for(const o of [{state:'refused',http_status:401},{state:'error',http_status:404},{state:'did_not_run'},
+    {state:'not_monitored'},{state:'removed'},{state:'disabled'},{state:'unsupported_schedule'}]) {
+    const result=applyAlertPolicy({...o,alert:true,consecutive_failures:1,requested_at:'2026-09-14T12:44:00Z'},now);
+    assert.equal(result.alert,true,o.state);assert.equal(result.transient,false,o.state);assert.ok(result.likely_cause,o.state);
+  }
+  assert.match(classifyFailure({state:'refused',http_status:403}).cause,/cron secret/);
+});
+test('timeouts, 5xx, 429 and native SQL errors are transient; healthy outcomes are untouched',()=>{
+  for(const status of [408,429,500,502,503,504,null]) assert.equal(classifyFailure({state:'error',http_status:status}).transient,true,status);
+  assert.equal(classifyFailure({state:'error',started_at:'2026-09-14T12:40:00Z'}).transient,true);
+  assert.deepEqual(applyAlertPolicy({state:'success',alert:false},now),{state:'success',alert:false,severity:'none'});
+});
+test('assessments report the last success time',()=>{
+  const runs=[{...run,outcome:'error'},{...run,requested_at:'2026-09-14T12:00:01Z'}];
+  assert.equal(assessJob({...job,runs},now).last_success_at,'2026-09-14T12:00:01Z');
+  assert.equal(assessJob({...job,runs:[{...run,outcome:'error'}]},now).last_success_at,null);
 });

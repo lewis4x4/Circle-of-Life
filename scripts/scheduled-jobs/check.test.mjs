@@ -25,8 +25,10 @@ function runFixture(mode) {
         if(mode==='collector_failure') return {ok:false,status:500,json:async()=>({error:'PRIVATE_PROVIDER_MARKER'})};
         data=[{collect:1}];
       } else if(query.startsWith('select coalesce(j.jobid')) data=[{jobid:1,installed_at:'2026-01-01T00:00:00Z',
+        // Two failed runs in a row: past the consecutive-failure threshold, so it alerts.
         command_matches:true,runs:[{request_id:10,requested_at:new Date(Date.now()-15000).toISOString(),
-          outcome:'error',http_status:500,governance_refusal:false}]}];
+          outcome:'error',http_status:500,governance_refusal:false},{request_id:9,
+          requested_at:new Date(Date.now()-75000).toISOString(),outcome:'error',http_status:500,governance_refusal:false}]}];
       else if(query.startsWith('select fingerprint')) data=mode==='unchanged' ? [{fingerprint:createHash('sha256')
         .update(JSON.stringify([{jobid:1,state:'error',http_status:500}])).digest('hex')}] : [];
       else if(query.startsWith('insert into job_monitor.signal_state')) {console.error('TEST_SAVED_RECEIPT');data=[];}
@@ -36,7 +38,7 @@ function runFixture(mode) {
   return spawnSync(process.execPath,['--import',`data:text/javascript,${encodeURIComponent(preload)}`,
     fileURLToPath(new URL('./check.mjs',import.meta.url)),'--send-sentry'],{
     encoding:'utf8',env:{...process.env,SUPABASE_PROJECT_REF:'abcdefghijklmnopqrst',
-      SUPABASE_ACCESS_TOKEN:'unit-test-token',SENTRY_DSN_JOB_MONITOR:'https://publickey@sentry.example/123'}});
+      SUPABASE_ACCESS_TOKEN:'unit-test-token',JOB_MONITOR_RECHECK_DELAY_MS:'0',SENTRY_DSN_JOB_MONITOR:'https://publickey@sentry.example/123'}});
 }
 test('unchanged findings do not resend or update the receipt',()=>{
   const result=runFixture('unchanged');
