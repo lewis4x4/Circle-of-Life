@@ -141,9 +141,9 @@ The row is not finished at approval. It ends when the billing ledger shows the f
 
 **Current-resident sweep.** At launch every current private-pay resident gets a one-time task for their facility administrator to record the six answers, coverage and runway. Until the sweep is complete for a facility, the board and owner summary say so rather than showing a partial picture as complete.
 
-**Forwarded agency letters.** Each organization gets one inbound address (and each case a plus-address). Jessica or an administrator forwards DCF, CARES, Elder Options or plan mail; Haven attaches it as private evidence to the matched case (or to an unmatched tray), reads the printed date and any response deadline, and proposes the next step and due date. A person confirms before anything is recorded; unconfirmed letters stay flagged. Missing a DCF verification deadline is the most common avoidable denial, so confirmed deadlines appear on the board and in Jessica's queue. Parsing follows the existing provider/BAA policy; manual entry always works.
+**Agency letters (revised 2026-09-24 — see [Document Intake Decision](DOCUMENT-INTAKE-DECISION.md)).** Agency and plan letters arrive through the single company intake address (`docs@circleoflifecommunities.com`, read at the real mailbox through Microsoft Graph), not per-facility or per-purpose inboxes. They are matched against the sender's open obligations; Medicaid case requirements (`benefits_requirements`) are Haven register rows feeding the `open_obligations` view. Resident documents are read and decided by Claude only (never Jev), are never filed automatically, and a person confirms the proposed filing; confirming records the agency event and sets the response deadline as the case due date, shown on the board. Haven intake starts after Homewood settles and copies the engine proven in Cornerstone. Until then, Jessica records letters on the case by hand (manual entry always works).
 
-**Document freshness.** Each requirement type carries a *good for* period in operating rules (for example bank statements); an accepted document past its period becomes *expiring* and the gathering task returns to the administrator, or to a linked family member through the existing family collection, before the submission that needs it. Periods are set by Jessica, not assumed.
+**Document freshness.** Each requirement type carries a *good for* period in operating rules (for example bank statements); an accepted document past its period becomes *expiring* and the gathering task returns to the administrator, or to a linked family member through the existing family collection, before the submission that needs it. Periods are set by Jessica, not assumed. These expiring requirements are open obligations in Haven's register (Document Intake Decision); the re-request uses the in-app and family-collection paths now and the decision's Requests accelerator once Haven intake exists.
 
 **Coverage continuity.** Michelle Norris is Jessica's designated backup (Brian, 2026-09-24, COL-760), recorded in operating rules; the board, queue and alerts go to both.
 
@@ -157,7 +157,7 @@ The row is not finished at approval. It ends when the billing ledger shows the f
 
 ### Phasing (Linear parent and issues listed in *Progress*)
 
-- **Phase 1 — find every candidate and stop losing them:** admission questions and classification (with COL-575's move-in gate); quarterly A/B recheck; current-resident sweep; private-pay runway trigger; facility Medicaid board with dollars, score/reapply, caseworker and stalled flags; forwarded agency letters with deadlines; retire the duplicate admission stage; log import.
+- **Phase 1 — find every candidate and stop losing them:** admission questions and classification (with COL-575's move-in gate); quarterly A/B recheck; current-resident sweep; private-pay runway trigger; facility Medicaid board with dollars, score/reapply, caseworker and stalled flags; retire the duplicate admission stage; log import. (Agency letters moved to Haven document intake, which follows the Document Intake Decision and starts after Homewood settles.)
 - **Phase 2 — carry it through to money:** board through first payment and renewal; document freshness; owner Medicaid summary (Murphy Notes); over-income/look-back prompts once decided.
 - **Phase 3 — convenience:** 701S pre-filled screening sheet; packet-readiness gate (COL-520).
 
@@ -168,7 +168,7 @@ The row is not finished at approval. It ends when the billing ledger shows the f
 - `benefits_cases`: add `agency_score smallint CHECK (agency_score BETWEEN 1 AND 5)`, `reapply_on date`, `caseworker_contact_id`; board step dates derive from events.
 - `benefits_contacts`: organization-scoped agency contacts.
 - `benefits_rules`: add the keys in the operating-rules table plus `runway.lead_days`, `document.valid_days` (per requirement type), `coverage.backup_user_id`, and plan rates.
-- `benefits_inbound_messages`: forwarded mail (private storage, hash, sender, matched case, proposed/confirmed event and deadline, confirmer).
+- Agency letters: no Module 39 mail tables. Haven document intake (envelope, sender authentication, obligations) owns received mail per the Document Intake Decision.
 - `benefits_admission_screenings` also stores `private_pay_months` and the derived runway date.
 - `admission_cases.medicaid_pipeline_stage`: stop writing; the admission page shows the linked benefits case's current step instead. Column dropped only after a release with no readers.
 - RLS, audit trigger, soft delete and facility checks follow the existing COL-504 helpers; financial answers use the existing explicit benefits access grants. The facility administrator needs a benefits grant scoped to their facility (write + gather, no review).
@@ -189,7 +189,7 @@ A one-time, reviewed import of the Medicaid Log's five current facility tabs (Pl
 8. Existing COL-504 guarantees (authority, idempotent commands, immutable evidence, no automatic notices or payer changes) still pass.
 9. A resident admitted private pay with a 6-month runway appears on Jessica's queue as *runway — start case* 75 days before the runway date; two consecutive late ledger payments raise the same prompt earlier.
 10. Until a facility's current-resident sweep is complete, its board and summary show *sweep incomplete (n of m residents answered)*.
-11. A forwarded DCF letter with a printed response date lands on the matched case as unconfirmed; after Jessica confirms, the deadline shows on the board and queue.
+11. (Moved to Haven document intake.) A DCF letter sent to the company intake address lands as a proposed filing against the resident's open Medicaid obligations; after a person confirms, the deadline shows on the board and queue.
 12. A funded row stays on the board until the ledger shows the first plan payment, and returns before renewal.
 13. The board shows revenue not yet collected per row and sorts by it.
 
@@ -213,3 +213,5 @@ A one-time, reviewed import of the Medicaid Log's five current facility tabs (Pl
 - 2026-09-22: review findings — migration 452: reviewed funding is a review fact; notice events need review + the notice document; requirements gain `expired` and `signed_on`; misfiled documents can be voided once with a reason; queue filters by assignee and flags assignees who lost authority; family collection stops for discharged/deceased residents.
 - 2026-09-22: quality review follow-up — migration 451: operating rules, due-date queue with flags, rebind for moved residents, evidence-access audit, Medicaid residents without a case.
 - 2026-09-24: Amendment A ruled by Brian and planned in Linear for Claude Code — parent COL-757 (build queue); delivery COL-763, COL-764, COL-765, COL-766, COL-767, COL-771, COL-772, COL-773, COL-575, COL-774, COL-768, COL-775, COL-769, COL-770; decisions COL-758, COL-759, COL-760, COL-761 (non-blocking; defaults ship as operating rules).
+- 2026-09-24: built and live on production — COL-763 (#879, migration 507), COL-764 (#881, 508); queued with production migrated — COL-765 (#886, 511), COL-766 (#889, 515), COL-767 (#892, 519).
+- 2026-09-24: course change — Document Intake Decision adopted (single company intake address, obligations register, first-hop sender authentication, Jev only for phi = false senders, Haven intake after Homewood settles, engine proven in Cornerstone first). COL-771's AgentMail receiver (#893) closed unmerged; migration 520 removed from staging and production (empty objects, ledger row deleted). COL-771 re-scoped to Haven document intake.

@@ -352,6 +352,7 @@ Additional variables are documented in individual spec files as features require
 
 Read `docs/LINEAR-WORKFLOW.md` before creating, assigning, relating, commenting on, or changing the status of a Linear issue.
 
+- **Document intake (Jev, the company intake address, incoming email):** follow `docs/specs/DOCUMENT-INTAKE-DECISION.md`. Do not build a receiver, inbox, or email-parsing path. Log each deferred piece as a child of Linear **COL-817** with the label **`intake-deferred`**: module and repo, document type (Obligations Register row), who sends it and whether it carries resident health information (PHI means Claude, never Jev), where it files and what done looks like, and the current workaround.
 - Keep Delivery assigned to the implementer. A required human answer belongs on a separate Decision / Approval issue assigned to that person; facility, clinical, customer, or live sign-off belongs on a Release / Acceptance issue assigned to the authorized approver.
 - Assignee means next actor. `In Review` means technical or peer review only. `Done` means this issue's written acceptance criteria passed; it is not deployment, facility, clinical, customer, or launch readiness.
 - For agent-only execution use a delegated agent/session when available; otherwise leave the human assignee empty and identify the agent in attributable updates. Never assign Brian as an agent proxy.
