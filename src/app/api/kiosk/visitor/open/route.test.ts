@@ -45,4 +45,13 @@ describe("GET /api/kiosk/visitor/open", () => {
     mock.rpc.mockResolvedValue({ data: { ok: false, error: "device_unknown" }, error: null });
     expect((await GET(request("Jor"))).status).toBe(401);
   });
+
+  it("answers a throttled kiosk with 429, Retry-After 300 and no-store, in the kiosk's own words", async () => {
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "device_throttled" }, error: null });
+    const response = await GET(request("Car"));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("300");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(await response.json()).toEqual({ error: "device_throttled" });
+  });
 });

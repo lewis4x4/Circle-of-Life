@@ -257,20 +257,25 @@ export type KioskSignOutResponse = { checked_in_at: string; checked_out_at: stri
 // Errors
 // ---------------------------------------------------------------------------
 
-export type KioskVisitorErrorCode = "device_unknown" | "invalid_input" | "not_found" | "already_signed_out" | "unavailable";
+export type KioskVisitorErrorCode = "device_unknown" | "device_throttled" | "invalid_input" | "not_found" | "already_signed_out" | "unavailable";
 
 export type KioskVisitorErrorResponse = { error: KioskVisitorErrorCode; fields?: KioskFieldErrors };
 
 export const KIOSK_VISITOR_ERROR_STATUS: Record<KioskVisitorErrorCode, number> = {
   device_unknown: 401,
+  device_throttled: 429,
   invalid_input: 400,
   not_found: 404,
   already_signed_out: 409,
   unavailable: 503,
 };
 
+/** Seconds a throttled kiosk waits (the device throttle lasts 5 minutes, spec 37 §4.1). */
+export const KIOSK_VISITOR_THROTTLE_RETRY_SECONDS = 300;
+
 export const KIOSK_VISITOR_ERROR_COPY: Record<KioskVisitorErrorCode, string> = {
   device_unknown: "This kiosk is not set up yet. Please see the front desk.",
+  device_throttled: "This kiosk is busy. Please try again in a few minutes or see the front desk.",
   invalid_input: "Something was missing. Check the form and try again.",
   not_found: "We could not find that visit. Please see the front desk.",
   already_signed_out: "You are already signed out.",

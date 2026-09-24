@@ -47,7 +47,7 @@ export function KioskVisitMatch({
         <option value="">Choose a resident…</option>
         {residents.map((resident) => (
           <option key={resident.id} value={resident.id}>
-            {resident.lastName}, {resident.firstName}
+            {resident.firstName} {resident.lastName}
           </option>
         ))}
       </select>

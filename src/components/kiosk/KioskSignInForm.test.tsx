@@ -134,4 +134,17 @@ describe("KioskSignInForm", () => {
     expect(await screen.findByText("Enter a phone number with 7 to 20 digits.")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText("Phone")).toHaveAttribute("aria-invalid", "true"));
   });
+
+  it("says the kiosk is busy when it is throttled, in the status area", async () => {
+    const fetchImpl = vi.fn(async () => json(429, { error: "device_throttled" }));
+    renderInKiosk(<KioskSignInForm kind="visitor" />, { fetchImpl, pathname: "/kiosk/sign-in/visitor" });
+    await screen.findByLabelText("Your name");
+    type("Your name", "Carol Parker");
+    type("Who are you visiting?", "Test Resident");
+    fireEvent.click(screen.getByRole("button", { name: "No" }));
+    signIn();
+    const busy = await screen.findByText(KIOSK_VISITOR_ERROR_COPY.device_throttled);
+    expect(busy).toHaveAttribute("role", "status");
+    expect(KIOSK_VISITOR_ERROR_COPY.device_throttled).toBe("This kiosk is busy. Please try again in a few minutes or see the front desk.");
+  });
 });

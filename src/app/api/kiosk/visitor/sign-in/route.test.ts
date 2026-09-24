@@ -94,4 +94,13 @@ describe("POST /api/kiosk/visitor/sign-in", () => {
     expect(failed.status).toBe(503);
     expect(await failed.json()).toEqual({ error: "unavailable" });
   });
+
+  it("answers a throttled kiosk with 429, Retry-After 300 and no-store, in the kiosk's own words", async () => {
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "device_throttled" }, error: null });
+    const response = await POST(request(VISIT));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("300");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(await response.json()).toEqual({ error: "device_throttled" });
+  });
 });

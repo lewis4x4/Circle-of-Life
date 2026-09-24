@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { KIOSK_VISITOR_COPY } from "@/lib/kiosk/contract";
+import { KIOSK_VISITOR_COPY, KIOSK_VISITOR_ERROR_COPY } from "@/lib/kiosk/contract";
 import { KIOSK_LEAVING_COPY } from "@/lib/kiosk/screens";
 
 import { KioskLeaving } from "./KioskLeaving";
@@ -71,5 +71,13 @@ describe("KioskLeaving", () => {
     renderInKiosk(<KioskLeaving debounceMs={0} />, { fetchImpl, pathname: "/kiosk/leaving" });
     fireEvent.change(await screen.findByLabelText(KIOSK_VISITOR_COPY.signOutHint), { target: { value: "Zed" } });
     await waitFor(() => expect(screen.getByText(KIOSK_LEAVING_COPY.none)).toBeInTheDocument());
+  });
+
+  it("says the kiosk is busy when the search is throttled", async () => {
+    const fetchImpl = vi.fn(async () => json(429, { error: "device_throttled" }));
+    renderInKiosk(<KioskLeaving debounceMs={0} />, { fetchImpl, pathname: "/kiosk/leaving" });
+    fireEvent.change(await screen.findByLabelText(KIOSK_VISITOR_COPY.signOutHint), { target: { value: "Car" } });
+    const busy = await screen.findByText(KIOSK_VISITOR_ERROR_COPY.device_throttled);
+    expect(busy.closest("[role=status]")).not.toBeNull();
   });
 });
