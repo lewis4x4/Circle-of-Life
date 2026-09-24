@@ -1,13 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Building2 } from "lucide-react";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useHavenAuth } from "@/contexts/haven-auth-context";
-import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { useApplyFacilityScope } from "@/hooks/useApplyFacilityScope";
+import type { Facility } from "@/hooks/useFacilityStore";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -18,19 +14,19 @@ const tabs = [
   { label: "Staff check", href: "/admin/staff/staff-check", owns: (path: string) => path === "/admin/staff/staff-check" || path.startsWith("/admin/staff/staff-check/") },
 ];
 
-export function isWorkforcePeopleRoute(pathname: string): boolean {
-  return tabs.some((tab) => tab.owns(pathname));
-}
-
-export function WorkforcePeopleNav() {
-  const pathname = usePathname();
-  const { user } = useHavenAuth();
-  const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
-  const availableFacilities = useFacilityStore((state) => state.availableFacilities);
-  const facilitiesCacheUserId = useFacilityStore((state) => state.facilitiesCacheUserId);
-  const { applyFacilityScope, pending } = useApplyFacilityScope();
-  const facilities = facilitiesCacheUserId === user?.id ? availableFacilities : [];
-
+export function WorkforcePeopleNav({
+  pathname,
+  facilities,
+  selectedFacilityId,
+  pending,
+  onFacilityChange,
+}: {
+  pathname: string;
+  facilities: Facility[];
+  selectedFacilityId: string | null;
+  pending: boolean;
+  onFacilityChange: (facilityId: string | null) => void;
+}) {
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border">
       <nav aria-label="Workforce people tabs" className="flex min-w-0 flex-wrap items-center gap-1">
@@ -55,24 +51,24 @@ export function WorkforcePeopleNav() {
       </nav>
 
       {facilities.length > 1 ? (
-        <Select
-          value={selectedFacilityId ?? "all"}
-          onValueChange={(value) => applyFacilityScope(value === "all" ? null : value)}
-          disabled={pending}
-        >
-          <SelectTrigger aria-label="Change facility" className="mb-1 w-52">
-            <Building2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="all">All Facilities</SelectItem>
+        <label className="mb-1 inline-flex items-center gap-2">
+          <Building2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="sr-only">Change facility</span>
+          <select
+            aria-label="Change facility"
+            value={selectedFacilityId ?? "all"}
+            onChange={(event) => onFacilityChange(event.target.value === "all" ? null : event.target.value)}
+            disabled={pending}
+            className="h-8 w-52 rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="all">All Facilities</option>
             {facilities.map((facility) => (
-              <SelectItem key={facility.id} value={facility.id}>
+              <option key={facility.id} value={facility.id}>
                 {facility.name}
-              </SelectItem>
+              </option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+        </label>
       ) : null}
     </div>
   );

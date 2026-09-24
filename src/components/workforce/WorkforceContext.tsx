@@ -6,12 +6,17 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import type { WorkforceSnapshot } from "@/lib/workforce/model";
 import { cn } from "@/lib/utils";
-import { isWorkforcePeopleRoute, WorkforcePeopleNav } from "./WorkforcePeopleNav";
 
 type State = { data: WorkforceSnapshot | null; loading: boolean; error: string | null; refresh: () => void };
 const Context = createContext<State>({ data: null, loading: false, error: null, refresh: () => {} });
 export const useWorkforce = () => useContext(Context);
-export function WorkforceContext({ children }: { children: React.ReactNode }) {
+export function WorkforceContext({
+  children,
+  sectionNavigation,
+}: {
+  children: React.ReactNode;
+  sectionNavigation?: React.ReactNode;
+}) {
   const pathname = usePathname();
   const facilityId = useFacilityStore((s) => s.selectedFacilityId);
   const { appRole, organizationId, user } = useHavenAuth();
@@ -36,7 +41,7 @@ export function WorkforceContext({ children }: { children: React.ReactNode }) {
   }, [facilityId, allowed, pathname, requestKey]);
   const current = state.requestKey === requestKey;
   const rosterRequested = !facilityId && pathname === "/admin/staff";
-  return <Context.Provider value={{ data: allowed && current ? state.data : null, loading: allowed && (rosterRequested || !!facilityId) && (!current || state.loading), error: allowed ? current ? state.error : null : "Workforce review is available to administrators and managers.", refresh }}><WorkforceLoop />{(pathname.startsWith("/admin/payroll/legacy") || /^\/admin\/payroll\/[0-9a-f-]{36}$/.test(pathname)) ? <div className="mb-5 rounded-[14px] border bg-card p-4 text-sm"><p className="font-semibold">Payroll source</p><p className="mt-1 text-muted-foreground">These historical batches use legacy time records. Prepare a payroll packet from Payroll for reviewed kiosk hours and the phone or RUN handoff.</p><Link href="/admin/timecards" className="mt-2 inline-block font-medium text-primary">Review kiosk timecards →</Link></div> : null}{children}</Context.Provider>;
+  return <Context.Provider value={{ data: allowed && current ? state.data : null, loading: allowed && (rosterRequested || !!facilityId) && (!current || state.loading), error: allowed ? current ? state.error : null : "Workforce review is available to administrators and managers.", refresh }}><WorkforceLoop />{sectionNavigation}{(pathname.startsWith("/admin/payroll/legacy") || /^\/admin\/payroll\/[0-9a-f-]{36}$/.test(pathname)) ? <div className="mb-5 rounded-[14px] border bg-card p-4 text-sm"><p className="font-semibold">Payroll source</p><p className="mt-1 text-muted-foreground">These historical batches use legacy time records. Prepare a payroll packet from Payroll for reviewed kiosk hours and the phone or RUN handoff.</p><Link href="/admin/timecards" className="mt-2 inline-block font-medium text-primary">Review kiosk timecards →</Link></div> : null}{children}</Context.Provider>;
 }
 
 function WorkforceLoop() {
