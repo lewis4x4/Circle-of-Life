@@ -22246,6 +22246,15 @@ export type Database = {
         | "failed"
         | "ignored"
       referral_lead_preferred_contact: "phone" | "email" | "either"
+      referral_interaction_method:
+        | "phone_call"
+        | "voicemail"
+        | "text_message"
+        | "email"
+        | "in_person"
+        | "video_call"
+        | "mail"
+        | "other"
       referral_interest_state: "unknown" | "interested" | "not_interested"
       referral_lead_status:
         | "new"
@@ -22919,6 +22928,16 @@ export const Constants = {
         "ignored",
       ],
       referral_lead_preferred_contact: ["phone", "email", "either"],
+      referral_interaction_method: [
+        "phone_call",
+        "voicemail",
+        "text_message",
+        "email",
+        "in_person",
+        "video_call",
+        "mail",
+        "other",
+      ],
       referral_interest_state: ["unknown", "interested", "not_interested"],
       referral_lead_status: [
         "new",

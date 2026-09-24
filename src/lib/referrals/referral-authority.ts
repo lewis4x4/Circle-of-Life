@@ -52,6 +52,9 @@ export type ReferralRecordedSourceKind =
   | "hl7"
   | "system_compatibility";
 
+export type ReferralInteractionMethod =
+  Database["public"]["Enums"]["referral_interaction_method"];
+
 export type ReferralEpisodeReply = {
   episode_id: string;
   episode_revision: string;
@@ -118,6 +121,8 @@ export type ReferralEpisodeHistory = {
     recorded_at: string;
     actor_id: string;
     actor_role: string;
+    /** Display name of whoever recorded the event; null when the profile has none. */
+    actor_name: string | null;
     request_key: string;
     source_kind: ReferralRecordedSourceKind;
     source_reference: Record<string, unknown>;
@@ -221,7 +226,7 @@ type ReferralCommandSource = {
 export type ReferralEpisodeCommand =
   | ({ kind: "assign"; owner_user_id: string; backup_user_id?: string | null; next_action?: string | null; next_action_at?: string | null; override_reason?: string | null } & ReferralCommandSource)
   | ({ kind: "accept_coverage"; coverage_reason?: string | null } & ReferralCommandSource)
-  | ({ kind: "record_interaction"; summary: string; effective: ReferralEffectiveValue; next_action?: string | null; next_action_at?: string | null } & ReferralCommandSource)
+  | ({ kind: "record_interaction"; summary: string; method?: ReferralInteractionMethod | null; contacted_name?: string | null; person_contact_id?: string | null; effective: ReferralEffectiveValue; next_action?: string | null; next_action_at?: string | null } & ReferralCommandSource)
   | ({ kind: "wait" | "review"; reason: string; follow_up_at: string } & ReferralCommandSource)
   | ({ kind: "resume" | "reopen"; reason: string } & ReferralCommandSource)
   | ({ kind: "next_action"; next_action: string; next_action_at: string } & ReferralCommandSource)
@@ -517,6 +522,28 @@ export function loadReferralEpisodeModel(
   episodeId: string,
 ): Promise<ReferralEpisodeModel> {
   return invokeReferralRpc<ReferralEpisodeModel>(client, "referral_episode_model_read", {
+    p_episode_id: episodeId,
+  });
+}
+
+export type ReferralOwnerPerson = { user_id: string; full_name: string };
+
+export type ReferralEpisodeOwners = {
+  self_user_id: string | null;
+  owner: ReferralOwnerPerson | null;
+  backup: ReferralOwnerPerson | null;
+  pending_owner: ReferralOwnerPerson | null;
+  /** Whether the reader may assign this lead (unowned, their own, or a supervisor). */
+  can_assign: boolean;
+  /** Staff who may own a lead at its facility; names only. */
+  eligible: ReferralOwnerPerson[];
+};
+
+export function loadReferralEpisodeOwners(
+  client: SupabaseClient<Database>,
+  episodeId: string,
+): Promise<ReferralEpisodeOwners> {
+  return invokeReferralRpc<ReferralEpisodeOwners>(client, "referral_episode_owner_read", {
     p_episode_id: episodeId,
   });
 }

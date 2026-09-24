@@ -56,6 +56,9 @@ describe("operating rules editor", () => {
     expect(describeRule(entry("screening.standard_individual", { income_cents: 298200, assets_cents: 200000, label: "DCF 2026" }))).toBe("Income $2982.00 · Assets $2000.00 · DCF 2026");
     expect(describeRule(entry("screening.standard_individual", null))).toBe("Not recorded");
     expect(describeRule(entry("renewal.warning_days", 60))).toBe("60 days");
+    expect(describeRule(entry("screening.recheck_days", 90))).toBe("90 days");
+    expect(describeRule(entry("screening.admission_gate", { disqualify: ["q_property_non_primary", "q_income_over_limit", "q_assets"], income_limit_cents: 282900, assets_limit_cents: 200000 })))
+      .toBe("Stops on: Property other than home, Income over the limit, Assets over the limit · Income limit $2829.00 · Asset limit $2000.00");
   });
   it("derives the screening standard from the rules payload and tolerates absence", () => {
     const standard = screeningStandardFromRules({ can_manage: true, as_of: today, rules: [{ rule_key: "screening.standard_individual", value: { income_cents: 1, assets_cents: 2, label: "L", source: "https://x" }, current: { id: "i", organization_id: "o", rule_key: "screening.standard_individual", value: {}, effective_from: "2026-01-01", reason: "r", created_by: null, created_at: "t" }, scheduled: [], history_count: 1 }] });
