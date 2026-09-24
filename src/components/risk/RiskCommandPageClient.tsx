@@ -13,7 +13,7 @@ import { RiskHubNav } from "@/components/risk/RiskHubNav";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RiskPageSnapshot, RiskSnapshotRow } from "@/lib/risk/load-risk-command";
-import { formatRiskDateTime, formatRiskScore, riskPortfolioTone } from "@/lib/risk/risk-display-copy";
+import { formatRiskBandsLine, formatRiskDateTime, formatRiskScore, riskPortfolioTone } from "@/lib/risk/risk-display-copy";
 import { cn } from "@/lib/utils";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
@@ -134,8 +134,8 @@ export default function RiskCommandPageClient({
               icon={ShieldAlert}
               label="Portfolio score"
               value={formatRiskScore(summary.portfolioScore)}
-              detail={scopeFacilityId ? "Current facility latest score" : "Average of latest facility snapshots"}
-              tone={riskPortfolioTone(summary.portfolioScore)}
+              detail={`${scopeFacilityId ? "Current facility latest score" : "Average of latest facility snapshots"}. ${formatRiskBandsLine(snapshot.scoreBands)}`}
+              tone={riskPortfolioTone(summary.portfolioScore, snapshot.scoreBands)}
             />
             <MetricCard
               icon={Siren}

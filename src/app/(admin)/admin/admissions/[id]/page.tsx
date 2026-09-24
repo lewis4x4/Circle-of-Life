@@ -30,7 +30,7 @@ import {
   admissionOnboardingChecklist,
   type AdmissionOnboardingCounts,
 } from "@/lib/admissions/admission-onboarding-checklist";
-import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,

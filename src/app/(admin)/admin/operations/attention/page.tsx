@@ -13,6 +13,7 @@ import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { ReceiptHistory, localTime } from "../work/_components/receipt-history";
 import { CONTROL } from "../work/_components/work-inputs";
 import { enumLabel } from "@/lib/display/enum-label";
+import { OPERATIONS_NO_FACILITY_COPY } from "@/lib/operations/operations-display-copy";
 
 const CATEGORIES: Record<AttentionCategory, string> = {
   overdue: "Overdue",
@@ -209,7 +210,7 @@ function AttentionScope({
           <option value="">All permitted facilities</option>
           {facilityId &&
           !body.facilities.some((row) => row.id === facilityId) ? (
-            <option value={facilityId}>Selected facility</option>
+            <option value={facilityId}>{OPERATIONS_NO_FACILITY_COPY}</option>
           ) : null}
           {body.facilities.map((row) => (
             <option key={row.id} value={row.id}>

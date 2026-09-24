@@ -141,14 +141,16 @@ describe("formatCoverageReviewStatus", () => {
 });
 
 describe("coverageKpiCoverageSub (COL-649)", () => {
-  it("says topics are marked by hand when none is marked", () => {
+  it("says nothing is linked yet when no topic is covered", () => {
     expect(coverageKpiCoverageSub({ covered_targets: 0, total_targets: 12 })).toBe(
-      "0/12 topics marked covered — none marked yet on Seed targets",
+      "0/12 topics covered — link published documents to topics on Seed targets",
     );
   });
 
-  it("counts marked topics", () => {
-    expect(coverageKpiCoverageSub({ covered_targets: 3, total_targets: 12 })).toBe("3/12 topics marked covered");
+  it("counts topics covered by a published document", () => {
+    expect(coverageKpiCoverageSub({ covered_targets: 3, total_targets: 12 })).toBe(
+      "3/12 topics covered by a published document",
+    );
     expect(coverageKpiCoverageSub({ covered_targets: 0, total_targets: 0 })).toBe("No seed topics defined");
     expect(coverageKpiCoverageSub(null)).toBe("loading…");
   });

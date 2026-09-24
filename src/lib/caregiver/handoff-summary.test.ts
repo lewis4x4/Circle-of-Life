@@ -5,15 +5,20 @@ import {
   autoSummaryCareEventLines,
   buildShiftHandoffAutoSummary,
   buildShiftHandoffInsert,
-  currentShiftWindowFor,
   handoffSummaryLine,
   nextShift,
   residentInitialLast,
-  shiftWindow,
+  shiftWindowOf,
   type HandoffCareEventInput,
 } from "./handoff-summary";
+import { currentShiftFor, handoffShiftOf, type FacilityShiftDefinition } from "./shift";
 
 const TIME_ZONE = "America/New_York";
+
+const TWELVE_HOUR: FacilityShiftDefinition[] = [
+  { shiftKey: "day", label: "Day", startsAtLocal: "06:00:00", endsAtLocal: "18:00:00", sortOrder: 0, rosterShiftType: "day" },
+  { shiftKey: "night", label: "Night", startsAtLocal: "18:00:00", endsAtLocal: "06:00:00", sortOrder: 1, rosterShiftType: "night" },
+];
 
 function event(overrides: Partial<HandoffCareEventInput> = {}): HandoffCareEventInput {
   return {
@@ -122,43 +127,22 @@ describe("handoffSummaryLine and residentInitialLast", () => {
   });
 });
 
-describe("shiftWindow", () => {
-  it("bounds the day and evening shifts in the facility zone", () => {
-    expect(shiftWindow("day", "2026-09-14", TIME_ZONE)).toEqual({
-      startIso: "2026-09-14T11:00:00.000Z",
-      endIso: "2026-09-14T19:00:00.000Z",
-    });
-    expect(shiftWindow("evening", "2026-09-14", TIME_ZONE)).toEqual({
-      startIso: "2026-09-14T19:00:00.000Z",
-      endIso: "2026-09-15T03:00:00.000Z",
-    });
-  });
-
-  it("carries the night shift across midnight into the next day", () => {
-    expect(shiftWindow("night", "2026-09-14", TIME_ZONE)).toEqual({
-      startIso: "2026-09-15T03:00:00.000Z",
-      endIso: "2026-09-15T11:00:00.000Z",
+describe("shiftWindowOf (COL-685)", () => {
+  it("summarises the configured shift's own span, not fixed 7/15/23 buckets", () => {
+    // Homewood runs 6a-6p Day and 6p-6a Night. At 10 PM the outgoing shift is
+    // Night, it began at 6 PM, and its service date is that evening.
+    const current = currentShiftFor({ timeZone: TIME_ZONE, shifts: TWELVE_HOUR }, new Date("2026-09-15T02:00:00.000Z"));
+    expect(current).toMatchObject({ shiftType: "night", serviceDate: "2026-09-14", configured: true });
+    expect(shiftWindowOf(current)).toEqual({
+      startIso: "2026-09-14T22:00:00.000Z",
+      endIso: "2026-09-15T10:00:00.000Z",
     });
   });
 
-  it("respects standard time in December", () => {
-    expect(shiftWindow("night", "2026-12-31", TIME_ZONE)).toEqual({
-      startIso: "2027-01-01T04:00:00.000Z",
-      endIso: "2027-01-01T12:00:00.000Z",
-    });
-  });
-});
-
-describe("currentShiftWindowFor", () => {
-  it("names the shift on the floor and the date its window started", () => {
-    expect(currentShiftWindowFor(TIME_ZONE, new Date("2026-09-14T13:00:00.000Z"))).toEqual({ shift: "day", date: "2026-09-14" });
-    expect(currentShiftWindowFor(TIME_ZONE, new Date("2026-09-14T23:30:00.000Z"))).toEqual({ shift: "evening", date: "2026-09-14" });
-    expect(currentShiftWindowFor(TIME_ZONE, new Date("2026-09-15T03:10:00.000Z"))).toEqual({ shift: "night", date: "2026-09-14" });
-  });
-
-  it("assigns the small hours to the night shift that started the day before", () => {
-    expect(currentShiftWindowFor(TIME_ZONE, new Date("2026-09-15T05:30:00.000Z"))).toEqual({ shift: "night", date: "2026-09-14" });
-    expect(currentShiftWindowFor(TIME_ZONE, new Date("2026-09-15T10:59:00.000Z"))).toEqual({ shift: "night", date: "2026-09-14" });
+  it("keeps the evening's service date for a 1 AM handoff", () => {
+    const current = currentShiftFor({ timeZone: TIME_ZONE, shifts: TWELVE_HOUR }, new Date("2026-09-15T05:30:00.000Z"));
+    expect(current.serviceDate).toBe("2026-09-14");
+    expect(handoffShiftOf(current, TIME_ZONE)).toBe("night");
   });
 });
 

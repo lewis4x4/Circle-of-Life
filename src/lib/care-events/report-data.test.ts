@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { FacilityShiftDefinition } from "@/lib/caregiver/shift";
+
 import {
   cacheOnCallPhone,
+  fetchMyResidentIds,
+  fetchOnCallPhone,
   filterMyResidents,
   onCallCacheKey,
   readCachedOnCallPhone,
@@ -113,5 +117,70 @@ describe("on-call cache", () => {
     expect(readCachedOnCallPhone(FACILITY)).toBe("555-0100");
     cacheOnCallPhone(FACILITY, null);
     expect(readCachedOnCallPhone(FACILITY)).toBeNull();
+  });
+});
+
+describe("the three-tap report reads the facility's configured shift (COL-685)", () => {
+  const TWELVE_HOUR: FacilityShiftDefinition[] = [
+    { shiftKey: "day", label: "Day", startsAtLocal: "06:00:00", endsAtLocal: "18:00:00", sortOrder: 0, rosterShiftType: "day" },
+    { shiftKey: "night", label: "Night", startsAtLocal: "18:00:00", endsAtLocal: "06:00:00", sortOrder: 1, rosterShiftType: "night" },
+  ];
+
+  function recordingClient(tables: Record<string, unknown[]>) {
+    const eqs: Array<{ table: string; column: string; value: unknown }> = [];
+    const client = {
+      from(table: string) {
+        const builder = {
+          select: () => builder,
+          eq: (column: string, value: unknown) => {
+            eqs.push({ table, column, value });
+            return builder;
+          },
+          in: () => builder,
+          is: () => builder,
+          then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+            Promise.resolve({ data: tables[table] ?? [], error: null }).then(resolve),
+        };
+        return builder;
+      },
+    };
+    return { client: client as unknown as Parameters<typeof fetchMyResidentIds>[0], eqs };
+  }
+
+  it("at 1 AM reads the night shift's assignments dated the evening before", async () => {
+    const { client, eqs } = recordingClient({
+      staff: [{ id: "staff-1" }],
+      shift_assignments: [
+        { shift_type: "night", assigned_resident_ids: ["r-night"], status: "assigned" },
+        { shift_type: "day", assigned_resident_ids: ["r-day"], status: "assigned" },
+      ],
+    });
+    const ids = await fetchMyResidentIds(client, {
+      userId: "user-1",
+      facilityId: "facility-1",
+      timeZone: "America/New_York",
+      shifts: TWELVE_HOUR,
+      now: new Date("2026-09-15T05:00:00.000Z"),
+    });
+    expect(ids).toEqual(["r-night"]);
+    expect(eqs).toContainEqual({ table: "shift_assignments", column: "shift_date", value: "2026-09-14" });
+  });
+
+  it("at 10 PM prefers the night on-call row over the day one", async () => {
+    const { client, eqs } = recordingClient({
+      on_call_schedules: [
+        { staff_id: "s-day", shift_type: "day", is_primary: true, phone_override: "111" },
+        { staff_id: "s-night", shift_type: "night", is_primary: true, phone_override: "222" },
+      ],
+      staff: [],
+    });
+    const phone = await fetchOnCallPhone(client, {
+      facilityId: "facility-1",
+      timeZone: "America/New_York",
+      shifts: TWELVE_HOUR,
+      now: new Date("2026-09-15T02:00:00.000Z"),
+    });
+    expect(phone).toBe("222");
+    expect(eqs).toContainEqual({ table: "on_call_schedules", column: "shift_date", value: "2026-09-14" });
   });
 });

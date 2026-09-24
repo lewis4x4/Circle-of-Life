@@ -19,7 +19,18 @@ describe("requireHeadCount", () => {
     expect(() => requireHeadCount({ count: null, error: { message: "boom" } }, "Open incidents")).toThrow(
       "Open incidents count failed: boom",
     );
-    expect(() => requireHeadCount({ count: null }, "Census")).toThrow("Census count was not returned");
+    expect(() => requireHeadCount({ count: null }, "Census")).toThrow("Census count unavailable");
+  });
+
+  it("rethrows an Error as-is and keeps a PostgREST error as the cause", () => {
+    const err = new Error("permission denied");
+    expect(() => requireHeadCount({ count: null, error: err }, "Census")).toThrow(err);
+    const pg = { message: "boom", code: "42501" };
+    try {
+      requireHeadCount({ count: 5, error: pg }, "Census");
+    } catch (e) {
+      expect((e as Error).cause).toBe(pg);
+    }
   });
 
   it("returns the count, including zero", () => {

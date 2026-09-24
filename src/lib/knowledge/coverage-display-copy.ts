@@ -45,10 +45,10 @@ export function coverageKpiCoveragePctValue(
 }
 
 /**
- * Line under the coverage %. A topic counts as covered only when someone marks
- * it covered on Seed targets; nothing links published documents to topics, so
- * "0/12" beside 20+ published documents means "none marked", not "none
- * answered" (COL-649). Say which.
+ * Line under the coverage %. A topic is covered while at least one published
+ * document is linked to it on Seed targets (COL-710); archiving or deleting the
+ * document uncovers it again. "0/12" beside published documents therefore
+ * means "nothing linked yet", not "nothing answered". Say which.
  */
 export function coverageKpiCoverageSub(
   rollup: { covered_targets: number; total_targets: number } | null,
@@ -56,9 +56,9 @@ export function coverageKpiCoverageSub(
   if (!rollup) return "loading…";
   if (rollup.total_targets === 0) return "No seed topics defined";
   if (rollup.covered_targets === 0) {
-    return `0/${rollup.total_targets} topics marked covered — none marked yet on Seed targets`;
+    return `0/${rollup.total_targets} topics covered — link published documents to topics on Seed targets`;
   }
-  return `${rollup.covered_targets}/${rollup.total_targets} topics marked covered`;
+  return `${rollup.covered_targets}/${rollup.total_targets} topics covered by a published document`;
 }
 
 /** Open-gap count — real zero stays numeric. */

@@ -4,6 +4,7 @@ import {
   complianceRollupScopeCopy,
   compliancePocDueDateLabel,
   compliancePocDueLine,
+  complianceScoreAlert,
   complianceScoreEmptyCopy,
   complianceScoreLoadingCopy,
   complianceDeficienciesAllClear,
@@ -137,5 +138,25 @@ describe("complianceOverdueEmergencyAlert (COL-649)", () => {
     ).toBe("3 emergency drills or checks are overdue.");
     expect(complianceOverdueEmergencyAlert([{ overdue: true }])).toBe("1 emergency drill or check is overdue.");
     expect(complianceOverdueEmergencyAlert([{ overdue: false }])).toBeNull();
+  });
+});
+
+describe("complianceScoreAlert (COL-710)", () => {
+  const score = { percentage: 72 };
+
+  it("is off unless the operating rule sets a level (no fixed 75)", () => {
+    expect(complianceScoreAlert(score, { off: true })).toBeNull();
+    expect(complianceScoreAlert(score, null)).toBeNull();
+  });
+
+  it("alerts below the configured level only", () => {
+    expect(complianceScoreAlert(score, { off: false, belowPct: 80 })).toBe(
+      "Compliance pass rate is 72%, below the 80% alert level.",
+    );
+    expect(complianceScoreAlert(score, { off: false, belowPct: 72 })).toBeNull();
+  });
+
+  it("says nothing before the score is in", () => {
+    expect(complianceScoreAlert(null, { off: false, belowPct: 80 })).toBeNull();
   });
 });
