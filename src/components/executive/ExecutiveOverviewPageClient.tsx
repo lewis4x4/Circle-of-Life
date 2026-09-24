@@ -1,6 +1,5 @@
 "use client";
 
-import { loadExecutiveOverview } from "@/lib/executive/load-executive-overview";
 import type { ResidentDayWindow } from "@/lib/executive/resident-days";
 import { startupMark } from "@/lib/observability/startup-performance";
 import dynamic from "next/dynamic";
@@ -217,6 +216,7 @@ export function ExecutiveOverviewPageClient({
     setLoading(true);
     setFetchError(null);
     try {
+      const { loadExecutiveOverview } = await import("@/lib/executive/load-executive-overview");
       const data = await loadExecutiveOverview(supabase, organizationId, { strict: true });
       if (generation !== requestGeneration.current) return;
       setMetrics(data.metrics);
