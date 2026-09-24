@@ -47,7 +47,7 @@ export default function CfoDashboardPage() {
     ? facilityName
       ? `This facility — CFO finance board for ${facilityName}, not a portfolio roll-up.`
       : "This facility — CFO finance board (facility name not loaded), not a portfolio roll-up."
-    : "CFO finance board — all facilities in your organization, not the enterprise portfolio roll-up.";
+    : "CFO finance board — all facilities in your organization.";
 
   const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
     authLoading,
@@ -102,7 +102,7 @@ export default function CfoDashboardPage() {
   ];
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full">
+    <div className="relative w-full">
       <div className="border-b border-border px-6 py-3 sm:px-12">
         <ExecutiveHubNav />
       </div>

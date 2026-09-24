@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 import { formatCents } from "@/lib/finance/format-cents";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type FamilyFeedIncidentItem = {
   kind: "incident";
@@ -251,7 +252,7 @@ export async function fetchFamilyHomeSnapshot(
     if (!link) continue;
 
     const clinical = link.can_view_clinical;
-    const catLabel = INCIDENT_CATEGORY_LABELS[inc.category] ?? inc.category.replace(/_/g, " ");
+    const catLabel = INCIDENT_CATEGORY_LABELS[inc.category] ?? enumLabel(inc.category);
     const title = `${catLabel} · #${inc.incident_number}`;
     const detail = clinical ? truncate(inc.description, 220) : REDACTED_INCIDENT_DETAIL;
     const badge = clinical ? "Clinical" : "Update";
@@ -309,7 +310,7 @@ export async function fetchFamilyHomeSnapshot(
     };
     if (!linkByResident.get(inv.resident_id)?.can_view_financial) continue;
 
-    const statusLabel = inv.status.replace(/_/g, " ");
+    const statusLabel = enumLabel(inv.status, { case: "lower" });
     const title = `Invoice ${inv.invoice_number}`;
     const detail = `Status: ${statusLabel} · Balance ${formatMoney(inv.balance_due)} · Total ${formatMoney(inv.total)}`;
     const sortAt = `${inv.invoice_date}T12:00:00.000Z`;

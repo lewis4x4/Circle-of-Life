@@ -1,6 +1,7 @@
 import { toDate } from "date-fns-tz";
 
 import { formatCaregiverEmarScheduledInstructions } from "./emar-queue-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type EmarQueueSlot = {
   /** Stable key for React + dedup */
@@ -66,7 +67,7 @@ function formatScheduleLabel(iso: string, timeZone: string): string {
 }
 
 function routeDisplay(route: string): string {
-  return route.replace(/_/g, " ");
+  return enumLabel(route);
 }
 
 /**

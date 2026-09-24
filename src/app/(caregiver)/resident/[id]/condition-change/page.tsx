@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -362,12 +363,7 @@ export default function CaregiverResidentConditionChangePage() {
                     </p>
                     <p className="mt-1 text-zinc-200">{row.description}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(row.reported_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatShortDateTime(row.reported_at)}{" "}
                       · {row.shift}
                       {row.nurse_notified ? <span className="text-emerald-400"> · nurse notified</span> : null}
                     </p>

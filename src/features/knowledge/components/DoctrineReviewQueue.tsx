@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, CheckCircle2, FileWarning, Loader2, NotebookPen, UserRoundX } from "lucide-react";
@@ -20,7 +21,7 @@ type SlaFilter = "all" | "due_soon" | "overdue";
 
 function dueDateLabel(value: string | null): string {
   if (!value) return "No due date";
-  return `Due ${new Date(value).toLocaleDateString()}`;
+  return `Due ${formatDisplayDate(value)}`;
 }
 
 function isDueSoon(value: string | null, today: Date): boolean {

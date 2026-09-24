@@ -18,7 +18,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { requireHeadCount } from "@/lib/metrics/require-head-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import type { Database } from "@/types/database";
 
 import {

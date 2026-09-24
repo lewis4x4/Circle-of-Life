@@ -6,9 +6,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
-import { currentShiftForTimezone, type ShiftType } from "@/lib/caregiver/shift";
+import { currentShiftFor, type FacilityShiftDefinition, type ShiftType } from "@/lib/caregiver/shift";
 import type { Database } from "@/types/database";
 
 import type { CareEventContext, CareEventKind, CareEventLevel } from "./level-engine";
@@ -68,9 +67,11 @@ export function filterMyResidents<T extends { id: string }>(everyone: T[], assig
 
 export async function fetchMyResidentIds(
   supabase: Client,
-  input: { userId: string; facilityId: string; timeZone: string; now?: Date },
+  input: { userId: string; facilityId: string; timeZone: string; shifts?: readonly FacilityShiftDefinition[] | null; now?: Date },
 ): Promise<string[]> {
-  const now = input.now ?? new Date();
+  // The facility's configured shift, and the date it started: at 1 AM the night
+  // shift's assignments are still dated the evening before (COL-685).
+  const shift = currentShiftFor({ timeZone: input.timeZone, shifts: input.shifts }, input.now ?? new Date());
   const staff = await supabase
     .from("staff" as never)
     .select("id")
@@ -85,13 +86,10 @@ export async function fetchMyResidentIds(
     .select("shift_type, assigned_resident_ids, status")
     .in("staff_id", staffIds)
     .eq("facility_id", input.facilityId)
-    .eq("shift_date", zonedYmd(now, input.timeZone))
+    .eq("shift_date", shift.serviceDate)
     .is("deleted_at", null);
   if (assignments.error) throw assignments.error;
-  return selectAssignedResidentIds(
-    (assignments.data ?? []) as ShiftAssignmentLite[],
-    currentShiftForTimezone(input.timeZone, now),
-  );
+  return selectAssignedResidentIds((assignments.data ?? []) as ShiftAssignmentLite[], shift.shiftType);
 }
 
 // ---------------------------------------------------------------------------
@@ -218,14 +216,14 @@ export function selectOnCallPhone(rows: OnCallCandidate[], currentShift: ShiftTy
 
 export async function fetchOnCallPhone(
   supabase: Client,
-  input: { facilityId: string; timeZone: string; now?: Date },
+  input: { facilityId: string; timeZone: string; shifts?: readonly FacilityShiftDefinition[] | null; now?: Date },
 ): Promise<string | null> {
-  const now = input.now ?? new Date();
+  const shift = currentShiftFor({ timeZone: input.timeZone, shifts: input.shifts }, input.now ?? new Date());
   const schedules = await supabase
     .from("on_call_schedules" as never)
     .select("staff_id, shift_type, is_primary, phone_override")
     .eq("facility_id", input.facilityId)
-    .eq("shift_date", zonedYmd(now, input.timeZone))
+    .eq("shift_date", shift.serviceDate)
     .is("deleted_at", null);
   if (schedules.error) throw schedules.error;
   const rows = (schedules.data ?? []) as {
@@ -246,7 +244,7 @@ export async function fetchOnCallPhone(
       phone_override: row.phone_override,
       staff_phone: phoneByStaff.get(row.staff_id) ?? null,
     })),
-    currentShiftForTimezone(input.timeZone, now),
+    shift.shiftType,
   );
 }
 

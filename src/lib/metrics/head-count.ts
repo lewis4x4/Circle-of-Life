@@ -8,6 +8,11 @@
  *   ("No … count posted", "Unavailable").
  * - `requireHeadCount` when a missing count should fail the whole read and
  *   surface the page's existing error state.
+ * - `metricFromCount` (./metric-state) when a single tile should say
+ *   "Unavailable" on its own.
+ *
+ * This is the only head-count helper; #816/#818/#819 each wrote one in
+ * parallel and they were folded in here.
  */
 
 export type HeadCountReply = { count?: number | null; error?: unknown };
@@ -19,15 +24,16 @@ export function headCountOrNull(reply: HeadCountReply): number | null {
 
 export function requireHeadCount(reply: HeadCountReply, what: string): number {
   if (reply.error) {
+    if (reply.error instanceof Error) throw reply.error;
     const message =
       typeof reply.error === "object" && reply.error !== null && "message" in reply.error
         ? String((reply.error as { message: unknown }).message)
         : String(reply.error);
-    throw new Error(`${what} count failed: ${message}`);
+    throw new Error(`${what} count failed: ${message}`, { cause: reply.error });
   }
   const count = headCountOrNull(reply);
   if (count === null) {
-    throw new Error(`${what} count was not returned`);
+    throw new Error(`${what} count unavailable`);
   }
   return count;
 }

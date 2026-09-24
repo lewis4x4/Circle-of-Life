@@ -1,4 +1,5 @@
 import { addDays, formatISO, parseISO } from "date-fns";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const FILE_CATEGORIES = ["policy", "application", "payroll", "benefit", "consent", "job_description", "orientation", "training", "screening", "medical"] as const;
 export const SIGNER_PURPOSES = ["employee", "supervisor", "witness", "trainer", "administrator", "provider"] as const;
@@ -77,10 +78,10 @@ export function assessDutyReadiness(assessments: RequirementAssessment[], duty: 
   const needed: Duty[] = duty === "medication" ? ["resident_interaction", "personal_care", "medication"] : duty === "personal_care" ? ["resident_interaction", "personal_care"] : ["resident_interaction"];
   if (needed.some((d) => !assessments.some((a) => a.requirement.duty === d))) return { status: "not_configured", reasons: ["Applicable requirements for this duty and its prerequisites have not been approved."] };
   const missing = relevant.filter((a) => a.state !== "verified");
-  return missing.length ? { status: "blocked", reasons: missing.map((a) => `${a.requirement.title}: ${a.state.replaceAll("_", " ")}`) } : { status: "ready", reasons: [] };
+  return missing.length ? { status: "blocked", reasons: missing.map((a) => `${a.requirement.title}: ${enumLabel(a.state, { case: "lower" })}`) } : { status: "ready", reasons: [] };
 }
 
-export function displayDuty(duty: string) { return duty.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase()); }
+export function displayDuty(duty: string) { return enumLabel(duty); }
 
 /** A personnel audit export intentionally excludes confidential medical records and free-text notes. */
 export function employeeAuditExport(data: EmployeeFileData, today: string) {

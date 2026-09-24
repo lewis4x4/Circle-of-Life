@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -474,7 +475,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
                   <p className={cn("mt-2 text-xs", v.className)}>{v.line}</p>
 
                   <p className="mt-2 border-t border-border pt-2 text-[12px] text-muted-foreground">
-                    Uploaded {new Date(doc.uploaded_at).toLocaleDateString()} by{" "}
+                    Uploaded {formatDisplayDate(doc.uploaded_at)} by{" "}
                     {formatDocumentsTabUploaderDisplay(doc.uploaded_by_display)}
                   </p>
 

@@ -376,6 +376,9 @@ export function AdminStaffPageClient({
               { value: "current", label: "Current" },
               { value: "expiring_soon", label: "Expiring Soon" },
               { value: "expired", label: "Expired" },
+              { value: "missing_required", label: "Required Cert Missing" },
+              { value: "not_required", label: "Not Required" },
+              { value: "not_set_up", label: "Requirements Not Set Up" },
             ],
           },
         ]}
@@ -512,8 +515,12 @@ function StaffStatusPill({ status }: { status: StaffStatus }) {
  */
 function CertificationStatusPill({ certifications }: { certifications: CertificationStatus }) {
   switch (certifications) {
-    case "not_verified":
-      return <StatusPill tone="warning">Not verified</StatusPill>;
+    case "missing_required":
+      return <StatusPill tone="warning">Required cert missing</StatusPill>;
+    case "not_required":
+      return <StatusPill tone="muted">Not required</StatusPill>;
+    case "not_set_up":
+      return <StatusPill tone="muted">Requirements not set up</StatusPill>;
     case "expired":
       return <StatusPill tone="danger">Expired</StatusPill>;
     case "expiring_soon":

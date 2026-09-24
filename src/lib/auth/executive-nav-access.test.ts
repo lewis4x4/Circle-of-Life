@@ -25,7 +25,7 @@ describe("executive nav access", () => {
       href: "/admin/executive",
       label: "Executive summary",
     });
-    expect(canOpenExecutiveHubHref("org_admin", "/admin/executive/reports")).toBe(true);
+    expect(canOpenExecutiveHubHref("org_admin", "/admin/executive/alerts")).toBe(true);
   });
 
   it("gives facility operators no Executive rail item while the standup hub stays reachable", () => {
@@ -36,7 +36,7 @@ describe("executive nav access", () => {
       expect(canOpenExecutiveHubHref(role, "/admin/executive")).toBe(false);
       expect(canOpenExecutiveHubHref(role, "/admin/executive/standup")).toBe(true);
       expect(canOpenExecutiveHubHref(role, "/admin/executive/standup/history")).toBe(true);
-      expect(canOpenExecutiveHubHref(role, "/admin/executive/reports")).toBe(false);
+      expect(canOpenExecutiveHubHref(role, "/admin/executive/alerts")).toBe(false);
     }
   });
 

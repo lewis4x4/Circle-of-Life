@@ -13,11 +13,15 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatStaffingConsoleExpiredCertStaffName } from "@/lib/staffing/staffing-console-display-copy";
+import { loadCertificationRules } from "@/lib/staff/certification-policy";
+import { summarizeCertificationScope } from "@/lib/staff/certification-scope";
 import {
+  fetchCertificationScope,
   fetchStaffingCoverageScope,
   type StaffingCoverageScope,
 } from "@/lib/staffing/staffing-coverage-scope";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 import { fetchStaffingRatioCheckOn } from "@/lib/staffing/ratio-check";
 
 export type SnapshotRow = {
@@ -157,23 +161,30 @@ export async function fetchSnapshotsFromSupabase(
   }));
 }
 
+/**
+ * Expired certifications that block someone: required for their job role and
+ * not replaced by an in-date one (COL-709). With no requirements recorded,
+ * nobody is flagged; the credential panel says the requirements are not set up.
+ */
 export async function fetchExpiredCertificationWarnings(
   selectedFacilityId: string | null,
   supabase: SupabaseClient<Database> = createClient(),
 ): Promise<CertWarning[]> {
-  const todayIso = todayFacilityDateIso();
+  const facilityId = isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : null;
+  const [scope, rules] = await Promise.all([
+    fetchCertificationScope(facilityId, supabase),
+    loadCertificationRules(supabase as unknown as SupabaseClient),
+  ]);
+  const blocking = summarizeCertificationScope({ ...scope, rules }).expiredRequiredCertIds;
+  if (blocking.length === 0) return [];
 
-  let certsQuery = supabase
+  const certsQuery = supabase
     .from("staff_certifications" as never)
     .select("id, staff_id, certification_name, expiration_date, status")
+    .in("id", blocking)
     .is("deleted_at", null)
-    .or(`status.in.(expired,revoked),expiration_date.lt.${todayIso}`)
     .order("expiration_date", { ascending: true })
     .limit(10);
-
-  if (isValidFacilityIdForQuery(selectedFacilityId)) {
-    certsQuery = certsQuery.eq("facility_id", selectedFacilityId);
-  }
 
   const certsRes = (await certsQuery) as unknown as QueryResult<SupabaseExpiredCertRow>;
   const certs = certsRes.data ?? [];
@@ -211,7 +222,7 @@ function mapDbStaffRoleToLabel(role: string): string {
   if (normalized === "cna") return "CNA";
   if (normalized === "rn") return "RN";
   if (normalized === "lpn") return "LPN";
-  return normalized.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return enumLabel(normalized, { case: "title" });
 }
 
 /**

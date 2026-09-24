@@ -14,7 +14,7 @@ describe("RiskCommandPageClient when the scorer has never run (COL-635)", () => 
   it("says scoring has not run and does not show a zero critical-facility count", () => {
     render(
       <RiskCommandPageClient
-        initialData={{ facilities: [], latestRows: [], historyRows: [], recentDeliveries: [], openAlerts: [], smsSent24h: 0 }}
+        initialData={{ facilities: [], latestRows: [], historyRows: [], recentDeliveries: [], openAlerts: [], smsSent24h: 0, scoreBands: null }}
         initialError={null}
         initialFacilityId={null}
       />,

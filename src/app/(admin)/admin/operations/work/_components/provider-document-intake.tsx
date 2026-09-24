@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { providerDocumentPrepareSchema, providerDocumentVersionSchema, type ProviderDocumentVersion, type ProviderReportsReply } from "@/lib/operations/provider-reports";
 import { CONTROL } from "./work-inputs";
+import { enumLabel } from "@/lib/display/enum-label";
 type Attempt = { file: File; body: string; version?: ProviderDocumentVersion; finalizeKey: string; uploaded?: boolean };
 export function ProviderDocumentIntake({ taskId, facilityId, residentId, versions, disabled, onLock, onSaved }: { taskId:string;facilityId:string;residentId:string;versions:ProviderReportsReply["versions"];disabled:boolean;onLock:(value:boolean)=>void;onSaved:()=>void }) {
  const [file,setFile]=useState<File|null>(null),[title,setTitle]=useState(""),[type,setType]=useState("community_support_plan"),[supersedes,setSupersedes]=useState(""),[pending,setPending]=useState<Attempt|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
@@ -43,7 +44,7 @@ export function ProviderDocumentIntake({ taskId, facilityId, residentId, version
  return <details><summary className={`${CONTROL} cursor-pointer`}>Native report document intake</summary><p>Files stay in the native resident document store. Upload does not confirm service, receipt, review or signatures.</p>{message?<p role="status">{message}</p>:null}{pending?<button type="button" className={CONTROL} disabled={busy||disabled} onClick={()=>void run(pending)}>Retry same document intake</button>:null}
  <fieldset disabled={disabled||busy||pending!==null} className="space-y-3"><legend>Prepare native document version</legend>
  <label className="block">Document title<input className={CONTROL} value={title} onChange={e=>setTitle(e.target.value)}/></label>
- <label className="block">Document type<select className={CONTROL} value={type} onChange={e=>setType(e.target.value)}>{['form_1823','hospice_plan','community_support_plan','support_plan','provider_report','other'].map(value=><option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}</select></label>
+ <label className="block">Document type<select className={CONTROL} value={type} onChange={e=>setType(e.target.value)}>{['form_1823','hospice_plan','community_support_plan','support_plan','provider_report','other'].map(value=><option key={value} value={value}>{enumLabel(value)}</option>)}</select></label>
  <label className="block">Supersedes native version<select className={CONTROL} value={supersedes} onChange={e=>setSupersedes(e.target.value)}><option value="">New document</option>{versions.filter(v=>v.state==='finalized'&&v.native_current).map(v=><option key={v.id} value={v.id}>{v.title} · {v.id}</option>)}</select></label>
  <label className="block">Native report file<input className={CONTROL} type="file" accept="application/pdf,image/jpeg,image/png" onChange={e=>setFile(e.target.files?.[0]??null)}/></label><button type="button" className={CONTROL} disabled={!file} onClick={()=>void start()}>Upload and finalize native version</button>
  </fieldset></details>;

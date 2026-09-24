@@ -28,7 +28,7 @@ function Line({ label, value }: { label: string; value: string }) {
 export function PhysicianSheet({ packet }: { packet: CareEventPrintPacket }) {
   const { card, facility, resident, incidentExtras } = packet;
   const tz = facility.timeZone;
-  const residentName = resident ? [resident.lastName, resident.firstName].filter(Boolean).join(", ") : null;
+  const residentName = resident ? [resident.firstName, resident.lastName].filter(Boolean).join(" ") : null;
   const facilityAddress = [facility.addressLine1, facility.city, facility.state, facility.zip]
     .filter((part) => Boolean(part && part.trim()))
     .join(", ");

@@ -21,7 +21,8 @@ describe("billing invoice ledger Eastern activity window", () => {
     expect(source).toContain("const t = todayFacilityDateIso();");
     expect(source).toContain("addFacilityCalendarDays(t, -7)");
     expect(source).toContain("addFacilityCalendarDays(t, 7)");
-    expect(source).toContain("as of {t} Eastern");
+    // The facility calendar day, shown as a display date (COL-684: no "2026-09-22 Eastern").
+    expect(source).toContain("as of {formatDisplayDate(t)}");
     expect(source).not.toMatch(/toISOString\(\)\.slice\(0,\s*10\)/);
   });
 });

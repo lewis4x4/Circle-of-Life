@@ -1,3 +1,4 @@
+import { formatProfileName } from "@/lib/format/datetime";
 import { NextRequest, NextResponse } from "next/server";
 
 import { logError } from "@/lib/observability/logger";
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
       .eq("organization_id", context.organizationId)
       .in("id", userIds);
     for (const row of profiles ?? []) {
-      nameById.set(row.id, row.full_name?.trim() || row.id);
+      nameById.set(row.id, formatProfileName(row.full_name, { fallback: "Staff" }));
     }
   }
 

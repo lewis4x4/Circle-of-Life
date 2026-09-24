@@ -4,11 +4,12 @@ import { enumLabel } from "@/lib/display/enum-label";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-import { aggregateCertStatus, type CertificationStatus } from "@/lib/staff/certification-aggregate";
+import { evaluateStaffCertifications, type CertificationStatus } from "@/lib/staff/certification-aggregate";
+import { certificationPolicyResolver, loadCertificationRules } from "@/lib/staff/certification-policy";
 import { formatStaffRosterNextShift } from "@/lib/staff/staff-roster-display-copy";
 import type { Database } from "@/types/database";
 
-export { aggregateCertStatus, type CertificationStatus };
+export type { CertificationStatus };
 
 export type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
 export type StaffStatus = "active" | "on_leave" | "inactive";
@@ -21,6 +22,8 @@ export type StaffRow = {
   roleLabel: string;
   status: StaffStatus;
   certifications: CertificationStatus;
+  /** Whether any certification requirement is recorded for this person's building (COL-709). */
+  certRequirementsSetUp: boolean;
   nextShift: string;
   photoUrl?: string | null;
   /** The building this employment record belongs to; one person can hold a record at several. */
@@ -135,6 +138,7 @@ export function buildDedupedStaffPickerOptions(
 
 type SupabaseCertRow = {
   staff_id: string;
+  certification_type: string | null;
   status: string;
   expiration_date: string | null;
   deleted_at: string | null;
@@ -200,14 +204,20 @@ export async function fetchStaffFromSupabase(
     shiftsQuery = shiftsQuery.eq("facility_id", selectedFacilityId);
   }
 
-  const [certsResult, shiftsResult] = (await Promise.all([
+  const [certsResult, shiftsResult, certificationRules] = (await Promise.all([
     supabase
       .from("staff_certifications" as never)
-      .select("staff_id, status, expiration_date, deleted_at")
+      .select("staff_id, certification_type, status, expiration_date, deleted_at")
       .in("staff_id", staffIds)
       .is("deleted_at", null),
     shiftsQuery,
-  ])) as unknown as [QueryResult<SupabaseCertRow>, QueryResult<SupabaseShiftRow>];
+    loadCertificationRules(supabase),
+  ])) as unknown as [
+    QueryResult<SupabaseCertRow>,
+    QueryResult<SupabaseShiftRow>,
+    Awaited<ReturnType<typeof loadCertificationRules>>,
+  ];
+  const policyFor = certificationPolicyResolver(certificationRules);
 
   if (certsResult.error) {
     throw certsResult.error;
@@ -235,7 +245,12 @@ export async function fetchStaffFromSupabase(
     const last = s.last_name?.trim() ?? "";
     const name = `${first} ${last}`.trim() || "Staff member";
     const initials = `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase() || "ST";
-    const certState = aggregateCertStatus(certsByStaff.get(s.id) ?? []);
+    const policy = policyFor(s.facility_id ?? null);
+    const certState = evaluateStaffCertifications({
+      staffRole: s.staff_role,
+      certs: certsByStaff.get(s.id) ?? [],
+      policy,
+    }).status;
     const uiRole = mapDbStaffRoleToUi(s.staff_role);
     const uiStatus = mapEmploymentToUiStatus(s.employment_status);
     const nextShift = formatStaffRosterNextShift(nextShiftByStaff.get(s.id));
@@ -248,6 +263,7 @@ export async function fetchStaffFromSupabase(
       roleLabel: formatStaffRoleLabel(s.staff_role),
       status: uiStatus,
       certifications: certState,
+      certRequirementsSetUp: policy.configured,
       nextShift,
       photoUrl: s.photo_url,
       facilityId: s.facility_id,

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useState, type FormEvent } from "react";
 import { BarChart3 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -360,19 +361,19 @@ export default function ExecutiveBenchmarkCohortsPageClient({
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="rounded-md border border-info/20 bg-card px-3 py-2">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Request</p>
-                <p>{crossOperatorSetting?.requested_at ? new Date(crossOperatorSetting.requested_at).toLocaleString() : "Not recorded"}</p>
+                <p>{crossOperatorSetting?.requested_at ? formatDisplayDateTime(crossOperatorSetting.requested_at) : "Not recorded"}</p>
               </div>
               <div className="rounded-md border border-info/20 bg-card px-3 py-2">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Terms acknowledged</p>
                 <p>
                   {crossOperatorSetting?.terms_acknowledged_at
-                    ? new Date(crossOperatorSetting.terms_acknowledged_at).toLocaleString()
+                    ? formatDisplayDateTime(crossOperatorSetting.terms_acknowledged_at)
                     : "Pending"}
                 </p>
               </div>
               <div className="rounded-md border border-info/20 bg-card px-3 py-2">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Approval</p>
-                <p>{crossOperatorSetting?.approved_at ? new Date(crossOperatorSetting.approved_at).toLocaleString() : "Not approved"}</p>
+                <p>{crossOperatorSetting?.approved_at ? formatDisplayDateTime(crossOperatorSetting.approved_at) : "Not approved"}</p>
               </div>
             </div>
             {crossOperatorSetting?.notes ? (

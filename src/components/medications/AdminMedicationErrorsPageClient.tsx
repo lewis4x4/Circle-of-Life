@@ -1,4 +1,5 @@
 "use client";
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { MedicationErrorReview } from "@/components/medications/MedicationErrorReview";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -238,7 +239,7 @@ export function AdminMedicationErrorsPageClient({
                     <div className="flex flex-col">
                       <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Occurred</span>
                       <span className="text-[11px] font-mono tracking-wider text-muted-foreground whitespace-nowrap tabular-nums">
-                        {new Date(r.occurred_at).toLocaleString()}
+                        {formatDisplayDateTime(r.occurred_at)}
                       </span>
                     </div>
 

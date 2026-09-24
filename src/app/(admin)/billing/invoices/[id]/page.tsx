@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -18,7 +19,7 @@ import { formatInvoiceRowNumberForDisplay } from "@/lib/billing/invoices-display
 import { isNotYetSentStatus } from "@/lib/billing/receivables";
 import { glPostUnavailableReason, postInvoiceToGl } from "@/lib/finance/post-to-gl";
 import { canMutateFinance } from "@/lib/finance/load-finance-context";
-import { requireCount } from "@/lib/metrics/require-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
 
@@ -75,9 +76,7 @@ type QueryResult<T> = { data: T | null; error: QueryError | null };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
 function formatDate(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 export default function AdminInvoiceDetailPage() {
@@ -169,7 +168,7 @@ export default function AdminInvoiceDetailPage() {
           .select("id", { count: "exact", head: true })
           .eq("entity_id", inv.entity_id)
           .is("deleted_at", null);
-        setGlAccountCount(requireCount(accounts, "GL account count"));
+        setGlAccountCount(requireHeadCount(accounts, "GL account count"));
         const existingJe = await supabase
           .from("journal_entries")
           .select("id, status")

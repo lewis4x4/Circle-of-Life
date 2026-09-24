@@ -1,12 +1,14 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { MedPassItem } from "@/components/med-tech/PassCard";
 import type { ResidentItem } from "@/components/med-tech/ResidentRail";
 import type { TapeEvent } from "@/components/med-tech/ShiftTape";
 import type { ShiftBarProps } from "@/components/med-tech/ShiftBar";
-import { currentShiftForTimezone } from "@/lib/caregiver/shift";
+import { currentShiftFor, fetchFacilityShiftDefinitions, type FacilityShiftDefinition } from "@/lib/caregiver/shift";
+import { DEFAULT_DISPLAY_TIME_ZONE } from "@/lib/format/datetime";
 import {
   formatShiftCurrentMedicationLabel,
   formatShiftCurrentResidentCompactName,
@@ -43,9 +45,13 @@ type DynamicSupabase = {
 
 const UNRESOLVED_UNIT_LABEL = "Assigned facility";
 
+/** The facility's zone and configured shifts: the incident form stamps the shift in force when it saves (COL-685). */
+export type MedTechShiftContext = { timeZone: string; shifts: FacilityShiftDefinition[] };
+
 interface ShiftData {
   userId: string;
   shift: ShiftBarProps;
+  shiftContext: MedTechShiftContext | null;
   passes: MedPassItem[];
   residents: ResidentItem[];
   tape: TapeEvent[];
@@ -81,7 +87,7 @@ function mapTapeKind(eventType: string): TapeEvent["kind"] {
 }
 
 function fmtTime(ts: string): string {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return formatDateTimeWith(ts, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function elapsed(clockedIn: string | null): string {
@@ -118,6 +124,7 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
   const [data, setData] = useState<ShiftData>({
     userId: "",
     shift: { techName: "", techInitials: "", shiftLabel: "", unitLabel: UNRESOLVED_UNIT_LABEL, assignedCount: 0, elapsedLabel: "00:00", shiftType: "day" },
+    shiftContext: null,
     passes: [], residents: [], tape: [], shiftId: "", loading: true, error: null,
   });
 
@@ -143,9 +150,22 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
       if (!shift) { setData(d => ({ ...d, loading: false, error: "No active shift" })); return; }
 
       const facilityRes = shift.facility_id
-        ? await q("facilities", "name", { id: shift.facility_id, _single: true })
+        ? await q("facilities", "name, timezone", { id: shift.facility_id, _single: true })
         : { data: null };
       const facilityLabel = facilityLabelFrom(facilityRes.data as QueryRow | null);
+      const facilityTimeZone =
+        typeof (facilityRes.data as QueryRow | null)?.timezone === "string" && (facilityRes.data as QueryRow).timezone
+          ? ((facilityRes.data as QueryRow).timezone as string)
+          : DEFAULT_DISPLAY_TIME_ZONE;
+      // The roster shift on incidents comes from the facility's configured shifts, not
+      // fixed clock buckets (COL-685). A failed read falls back to the legacy buckets.
+      const facilityShifts =
+        typeof shift.facility_id === "string"
+          ? await fetchFacilityShiftDefinitions(sb, [shift.facility_id])
+              .then((byFacility) => byFacility.get(shift.facility_id as string) ?? [])
+              .catch(() => [] as FacilityShiftDefinition[])
+          : [];
+      const shiftContext: MedTechShiftContext = { timeZone: facilityTimeZone, shifts: facilityShifts };
 
       // Profile
       const profRes = await q("user_profiles", "full_name", { id: user.id, _single: true });
@@ -256,9 +276,10 @@ export function useShiftCurrent(): ShiftData & { refresh: () => Promise<void> } 
       }));
 
 
-      const shiftType = currentShiftForTimezone("America/New_York");
+      const shiftType = currentShiftFor(shiftContext).shiftType;
       setData({
         userId: user.id,
+        shiftContext,
         shift: {
           techName: fullName, techInitials: initials,
           shiftLabel: formatShiftCurrentWindowLabel(

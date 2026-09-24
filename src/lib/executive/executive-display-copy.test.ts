@@ -291,7 +291,8 @@ describe("formatExecutiveLastGeneratedAt", () => {
 
   it("formats posted generate timestamps", () => {
     const formatted = formatExecutiveLastGeneratedAt("2026-01-15T12:00:00.000Z");
-    expect(formatted).toBe(new Date("2026-01-15T12:00:00.000Z").toLocaleString());
+    // Facility zone, one display format (COL-684): noon UTC is 7:00 AM Eastern in January.
+    expect(formatted).toBe("Jan 15, 2026, 7:00 AM");
   });
 });
 

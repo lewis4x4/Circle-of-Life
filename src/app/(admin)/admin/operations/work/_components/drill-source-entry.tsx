@@ -6,6 +6,7 @@ import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { drillSourceComponent, drillSourceMap, type DrillSourceComponent } from "@/lib/operations/drill-source-map";
 import { CONTROL } from "./work-inputs";
 import { LATE_ENTRY_LABEL, ObservationForm, useSourceCommand, type CommandReply } from "./source-command";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const drillLogSchema = z
   .object({
@@ -60,7 +61,7 @@ function Entry({ component, taskId, actorId, actorName, facilityId, timezone, di
             <ul>
               {drillSourceMap.map((row) => (
                 <li key={row.key}>
-                  {row.sourceId} · {row.label} · {row.kind.replaceAll("_", " ")} · {row.subjectKind ?? "Subject unknown"}: {row.command ? `${row.command.mode === "drill" ? "Drill log" : "Asset observation"} source record.` : "No source command."} {row.fallback}
+                  {row.sourceId} · {row.label} · {enumLabel(row.kind, { case: "lower" })} · {row.subjectKind ?? "Subject unknown"}: {row.command ? `${row.command.mode === "drill" ? "Drill log" : "Asset observation"} source record.` : "No source command."} {row.fallback}
                 </li>
               ))}
             </ul>

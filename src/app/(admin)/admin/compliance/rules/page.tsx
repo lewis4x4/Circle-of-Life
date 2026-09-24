@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Play, TrendingUp } from "lucide-react";
@@ -176,7 +177,7 @@ export default function ComplianceRulesPage() {
             </div>
             <CardDescription>
               {score.passed} of {score.total} rules passing
-              {scanDate && ` • Last scan: ${new Date(scanDate).toLocaleDateString()}`}
+              {scanDate && ` • Last scan: ${formatDisplayDate(scanDate)}`}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -223,7 +224,7 @@ export default function ComplianceRulesPage() {
                               {rule.last_result.passed ? "PASS" : "FAIL"}
                             </span>
                             <span className="text-muted-foreground">
-                              Scanned {new Date(rule.last_result.scanned_at).toLocaleDateString()}
+                              Scanned {formatDisplayDate(rule.last_result.scanned_at)}
                             </span>
                           </div>
                         )}

@@ -14,7 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { formatMetric, metricFromRead } from "@/lib/metrics/metric-state";
-import { requireHeadCount } from "@/lib/metrics/require-head-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
 import { V2Card } from "@/components/ui/v2-card";
@@ -196,7 +196,7 @@ export default function AdminMeetingsHubPage() {
   }, [supabase, facilityReady, selectedFacilityId, templateName, templateCadence, templateAgenda, load]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>

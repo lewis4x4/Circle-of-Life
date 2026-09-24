@@ -66,6 +66,13 @@ export function enumLabel(value: string | null | undefined, options: EnumLabelOp
   const override = options.overrides?.[raw] ?? options.overrides?.[key];
   if (override) return override;
 
+  // Already words (a space and no underscore): free text such as "Call the on-call lead"
+  // keeps its own casing; only a leading lowercase letter is raised for sentence case.
+  if (/\s/.test(raw) && !raw.includes("_")) {
+    if (options.case === "lower" || options.case === "title") return raw;
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
   const tokens = key.split(/[\s_-]+/).filter(Boolean);
   const title = options.case === "title";
   const lower = options.case === "lower";

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -111,9 +112,7 @@ const CONCESSION_REASONS = [
 ] as const;
 
 function formatDate(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 function centsToInput(cents: number | null | undefined): string {
@@ -440,7 +439,7 @@ export default function ResidentBillingPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 rounded-[3rem] bg-gradient-to-b from-amber-500/10 via-transparent to-transparent blur-3xl" aria-hidden />
       <div className="relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">

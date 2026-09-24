@@ -3,6 +3,7 @@
  * Missing uploader attribution names real gaps — never fabricate staff names.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import type { DocumentVaultCategoryKey } from "@/lib/admin/facilities/document-vault-taxonomy";
 import {
   DOCUMENT_CATEGORY_EXPIRATION_NA,
@@ -57,7 +58,7 @@ export function formatDocumentsTabExpirationVisual(
   }
 
   const days = daysUntilFacilityExpirationDate(expirationDate, now);
-  const formatted = new Date(`${expirationDate}T12:00:00`).toLocaleDateString();
+  const formatted = formatDisplayDate(expirationDate);
   if (days < 0) {
     return {
       line: `Expired ${Math.abs(days)} days ago`,

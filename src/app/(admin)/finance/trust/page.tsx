@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Landmark, Scale, Wallet } from "lucide-react";
 
 import { FinanceHubNav } from "../finance-hub-nav";
+import { CashTrustLedgersClient } from "@/components/finance/CashTrustLedgersClient";
 import { billingCurrency } from "@/lib/billing/currency";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerSelectedFacilityId } from "@/lib/facilities/selected-facility-cookie.server";
@@ -140,6 +141,9 @@ export default async function FinanceTrustPage() {
           </HorizontalScroll>
         </CardContent>
       </Card>
+
+      {/* /admin/cash was a second page over this same ledger; it 308s here (COL-707). */}
+      <CashTrustLedgersClient />
     </div>
   );
 }

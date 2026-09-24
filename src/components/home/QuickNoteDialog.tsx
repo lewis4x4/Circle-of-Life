@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPersonName } from "@/lib/format/datetime";
 import { useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ async function defaultResidents(facilityId: string): Promise<ResidentOption[]> {
     .in("status", ["active", "hospital_hold", "loa"])
     .order("last_name");
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => ({ id: row.id, name: `${row.last_name}, ${row.preferred_name || row.first_name}` }));
+  return (data ?? []).map((row) => ({ id: row.id, name: formatPersonName(row) }));
 }
 
 /**

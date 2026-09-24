@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronLeft, Clock, Zap } from "lucide-react";
@@ -204,7 +205,7 @@ export default function OperationsPagerPage() {
                 <CardDescription>
                   {task.facility_name}
                   {task.assigned_to_name ? ` · ${task.assigned_to_name}` : ""}
-                  {task.due_at ? ` · due ${new Date(task.due_at).toLocaleString()}` : " · schedule needs confirmation"}
+                  {task.due_at ? ` · due ${formatDisplayDateTime(task.due_at)}` : " · schedule needs confirmation"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useEffect, useState } from "react";
 
 import { ReportsHubNav } from "@/components/reports/reports-hub-nav";
@@ -137,7 +138,7 @@ export default function ReportsGovernancePage() {
                              </div>
                              <div className="flex flex-col gap-2 align-right text-left md:text-right">
                                 <span className="xl:hidden text-[9px] uppercase font-mono tracking-wider text-muted-foreground mb-0.5">Last Updated</span>
-                                <span className="font-mono text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-wide">{new Date(row.updated_at).toLocaleString()}</span>
+                                <span className="font-mono text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-wide">{formatDisplayDateTime(row.updated_at)}</span>
                              </div>
                           </div>
                       </div>

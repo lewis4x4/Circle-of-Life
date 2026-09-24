@@ -14,6 +14,7 @@
  * administrator reads them before submitting, not instead of.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 
 import { CadencePolicyDiff } from "@/components/rounding/CadencePolicyDiff";
@@ -206,7 +207,7 @@ export function CadencePreviewPanel({
           <p className="text-[13px] leading-relaxed text-muted-foreground">{APPLY_MODE_HELPERS[applyMode]}</p>
           {applyMode === "next_shift_boundary" && overview.next_shift_boundary_at ? (
             <p className="text-[13px] text-muted-foreground">
-              The next boundary is {new Date(overview.next_shift_boundary_at).toLocaleString()}.
+              The next boundary is {formatDisplayDateTime(overview.next_shift_boundary_at)}.
             </p>
           ) : null}
         </div>

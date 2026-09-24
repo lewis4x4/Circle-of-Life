@@ -80,7 +80,7 @@ describe("fetchAdminDashboardSnapshot", () => {
     });
     expect(snapshot.activity[0]).toMatchObject({
       tone: "critical",
-      message: "Avery Jones · fall without injury (open)",
+      message: "Avery Jones · Fall without injury (open)",
       href: "/admin/incidents/incident-1",
     });
   });

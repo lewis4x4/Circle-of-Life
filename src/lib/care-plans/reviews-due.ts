@@ -82,7 +82,8 @@ function parseISODateOnly(value: string): number {
 export function formatCarePlanReviewDate(iso: string): string {
   const t = parseISODateOnly(iso);
   if (Number.isNaN(t)) return iso;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(t));
+  // `t` is UTC midnight of a stored calendar date: format it in UTC so it stays that day.
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(t));
 }
 
 /**

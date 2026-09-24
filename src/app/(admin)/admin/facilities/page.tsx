@@ -35,7 +35,7 @@ export default function FacilitiesPage() {
   const kpiStripHelperLine = portfolioKpiStripHelperLine(totals);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-16">
+    <div className="relative w-full pb-16">
       <div className="relative z-10 mx-auto max-w-7xl space-y-8 px-4 sm:px-6 xl:px-0">
         <header className="mt-2 space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Facilities</h1>
