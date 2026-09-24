@@ -182,7 +182,10 @@ export async function actOnPayrollPacket(actor: CurrentApiActor, id: string, inp
     if (input.action !== "amend" && packet.status !== "draft") throw new PayrollPacketError("Approved packet contents cannot be changed. Create an amendment.");
     if (input.action === "amend" && packet.status === "draft") throw new PayrollPacketError("Save the existing draft instead of creating an amendment.");
     const source = await loadPayrollSource(actor, packet.facility_id);
-    const inputs = input.action === "save" ? input.inputs : packet.inputs.map((row) => ({ ...row, reviewed: false }));
+    // A save can refresh source data too. Review marks must still refer to the
+    // hours/rules the operator saw, even when saving an unrelated manual edit.
+    const sourceChanged = input.action === "save" && snapshotFingerprint(buildSnapshot(source, datesFor(packet), packet.inputs)) !== snapshotFingerprint(packet.snapshot);
+    const inputs = input.action === "save" ? input.inputs.map((row) => sourceChanged ? { ...row, reviewed: false } : row) : packet.inputs.map((row) => ({ ...row, reviewed: false }));
     const dates = createPacketSchema.parse({ facilityId: packet.facility_id, ...datesFor(packet), ...(input.action === "save" && input.checkDate ? { checkDate: input.checkDate } : {}) });
     const snapshot = buildSnapshot(source, dates, inputs);
     return writePacket(actor, source, dates, inputs, snapshot, input.action === "amend" ? null : packet, input.action === "amend" ? { id: packet.id, reason: input.reason } : undefined);

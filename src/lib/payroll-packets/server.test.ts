@@ -87,6 +87,18 @@ describe("payroll packet server boundaries", () => {
     expect(state.rpc).toHaveBeenCalledWith("payroll_packet_write", expect.objectContaining({ p_expected_revision: 1, p_source_revision: "2" }));
     expect(state.rpc).toHaveBeenCalledWith("payroll_packet_action", expect.objectContaining({ p_actor_id: actor().id, p_expected_revision: 2, p_detail: expect.objectContaining({ approvedByName: "Payroll reviewer", csv: "name,hours\nExample,1\n" }) }));
   });
+  it.each(["hours", "policy", "revision-only"] as const)("binds saved review marks to the reviewed source: %s", async (change) => {
+    const reviewed = { staffId: staff, payrollId: "A1", payBasis: "hourly" as const, department: "operations" as const, regularMinutes: 2400, overtimeMinutes: 0, holidayMinutes: 0, personalMinutes: 0, trainingMinutes: 0, onCallCents: 0, bonusCents: 0, salaryCents: null, note: "", reason: "Reviewed allocation", reviewed: true };
+    state.packet.inputs = [reviewed];
+    state.revision = "2";
+    if (change === "hours") state.snapshot.totals.regularMinutes += 60;
+    if (change === "policy") state.snapshot.policyConfirmedAt = "2026-09-24T18:00:00Z";
+    await actOnPayrollPacket(actor(), id, { action: "save", expectedRevision: 1, inputs: [{ ...reviewed, note: "Updated call notes", bonusCents: 1000 }], checkDate: "2026-09-26" });
+    expect(state.rpc).toHaveBeenCalledWith("payroll_packet_write", expect.objectContaining({
+      p_source_revision: "2", p_check_date: "2026-09-26",
+      p_inputs: [expect.objectContaining({ note: "Updated call notes", bonusCents: 1000, reviewed: change === "revision-only" })],
+    }));
+  });
   it("keeps amendment identity while correcting its draft check date", async () => {
     state.packet.amends_packet_id = "66666666-6666-4666-8666-666666666666";
     await actOnPayrollPacket(actor(), id, { action: "save", expectedRevision: 1, inputs: [], checkDate: "2026-09-26" });
