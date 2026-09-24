@@ -90,6 +90,18 @@ describe("residents rail", () => {
     expect(residentFlag({ hasOpenEscalation: false, hasActiveWatch: false, status: "active" })).toBe("stable");
   });
 
+  it("puts a stable resident with no next check after every one with a check", () => {
+    const ordered = orderRailResidents(
+      [
+        { id: "no-check", room: "101", flag: "stable" as const, nextDueAt: null },
+        { id: "later", room: "110", flag: "stable" as const, nextDueAt: at("15:00") },
+        { id: "sooner", room: "112", flag: "stable" as const, nextDueAt: at("14:00") },
+      ],
+      3,
+    );
+    expect(ordered.map((resident) => resident.id)).toEqual(["sooner", "later", "no-check"]);
+  });
+
   it("puts flagged residents first, then the soonest check, then room order", () => {
     const ordered = orderRailResidents(
       [

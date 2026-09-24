@@ -11,6 +11,7 @@ import { resolveFloorDeviceStore, type FloorDevice } from "@/lib/floor/device-st
 import { clearBrowserSessionCookies, floorLockHref, forgetFloorPerson, sendFloorLock } from "@/lib/floor/lock-client";
 import { currentRetryOwner } from "@/lib/floor/check-submit";
 import { replayFloorQueues } from "@/lib/floor/replay";
+import { startFloorReplayScheduler } from "@/lib/floor/replay-scheduler";
 import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { currentFloorUnlockId } from "@/lib/floor/session-context";
 import { currentFloorUnlockProfile, type FloorUnlockProfile } from "@/lib/floor/unlock-profile";
@@ -192,8 +193,6 @@ export function FloorShell({ children }: { children: ReactNode }) {
         facilityId: resolved.ctx.facilityId,
         resolve: currentRetryOwner,
       }).catch(() => undefined);
-      // Items other people left on this tablet go out as their owners.
-      void replayFloorQueues({ signedInUserId: profile.userId }).catch(() => undefined);
     })();
     return () => {
       active = false;
@@ -204,7 +203,19 @@ export function FloorShell({ children }: { children: ReactNode }) {
   // Someone is unlocked once the shell knows the device and the unlock, even
   // when their facility could not be read: the lock triggers run from then on.
   const unlocked = state.status === "ready" || state.status === "facility-error" ? state : null;
-  const sync = useFloorSyncState(ready?.profile.userId ?? null);
+  const { sync, refresh: refreshSync } = useFloorSyncState(ready?.profile.userId ?? null);
+
+  // Items other people left on this tablet go out as their owners: at unlock,
+  // on reconnect and every minute, one pass at a time, stopped on lock.
+  const readyUserId = ready?.profile.userId ?? null;
+  useEffect(() => {
+    if (!readyUserId) return;
+    const scheduler = startFloorReplayScheduler({
+      run: () => replayFloorQueues({ signedInUserId: readyUserId }),
+      onSettled: refreshSync,
+    });
+    return () => scheduler.stop();
+  }, [readyUserId, refreshSync]);
 
   useFloorLockTriggers({
     enabled: Boolean(unlocked),

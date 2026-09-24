@@ -35,7 +35,8 @@ vi.mock("@/lib/caregiver/facility-context", () => ({
     Promise.resolve({ ok: true, ctx: { facilityId: "facility-1", organizationId: "org-1", facilityName: "Homewood Lodge", timeZone: "America/New_York", shifts: [] } }),
 }));
 vi.mock("@/lib/floor/replay", () => ({ replayFloorQueues: () => Promise.resolve(), countUnsentByOwner: () => Promise.resolve({}) }));
-vi.mock("@/hooks/useRoundingOfflineSync", () => ({ useRoundingOfflineSync: () => ({ pendingCount: 0, queuedTaskIdSet: new Set() }) }));
+const refreshRounding = () => Promise.resolve();
+vi.mock("@/hooks/useRoundingOfflineSync", () => ({ useRoundingOfflineSync: () => ({ pendingCount: 0, queuedTaskIdSet: new Set(), refresh: refreshRounding }) }));
 vi.mock("@/lib/offline/care-event-queue", () => ({
   requestCareEventQueueState: () => Promise.resolve({ pendingCount: 0, isSyncing: false, lastError: null, sent: [] }),
   subscribeCareEventQueue: () => () => undefined,

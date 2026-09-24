@@ -175,6 +175,14 @@ export function compareRooms(a: string | null, b: string | null): number {
   return a.localeCompare(b, "en-US", { numeric: true, sensitivity: "base" });
 }
 
+/** Soonest first; no next check sorts last. ISO instants compare as plain strings. */
+export function compareDueTimes(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return a < b ? -1 : 1;
+}
+
 export type RailCandidate = { id: string; room: string | null; flag: ResidentFlag; nextDueAt: string | null };
 
 /**
@@ -186,7 +194,7 @@ export function orderRailResidents<T extends RailCandidate>(residents: readonly 
     .sort(
       (a, b) =>
         FLAG_RANK[a.flag] - FLAG_RANK[b.flag] ||
-        (a.nextDueAt ?? "~").localeCompare(b.nextDueAt ?? "~") ||
+        compareDueTimes(a.nextDueAt, b.nextDueAt) ||
         compareRooms(a.room, b.room),
     )
     .slice(0, limit);
