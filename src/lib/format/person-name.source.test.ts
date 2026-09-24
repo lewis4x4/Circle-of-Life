@@ -16,6 +16,8 @@ const LAST_FIRST_PATTERNS: RegExp[] = [
   /\[[\w.?]*last_?[nN]ame\s*,\s*[\w.?]*first_?[nN]ame\][^;\n]*join\(\s*["'], ["']\s*\)/,
   // x.last_name + ", " + x.first_name
   /last_?[nN]ame\s*\+\s*["'], ["']\s*\+/,
+  // JSX: {x.lastName}, {x.firstName} / {r.last_name}, {r.first_name} (picker options, list rows)
+  /\{[\w.?]*last_?[nN]ame\}\s*,\s*\{[\w.?]*(first_?[nN]ame|preferred_?[nN]ame)\}/,
 ];
 
 function sourceFiles(dir: string): string[] {
@@ -36,5 +38,14 @@ describe("person names read First Last", () => {
       return LAST_FIRST_PATTERNS.some((re) => re.test(text)) ? [path.relative(path.resolve(root, ".."), file)] : [];
     });
     expect(offenders).toEqual([]);
+  });
+});
+
+describe("the Last, First guard", () => {
+  it("catches the JSX form as well as templates", () => {
+    const jsx = LAST_FIRST_PATTERNS.some((re) => re.test("<option>{resident.lastName}, {resident.firstName}</option>"));
+    const snake = LAST_FIRST_PATTERNS.some((re) => re.test("<option>{r.last_name}, {r.first_name}</option>"));
+    const firstLast = LAST_FIRST_PATTERNS.some((re) => re.test("<option>{r.first_name} {r.last_name}</option>"));
+    expect([jsx, snake, firstLast]).toEqual([true, true, false]);
   });
 });

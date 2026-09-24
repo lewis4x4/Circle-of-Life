@@ -16,6 +16,7 @@ import {
   type RawPunch,
   WORKWEEK_TZ,
 } from "./compute";
+import { EXCEPTION_LABELS } from "./display-copy";
 
 const STAFF = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const MANAGER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -210,6 +211,31 @@ describe("computeTimesheet", () => {
     expect(sheet.exceptions.filter((e) => !e.acknowledged)).toHaveLength(5);
     // The unclosed 11-02 shift counts nothing; 11-03 counts 07:00 to 11:00 (meal never ended) and 20:00 to 04:00.
     expect(sheet.weeks[0]!.workedMinutes).toBe(240 + 480);
+  });
+
+  it("raises unlock_without_punch for an off-clock floor unlock only, acknowledgeable (COL-690)", () => {
+    const punches = [punch("2026-11-03 07:00", "in"), punch("2026-11-03 15:00", "out")];
+    const floorUnlocks = [
+      { id: "u-off", staff_id: STAFF, started_at: et("2026-11-04 08:00").toISOString(), on_clock: false },
+      { id: "u-on", staff_id: STAFF, started_at: et("2026-11-03 08:00").toISOString(), on_clock: true },
+      { id: "u-other", staff_id: MANAGER, started_at: et("2026-11-04 09:00").toISOString(), on_clock: false },
+      { id: "u-outside", staff_id: STAFF, started_at: et("2026-11-20 09:00").toISOString(), on_clock: false },
+    ];
+    const input = { staffId: STAFF, punches, floorUnlocks, periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: new Date("2026-11-10T12:00:00Z") };
+    const sheet = computeTimesheet({ ...input, corrections: [] });
+    expect(sheet.exceptions).toEqual([
+      expect.objectContaining({ key: "unlock_without_punch:u-off", type: "unlock_without_punch", anchorId: "u-off", acknowledged: false }),
+    ]);
+    expect(sheet.days.find((d) => d.dateIso === "2026-11-04")?.exceptions.map((e) => e.type)).toEqual(["unlock_without_punch"]);
+    // It records a use, not time: worked minutes are the punches' alone.
+    expect(sheet.weeks[0]!.workedMinutes).toBe(480);
+
+    const acknowledged = computeTimesheet({
+      ...input,
+      corrections: [correction({ correction_type: "acknowledge", reason: "manager_verified_time", exception_key: "unlock_without_punch:u-off" })],
+    });
+    expect(acknowledged.exceptions).toEqual([expect.objectContaining({ type: "unlock_without_punch", acknowledged: true })]);
+    expect(EXCEPTION_LABELS.unlock_without_punch).toBe("Used a floor tablet without clocking in");
   });
 
   it("a stray meal_end does not erase the hour already worked (COL-352 review S4)", () => {

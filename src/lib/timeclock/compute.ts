@@ -61,6 +61,14 @@ export type RawSyncRejection = {
   created_at: string;
 };
 
+/** A floor tablet unlock (COL-690). Only `on_clock = false` rows raise an exception. */
+export type RawFloorUnlock = {
+  id: string;
+  staff_id: string;
+  started_at: string;
+  on_clock: boolean;
+};
+
 export type EffectivePunch = {
   id: string;
   source: "punch" | "correction";
@@ -71,7 +79,7 @@ export type EffectivePunch = {
   timeChanged: boolean;
 };
 
-export type ExceptionType = "missing_out" | "missing_meal_end" | "long_shift" | "clock_skew" | "offline_capture" | "rejected_offline_sync" | "short_turnaround";
+export type ExceptionType = "missing_out" | "missing_meal_end" | "long_shift" | "clock_skew" | "offline_capture" | "rejected_offline_sync" | "short_turnaround" | "unlock_without_punch";
 
 export type TimesheetException = {
   key: string;
@@ -375,6 +383,7 @@ export type ComputeTimesheetInput = {
   punches: RawPunch[];
   corrections: RawCorrection[];
   rejections?: RawSyncRejection[];
+  floorUnlocks?: RawFloorUnlock[];
   /** Inclusive start of the period. */
   periodStart: Date;
   /** Exclusive end of the period. */
@@ -414,6 +423,11 @@ export function computeTimesheet(input: ComputeTimesheetInput): Timesheet {
   for (const r of input.rejections ?? []) {
     if (r.staff_id !== input.staffId) continue;
     exceptions.push({ key: `rejected_offline_sync:${r.id}`, type: "rejected_offline_sync", staffId: input.staffId, anchorId: r.id, at: toDate(r.device_time ?? r.created_at), acknowledged: acknowledgedKeys.has(`rejected_offline_sync:${r.id}`) });
+  }
+  // Someone used a floor tablet by employee number without being clocked in.
+  for (const u of input.floorUnlocks ?? []) {
+    if (u.staff_id !== input.staffId || u.on_clock) continue;
+    exceptions.push({ key: `unlock_without_punch:${u.id}`, type: "unlock_without_punch", staffId: input.staffId, anchorId: u.id, at: toDate(u.started_at), acknowledged: acknowledgedKeys.has(`unlock_without_punch:${u.id}`) });
   }
   const inPeriod = (at: Date) => at.getTime() >= input.periodStart.getTime() && at.getTime() < input.periodEnd.getTime();
   const periodExceptions = exceptions.filter((e) => inPeriod(e.at)).sort((a, b) => a.at.getTime() - b.at.getTime());

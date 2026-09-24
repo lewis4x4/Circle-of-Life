@@ -19,7 +19,7 @@
       },
       "med_tech": {
         "outcome": "redirect",
-        "location": "/med-tech"
+        "location": "/floor"
       },
       "cook": {
         "outcome": "redirect",
@@ -101,7 +101,7 @@
       },
       "med_tech": {
         "outcome": "redirect",
-        "location": "/med-tech"
+        "location": "/floor"
       },
       "cook": {
         "outcome": "redirect",
@@ -129,7 +129,7 @@
       },
       "med_tech": {
         "outcome": "redirect",
-        "location": "/med-tech"
+        "location": "/floor"
       },
       "cook": {
         "outcome": "redirect",
@@ -157,7 +157,7 @@
       },
       "med_tech": {
         "outcome": "redirect",
-        "location": "/med-tech"
+        "location": "/floor"
       },
       "cook": {
         "outcome": "redirect",
@@ -292,7 +292,7 @@
       },
       "med_tech": {
         "outcome": "redirect",
-        "location": "/med-tech"
+        "location": "/floor"
       },
       "cook": {
         "outcome": "redirect",
@@ -426,6 +426,53 @@
         "location": "/family"
       }
     },
+    "/floor": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "allow"
+      },
+      "housekeeper": {
+        "outcome": "allow"
+      },
+      "recruiter": {
+        "outcome": "allow"
+      },
+      "family": {
+        "outcome": "redirect",
+        "location": "/family"
+      }
+    },
+    "/floor/lock": {
+      "owner": {
+        "outcome": "allow"
+      },
+      "facility_admin": {
+        "outcome": "allow"
+      },
+      "med_tech": {
+        "outcome": "allow"
+      },
+      "cook": {
+        "outcome": "allow"
+      },
+      "housekeeper": {
+        "outcome": "allow"
+      },
+      "recruiter": {
+        "outcome": "allow"
+      },
+      "family": {
+        "outcome": "allow"
+      }
+    },
     "/dietary": {
       "owner": {
         "outcome": "allow"
@@ -463,7 +510,7 @@
       },
       "med_tech": {
         "outcome": "redirect",
-        "location": "/med-tech"
+        "location": "/floor"
       },
       "cook": {
         "outcome": "redirect",

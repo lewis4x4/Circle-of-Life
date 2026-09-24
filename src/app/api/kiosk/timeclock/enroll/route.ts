@@ -13,13 +13,15 @@ const CODE_RE = /^[A-Z0-9]{8}$/;
  * POST /api/kiosk/timeclock/enroll — exchange a one time enrollment code for a
  * device token (spec 37 §5). No session: the code is the credential. Failed
  * attempts are rate limited per client address so an 8 character code cannot
- * be guessed inside its 15 minute life.
+ * be guessed inside its 15 minute life. This is also `/kiosk/setup`'s enroll
+ * (spec 40 §7): it accepts kiosk-kind codes only; a floor code is code_invalid
+ * here and stays unused for `/api/floor/enroll`.
  */
 export async function POST(request: Request) {
   const limiterKey = `timeclock-enroll:${clientAddress(request)}`;
   const limit = checkFailureRateLimit(limiterKey, ENROLL_LIMIT);
   if (!limit.allowed) {
-    return NextResponse.json({ error: "device_throttled" }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
+    return NextResponse.json({ error: "device_throttled" }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds), "Cache-Control": "no-store" } });
   }
 
   let body: unknown;
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
     return kioskErrorResponse("unavailable");
   }
 
-  const { data, error } = await admin.rpc("timeclock_enroll_device", { p_code: code, p_label: label });
+  const { data, error } = await admin.rpc("timeclock_enroll_device", { p_code: code, p_label: label, p_device_kind: "kiosk" });
   if (error) {
     logError("timeclock.enroll", error, { action: "enroll_device" });
     return kioskErrorResponse("unavailable");

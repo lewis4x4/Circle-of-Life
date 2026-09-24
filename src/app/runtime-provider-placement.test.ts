@@ -22,6 +22,7 @@ describe("runtime provider placement", () => {
       "src/app/(admin)/layout.tsx",
       "src/app/(caregiver)/layout.tsx",
       "src/app/(family)/layout.tsx",
+      "src/app/(floor)/layout.tsx",
       "src/app/(med-tech)/layout.tsx",
       "src/app/(dietary)/layout.tsx",
       "src/app/(onboarding)/layout.tsx",

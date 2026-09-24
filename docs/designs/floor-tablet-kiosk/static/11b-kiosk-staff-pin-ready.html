@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Staff clock (static snapshot)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F2F3F5;font-family:'IBM Plex Sans', system-ui, sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0B1D34}a:hover{color:#0B1D34}
+button{font-family:'IBM Plex Sans', system-ui, sans-serif}
+input{font-family:'IBM Plex Sans', system-ui, sans-serif}
+</style>
+</head>
+<body>
+
+
+<div style="width: 1180px; height: 820px; display: flex; flex-direction: column; background: #F2F3F5; color: #121820; font-family: 'IBM Plex Sans', system-ui, sans-serif; overflow: hidden; box-sizing: border-box;">
+<div style="height: 88px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #0B1D34; box-sizing: border-box;">
+<div style="display: flex; align-items: center; gap: 20px;">
+<a href="KioskHome.dc.html" style="height: 52px; padding: 0 18px 0 12px; border-radius: 10px; border: 1px solid #2B4466; color: #FFFFFF; text-decoration: none; display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 500; box-sizing: border-box;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back</a>
+<span style="font-size: 26px; font-weight: 600; color: #FFFFFF;">Staff clock</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #FFFFFF;">6:58 AM</span>
+<span style="font-size: 13px; color: #B8C4D4;">Homewood Lodge</span>
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 88px; padding: 0 40px; box-sizing: border-box;">
+<div style="width: 420px; display: flex; flex-direction: column; gap: 26px;">
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<span style="font-size: 18px; font-weight: 600; color: #121820;">Employee number</span>
+<div style="height: 84px; border-radius: 12px; background: #FFFFFF; border: 1.5px solid #B9C1CC; display: flex; align-items: center; gap: 14px; padding: 0 22px; box-sizing: border-box;"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 34px; font-weight: 500; letter-spacing: 0.12em; color: #121820;">1042</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<span style="font-size: 18px; font-weight: 600; color: #121820;">PIN</span>
+<div style="height: 84px; border-radius: 12px; background: #FFFFFF; border: 2.5px solid #0B1D34; display: flex; align-items: center; gap: 14px; padding: 0 22px; box-sizing: border-box;">
+<span style="width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: #0B1D34;"></span><span style="width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: #0B1D34;"></span><span style="width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: #0B1D34;"></span><span style="width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: #0B1D34;"></span><span style="width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: #0B1D34;"></span><span style="width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: #0B1D34;"></span>
+</div>
+</div>
+<span style="font-size: 16px; color: #4A5461;">Now your 6-digit PIN.</span>
+
+<a href="KioskStaffAction.dc.html" style="height: 72px; border-radius: 12px; background: #0B1D34; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 600; text-decoration: none;">Continue</a>
+
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; width: 390px;">
+
+<button type="button" aria-label="Digit 1" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">1</button>
+
+<button type="button" aria-label="Digit 2" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">2</button>
+
+<button type="button" aria-label="Digit 3" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">3</button>
+
+<button type="button" aria-label="Digit 4" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">4</button>
+
+<button type="button" aria-label="Digit 5" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">5</button>
+
+<button type="button" aria-label="Digit 6" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">6</button>
+
+<button type="button" aria-label="Digit 7" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">7</button>
+
+<button type="button" aria-label="Digit 8" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">8</button>
+
+<button type="button" aria-label="Digit 9" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">9</button>
+
+<button type="button" aria-label="Clear" style="height: 88px; border-radius: 14px; border: 1.5px solid transparent; background: transparent; color: #4A5461; font-family: inherit; font-size: 18px; font-weight: 500; cursor: pointer;">Clear</button>
+
+<button type="button" aria-label="Digit 0" style="height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;">0</button>
+
+<button type="button" aria-label="Delete" style="height: 88px; border-radius: 14px; border: 1.5px solid transparent; background: transparent; color: #4A5461; font-family: inherit; font-size: 18px; font-weight: 500; cursor: pointer;">Delete</button>
+
+</div>
+</div>
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #4A5461; border-top: 1px solid #D5DAE1;">Stand so nobody behind you can see your PIN. Forgot it? Ask the administrator to reset it.</div>
+</div>
+
+</body>
+</html>

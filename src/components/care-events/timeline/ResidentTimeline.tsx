@@ -164,7 +164,7 @@ function TimelineEntry({ row, timeZone, workspace, expanded, onToggle }: Timelin
   const detail = row.detail?.trim() || null;
   const canExpand = timelineDetailNeedsExpand(detail);
   const badge = label.levelWord ? levelBadgeProps(label.levelWord) : null;
-  const tapClass = workspace === "caregiver" ? "min-h-11" : "";
+  const tapClass = workspace === "admin" ? "" : "min-h-11";
 
   return (
     <li className="flex flex-col gap-2 px-4 py-3">

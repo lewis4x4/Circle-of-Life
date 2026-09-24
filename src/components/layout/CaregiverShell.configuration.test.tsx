@@ -56,6 +56,7 @@ it("gives a med-tech the one Med-Tech app's tabs, and a housekeeper only houseke
   const medTechTabs = screen.getByRole("navigation", { name: "Med-Tech navigation" });
   expect([...medTechTabs.querySelectorAll("a")].map((a) => a.textContent)).toEqual(["Meds", "Residents", "Rounds", "Clock", "Me"]);
   expect(screen.getAllByRole("link", { name: "Meds" })[0]).toHaveAttribute("href", "/med-tech");
+  expect(screen.queryByRole("link", { name: "Med-Tech app" })).toBeNull();
   cleanup();
   mocks.role = "housekeeper";
   mocks.path = "/caregiver/housekeeper";

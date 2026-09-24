@@ -65,7 +65,7 @@ export default function LoginPage() {
   const resolveRouteFromRole = useCallback(async (candidateUser?: Pick<User, "app_metadata" | "user_metadata"> | null) => {
     const mapRoleToRoute = (role: ReturnType<typeof getAppRoleFromClaims>) => {
       if (isOnboardingAppRole(role)) return "/onboarding";
-      if (isMedTechRole(role)) return "/med-tech";
+      if (isMedTechRole(role)) return getDashboardRouteForRole(role);
       if (isDietaryRole(role)) return "/dietary";
       if (role === "housekeeper") return getDashboardRouteForRole(role);
       if (role === "family") return "/family";
