@@ -62,11 +62,21 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("void_document"), payload: z.object({ document_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict() }).strict(),
 ]);
-export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days"] as const;
+export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days"] as const;
 export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
 export const checklistRuleSchema = z.array(z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(BENEFITS_STAGES), signature_status: z.enum(["not_required", "pending"]).default("not_required") }).strict()).max(60);
 export const screeningStandardSchema = z.object({ income_cents: z.number().int().min(1).max(99_999_999), assets_cents: z.number().int().min(1).max(9_999_999_999), label: z.string().trim().min(1).max(200), source: z.string().max(500).optional() }).strict();
 export const dayWindowSchema = z.number().int().min(0).max(365);
+/** The six New Admits Medicaid Pending Criteria questions, in printed order (A–F). */
+export const SCREENING_QUESTIONS = ["q_property_non_primary", "q_income_over_limit", "q_life_insurance", "q_burial_contract", "q_assets", "q_power_of_attorney"] as const;
+export type ScreeningQuestion = typeof SCREENING_QUESTIONS[number];
+export const admissionGateSchema = z.object({
+  disqualify: z.array(z.enum(SCREENING_QUESTIONS)).min(1).max(6).refine((list) => new Set(list).size === list.length, "Each question once"),
+  income_limit_cents: z.number().int().min(1).max(99_999_999),
+  assets_limit_cents: z.number().int().min(1).max(9_999_999_999),
+  source: z.string().max(500).optional(),
+}).strict();
+export type AdmissionGate = z.infer<typeof admissionGateSchema>;
 export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("checklist.smmc_ltc"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("checklist.oss"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
@@ -74,7 +84,38 @@ export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("screening.standard_individual"), value: screeningStandardSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("family_collection.max_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("renewal.warning_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("screening.admission_gate"), value: admissionGateSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("screening.recheck_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
 ]);
+export const SCREENING_COVERAGE = ["unknown", "none", "private_pay", "medicaid_mma", "application_pending", "smmc_ltc_enrolled"] as const;
+export const SCREENING_RESULTS = ["candidate", "not_qualified_now", "needs_answers", "already_enrolled"] as const;
+export const SCREENING_RESPONDENTS = ["resident", "poa", "family", "staff_records"] as const;
+export type ScreeningCoverage = typeof SCREENING_COVERAGE[number];
+export type ScreeningResult = typeof SCREENING_RESULTS[number];
+export const admissionScreeningSchema = z.object({
+  resident_id: uuid, admission_case_id: uuid.nullable().optional(),
+  source: z.enum(["admission", "recheck", "manual"]), coverage: z.enum(SCREENING_COVERAGE), coverage_plan: z.string().trim().max(200).nullable().optional(),
+  q_property_non_primary: knowledge, q_income_over_limit: knowledge, q_life_insurance: knowledge, q_burial_contract: knowledge, q_assets: knowledge, q_power_of_attorney: knowledge,
+  monthly_income_cents: z.number().int().min(0).max(99_999_999).nullable().optional(), assets_cents: z.number().int().min(0).max(99_999_999_999).nullable().optional(),
+  private_pay_months: z.number().int().min(0).max(240).nullable().optional(),
+  answered_by_kind: z.enum(SCREENING_RESPONDENTS).nullable().optional(), answered_at: z.string().datetime({ offset: true }).optional(),
+  notes: text.nullable().optional(),
+}).strict();
+export const recordAdmissionScreeningSchema = z.object({ request_id: uuid, screening: admissionScreeningSchema }).strict();
+export const overrideAdmissionScreeningSchema = z.object({ request_id: uuid, result: z.enum(["candidate", "not_qualified_now", "needs_answers"]), reason: z.string().trim().min(1).max(2000) }).strict();
+export type AdmissionScreeningInput = z.infer<typeof admissionScreeningSchema>;
+export interface AdmissionScreeningOverride { id: string; screening_id: string; result: Exclude<ScreeningResult, "already_enrolled">; reason: string; case_id: string | null; created_by: string; created_by_name: string | null; created_at: string }
+export interface AdmissionScreeningRow extends Omit<AdmissionScreeningInput, "resident_id"> { id: string; answered_at: string; runway_date: string | null; result: ScreeningResult; reasons: string[]; created_at: string; recorded_by_name: string | null; override: AdmissionScreeningOverride | null }
+export interface AdmissionRecheck { id: string; due_on: string; status: "open" | "done" | "closed"; screening_id: string }
+export interface AdmissionScreeningList { resident_id: string; facility_id: string; permissions: { can_write: boolean; can_review: boolean }; gate: AdmissionGate; active_case_id: string | null; open_recheck: AdmissionRecheck | null; screenings: AdmissionScreeningRow[] }
+export const completeRecheckSchema = z.object({ request_id: uuid, outcome: z.enum(["no_change", "resident_left"]), note: z.string().trim().max(2000).nullable().optional() }).strict();
+export interface RecheckRow {
+  id: string; facility_id: string; facility_name: string; resident_id: string; resident_name: string; due_on: string; overdue: boolean; can_write: boolean;
+  last_answered_at: string; last_result: ScreeningResult; last_reasons: string[];
+  q_property_non_primary: "yes" | "no" | "unknown"; q_income_over_limit: "yes" | "no" | "unknown"; q_assets: "yes" | "no" | "unknown";
+}
+export interface RecheckList { as_of: string; rechecks: RecheckRow[] }
+export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }
 export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
 export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }
 export interface BenefitsRulesList { can_manage: boolean; as_of: string; rules: BenefitsRuleEntry[] }

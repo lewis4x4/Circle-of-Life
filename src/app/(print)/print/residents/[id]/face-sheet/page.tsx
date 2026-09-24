@@ -29,6 +29,8 @@ import {
   recordResidentFaceSheetPrint,
 } from "@/lib/residents/resident-face-sheet-print";
 import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
+import { FACE_SHEET_PRINT_CSS } from "@/lib/print/face-sheet-print-css";
+import { waitForPrintReady } from "@/lib/print/print-ready";
 import { presenceSinceSummary, presenceStatusLabel } from "@/lib/residents/resident-presence-history";
 import { RESPONSIBLE_PARTY_CONTACT_ID, RESPONSIBLE_PARTY_CONTACT_NOTE } from "@/lib/residents/resident-responsible-party";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
@@ -51,8 +53,12 @@ import { cn } from "@/lib/utils";
  * refuses or fails the page shows why and never loads the record. The Print
  * button logs again before it opens the dialog, so each sheet sent to a
  * printer from here has its own row.
+ *
+ * COL-794: nothing opens the print dialog until the fonts and the resident
+ * photo have settled (`waitForPrintReady`) — a timed dialog can snapshot the
+ * sheet mid-layout — and the Letter pagination rules live in
+ * `FACE_SHEET_PRINT_CSS`.
  */
-const PAGE_CSS = `@page { margin: 0.5in; }`;
 
 const printedAtFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York",
@@ -108,6 +114,7 @@ export default function ResidentFaceSheetPage() {
   const searchParams = useSearchParams();
   const autoPrint = searchParams.get("auto") !== "0";
   const printed = useRef(false);
+  const sheetRef = useRef<HTMLElement | null>(null);
   const { fullName: printedBy, loading: authLoading } = useHavenAuth();
 
   const [detail, setDetail] = useState<ResidentOverviewDetail | null>(null);
@@ -158,8 +165,13 @@ export default function ResidentFaceSheetPage() {
   useEffect(() => {
     if (!autoPrint || !detail || authLoading || printed.current) return;
     printed.current = true;
-    const t = window.setTimeout(() => window.print(), 250);
-    return () => window.clearTimeout(t);
+    let cancelled = false;
+    void waitForPrintReady(sheetRef.current ?? document).then(() => {
+      if (!cancelled) window.print();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [autoPrint, detail, authLoading]);
 
   const backHref = `/admin/residents/${residentId}`;
@@ -169,6 +181,7 @@ export default function ResidentFaceSheetPage() {
     setReprintError(null);
     try {
       await recordResidentFaceSheetPrint(residentId);
+      await waitForPrintReady(sheetRef.current ?? document);
       window.print();
     } catch (err) {
       setReprintError(faceSheetPrintErrorMessage(err));
@@ -212,7 +225,7 @@ export default function ResidentFaceSheetPage() {
 
   return (
     <>
-      <style>{PAGE_CSS}</style>
+      <style>{FACE_SHEET_PRINT_CSS}</style>
       <div className="mx-auto mb-4 flex max-w-3xl flex-wrap items-center gap-2 px-8 pt-4 print:hidden">
         <Link href={backHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
           Back to resident
@@ -228,7 +241,7 @@ export default function ResidentFaceSheetPage() {
         ) : null}
       </div>
 
-      <article id="resident-face-sheet" className="mx-auto max-w-3xl bg-white p-8 text-black print:p-0">
+      <article ref={sheetRef} id="resident-face-sheet" className="mx-auto max-w-3xl bg-white p-8 text-black print:p-0">
         <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-black pb-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide">Resident face sheet</p>

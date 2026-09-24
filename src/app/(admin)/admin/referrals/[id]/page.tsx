@@ -33,6 +33,7 @@ import {
   type ReferralLeadUpdatePatch,
 } from "@/lib/referrals/referral-authority";
 import { enumLabel } from "@/lib/display/enum-label";
+import { ReferralContactLog } from "@/components/referrals/ReferralContactLog";
 
 type LeadDetail = AuthorizedReferralLeadRow;
 
@@ -40,8 +41,12 @@ type LeadContact = ReferralEpisodeModel["contacts"][number];
 
 type ContactsState =
   | { status: "loading" }
-  | { status: "loaded"; contacts: LeadContact[] }
+  | { status: "loaded"; contacts: LeadContact[]; episode: ReferralEpisodeModel["episode"] | null }
   | { status: "failed"; message: string };
+
+function currentPersonContacts(model: ReferralEpisodeModel): LeadContact[] {
+  return model.contacts.filter((contact) => contact.belongs_to_current_person);
+}
 
 const CHANNEL_LABEL: Record<LeadContact["permissions"][number]["channel"], string> = {
   phone: "Phone",
@@ -106,13 +111,14 @@ export default function AdminReferralLeadDetailPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [contactsState, setContactsState] = useState<ContactsState>({ status: "loading" });
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options: { quiet?: boolean } = {}) => {
     if (!id) {
       setLead(null);
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // A save elsewhere on the page re-reads quietly so the contact log keeps its unsaved entry.
+    if (!options.quiet) setLoading(true);
     setError(null);
     try {
       const [leadRow = null] = await loadAuthorizedReferralLeads(supabase, {
@@ -142,7 +148,8 @@ export default function AdminReferralLeadDetailPage() {
           const model = await loadReferralEpisodeModel(supabase, leadRow.id);
           setContactsState({
             status: "loaded",
-            contacts: model.contacts.filter((contact) => contact.belongs_to_current_person),
+            contacts: currentPersonContacts(model),
+            episode: model.episode ?? null,
           });
         } catch (contactsError) {
           setContactsState({
@@ -152,7 +159,7 @@ export default function AdminReferralLeadDetailPage() {
         }
       } else {
         setLinkedAdmissionCaseId(null);
-        setContactsState({ status: "loaded", contacts: [] });
+        setContactsState({ status: "loaded", contacts: [], episode: null });
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load lead.");
@@ -165,6 +172,24 @@ export default function AdminReferralLeadDetailPage() {
   useEffect(() => {
     void Promise.resolve().then(() => load());
   }, [load]);
+
+  /** Re-read the episode quietly after a contact-log save; the page itself stays put. */
+  const refreshEpisode = useCallback(async () => {
+    if (!id) return;
+    try {
+      const model = await loadReferralEpisodeModel(supabase, id);
+      setContactsState({
+        status: "loaded",
+        contacts: currentPersonContacts(model),
+        episode: model.episode ?? null,
+      });
+    } catch (refreshError) {
+      setContactsState({
+        status: "failed",
+        message: refreshError instanceof Error ? refreshError.message : "Contacts could not be read.",
+      });
+    }
+  }, [supabase, id]);
 
   const wrongFacility =
     lead &&
@@ -190,7 +215,7 @@ export default function AdminReferralLeadDetailPage() {
         patch,
       });
       setActionMessage(successMessage);
-      await load();
+      await load({ quiet: true });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not update lead.");
     } finally {
@@ -400,6 +425,15 @@ export default function AdminReferralLeadDetailPage() {
               </ul>
             )}
           </RecordDetailSection>
+
+          <ReferralContactLog
+            leadId={lead.id}
+            prospectName={`${lead.first_name} ${lead.last_name}`.trim()}
+            canWrite={canEditLead}
+            episode={contactsState.status === "loaded" ? contactsState.episode : null}
+            contacts={contactsState.status === "loaded" ? contactsState.contacts : []}
+            onEpisodeChanged={refreshEpisode}
+          />
 
           <RecordDetailSection title="Tour workflow">
             <div className="space-y-4 text-sm">

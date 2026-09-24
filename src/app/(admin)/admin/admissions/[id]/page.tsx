@@ -31,6 +31,7 @@ import {
   type AdmissionOnboardingCounts,
 } from "@/lib/admissions/admission-onboarding-checklist";
 import { headCountOrNull } from "@/lib/metrics/head-count";
+import { AdmissionMedicaidScreening } from "@/components/benefits/AdmissionMedicaidScreening";
 import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
 import {
   EMPTY_MOVEMENT_WHEN,
@@ -561,6 +562,8 @@ export default function AdminAdmissionCaseDetailPage() {
                 This case belongs to another facility. Switch the facility in the header to match.
               </div>
             )}
+
+            {row.resident_id && <AdmissionMedicaidScreening residentId={row.resident_id} admissionCaseId={row.id} />}
 
             <RecordDetailSection
               title="Resident packet reviews"

@@ -9,6 +9,8 @@ import {
   benefitsAccessSchema, benefitsCommandSchema, benefitsEventSchema, benefitsFundingSchema,
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
+  admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
+  completeRecheckSchema,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -160,6 +162,74 @@ export async function rebindBenefitsCase(request: Request, id: string) {
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ case_id: uuid, revision: z.number().int().positive(), facility_id: uuid }).safeParse(result.data);
   return reply.success && reply.data.case_id === id ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+const knowledgeSchema = z.enum(["yes", "no", "unknown"]);
+const screeningResultSchema = z.enum(SCREENING_RESULTS);
+const screeningReplySchema = z.object({ screening_id: uuid, result: screeningResultSchema, reasons: z.array(z.string()), case_id: uuid.nullable(), recheck_id: uuid.nullable(), recheck_due_on: z.string().nullable() });
+const screeningRowSchema = z.object({
+  id: uuid, admission_case_id: uuid.nullable(), source: z.enum(["admission", "recheck", "manual"]), coverage: z.enum(SCREENING_COVERAGE), coverage_plan: z.string().nullable(),
+  q_property_non_primary: knowledgeSchema, q_income_over_limit: knowledgeSchema, q_life_insurance: knowledgeSchema, q_burial_contract: knowledgeSchema, q_assets: knowledgeSchema, q_power_of_attorney: knowledgeSchema,
+  monthly_income_cents: z.number().int().nullable(), assets_cents: z.number().int().nullable(), private_pay_months: z.number().int().nullable(), runway_date: z.string().nullable(),
+  answered_by_kind: z.enum(SCREENING_RESPONDENTS).nullable(), answered_at: z.string(), notes: z.string().nullable(), result: screeningResultSchema, reasons: z.array(z.string()),
+  created_at: z.string(), recorded_by_name: z.string().nullable(),
+  override: z.object({ id: uuid, screening_id: uuid, result: z.enum(["candidate", "not_qualified_now", "needs_answers"]), reason: z.string(), case_id: uuid.nullable(), created_by: uuid, created_by_name: z.string().nullable(), created_at: z.string() }).passthrough().nullable(),
+});
+const screeningListSchema = z.object({
+  resident_id: uuid, facility_id: uuid, permissions: z.object({ can_write: z.boolean(), can_review: z.boolean() }), gate: admissionGateSchema,
+  active_case_id: uuid.nullable(), open_recheck: z.object({ id: uuid, due_on: z.string(), status: z.enum(["open", "done", "closed"]), screening_id: uuid }).passthrough().nullable(),
+  screenings: z.array(screeningRowSchema),
+});
+export async function listAdmissionScreenings(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const query = z.object({ resident_id: uuid }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
+  if (!query.success) return benefitsFailure(400, "Choose a resident.");
+  const result = await rpc(auth.actor, "benefits_screening_list", { p_resident_id: query.data.resident_id });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = screeningListSchema.safeParse(result.data);
+  if (!parsed.success || parsed.data.resident_id !== query.data.resident_id) return benefitsFailure();
+  return NextResponse.json(parsed.data, { headers: noStore });
+}
+export async function recordAdmissionScreening(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = recordAdmissionScreeningSchema.safeParse(await readBody(request));
+  if (!parsed.success) return benefitsFailure(400, "Answer each question with yes, no or unknown, and enter amounts in dollars and cents.");
+  const result = await rpc(auth.actor, "benefits_screening_record", { p_payload: parsed.data.screening, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = screeningReplySchema.safeParse(result.data); if (!reply.success) return benefitsFailure();
+  return NextResponse.json(reply.data, { status: 201, headers: noStore });
+}
+export async function overrideAdmissionScreening(request: Request, screeningId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = overrideAdmissionScreeningSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(screeningId).success || !parsed.success) return benefitsFailure(400, "Choose the result and give the reason.");
+  const result = await rpc(auth.actor, "benefits_screening_override", { p_screening_id: screeningId, p_result: parsed.data.result, p_reason: parsed.data.reason, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ override_id: uuid, screening_id: uuid, result: z.enum(["candidate", "not_qualified_now", "needs_answers"]), case_id: uuid.nullable() }).passthrough().safeParse(result.data);
+  return reply.success && reply.data.screening_id === screeningId ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
+}
+const recheckRowSchema = z.object({
+  id: uuid, facility_id: uuid, facility_name: z.string(), resident_id: uuid, resident_name: z.string(), due_on: z.string(), overdue: z.boolean(), can_write: z.boolean(),
+  last_answered_at: z.string(), last_result: screeningResultSchema, last_reasons: z.array(z.string()),
+  q_property_non_primary: knowledgeSchema, q_income_over_limit: knowledgeSchema, q_assets: knowledgeSchema,
+});
+export async function listBenefitsRechecks(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const query = z.object({ facility_id: uuid.optional(), within_days: z.coerce.number().int().min(0).max(400).default(14) }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
+  if (!query.success) return benefitsFailure(400, "Invalid recheck filters.");
+  const result = await rpc(auth.actor, "benefits_recheck_list", { p_facility_id: query.data.facility_id ?? null, p_due_within_days: query.data.within_days });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = z.object({ as_of: z.string(), rechecks: z.array(recheckRowSchema) }).safeParse(result.data);
+  if (!parsed.success || (query.data.facility_id && parsed.data.rechecks.some((row) => row.facility_id !== query.data.facility_id))) return benefitsFailure();
+  return NextResponse.json(parsed.data, { headers: noStore });
+}
+export async function completeBenefitsRecheck(request: Request, recheckId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = completeRecheckSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(recheckId).success || !parsed.success) return benefitsFailure(400, "Choose no change or resident left.");
+  const result = await rpc(auth.actor, "benefits_recheck_complete", { p_recheck_id: recheckId, p_outcome: parsed.data.outcome, p_note: parsed.data.note ?? null, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ recheck_id: uuid, outcome: z.enum(["no_change", "resident_left"]), next_recheck_id: uuid.nullable(), next_due_on: z.string().nullable() }).safeParse(result.data);
+  return reply.success && reply.data.recheck_id === recheckId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
 }
 /** Reading private financial evidence is recorded in the case history before any bytes leave the server. */
 export async function recordBenefitsDocumentAccess(actor: CurrentApiActor, caseId: string, documentId: string, kind: "download" | "packet"): Promise<NextResponse | null> {

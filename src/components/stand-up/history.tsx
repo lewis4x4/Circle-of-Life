@@ -55,6 +55,63 @@ function WhatChanged({ report, facilityName }: { report: StandUpReport; facility
   </div>;
 }
 
+/** COL-797: one row per field changed after the report was submitted, as recorded by Haven. */
+export type PostSubmitChange = { id: string; version: number; revision_id: string; field_key: string; before_value: unknown; after_value: unknown; actor_id: string; actor_name: string | null; actor_role: string | null; reason: string | null; created_at: string };
+type PostSubmitHistoryData = { facility_id: string; week_start: string; changes: PostSubmitChange[] };
+
+function changeValue(key: string, value: unknown): string {
+  if (key === 'status') return value === 'ready' ? 'Submitted' : value === 'draft' ? 'Draft' : String(value ?? 'Not provided');
+  const metric = METRICS.find(item => item.key === key);
+  const number = typeof value === 'number' ? value : null;
+  return metric ? metricDisplay(metric.key, number) : number === null ? 'Not provided' : String(number);
+}
+
+/** Readable lines for the edit history: who, when (Eastern), which field, before and after. */
+export function postSubmitChangeLines(changes: PostSubmitChange[]): { id: string; when: string; who: string; field: string; before: string; after: string; reason: string | null }[] {
+  return changes.map(change => ({
+    id: change.id,
+    when: easternTime(change.created_at),
+    who: change.actor_name ?? 'Unknown',
+    field: change.field_key === 'status' ? 'Status' : METRICS.find(metric => metric.key === change.field_key)?.label ?? change.field_key,
+    before: changeValue(change.field_key, change.before_value),
+    after: changeValue(change.field_key, change.after_value),
+    reason: change.reason,
+  }));
+}
+
+export function PostSubmitHistory({ facilityId, week, version }: { facilityId: string; week: string; version: number }) {
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState<{ version: number; history: PostSubmitHistoryData } | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const load = async () => {
+    if (open) { setOpen(false); return; }
+    setOpen(true);
+    // A save since the last read makes the loaded history stale; read it again.
+    if ((data && data.version === version) || busy) return;
+    setBusy(true); setError('');
+    try {
+      const result = await standUpRequest<PostSubmitHistoryData>('post_submit_changes', { facility_id: facilityId, week_start: week });
+      if (result.facility_id !== facilityId || result.week_start !== week) throw new Error('The edit history did not match this facility and meeting.');
+      setData({ version, history: result });
+    } catch (cause) {
+      setError(cause instanceof StandUpRequestError && [401, 403].includes(cause.status) ? 'Your access changed. Refresh reports.' : cause instanceof Error ? cause.message : 'The edit history could not be loaded.');
+    } finally { setBusy(false); }
+  };
+  const lines = data ? postSubmitChangeLines(data.history.changes) : [];
+  return <div>
+    <Button variant="ghost" size="sm" aria-expanded={open} disabled={busy} onClick={() => void load()}>{open ? 'Hide edit history' : 'Edit history'}</Button>
+    {open && <div className="mt-2 space-y-2 text-xs" aria-label="Changes after submission">
+      {busy && <p role="status">Loading edit history…</p>}
+      {error && <p role="alert">{error}</p>}
+      {data && !lines.length && <p>No figure has changed since this report was submitted.</p>}
+      {lines.length > 0 && <ul className="space-y-1">{lines.map(line => <li key={line.id} className="border-l-2 border-border pl-2">
+        <span className="font-medium">{line.when} Eastern · {line.who}</span> · {line.field}: {line.before} to {line.after}{line.reason ? ` · ${line.reason}` : ''}
+      </li>)}</ul>}
+    </div>}
+  </div>;
+}
+
 export function StandUpHistory({ reports, facilityId, facilityName }: {
   reports: StandUpReport[]; facilityId: string; facilityName: string;
 }) {
