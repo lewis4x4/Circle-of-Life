@@ -30,6 +30,7 @@ import {
   huddleTodayEtIso,
   type MorningHuddleData,
 } from "@/lib/office/morning-huddle";
+import { formatMorningHuddleFacilityName } from "@/lib/office/morning-huddle-display-copy";
 import { buildMorningHuddlePrintHtml } from "@/lib/office/morning-huddle-print";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -69,7 +70,7 @@ export default function AdminMorningBriefingPage() {
   const todayIso = useMemo(() => huddleTodayEtIso(), []);
   const facilityName = useMemo(() => {
     const match = availableFacilities.find((f) => f.id === selectedFacilityId);
-    return match?.name ?? "Selected facility";
+    return formatMorningHuddleFacilityName(match?.name);
   }, [availableFacilities, selectedFacilityId]);
 
   const load = useCallback(async () => {

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  MORNING_HUDDLE_NO_FACILITY_NAME_COPY,
   MORNING_HUDDLE_NO_NAME_POSTED_COPY,
   MORNING_HUDDLE_NO_RESIDENT_POSTED_COPY,
   MORNING_HUDDLE_NO_STAFF_POSTED_COPY,
+  formatMorningHuddleFacilityName,
   formatMorningHuddleResidentName,
   formatMorningHuddleStaffName,
 } from "./morning-huddle-display-copy";
@@ -99,5 +101,20 @@ describe("formatMorningHuddleStaffName", () => {
     expect(
       formatMorningHuddleStaffName({ first_name: "  Jordan  ", last_name: "  Lee  " }),
     ).toBe("Jordan Lee");
+  });
+});
+
+describe("formatMorningHuddleFacilityName", () => {
+  it("returns a posted facility name trimmed", () => {
+    expect(formatMorningHuddleFacilityName("Anon Facility A")).toBe("Anon Facility A");
+    expect(formatMorningHuddleFacilityName("  Anon Facility A  ")).toBe("Anon Facility A");
+  });
+
+  it("names the gap without Selected facility when the name is missing", () => {
+    expect(formatMorningHuddleFacilityName(null)).toBe(MORNING_HUDDLE_NO_FACILITY_NAME_COPY);
+    expect(formatMorningHuddleFacilityName(undefined)).toBe(MORNING_HUDDLE_NO_FACILITY_NAME_COPY);
+    expect(formatMorningHuddleFacilityName("")).toBe(MORNING_HUDDLE_NO_FACILITY_NAME_COPY);
+    expect(formatMorningHuddleFacilityName("   ")).toBe(MORNING_HUDDLE_NO_FACILITY_NAME_COPY);
+    expect(formatMorningHuddleFacilityName(null)).not.toMatch(/selected facility/i);
   });
 });
