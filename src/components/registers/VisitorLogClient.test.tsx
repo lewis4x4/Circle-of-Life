@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { VisitorLogClient } from "./VisitorLogClient";
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), confirm: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), confirm: vi.fn(), kioskDetails: vi.fn() }));
 
-vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ rpc: mocks.rpc, from: () => ({ select: () => ({ in: mocks.kioskDetails }) }) }),
+}));
 vi.mock("@/components/common/FacilityGate", () => ({
   FacilityGateNotice: ({ reason }: { reason: string }) => <div data-testid="facility-gate">{reason}</div>,
 }));
@@ -38,6 +40,8 @@ const RESIDENTS = [
 ];
 
 beforeEach(() => {
+  mocks.kioskDetails.mockReset();
+  mocks.kioskDetails.mockResolvedValue({ data: [], error: null });
   mocks.rpc.mockReset();
   mocks.confirm.mockReset();
   // visitor_log_open and visitor_log are separate questions now; both answer
@@ -216,6 +220,57 @@ describe("void", () => {
     renderLog();
     await user.click(await screen.findByRole("button", { name: "Voided entries (1)" }));
     expect(await screen.findByText(/voided as Entered in error/)).toBeTruthy();
+  });
+});
+
+describe("kiosk entries (COL-692)", () => {
+  const kioskRow = dbRow({
+    id: "k1",
+    visitor_name: "Dana Reyes",
+    visitor_type: "healthcare_provider",
+    visiting_type: null,
+    visiting_resident_id: null,
+    visiting_resident_name: null,
+    signed_in_by_name: null,
+  });
+
+  function withKiosk(detail: Record<string, unknown>) {
+    mocks.rpc.mockImplementation((name: string) =>
+      Promise.resolve(name === "visitor_log_open" || name === "visitor_log" ? { data: [kioskRow], error: null } : { data: null, error: null }),
+    );
+    mocks.kioskDetails.mockResolvedValue({ data: [{ id: "k1", kiosk_device_id: "dev-1", ...detail }], error: null });
+  }
+
+  it("shows the company and the typed resident, and offers Match resident once", async () => {
+    withKiosk({ visitor_company: "Sunshine Hospice", visiting_name_text: "Mrs Carter" });
+    renderLog();
+    expect((await screen.findAllByText("Dana Reyes · Sunshine Hospice")).length).toBeGreaterThan(0);
+    expect(screen.getByText(/visiting Mrs Carter \(typed at the kiosk\)/)).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Match resident" })).toHaveLength(1);
+    expect(screen.getByText("Front-door kiosk")).toBeTruthy();
+  });
+
+  it("matches the typed name to a resident through visitor_match_resident", async () => {
+    const user = userEvent.setup();
+    withKiosk({ visitor_company: "Sunshine Hospice", visiting_name_text: "Mrs Carter" });
+    renderLog();
+    await user.click(await screen.findByRole("button", { name: "Match resident" }));
+    await user.selectOptions(screen.getByLabelText("Resident Mrs Carter is visiting"), "r2");
+    await user.click(screen.getByRole("button", { name: "Match" }));
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith("visitor_match_resident", { p_entry_id: "k1", p_resident_id: "r2" }));
+  });
+
+  it("offers no match for a kiosk entry with nothing typed, or one already matched", async () => {
+    withKiosk({ visitor_company: "Acme Plumbing", visiting_name_text: null });
+    renderLog();
+    expect((await screen.findAllByText("Dana Reyes · Acme Plumbing")).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Match resident" })).toBeNull();
+  });
+
+  it("never looks up desk entries", async () => {
+    renderLog();
+    await screen.findByText("In the building now (1)");
+    expect(mocks.kioskDetails).not.toHaveBeenCalled();
   });
 });
 

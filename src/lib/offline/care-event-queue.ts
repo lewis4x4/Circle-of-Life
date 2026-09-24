@@ -12,6 +12,7 @@
  */
 
 import type { CareEventLevel } from "@/lib/care-events/level-engine";
+import { currentFloorUnlockId } from "@/lib/floor/session-context";
 import {
   type CareEventReceipt,
   type CareEventSubmitPayload,
@@ -45,6 +46,12 @@ export type CareEventQueueItem = {
   lastError: string | null;
   /** 409 or 422 from the server: keep for reconciliation, never auto-retry. 403 (wrong operator) stays retryable. */
   terminal: boolean;
+  /**
+   * The floor tablet unlock this was captured under (COL-690), or null off a
+   * floor tablet. Stamped by `queueCareEvent`; lets the device replay write it
+   * as its owner after someone else unlocks the tablet (src/lib/floor/replay.ts).
+   */
+  unlockId?: string | null;
 };
 
 export type CareEventQueueSent = { clientEventId: string; receipt: CareEventReceipt };
@@ -295,7 +302,8 @@ function isOnline(): boolean {
   return typeof navigator === "undefined" ? true : navigator.onLine;
 }
 
-export async function queueCareEvent(item: CareEventQueueItem, options: { store?: QueueStore } = {}): Promise<void> {
+export async function queueCareEvent(input: CareEventQueueItem, options: { store?: QueueStore } = {}): Promise<void> {
+  const item: CareEventQueueItem = { ...input, unlockId: input.unlockId ?? currentFloorUnlockId() };
   if (!options.store && hasServiceWorkerTransport()) {
     await sendWorkerCommand(QUEUE_COMMAND, { item, ownerUserId: item.ownerUserId });
     await registerBackgroundSync();

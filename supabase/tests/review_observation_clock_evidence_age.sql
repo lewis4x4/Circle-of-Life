@@ -1,6 +1,14 @@
 -- Disposable PostgreSQL replay only. Synthetic fixtures and settings roll back.
 BEGIN;
 
+-- The floor roster and rounding owner must share the same definition of an
+-- active, facility-scoped clock stint; the setting only tightens its age.
+DO $$ BEGIN
+  IF position('haven.floor_clocked_in_at' IN (
+    SELECT prosrc FROM pg_proc WHERE oid='haven.observation_on_clock_staff(uuid,timestamptz)'::regprocedure
+  ))=0 THEN RAISE EXCEPTION 'Rounding owner bypasses the shared floor clock definition'; END IF;
+END $$;
+
 CREATE TEMP TABLE clock_age_fixture AS
 SELECT f.organization_id org, f.entity_id entity, gen_random_uuid() facility,
   gen_random_uuid() other_facility, '2090-03-20 18:00:00Z'::timestamptz as_of

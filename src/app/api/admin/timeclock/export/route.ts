@@ -42,7 +42,7 @@ export async function GET(request: Request) {
         staffId: s.id,
         name: s.name,
         employeeNumber: numbers.get(s.id) ?? null,
-        sheet: computeTimesheet({ staffId: s.id, punches: data.punches, corrections: data.corrections, rejections: data.rejections, periodStart: period.start, periodEnd: period.end, now }),
+        sheet: computeTimesheet({ staffId: s.id, punches: data.punches, corrections: data.corrections, rejections: data.rejections, floorUnlocks: data.floorUnlocks, periodStart: period.start, periodEnd: period.end, now }),
       }))
       .filter((s) => s.sheet.effective.length > 0 || s.sheet.exceptions.length > 0);
 

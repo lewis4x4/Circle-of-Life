@@ -1519,14 +1519,51 @@ END;
 $$;
 REVOKE ALL ON FUNCTION haven.visitor_kiosk_device(text) FROM PUBLIC, anon, authenticated, service_role;
 
--- Throttled by the shared device counter (staff PIN misses, visitor sign-out misses).
+-- The visitor path keeps its own failure accounting, separate from the staff
+-- PIN counter (failure_count / throttled_until), so wrong staff PINs never turn
+-- visitors away and visitor sign-out misses never block a punch. Same shape as
+-- haven.timeclock_note_device_failure: 20 misses in a rolling 10 minutes
+-- throttle the visitor calls on that tablet for 5 minutes.
+ALTER TABLE public.timeclock_devices
+  ADD COLUMN visitor_failure_count integer NOT NULL DEFAULT 0 CHECK (visitor_failure_count >= 0),
+  ADD COLUMN visitor_failure_window_started_at timestamptz NULL,
+  ADD COLUMN visitor_throttled_until timestamptz NULL;
+
+CREATE FUNCTION haven.visitor_kiosk_note_failure(p_device_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  v_now timestamptz := clock_timestamp();
+  v_dev record;
+BEGIN
+  UPDATE public.timeclock_devices
+  SET visitor_failure_window_started_at = CASE
+        WHEN visitor_failure_window_started_at IS NULL OR visitor_failure_window_started_at < v_now - interval '10 minutes' THEN v_now
+        ELSE visitor_failure_window_started_at END,
+      visitor_failure_count = CASE
+        WHEN visitor_failure_window_started_at IS NULL OR visitor_failure_window_started_at < v_now - interval '10 minutes' THEN 1
+        ELSE visitor_failure_count + 1 END
+  WHERE id = p_device_id
+  RETURNING id, organization_id, facility_id, visitor_failure_count INTO v_dev;
+  IF v_dev.visitor_failure_count >= 20 THEN
+    UPDATE public.timeclock_devices
+    SET visitor_throttled_until = v_now + interval '5 minutes', visitor_failure_count = 0, visitor_failure_window_started_at = NULL
+    WHERE id = p_device_id;
+    PERFORM haven.timeclock_audit('timeclock_devices', v_dev.id, 'UPDATE', 'visitor_kiosk_throttled', NULL, v_dev.organization_id, v_dev.facility_id);
+  END IF;
+END;
+$$;
+REVOKE ALL ON FUNCTION haven.visitor_kiosk_note_failure(uuid) FROM PUBLIC, anon, authenticated, service_role;
+
 CREATE FUNCTION haven.visitor_kiosk_throttled(p_device_id uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
 SET search_path = public
 AS $$
-  SELECT EXISTS (SELECT 1 FROM public.timeclock_devices d WHERE d.id = p_device_id AND d.throttled_until > clock_timestamp())
+  SELECT EXISTS (SELECT 1 FROM public.timeclock_devices d WHERE d.id = p_device_id AND d.visitor_throttled_until > clock_timestamp())
 $$;
 REVOKE ALL ON FUNCTION haven.visitor_kiosk_throttled(uuid) FROM PUBLIC, anon, authenticated, service_role;
 
@@ -1729,14 +1766,14 @@ BEGIN
   WHERE id = p_entry_id AND organization_id = v_dev.organization_id AND facility_id = v_dev.facility_id
     AND deleted_at IS NULL AND voided_at IS NULL AND checked_in_at >= now() - interval '24 hours'
   FOR UPDATE;
-  -- Misses count toward the device throttle the kiosk PIN pad uses, so the
-  -- sign-out endpoint cannot be walked to learn who is in the building.
+  -- Misses count toward the visitor throttle, so the sign-out endpoint cannot
+  -- be walked to learn who is in the building.
   IF NOT FOUND THEN
-    PERFORM haven.timeclock_note_device_failure(v_dev.id);
+    PERFORM haven.visitor_kiosk_note_failure(v_dev.id);
     RETURN jsonb_build_object('ok', false, 'error', 'not_found');
   END IF;
   IF e.checked_out_at IS NOT NULL THEN
-    PERFORM haven.timeclock_note_device_failure(v_dev.id);
+    PERFORM haven.visitor_kiosk_note_failure(v_dev.id);
     RETURN jsonb_build_object('ok', false, 'error', 'already_signed_out');
   END IF;
   UPDATE public.visitor_log_entries

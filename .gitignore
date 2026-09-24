@@ -89,3 +89,6 @@ next-env.d.ts
 
 # Netlify local build/deploy cache
 .netlify/
+
+# COL-694 floor/kiosk demo device tokens, PINs and passwords (never commit)
+test-results/floor-kiosk/

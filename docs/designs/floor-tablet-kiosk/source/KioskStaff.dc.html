@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Staff clock</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F2F3F5;font-family:'IBM Plex Sans', system-ui, sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0B1D34}a:hover{color:#0B1D34}
+button{font-family:'IBM Plex Sans', system-ui, sans-serif}
+input{font-family:'IBM Plex Sans', system-ui, sans-serif}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; display: flex; flex-direction: column; background: #F2F3F5; color: #121820; font-family: 'IBM Plex Sans', system-ui, sans-serif; overflow: hidden; box-sizing: border-box;">
+<div style="height: 88px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #0B1D34; box-sizing: border-box;">
+<div style="display: flex; align-items: center; gap: 20px;">
+<a href="KioskHome.dc.html" style="height: 52px; padding: 0 18px 0 12px; border-radius: 10px; border: 1px solid #2B4466; color: #FFFFFF; text-decoration: none; display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 500; box-sizing: border-box;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back</a>
+<span style="font-size: 26px; font-weight: 600; color: #FFFFFF;">Staff clock</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #FFFFFF;">6:58 AM</span>
+<span style="font-size: 13px; color: #B8C4D4;">Homewood Lodge</span>
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 88px; padding: 0 40px; box-sizing: border-box;">
+<div style="width: 420px; display: flex; flex-direction: column; gap: 26px;">
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<span style="font-size: 18px; font-weight: 600; color: #121820;">Employee number</span>
+<div style="{{empBox}}"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 34px; font-weight: 500; letter-spacing: 0.12em; color: #121820;">{{empShown}}</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<span style="font-size: 18px; font-weight: 600; color: #121820;">PIN</span>
+<div style="{{pinBox}}">
+<sc-for list="{{dots}}" as="d" hint-placeholder-count="6"><span style="{{d.st}}"></span></sc-for>
+</div>
+</div>
+<span style="font-size: 16px; color: #4A5461;">{{hint}}</span>
+<sc-if value="{{ready}}" hint-placeholder-val="{{false}}">
+<a href="KioskStaffAction.dc.html" style="height: 72px; border-radius: 12px; background: #0B1D34; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 600; text-decoration: none;">Continue</a>
+</sc-if>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; width: 390px;">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+<button type="button" onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.st}}">{{k.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #4A5461; border-top: 1px solid #D5DAE1;">Stand so nobody behind you can see your PIN. Forgot it? Ask the administrator to reset it.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1180, "height": 820}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { stage: 'id', emp: '', pin: '' }; }
+  renderVals() {
+    const s = this.state;
+    const idStage = s.stage === 'id';
+    const active = 'height: 84px; border-radius: 12px; background: #FFFFFF; border: 2.5px solid #0B1D34; display: flex; align-items: center; gap: 14px; padding: 0 22px; box-sizing: border-box;';
+    const idle = 'height: 84px; border-radius: 12px; background: #FFFFFF; border: 1.5px solid #B9C1CC; display: flex; align-items: center; gap: 14px; padding: 0 22px; box-sizing: border-box;';
+    const dots = [0, 1, 2, 3, 4, 5].map((i) => ({
+      st: 'width: 20px; height: 20px; border-radius: 10px; box-sizing: border-box; border: 2px solid #0B1D34; background: ' + (i < s.pin.length ? '#0B1D34' : 'transparent') + ';'
+    }));
+    const key = 'height: 88px; border-radius: 14px; border: 1.5px solid #C9D0D9; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 32px; font-weight: 500; cursor: pointer;';
+    const quiet = 'height: 88px; border-radius: 14px; border: 1.5px solid transparent; background: transparent; color: #4A5461; font-family: inherit; font-size: 18px; font-weight: 500; cursor: pointer;';
+    const go = 'height: 88px; border-radius: 14px; border: 1.5px solid #0B1D34; background: #0B1D34; color: #FFFFFF; font-family: inherit; font-size: 20px; font-weight: 600; cursor: pointer;';
+    const last = idStage ? 'Next' : 'Delete';
+    const labels = ['1','2','3','4','5','6','7','8','9','Clear','0', last];
+    const keys = labels.map((l) => {
+      const digit = /^[0-9]$/.test(l);
+      return {
+        label: l,
+        aria: digit ? 'Digit ' + l : l,
+        st: digit ? key : (l === 'Next' ? go : quiet),
+        press: () => {
+          if (digit) {
+            if (idStage) { if (s.emp.length < 6) this.setState({ emp: s.emp + l }); }
+            else if (s.pin.length < 6) this.setState({ pin: s.pin + l });
+          } else if (l === 'Clear') {
+            this.setState(idStage ? { emp: '' } : { pin: '' });
+          } else if (l === 'Next') {
+            if (s.emp.length > 0) this.setState({ stage: 'pin' });
+          } else {
+            this.setState({ pin: s.pin.slice(0, -1) });
+          }
+        }
+      };
+    });
+    return {
+      empBox: idStage ? active : idle,
+      pinBox: idStage ? idle : active,
+      empShown: s.emp.length ? s.emp : ' ',
+      dots,
+      keys,
+      hint: idStage ? 'Type your employee number, then tap Next.' : 'Now your 6-digit PIN.',
+      ready: !idStage && s.pin.length === 6
+    };
+  }
+}
+</script>
+</body>
+</html>

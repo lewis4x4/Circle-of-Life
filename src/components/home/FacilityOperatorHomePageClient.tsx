@@ -75,6 +75,11 @@ const ContactLogDialog = dynamic(
   () => import("./ContactLogDialog").then((module) => module.ContactLogDialog),
   { ssr: false },
 );
+// Shown only while an inspector is signed in (COL-692); most days it never
+// mounts, so it stays out of the /admin first load (450 kB gzip hard cap).
+const InspectorOnSiteBanner = dynamic(
+  () => import("./InspectorOnSiteBanner").then((module) => module.InspectorOnSiteBanner),
+);
 // W4 (call-out) ships dark too.
 const CallOutDialog = dynamic(
   () => import("./CallOutDialog").then((module) => module.CallOutDialog),
@@ -227,6 +232,8 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           </span>
         ) : null}
       </header>
+
+      {data.openInspections.length > 0 ? <InspectorOnSiteBanner inspections={data.openInspections} timeZone={feed.timezone} /> : null}
 
       {readOnly ? (
         <p role="note" className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground" data-testid="home-preview-note">

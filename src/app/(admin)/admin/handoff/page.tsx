@@ -237,7 +237,7 @@ export default function AdminHandoffPage() {
             </select>
             <select value={residentId} onChange={(e) => setResidentId(e.target.value)} aria-label="Resident (optional)" className={inputCls}>
               <option value="">Resident (optional)…</option>
-              {residents.map((r) => <option key={r.id} value={r.id}>{r.last_name}, {r.first_name}</option>)}
+              {residents.map((r) => <option key={r.id} value={r.id}>{r.first_name} {r.last_name}</option>)}
             </select>
             <Button type="button" disabled={saving || !text.trim()} onClick={() => void postNote()} className="gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}

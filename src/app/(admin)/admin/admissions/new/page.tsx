@@ -1844,7 +1844,7 @@ function AdmissionsNewInner() {
                         <SelectItem value={OPTIONAL_LEAD_NONE}>None</SelectItem>
                         {leads.map((l) => (
                           <SelectItem key={l.id} value={l.id}>
-                            {l.last_name}, {l.first_name}
+                            {l.first_name} {l.last_name}
                           </SelectItem>
                         ))}
                       </SelectContent>

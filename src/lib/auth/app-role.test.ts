@@ -25,8 +25,8 @@ describe("owner ruling 2026-09-22: nurse is folded into med_tech", () => {
     expect(isMedTechRole("nurse")).toBe(false);
   });
 
-  it("keeps the med-tech home on /med-tech", () => {
-    expect(getDashboardRouteForRole("med_tech")).toBe("/med-tech");
+  it("lands a med-tech on the floor tablet app (COL-677, spec 40 §1)", () => {
+    expect(getDashboardRouteForRole("med_tech")).toBe("/floor");
   });
 
   it("lets a med_tech open admin pages without being bounced away", () => {
@@ -34,7 +34,7 @@ describe("owner ruling 2026-09-22: nurse is folded into med_tech", () => {
       expect(redirectPath(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("med_tech")))).toBeNull();
     }
     // The bare /admin landing still sends a med-tech to their home.
-    expect(redirectPath(adminShellAccessRedirect(new NextRequest("https://haven.test/admin"), asUser("med_tech")))).toBe("/med-tech");
+    expect(redirectPath(adminShellAccessRedirect(new NextRequest("https://haven.test/admin"), asUser("med_tech")))).toBe("/floor");
   });
 
   it("turns a leftover nurse token away from the admin shell", () => {
@@ -44,13 +44,13 @@ describe("owner ruling 2026-09-22: nurse is folded into med_tech", () => {
 });
 
 describe("owner ruling 2026-09-22: caregiver is folded into med_tech", () => {
-  it("lets a med_tech into the caregiver floor app and the med-tech app, landing on /med-tech", () => {
+  it("lets a med_tech into the caregiver floor app and the med-tech app, landing on /floor (COL-677)", () => {
     for (const path of ["/caregiver", "/caregiver/tasks", "/caregiver/rounds", "/caregiver/report", "/tasks", "/resident/abc"]) {
       expect(caregiverShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("med_tech"))).toBeNull();
     }
     expect(medTechShellAccessRedirect(new NextRequest("https://haven.test/med-tech"), asUser("med_tech"))).toBeNull();
-    expect(getDashboardRouteForRole("med_tech")).toBe("/med-tech");
-    expect(getShellForRole("med_tech")).toBe("med-tech");
+    expect(getDashboardRouteForRole("med_tech")).toBe("/floor");
+    expect(getShellForRole("med_tech")).toBe("floor");
   });
 
   it("turns a leftover caregiver token away from every shell", () => {

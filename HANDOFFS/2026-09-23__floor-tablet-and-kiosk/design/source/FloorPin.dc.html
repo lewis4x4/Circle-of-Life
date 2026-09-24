@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Enter PIN</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1318;font-family:'IBM Plex Sans', system-ui, sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#7FB2E5}a:hover{color:#7FB2E5}
+button{font-family:'IBM Plex Sans', system-ui, sans-serif}
+input{font-family:'IBM Plex Sans', system-ui, sans-serif}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; display: flex; flex-direction: column; background: #0F1318; color: #E8ECF1; font-family: 'IBM Plex Sans', system-ui, sans-serif; box-sizing: border-box;">
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #2A333E; box-sizing: border-box;">
+<a href="Main.dc.html" style="height: 44px; padding: 0 14px 0 8px; display: flex; align-items: center; gap: 8px; color: #E8ECF1; text-decoration: none; font-size: 15px; font-weight: 500; border-radius: 8px; border: 1px solid #3A4552; box-sizing: border-box;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8ECF1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Not you</a>
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 500; color: #E8ECF1;">9:40 AM</span>
+</div>
+<div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 96px;">
+<div style="width: 360px; display: flex; flex-direction: column; align-items: center; gap: 18px;">
+<div style="width: 96px; height: 96px; border-radius: 48px; background: #2F6DB0; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 600; color: #FFFFFF;">AW</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+<span style="font-size: 30px; font-weight: 600; color: #E8ECF1;">Ashley W.</span>
+<span style="font-size: 15px; color: #A3ADBA;">Clocked in at the front door, 6:58 AM</span>
+</div>
+<span style="margin-top: 12px; font-size: 17px; color: #E8ECF1;">Enter your 6-digit PIN</span>
+<div style="display: flex; gap: 16px;">
+<sc-for list="{{dots}}" as="d" hint-placeholder-count="6">
+<span style="{{d.st}}"></span>
+</sc-for>
+</div>
+<span style="font-size: 13px; color: #8791A0;">Same PIN you use at the front door. 5 tries, then a 15 minute lock.</span>
+<sc-if value="{{full}}" hint-placeholder-val="{{false}}">
+<a href="FloorNow.dc.html" style="margin-top: 8px; width: 260px; height: 60px; border-radius: 10px; background: #2F6DB0; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; font-weight: 600; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Unlock</a>
+</sc-if>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; width: 348px;">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+<button type="button" onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.st}}">{{k.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1180, "height": 820}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { pin: '' }; }
+  renderVals() {
+    const pin = this.state.pin;
+    const dots = [0, 1, 2, 3, 4, 5].map((i) => ({
+      st: 'width: 18px; height: 18px; border-radius: 9px; box-sizing: border-box; border: 2px solid #7FB2E5; background: ' + (i < pin.length ? '#7FB2E5' : 'transparent') + ';'
+    }));
+    const base = 'height: 84px; border-radius: 12px; border: 1px solid #3A4552; background: #161C23; color: #E8ECF1; font-family: inherit; font-size: 30px; font-weight: 500; cursor: pointer;';
+    const quiet = 'height: 84px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: #A3ADBA; font-family: inherit; font-size: 16px; font-weight: 500; cursor: pointer;';
+    const labels = ['1','2','3','4','5','6','7','8','9','Clear','0','Delete'];
+    const keys = labels.map((l) => {
+      const digit = /^[0-9]$/.test(l);
+      return {
+        label: l,
+        aria: digit ? 'Digit ' + l : l,
+        st: digit ? base : quiet,
+        press: () => {
+          if (digit) { if (pin.length < 6) this.setState({ pin: pin + l }); }
+          else if (l === 'Clear') this.setState({ pin: '' });
+          else this.setState({ pin: pin.slice(0, -1) });
+        }
+      };
+    });
+    return { dots, keys, full: pin.length === 6 };
+  }
+}
+</script>
+</body>
+</html>

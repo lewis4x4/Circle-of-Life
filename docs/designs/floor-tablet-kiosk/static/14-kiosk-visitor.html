@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Visitor sign in (static snapshot)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F2F3F5;font-family:'IBM Plex Sans', system-ui, sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0B1D34}a:hover{color:#0B1D34}
+button{font-family:'IBM Plex Sans', system-ui, sans-serif}
+input{font-family:'IBM Plex Sans', system-ui, sans-serif}
+</style>
+</head>
+<body>
+
+
+<div style="width: 1180px; height: 820px; display: flex; flex-direction: column; background: #F2F3F5; color: #121820; font-family: 'IBM Plex Sans', system-ui, sans-serif; overflow: hidden; box-sizing: border-box;">
+<div style="height: 88px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #0B1D34; box-sizing: border-box;">
+<div style="display: flex; align-items: center; gap: 20px;">
+<a href="KioskHome.dc.html" style="height: 52px; padding: 0 18px 0 12px; border-radius: 10px; border: 1px solid #2B4466; color: #FFFFFF; text-decoration: none; display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 500; box-sizing: border-box;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back</a>
+<span style="font-size: 26px; font-weight: 600; color: #FFFFFF;">Visiting a resident</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #FFFFFF;">6:58 AM</span>
+<span style="font-size: 13px; color: #B8C4D4;">Homewood Lodge</span>
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 22px; padding: 26px 40px 24px; box-sizing: border-box;">
+<p style="margin: 0; font-size: 19px; color: #4A5461;">Sign in so staff know you are in the building.</p>
+<div style="flex-grow: 1; display: flex; gap: 36px;">
+<div style="flex-grow: 1; flex-basis: 0; display: flex; flex-direction: column; gap: 22px;"><div style="display: flex; flex-direction: column; gap: 8px;">
+<label for="vname" style="font-size: 17px; font-weight: 600; color: #121820;">Your name</label>
+<input id="vname" type="text" placeholder="First and last name" style="height: 60px; padding: 0px 18px; border-radius: 10px; border: 1.5px solid rgb(185, 193, 204); background: rgb(255, 255, 255); font-size: 20px; color: rgb(18, 24, 32); box-sizing: border-box; width: 100%;">
+
+</div><div style="display: flex; flex-direction: column; gap: 8px;">
+<label for="vphone" style="font-size: 17px; font-weight: 600; color: #121820;">Phone</label>
+<input id="vphone" type="text" placeholder="Optional" style="height: 60px; padding: 0px 18px; border-radius: 10px; border: 1.5px solid rgb(185, 193, 204); background: rgb(255, 255, 255); font-size: 20px; color: rgb(18, 24, 32); box-sizing: border-box; width: 100%;">
+<span style="font-size: 14px; color: #4A5461;">Only used if the building needs to reach you.</span>
+</div></div>
+<div style="flex-grow: 1; flex-basis: 0; display: flex; flex-direction: column; gap: 22px;"><div style="display: flex; flex-direction: column; gap: 8px;">
+<label for="vres" style="font-size: 17px; font-weight: 600; color: #121820;">Who are you visiting?</label>
+<input id="vres" type="text" placeholder="Resident's name" style="height: 60px; padding: 0px 18px; border-radius: 10px; border: 1.5px solid rgb(185, 193, 204); background: rgb(255, 255, 255); font-size: 20px; color: rgb(18, 24, 32); box-sizing: border-box; width: 100%;">
+<span style="font-size: 14px; color: #4A5461;">Type their name. Staff will match it.</span>
+</div><div style="display: flex; flex-direction: column; gap: 10px;">
+<span style="font-size: 17px; font-weight: 600; color: #121820;">Do you have a fever, cough or feel sick today?</span>
+<div style="display: flex; gap: 12px;">
+
+<button type="button" aria-pressed="true" style="width: 150px; height: 60px; border-radius: 10px; border: 2.5px solid #0B1D34; background: #0B1D34; color: #FFFFFF; font-family: inherit; font-size: 20px; font-weight: 600; cursor: pointer;">No</button>
+
+<button type="button" aria-pressed="false" style="width: 150px; height: 60px; border-radius: 10px; border: 1.5px solid #B9C1CC; background: #FFFFFF; color: #121820; font-family: inherit; font-size: 20px; font-weight: 500; cursor: pointer;">Yes</button>
+
+</div>
+
+</div></div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between;">
+<span style="font-size: 15px; color: #4A5461;">Your name and times go in the facility visitor log.</span>
+<a href="KioskSignedIn.dc.html" style="width: 300px; height: 72px; border-radius: 12px; background: #0B1D34; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 22px; font-weight: 600; text-decoration: none; box-sizing: border-box;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>Sign in</a>
+</div>
+</div>
+</div>
+
+</body>
+</html>

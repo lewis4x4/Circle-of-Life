@@ -679,7 +679,7 @@ export default function EditResidentTransportRequestPage() {
                 <option value="">— None —</option>
                 {staffOptions.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.last_name}, {s.first_name}
+                    {s.first_name} {s.last_name}
                   </option>
                 ))}
               </select>
@@ -697,7 +697,7 @@ export default function EditResidentTransportRequestPage() {
               <option value="">— None —</option>
               {staffOptions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.last_name}, {s.first_name}
+                  {s.first_name} {s.last_name}
                 </option>
               ))}
             </select>

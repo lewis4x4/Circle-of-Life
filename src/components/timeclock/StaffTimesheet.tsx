@@ -28,6 +28,7 @@ import {
   type PayPeriod,
   type PayPeriodSettings,
   type RawCorrection,
+  type RawFloorUnlock,
   type RawPunch,
   type RawSyncRejection,
   type TimesheetException,
@@ -89,6 +90,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
   const [punches, setPunches] = useState<RawPunch[]>([]);
   const [corrections, setCorrections] = useState<RawCorrection[]>([]);
   const [rejections, setRejections] = useState<RawSyncRejection[]>([]);
+  const [floorUnlocks, setFloorUnlocks] = useState<RawFloorUnlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -151,6 +153,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
       setPunches(loaded.punches);
       setCorrections(loaded.corrections);
       setRejections(loaded.rejections);
+      setFloorUnlocks(loaded.floorUnlocks);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load the timesheet");
     } finally {
@@ -164,8 +167,8 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
 
   const sheet = useMemo(() => {
     if (!period) return null;
-    return computeTimesheet({ staffId, punches, corrections, rejections, periodStart: period.start, periodEnd: period.end, now: now() });
-  }, [staffId, punches, corrections, rejections, period, now]);
+    return computeTimesheet({ staffId, punches, corrections, rejections, floorUnlocks, periodStart: period.start, periodEnd: period.end, now: now() });
+  }, [staffId, punches, corrections, rejections, floorUnlocks, period, now]);
 
   const facilityForTarget = useCallback(
     (target: string): string | null => {

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Signing out</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F2F3F5;font-family:'IBM Plex Sans', system-ui, sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0B1D34}a:hover{color:#0B1D34}
+button{font-family:'IBM Plex Sans', system-ui, sans-serif}
+input{font-family:'IBM Plex Sans', system-ui, sans-serif}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; display: flex; flex-direction: column; background: #F2F3F5; color: #121820; font-family: 'IBM Plex Sans', system-ui, sans-serif; overflow: hidden; box-sizing: border-box;">
+<div style="height: 88px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #0B1D34; box-sizing: border-box;">
+<div style="display: flex; align-items: center; gap: 20px;">
+<a href="KioskHome.dc.html" style="height: 52px; padding: 0 18px 0 12px; border-radius: 10px; border: 1px solid #2B4466; color: #FFFFFF; text-decoration: none; display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 500; box-sizing: border-box;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back</a>
+<span style="font-size: 26px; font-weight: 600; color: #FFFFFF;">Signing out</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: #FFFFFF;">11:40 AM</span>
+<span style="font-size: 13px; color: #B8C4D4;">Homewood Lodge</span>
+</div>
+</div>
+<sc-if value="{{searching}}" hint-placeholder-val="{{true}}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 20px; padding: 28px 40px; box-sizing: border-box;">
+<label for="q" style="font-size: 22px; font-weight: 600; color: #121820;">Type the first 3 letters of your first name</label>
+<div style="position: relative; width: 620px;">
+<span style="position: absolute; left: 18px; top: 20px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4A5461" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+<input id="q" type="text" autocomplete="off" onChange="{{onQ}}" placeholder="Car" style="width: 100%; height: 68px; padding: 0 18px 0 56px; border-radius: 12px; border: 2.5px solid #0B1D34; background: #FFFFFF; font-size: 26px; color: #121820; box-sizing: border-box;">
+</div>
+<span style="font-size: 16px; color: #4A5461;">{{hint}}</span>
+<div style="display: flex; flex-direction: column; gap: 12px; width: 820px;">
+<sc-for list="{{matches}}" as="m" hint-placeholder-count="2">
+<button type="button" onClick="{{m.pick}}" style="height: 84px; border-radius: 14px; background: #FFFFFF; border: 1.5px solid #D5DAE1; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; font-family: inherit; text-align: left; cursor: pointer; box-sizing: border-box;">
+<span style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 24px; font-weight: 600; color: #121820;">{{m.name}}</span><span style="font-size: 16px; color: #4A5461;">{{m.kind}}</span></span>
+<span style="display: flex; align-items: center; gap: 18px;"><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 17px; color: #4A5461;">in {{m.t}}</span><span style="height: 52px; padding: 0 22px; border-radius: 10px; background: #0B1D34; color: #FFFFFF; display: flex; align-items: center; font-size: 18px; font-weight: 600;">Sign out</span></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{out}}" hint-placeholder-val="{{false}}">
+<div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+<div style="width: 112px; height: 112px; border-radius: 56px; background: #0B1D34; display: flex; align-items: center; justify-content: center;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+<h1 style="margin: 0; font-size: 44px; font-weight: 600; color: #121820;">Signed out. Thank you for visiting.</h1>
+<p style="margin: 0; font-size: 21px; color: #4A5461;">{{outLine}}</p>
+<a href="KioskHome.dc.html" style="margin-top: 8px; height: 60px; padding: 0 36px; border-radius: 12px; border: 1.5px solid #0B1D34; color: #0B1D34; display: flex; align-items: center; font-size: 19px; font-weight: 600; text-decoration: none; box-sizing: border-box;">Done</a>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1180, "height": 820}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { q: '', out: null }; }
+  renderVals() {
+    const open = [
+      { name: 'Carol P.', kind: 'Visiting a resident', t: '10:12 AM' },
+      { name: 'Carlos M.', kind: 'Vendor or contractor', t: '9:48 AM' },
+      { name: 'Priya S.', kind: 'Healthcare provider', t: '9:30 AM' },
+      { name: 'Donna K.', kind: 'Visiting a resident', t: '8:55 AM' }
+    ];
+    const q = this.state.q.trim().toLowerCase();
+    const matches = q.length >= 3
+      ? open.filter((v) => v.name.toLowerCase().indexOf(q) === 0).map((v) => ({ ...v, pick: () => this.setState({ out: v }) }))
+      : [];
+    let hint = 'Names show after 3 letters, so nobody can scroll the whole list.';
+    if (q.length >= 3 && matches.length === 0) hint = 'No open visit starts with those letters. Ask the front desk.';
+    if (matches.length) hint = 'Tap your name.';
+    const out = this.state.out;
+    return {
+      onQ: (e) => this.setState({ q: e.target.value }),
+      matches,
+      hint,
+      searching: !out,
+      out: !!out,
+      outLine: out ? out.name + ' · in ' + out.t + ' · out 11:40 AM' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

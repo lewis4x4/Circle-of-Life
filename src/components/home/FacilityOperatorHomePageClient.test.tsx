@@ -64,6 +64,7 @@ function initial(overrides: Partial<HomeInitialData> = {}): HomeInitialData {
     facilityOptions: [{ id: FACILITY, name: "Sample Lodge" }],
     census: null,
     releasedModules: [],
+    openInspections: [],
     pastDue: null,
     notesOnTap: [],
     shiftsToday: null,
@@ -165,6 +166,25 @@ describe("FacilityOperatorHomePageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith("home_claim_task", { p_instance_id: "gen", p_claim: true }));
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  });
+
+  it("raises a banner while an inspector is signed in at this facility (COL-692)", async () => {
+    const { unmount } = render(
+      <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
+    );
+    expect(screen.queryByTestId("inspector-on-site")).toBeNull();
+    unmount();
+    render(
+      <FacilityOperatorHomePageClient
+        initial={initial({ openInspections: [{ id: "v1", checkedInAt: "2026-09-22T14:12:00Z", agency: "AHCA" }] })}
+        initialFacilityId={FACILITY}
+        currentUserId="me"
+        fullName={null}
+      />,
+    );
+    const banner = await screen.findByTestId("inspector-on-site");
+    expect(banner).toHaveTextContent("An inspector from AHCA signed in at the front door at 10:12 AM.");
+    expect(within(banner).getByRole("link", { name: "Open the visitor log" })).toHaveAttribute("href", "/admin/front-desk");
   });
 
   it("keeps Record payment dark until it is released for this facility, then opens it (COL-594)", async () => {

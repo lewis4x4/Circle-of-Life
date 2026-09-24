@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-09-24T10:42:58.686455+00:00",
+  "checked_at": "2026-09-24T11:13:09.221134+00:00",
   "source_base": "4a8fef12b39f2cced1cf824c33ac54b1bdbebd39",
-  "source_state": "Current main integrated through493; source through501; staging clock policy recorded under timestamp; production Workforce release and refreshed PR CI pending",
+  "source_state": "Merged released floor main through495; source sequence through502; staging502 applied; production496-498/501 applied, 502 pending refreshed CI and live UI release",
   "migration": "497_workforce_in_place.sql",
   "full_release_ready": false,
   "review_fixes": [
@@ -144,12 +144,12 @@
     },
     "native_postgres_latest": {
       "exit_code": 0,
-      "migration_files": 504,
+      "migration_files": 505,
       "sql_probes": 122,
       "acceptance_suites": 7,
       "care_event_parity_cases": 105,
       "signed_synthetic_contract_bytes": 6687,
-      "artifact": "/Users/brianlewis/.hermes/tmp/agent-runs/workforce-release-resume-20260924T022754Z/native-501-full.log"
+      "artifact": "/Users/brianlewis/.hermes/tmp/agent-runs/workforce-release-resume-20260924T022754Z/native-502-merged-main.log"
     }
   },
   "additional_fix": {
@@ -288,8 +288,8 @@
     },
     {
       "migrations": "494-495",
-      "source_commit": "af7193f92e484a748417cbada86f6dd3060e8a8b",
-      "state": "original source identities preserved; source release has no recorded human hold; separate floor application excluded"
+      "source_commit": "b5c844a6b80bdf70da3476eb64c0802d1afac039",
+      "state": "released on main by PR814; current source preserved; previous af snapshot retained only as history"
     },
     {
       "migrations": "496",
@@ -318,9 +318,13 @@
       "migrations": "500",
       "pr": 868,
       "state": "exact owner committed migration and probe imported; hosted version500 applied in staging and production; remaining application scope separate"
+    },
+    {
+      "migrations": "502",
+      "state": "shared floor clock parity with configurable Workforce age; staging applied, production pending refreshed CI"
     }
   ],
-  "production_changes_by_this_draft": false,
+  "production_changes_by_this_draft": true,
   "adp_submission_available": false,
   "human_acceptance_claimed": false,
   "independent_timekeeping_release": {
@@ -618,8 +622,8 @@
   "prerequisite_provenance": "docs/workforce/evidence/prerequisite-provenance.json",
   "source_integration": {
     "integrated_main_through": 489,
-    "latest_origin_main_through": 493,
-    "verified_branch_sequence_through": 501,
+    "latest_origin_main_through": 495,
+    "verified_branch_sequence_through": 502,
     "latest_main_reconciliation_pending": true,
     "hosted_ddl_applied_by_this_delivery": false
   },
@@ -649,10 +653,19 @@
       "496",
       "497",
       "498",
-      "501"
+      "501",
+      "502"
     ],
     "ledger": "pass",
-    "production_workforce_applied": false,
-    "source_501_recorded_as": "20260924102913"
+    "production_workforce_applied": [
+      "496",
+      "497",
+      "498",
+      "501"
+    ],
+    "source_501_recorded_as": "20260924102913",
+    "production_remaining": [
+      "502"
+    ]
   }
 }

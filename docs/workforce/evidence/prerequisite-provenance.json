@@ -212,5 +212,11 @@
     "focused_tests_passed": 10,
     "edge_suite_tests_passed": 50
   },
-  "canonical_gate_artifact": "test-results/agent-gates/2026-09-24T03-11-49-296Z-COL-715-WORKFORCE-INTEGRATED.json"
+  "canonical_gate_artifact": "test-results/agent-gates/2026-09-24T03-11-49-296Z-COL-715-WORKFORCE-INTEGRATED.json",
+  "current_main_floor_source": {
+    "commit": "b5c844a6b80bdf70da3476eb64c0802d1afac039",
+    "migration_494_sha256": "2be4d36710ed70c0235f1874ad08e79b19f1ec7a0fceba1de9d6a40dca0376b1",
+    "migration_495_sha256": "4377bbd62d71604a9aaf4d743318bc8859760307211be45dd34ae0fa489a5f2e",
+    "prior_af_imports": "Historical initial integration only; current main won the merge and forward migration 502 preserves floor-clock behavior"
+  }
 }
