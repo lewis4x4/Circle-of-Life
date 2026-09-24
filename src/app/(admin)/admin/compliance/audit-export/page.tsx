@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
@@ -338,7 +339,7 @@ export default function AuditLogExportPage() {
                 {jobs.map((j) => (
                   <TableRow key={j.id}>
                     <TableCell className="whitespace-nowrap text-xs">
-                      {new Date(j.created_at).toLocaleString()}
+                      {formatDisplayDateTime(j.created_at)}
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">{j.status}</span>

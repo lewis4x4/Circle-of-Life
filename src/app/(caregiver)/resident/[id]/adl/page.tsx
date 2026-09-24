@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -347,12 +348,7 @@ export default function CaregiverResidentAdlPage() {
                       {row.refused ? <span className="text-amber-400"> · refused</span> : null}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(row.log_time).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatShortDateTime(row.log_time)}{" "}
                       · {row.shift} · {row.log_date}
                     </p>
                     {row.notes?.trim() ? <p className="mt-2 text-xs text-muted-foreground">{row.notes}</p> : null}

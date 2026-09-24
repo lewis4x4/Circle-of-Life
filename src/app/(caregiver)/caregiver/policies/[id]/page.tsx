@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { REQUIRED_READING_POLICIES_HREF } from "@/lib/caregiver/required-reading";
 import { createClient } from "@/lib/supabase/client";
 import { resolveAckFacilityId } from "@/lib/pending-policies";
 import { Button } from "@/components/ui/button";
@@ -96,7 +97,7 @@ export default function CaregiverPolicyAckPage() {
         setError(insErr.message);
         return;
       }
-      router.push("/caregiver/policies");
+      router.push(REQUIRED_READING_POLICIES_HREF);
     } finally {
       setSubmitting(false);
     }
@@ -116,7 +117,7 @@ export default function CaregiverPolicyAckPage() {
       <div className="space-y-4">
         <p className="text-sm text-destructive">{error}</p>
         <Link
-          href="/caregiver/policies"
+          href={REQUIRED_READING_POLICIES_HREF}
           className="text-sm text-primary underline transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
         >
           Back to list
@@ -128,10 +129,10 @@ export default function CaregiverPolicyAckPage() {
   return (
     <div className="space-y-4">
       <Link
-        href="/caregiver/policies"
+        href={REQUIRED_READING_POLICIES_HREF}
         className="text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
       >
-        ← Pending policies
+        ← Required reading
       </Link>
       <Card className="border-border bg-card text-card-foreground">
         <CardHeader>

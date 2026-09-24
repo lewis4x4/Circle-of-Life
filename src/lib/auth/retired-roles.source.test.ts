@@ -24,7 +24,6 @@ const BASELINE: Record<string, number> = {
   "src/app/(admin)/admin/feedback/page.tsx": 1,
   "src/app/(admin)/admin/operations/work/_components/dietary-service-entry.tsx": 1,
   "src/app/(admin)/admin/settings/notifications/page.tsx": 1,
-  "src/app/(admin)/staff/[id]/page.tsx": 5,
   "src/app/(admin)/staff/new/page.tsx": 1,
   "src/app/(caregiver)/caregiver/resident/[id]/timeline/page.tsx": 1,
   "src/components/care-events/timeline/ResidentTimeline.tsx": 1,

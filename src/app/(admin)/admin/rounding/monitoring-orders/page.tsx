@@ -141,7 +141,7 @@ function ScopedMonitoringOrdersPage() {
   ).length;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <PageHeader
         title="Monitoring Orders"
         subtitle={monitoringOrdersSubtitle(scope)}

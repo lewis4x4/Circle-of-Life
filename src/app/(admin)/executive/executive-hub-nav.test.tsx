@@ -26,7 +26,7 @@ describe("ExecutiveHubNav", () => {
   it("keeps primary links focusable and marks Overview only on its exact route", () => {
     render(<ExecutiveHubNav />);
     const overview = screen.getByRole("link", { name: "Overview" });
-    const standup = screen.getByRole("link", { name: "Weekly Stand Up" });
+    const standup = screen.getByRole("link", { name: "Stand Up" });
     expect(overview).toHaveAttribute("aria-current", "page");
     expect(standup.tabIndex).toBe(0);
     standup.focus();
@@ -34,10 +34,14 @@ describe("ExecutiveHubNav", () => {
     expect(standup).toHaveAttribute("href", "/admin/stand-up");
   });
 
-  it("has one Stand Up entry in the primary strip (COL-655)", () => {
+  it("has one Stand Up entry in the whole strip, More included, and no Reports tab (COL-707)", async () => {
     render(<ExecutiveHubNav />);
     const nav = screen.getAllByRole("navigation", { name: "Executive intelligence sections" })[0];
     expect(within(nav).getAllByRole("link").filter((link) => /stand ?up/i.test(link.textContent ?? ""))).toHaveLength(1);
+    const drawer = await openSections();
+    const labels = drawer.getAllByRole("link").map((link) => link.textContent);
+    expect(labels.filter((label) => /stand ?up/i.test(label ?? ""))).toEqual(["Stand Up"]);
+    expect(labels).not.toContain("Reports");
   });
 
   it.each([
@@ -56,9 +60,11 @@ describe("ExecutiveHubNav", () => {
   it.each([
     ["/admin/executive", "Overview"],
     ["/admin/executive/alerts", "Alerts"],
-    ["/admin/executive/standup/history", "Stand Up history"],
-    ["/admin/executive/standup/history/older", "Stand Up history"],
-    ["/admin/executive/standup/compare", "Stand Up compare"],
+    ["/admin/stand-up", "Stand Up"],
+    ["/admin/executive/standup", "Stand Up"],
+    ["/admin/executive/standup/history", "Stand Up"],
+    ["/admin/executive/standup/history/older", "Stand Up"],
+    ["/admin/executive/standup/compare", "Stand Up"],
   ])("opens the real mobile drawer on %s with exactly one current destination", async (pathname, currentLabel) => {
     mocks.pathname = pathname;
     render(<ExecutiveHubNav />);
@@ -78,12 +84,11 @@ describe("ExecutiveHubNav", () => {
     expect(drawer.queryAllByRole("link", { current: "page" })).toHaveLength(0);
   });
 
-  it("does not mark the Stand Up pack parent current when history is selected", async () => {
+  it("keeps the More menu unlit on the Stand Up roll-up views", () => {
     mocks.pathname = "/admin/executive/standup/history";
     render(<ExecutiveHubNav />);
-    expect(screen.getByRole("button", { name: "More views — currently Stand Up history" })).toBeVisible();
-    const drawer = await openSections();
-    expect(drawer.getByRole("link", { name: "Stand Up pack" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: "More views" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Stand Up" })).toHaveAttribute("aria-current", "page");
   });
 
   it("restricts desktop and mobile links to the facility admin's permitted destinations", async () => {
@@ -92,11 +97,9 @@ describe("ExecutiveHubNav", () => {
     render(<ExecutiveHubNav />);
     expect(screen.queryByRole("link", { name: "Overview" })).not.toBeInTheDocument();
     const drawer = await openSections();
-    expect(drawer.getAllByRole("link").map((link) => link.textContent)).toEqual([
-      "Weekly Stand Up", "Stand Up pack", "Stand Up history", "Stand Up compare",
-    ]);
+    expect(drawer.getAllByRole("link").map((link) => link.textContent)).toEqual(["Stand Up"]);
     expect(drawer.getAllByRole("link", { current: "page" })).toHaveLength(1);
-    expect(drawer.getByRole("link", { current: "page" })).toHaveAccessibleName("Stand Up history");
+    expect(drawer.getByRole("link", { current: "page" })).toHaveAccessibleName("Stand Up");
   });
 
   it("offers no executive destinations to a role without executive access", async () => {

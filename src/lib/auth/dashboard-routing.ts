@@ -107,7 +107,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     suppressedSections: ["clinical_risk_rollups", "finance_risk", "staffing_exceptions"],
     mobileTabletExpectation: "desktop-first",
     visibleGroups: ["Command", "Pipeline", "Clinical Ops", "Workforce", "Knowledge"],
-    visibleItemKeys: ["site-work", "referrals", "admissions", "benefits", "family-messages", "residents", "transportation", "staff", "kb-admin"],
+    visibleItemKeys: ["site-work", "referrals", "admissions", "benefits", "family-portal", "residents", "transportation", "staff", "kb-admin"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: false,
       compliance: false, financials: false, watchlist: false,
@@ -123,7 +123,7 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     suppressedSections: ["enterprise_rollup", "finance_risk"],
     mobileTabletExpectation: "desktop-first",
     visibleGroups: ["Command", "Clinical Ops", "Pipeline"],
-    visibleItemKeys: ["admissions", "benefits", "family-messages", "residents", "care-plans", "assessments"],
+    visibleItemKeys: ["admissions", "benefits", "family-portal", "residents", "care-plans", "assessments"],
     sections: {
       heroStats: true, quickActions: true, criticalUpdates: true,
       compliance: false, financials: false, watchlist: true,

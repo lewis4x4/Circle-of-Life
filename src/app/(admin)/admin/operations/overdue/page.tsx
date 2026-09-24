@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock, Filter, Calendar, ChevronLeft, CheckCircle2, User } from "lucide-react";
@@ -30,7 +31,7 @@ type TaskInstance = {
 
 /** A task without a due instant has no due date to show; the assigned date is never one. */
 function dueLabel(task: Pick<TaskInstance, "due_at">) {
-  return task.due_at ? new Date(task.due_at).toLocaleDateString() : "Schedule needs confirmation";
+  return task.due_at ? formatDisplayDate(task.due_at) : "Schedule needs confirmation";
 }
 
 export default function OverdueTasksPage() {

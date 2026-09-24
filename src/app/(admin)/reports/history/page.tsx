@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -88,7 +89,7 @@ export default function ReportHistoryPage() {
                 </div>
                 <div className="tabular-nums">
                   <p className="text-xs text-muted-foreground">Started</p>
-                  <p className="text-foreground">{new Date(row.startedAt).toLocaleString()}</p>
+                  <p className="text-foreground">{formatDisplayDateTime(row.startedAt)}</p>
                 </div>
                 <div className="tabular-nums">
                   <p className="text-xs text-muted-foreground">Finished</p>

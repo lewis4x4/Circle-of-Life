@@ -1,3 +1,4 @@
+import { formatDateTimeWith, formatDisplayDateTime } from "@/lib/format/datetime";
 import {
   type StandupMetricRow,
   type StandupSnapshotDetail,
@@ -35,26 +36,11 @@ function formatMetricDisplay(metric: StandupMetricRow | undefined): string {
 
 function formatDateTimeDisplay(value: string | null): string {
   if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDisplayDateTime(value, { fallback: value });
 }
 
 function formatWeekLabel(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatDateTimeWith(iso.slice(0, 10), { weekday: "long", month: "long", day: "numeric", year: "numeric" }, { fallback: iso });
 }
 
 function toneForConfidence(band: string): "ok" | "warn" | "risk" {

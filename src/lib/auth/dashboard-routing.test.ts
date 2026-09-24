@@ -103,7 +103,7 @@ describe("site work nav visibility (COL-148 / HFO-10)", () => {
     const config = getRoleDashboardConfig("admin_assistant");
     expect(config.visibleGroups).toContain("Command");
     expect(config.visibleItemKeys).toContain("site-work");
-    for (const key of ["referrals", "admissions", "family-messages", "residents", "transportation", "staff", "kb-admin"]) {
+    for (const key of ["referrals", "admissions", "family-portal", "residents", "transportation", "staff", "kb-admin"]) {
       expect(config.visibleItemKeys).toContain(key);
     }
   });

@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatDateTimeWith,
   formatDisplayDate,
   formatDisplayDateTime,
   formatDisplayTime,
   formatDurationHoursMinutes,
   formatPersonName,
+  formatPersonNameLastFirst,
+  formatProfileName,
   formatRelativeTime,
   formatShortDateTime,
   isDateOnlyString,
+  looksLikeLoginIdentifier,
 } from "@/lib/format/datetime";
 
 // 2026-09-16 02:05 UTC is 10:05 PM on Sep 15 in Florida (HOM-2026-0002).
@@ -94,5 +98,44 @@ describe("formatPersonName", () => {
     expect(formatPersonName({ first_name: "  ", last_name: "Cher" })).toBe("Cher");
     expect(formatPersonName(null)).toBe("No name posted");
     expect(formatPersonName({ first_name: "", last_name: null })).toBe("No name posted");
+  });
+});
+
+describe("formatPersonNameLastFirst (exports and sort keys only)", () => {
+  it("writes surname first, preferred name when posted", () => {
+    expect(formatPersonNameLastFirst({ first_name: "James", last_name: "Baker", preferred_name: "Jimmie" })).toBe("Baker, Jimmie");
+    expect(formatPersonNameLastFirst({ first_name: "Ada", last_name: "" })).toBe("Ada");
+    expect(formatPersonNameLastFirst(null)).toBe("No name posted");
+  });
+});
+
+describe("formatProfileName never shows a login identifier", () => {
+  it("keeps a real name", () => {
+    expect(formatProfileName("Brian Lewis")).toBe("Brian Lewis");
+    expect(formatProfileName("  Cher ")).toBe("Cher");
+  });
+  it("falls back for a handle, an email or a blank", () => {
+    expect(formatProfileName("blewis")).toBe("Staff");
+    expect(formatProfileName("someone@example.com", { fallback: "Assigned" })).toBe("Assigned");
+    expect(formatProfileName("   ")).toBe("Staff");
+    expect(formatProfileName(null)).toBe("Staff");
+  });
+  it("names the identifiers it refuses", () => {
+    expect(looksLikeLoginIdentifier("j.smith")).toBe(true);
+    expect(looksLikeLoginIdentifier("Jo Smith")).toBe(false);
+  });
+});
+
+describe("formatDateTimeWith (COL-684)", () => {
+  it("keeps a stored calendar day whatever the zone", () => {
+    expect(formatDateTimeWith("2026-09-27", { weekday: "short", month: "short", day: "numeric" })).toBe("Sun, Sep 27");
+  });
+  it("reads an instant in the facility zone", () => {
+    expect(formatDateTimeWith("2026-09-16T02:05:00+00:00", { month: "short", day: "numeric" })).toBe("Sep 15");
+    expect(formatDateTimeWith("2026-09-16T02:05:00+00:00", { month: "short", day: "numeric" }, { timeZone: "UTC" })).toBe("Sep 16");
+  });
+  it("falls back on a missing or invalid value", () => {
+    expect(formatDateTimeWith(null, { month: "short" })).toBe("No date posted");
+    expect(formatDateTimeWith("nope", { month: "short" }, { fallback: "—" })).toBe("—");
   });
 });

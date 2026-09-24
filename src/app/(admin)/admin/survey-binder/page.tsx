@@ -165,7 +165,7 @@ export default function AdminSurveyBinderPage() {
   const kpis = evidence ? binderEvidenceTiles(evidence) : [];
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-2">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">

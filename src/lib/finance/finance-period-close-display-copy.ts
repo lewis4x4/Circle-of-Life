@@ -2,6 +2,8 @@
  * Quiet Operator copy for GL period close (`/admin/finance/period-close`).
  * Missing close timestamps name real gaps — never fabricate dates.
  */
+import { formatDisplayDateTime } from "@/lib/format/datetime";
+
 
 export const PERIOD_CLOSE_NO_CLOSED_AT_COPY = "No close date posted";
 
@@ -10,13 +12,5 @@ export function formatPeriodClosedAt(closedAt: string | null | undefined): strin
   if (closedAt == null) return PERIOD_CLOSE_NO_CLOSED_AT_COPY;
   const trimmed = closedAt.trim();
   if (!trimmed || trimmed === "—") return PERIOD_CLOSE_NO_CLOSED_AT_COPY;
-  const parsed = new Date(trimmed);
-  if (Number.isNaN(parsed.getTime())) return PERIOD_CLOSE_NO_CLOSED_AT_COPY;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
+  return formatDisplayDateTime(trimmed, { fallback: PERIOD_CLOSE_NO_CLOSED_AT_COPY });
 }

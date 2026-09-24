@@ -1,3 +1,4 @@
+import { formatShortDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   formatFamilyMessagesAuthorName,
@@ -282,12 +283,7 @@ export async function fetchStaffMessagesForResident(
     authorName: formatFamilyMessagesAuthorName(nameMap.get(m.author_user_id)),
     authorKind: m.author_kind,
     body: m.body,
-    createdAt: new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(m.created_at)),
+    createdAt: formatShortDateTime(m.created_at),
     deliveryMethod: m.delivery_method,
     familyAcknowledgedAt: m.family_acknowledged_at,
   }));

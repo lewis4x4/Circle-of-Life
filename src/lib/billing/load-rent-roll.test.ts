@@ -154,7 +154,8 @@ describe("fetchRentRollFromSupabase", () => {
 
     expect(roll.rows).toHaveLength(1);
     expect(roll.rows[0]).toMatchObject({
-      residentName: "Baker, Jimmie",
+      residentName: "Jimmie Baker",
+      residentSheetName: "Baker, Jimmie",
       roomLabel: "7-B",
       admittedFrom: "Bedrock of Live Oak Fl",
       contractedCents: 300900,

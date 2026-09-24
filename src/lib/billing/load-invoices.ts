@@ -1,3 +1,4 @@
+import { formatDisplayDate } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -154,7 +155,5 @@ export function mapDbInvoiceStatusToUi(value: string): InvoiceStatusUi {
 
 function formatDueDisplay(dueDate: string, status: string): string {
   if (status === "paid") return "Paid";
-  const parsed = new Date(`${dueDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return dueDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+  return formatDisplayDate(dueDate.slice(0, 10), { fallback: dueDate });
 }

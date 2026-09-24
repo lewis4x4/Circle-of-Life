@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -191,7 +192,7 @@ export default function SavedReportsPage() {
           ) : views.length === 0 ? (
             <div className="p-16 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Saved Variants</p>
-               <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">You haven&apos;t pinned any custom report configurations yet.</p>
+               <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">You haven&apos;t pinned any custom report configurations yet.</p>
              </div>
           ) : (
             <MotionList className="space-y-4">
@@ -228,7 +229,7 @@ export default function SavedReportsPage() {
                            </div>
                            <div className="flex flex-col gap-2 align-right text-left md:text-right">
                               <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Last Modified</span>
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-medium">{new Date(view.updated_at).toLocaleString()}</span>
+                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-medium">{formatDisplayDateTime(view.updated_at)}</span>
                            </div>
                         </div>
 

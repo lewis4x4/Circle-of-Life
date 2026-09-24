@@ -36,6 +36,7 @@ function row(overrides: Partial<IncidentReportsLogRow> = {}): IncidentReportsLog
     organization_id: "00000000-0000-4000-8000-0000000000a1",
     other: false,
     resident: "Brownell, Placeholder",
+    resident_display: "Placeholder Brownell",
     room: "12",
     scrapes_or_burn: false,
     severity: "level_3",
@@ -73,7 +74,7 @@ describe("buildIncidentReportsLogCsv", () => {
   });
 
   it("names missing room and resident", () => {
-    const cells = incidentReportsLogCells(row({ room: null, resident: "  ", severity: null, shift: null }));
+    const cells = incidentReportsLogCells(row({ room: null, resident: "  ", resident_display: null, severity: null, shift: null }));
     expect(cells[1]).toBe(INCIDENT_REPORTS_LOG_NO_ROOM_COPY);
     expect(cells[2]).toBe(INCIDENT_REPORTS_LOG_NO_RESIDENT_COPY);
     expect(cells[10]).toBe("");
@@ -84,6 +85,18 @@ describe("buildIncidentReportsLogCsv", () => {
     expect(reportsLogMark(true)).toBe(INCIDENT_REPORTS_LOG_CHECK_MARK);
     expect(reportsLogMark(false)).toBe("");
     expect(reportsLogMark(null)).toBe("");
+  });
+});
+
+describe("resident name order (COL-686)", () => {
+  it("reads First Last on screen and keeps the paper log's Last, First in the CSV", () => {
+    expect(incidentReportsLogCells(row())[2]).toBe("Placeholder Brownell");
+    expect(incidentReportsLogCells(row(), { surface: "csv" })[2]).toBe("Brownell, Placeholder");
+    expect(buildIncidentReportsLogCsv([row()])).toContain('"Brownell, Placeholder"');
+  });
+
+  it("falls back to the view's resident column before migration 488 reaches a database", () => {
+    expect(incidentReportsLogCells(row({ resident_display: null }))[2]).toBe("Brownell, Placeholder");
   });
 });
 

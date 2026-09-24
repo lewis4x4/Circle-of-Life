@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Flag } from "lucide-react";
 
@@ -280,7 +281,7 @@ export default function PilotFeedbackInboxPage() {
                         <div>Role: {row.app_role}</div>
                         <div>Route: <span className="font-medium">{row.route}</span></div>
                         <div>Facility: <span className="font-medium">{row.facility_id ?? "none"}</span></div>
-                        <div>Submitted: {new Date(row.created_at).toLocaleString()}</div>
+                        <div>Submitted: {formatDisplayDateTime(row.created_at)}</div>
                       </div>
                     </div>
                   </div>

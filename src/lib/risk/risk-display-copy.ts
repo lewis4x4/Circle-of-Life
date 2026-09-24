@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { riskLevelFromBands, type RiskScoreBands } from "@/lib/operating-rules/risk-bands";
 
 /**
@@ -21,7 +22,7 @@ export function formatRiskScore(value: number | null | undefined): string {
 /** ISO timestamp on risk command rows when unset or blank. */
 export function formatRiskDateTime(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return RISK_NO_TIMESTAMP_POSTED_COPY;
-  return new Date(value).toLocaleString();
+  return formatDisplayDateTime(value);
 }
 
 /**

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -7,6 +8,7 @@ import { CheckCircle2, FileSpreadsheet, Loader2, Save } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +29,6 @@ import {
   publishStandupSnapshot,
   saveStandupSnapshotNotes,
   saveStandupMetricInput,
-  saveStandupBoardReport,
   standupMetricDefinitionByKey,
   summarizeStandupSections,
   type StandupMetricRow,
@@ -74,7 +75,6 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
-  const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -290,34 +290,11 @@ export default function ExecutiveStandupWeekDetailPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
-  async function onSaveBoardReport() {
-    if (!detail || !user?.id || !organizationId) {
-      setActionError("Sign in required.");
-      return;
-    }
-    setSavingBoardReport(true);
-    setActionError(null);
-    try {
-      await saveStandupBoardReport(supabase, {
-        organizationId,
-        userId: user.id,
-        weekOf: detail.snapshot.weekOf,
-        status: detail.snapshot.status,
-        confidenceBand: detail.snapshot.confidenceBand,
-        version: detail.snapshot.publishedVersion,
-        publishedAt: detail.snapshot.publishedAt,
-        completenessPct: detail.snapshot.completenessPct,
-      });
-    } catch (saveError) {
-      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
-    } finally {
-      setSavingBoardReport(false);
-    }
-  }
 
   return (
     <div className="w-full space-y-6 pb-12">
       <ExecutiveHubNav />
+      <StandUpViewsNav current="/admin/executive/standup" />
 
       <RecordDetailHeader
         title={`Standup Week ${week}`}
@@ -351,10 +328,6 @@ export default function ExecutiveStandupWeekDetailPage() {
               <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
                 {downloadingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
                 Download PDF
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
-                {savingBoardReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save in executive reports
               </Button>
               <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing || !publishReadiness.canPublish}>
                 {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
@@ -405,8 +378,8 @@ export default function ExecutiveStandupWeekDetailPage() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[
-              { label: "Generated", value: new Date(detail.snapshot.generatedAt).toLocaleString() },
-              { label: "Published", value: detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet" },
+              { label: "Generated", value: formatDisplayDateTime(detail.snapshot.generatedAt) },
+              { label: "Published", value: detail.snapshot.publishedAt ? formatDisplayDateTime(detail.snapshot.publishedAt) : "Not yet" },
               { label: "Completeness", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
               { label: "Confidence", value: <span className="capitalize">{detail.snapshot.confidenceBand}</span> },
             ].map(({ label, value }) => (
