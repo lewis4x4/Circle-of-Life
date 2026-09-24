@@ -58,3 +58,5 @@ Administrators and Assistant Administrators use the existing facility_admin/mana
 - A concurrent older split-shift release introduced migration 514. Its historical file is retained; forward migration 516 restores the shared configurable grid RPCs after it. Fixed universal color/hour helpers are superseded by the preset model. The original bundle budget is retained.
 
 Mission alignment: pass. Facility-specific work choices remain editable and auditable, while resident policy, clinical permission, actual attendance and paid-time evidence stay independently enforced.
+
+Final source reconciliation retains our original migration 516, meeting days at 517 and referral tours at 518. The added 517/518 source matches already-hosted changes; it is not a request to replay those production migrations. The reconciled native replay passed all 521 migration files, 138 SQL probes and seven acceptance suites. See [technical verification receipt](shift-options-evidence/verification.json).
