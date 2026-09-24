@@ -11,7 +11,7 @@ import NewRatePage from "./rates/new/page";
 import PayrollPage from "../payroll/page";
 import NewPayrollBatchPage from "../payroll/new/page";
 import PayrollBatchPage from "../payroll/[id]/page";
-import CashPage from "../admin/cash/page";
+import { CashTrustLedgersClient as CashPage } from "@/components/finance/CashTrustLedgersClient";
 import LettersPage from "../admin/letters/page";
 import GenerateLetterPage from "../admin/letters/generate/page";
 

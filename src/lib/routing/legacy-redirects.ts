@@ -104,6 +104,18 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   // 308s into /admin/executive/reports, and from there here.
   { source: "/admin/executive/reports", destination: "/admin/reports", permanent: true },
   { source: "/admin/executive/reports/:path*", destination: "/admin/reports", permanent: true },
+  // Cash and Trust were two pages over one resident-money ledger; Trust is canonical and
+  // now carries the petty cash and trust posting workbench (COL-707, Brian 2026-09-23).
+  { source: "/admin/cash", destination: "/admin/finance/trust", permanent: true },
+  { source: "/admin/cash/:path*", destination: "/admin/finance/trust", permanent: true },
+  // Page files that only called redirect() are server redirects instead (COL-707).
+  // The vendor directory hosts the inline creator.
+  { source: "/admin/vendors/new", destination: "/admin/vendors/directory", permanent: true },
+  // The live rounding board is the hub root now; old links keep working.
+  { source: "/admin/rounding/live", destination: "/admin/rounding", permanent: true },
+  // Create flows not built yet; nothing links here. Temporary so they can ship later.
+  { source: "/admin/family-portal/consents/new", destination: "/admin/family-portal", permanent: false },
+  { source: "/admin/family-portal/conferences/new", destination: "/admin/family-portal", permanent: false },
   // "Close" was a second tab rendering Period close (COL-654).
   { source: "/admin/finance/close", destination: "/admin/finance/period-close", permanent: true },
   // The medication reconciliation hub lives at /admin/discharge; the pipeline URL
