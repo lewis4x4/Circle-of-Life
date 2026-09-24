@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form-label";
 import {
   BENEFITS_STAGES,
+  SCREENING_QUESTIONS,
+  type ScreeningQuestion,
   type BenefitsRuleEntry,
   type BenefitsRuleKey,
   type BenefitsRulesList,
@@ -17,6 +19,16 @@ const RULE_LABELS: Record<BenefitsRuleKey, { title: string; help: string }> = {
   "screening.standard_individual": { title: "Financial screening standard (individual)", help: "Review-aid limits only; never an eligibility decision. Enter dollars." },
   "family_collection.max_days": { title: "Family upload window (days)", help: "How long a family document request stays open before it expires." },
   "renewal.warning_days": { title: "Renewal warning (days)", help: "The queue flags a case this many days before its recorded renewal date." },
+  "screening.admission_gate": { title: "Admission Medicaid questions: what stops a case", help: "Circle of Life screening policy for the admission questions, never an eligibility decision. A yes to a checked question means the resident does not qualify now and is rechecked. Enter dollars." },
+  "screening.recheck_days": { title: "Recheck interval for residents who do not qualify now (days)", help: "The facility administrator is asked to re-ask the admission questions this many days after the last answers." },
+};
+const QUESTION_SHORT: Record<ScreeningQuestion, string> = {
+  q_property_non_primary: "Property other than home",
+  q_income_over_limit: "Income over the limit",
+  q_life_insurance: "Life insurance",
+  q_burial_contract: "Burial contract",
+  q_assets: "Assets over the limit",
+  q_power_of_attorney: "Power of attorney",
 };
 const stageSet = new Set<string>(BENEFITS_STAGES);
 
@@ -49,6 +61,11 @@ export function describeRule(entry: BenefitsRuleEntry) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return "Not recorded";
     return `Income $${dollars(value.income_cents)} · Assets $${dollars(value.assets_cents)} · ${String(value.label ?? "")}`;
   }
+  if (entry.rule_key === "screening.admission_gate") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return "Not recorded";
+    const list = Array.isArray(value.disqualify) ? (value.disqualify as ScreeningQuestion[]).map((q) => QUESTION_SHORT[q] ?? q).join(", ") : "";
+    return `Stops on: ${list} · Income limit $${dollars(value.income_limit_cents)} · Asset limit $${dollars(value.assets_limit_cents)}`;
+  }
   return typeof value === "number" ? `${value} days` : "Not recorded";
 }
 
@@ -65,6 +82,9 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
   const [labelText, setLabelText] = useState(() => (typeof current.label === "string" ? current.label : ""));
   const [source, setSource] = useState(() => (typeof current.source === "string" ? current.source : ""));
   const [days, setDays] = useState(() => (typeof entry.value === "number" ? String(entry.value) : ""));
+  const [disqualify, setDisqualify] = useState<ScreeningQuestion[]>(() => (Array.isArray(current.disqualify) ? (current.disqualify as ScreeningQuestion[]) : []));
+  const [gateIncome, setGateIncome] = useState(() => dollars(current.income_limit_cents));
+  const [gateAssets, setGateAssets] = useState(() => dollars(current.assets_limit_cents));
   const meta = RULE_LABELS[entry.rule_key];
   const submit = async () => {
     setBusy(true);
@@ -76,6 +96,11 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
         const toCents = (s: string) => Math.round(Number(s) * 100);
         if (!Number.isFinite(toCents(income)) || !Number.isFinite(toCents(assets)) || toCents(income) <= 0 || toCents(assets) <= 0) throw new Error("Enter positive dollar amounts for income and assets.");
         value = { income_cents: toCents(income), assets_cents: toCents(assets), label: labelText.trim(), ...(source.trim() ? { source: source.trim() } : {}) };
+      } else if (entry.rule_key === "screening.admission_gate") {
+        const toCents = (s: string) => Math.round(Number(s) * 100);
+        if (disqualify.length === 0) throw new Error("Check at least one question that stops a case.");
+        if (!Number.isFinite(toCents(gateIncome)) || !Number.isFinite(toCents(gateAssets)) || toCents(gateIncome) <= 0 || toCents(gateAssets) <= 0) throw new Error("Enter positive dollar amounts for the income and asset limits.");
+        value = { disqualify, income_limit_cents: toCents(gateIncome), assets_limit_cents: toCents(gateAssets), ...(source.trim() ? { source: source.trim() } : {}) };
       } else {
         if (!/^\d+$/.test(days)) throw new Error("Enter a whole number of days.");
         value = Number(days);
@@ -129,7 +154,27 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
               <div className="space-y-2"><FormLabel htmlFor={`${id}-source`}>Source link</FormLabel><input id={`${id}-source`} className={fieldClass} value={source} onChange={(event) => setSource(event.target.value)} /></div>
             </>
           )}
-          {(entry.rule_key === "family_collection.max_days" || entry.rule_key === "renewal.warning_days") && (
+          {entry.rule_key === "screening.admission_gate" && (
+            <>
+              <fieldset className="space-y-2 sm:col-span-2">
+                <legend className="text-sm font-medium">A yes to these questions means the resident does not qualify now</legend>
+                {SCREENING_QUESTIONS.map((question) => (
+                  <label key={question} className="flex min-h-11 items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={disqualify.includes(question)}
+                      onChange={(event) => setDisqualify((list) => (event.target.checked ? [...list, question] : list.filter((q) => q !== question)))}
+                    />
+                    {QUESTION_SHORT[question]}
+                  </label>
+                ))}
+              </fieldset>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-gate-income`} required>Monthly income limit ($)</FormLabel><input id={`${id}-gate-income`} className={fieldClass} inputMode="decimal" value={gateIncome} onChange={(event) => setGateIncome(event.target.value)} /></div>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-gate-assets`} required>Countable asset limit ($)</FormLabel><input id={`${id}-gate-assets`} className={fieldClass} inputMode="decimal" value={gateAssets} onChange={(event) => setGateAssets(event.target.value)} /></div>
+              <div className="space-y-2 sm:col-span-2"><FormLabel htmlFor={`${id}-gate-source`}>Source</FormLabel><input id={`${id}-gate-source`} className={fieldClass} value={source} onChange={(event) => setSource(event.target.value)} /></div>
+            </>
+          )}
+          {(entry.rule_key === "family_collection.max_days" || entry.rule_key === "renewal.warning_days" || entry.rule_key === "screening.recheck_days") && (
             <div className="space-y-2"><FormLabel htmlFor={`${id}-days`} required>Days</FormLabel><input id={`${id}-days`} className={fieldClass} inputMode="numeric" value={days} onChange={(event) => setDays(event.target.value)} /></div>
           )}
           <div className="space-y-2"><FormLabel htmlFor={`${id}-from`} required>Takes effect on</FormLabel><input id={`${id}-from`} type="date" className={fieldClass} value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} /></div>
