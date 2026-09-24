@@ -28,6 +28,13 @@ State **mission alignment** (`pass` | `risk` | `fail`) with one sentence in ever
 | Agent registry / playbooks | `agents/registry.yaml`, `agents/playbooks/` |
 | Gate runner runbook | `docs/agent-gates-runbook.md` |
 | Frontend route contract | `docs/specs/FRONTEND-CONTRACT.md` |
+| Document intake (Jev, intake address, incoming email) | `docs/specs/DOCUMENT-INTAKE-DECISION.md`; deferred work → Linear COL-817, label `intake-deferred` |
+
+## Document intake (every session)
+
+Anything that touches **Jev**, the **company intake address** (`docs@circleoflifecommunities.com`), or **incoming email/scans/photos** follows `docs/specs/DOCUMENT-INTAKE-DECISION.md`. No purpose-specific or per-facility inboxes, no forwarding hop, no receiver built outside the shared engine (Cornerstone COL-806 first, Haven COL-771 after Homewood settles). In Haven, resident documents are Claude-only (never Jev) and never filed automatically.
+
+If your work needs intake that does not exist yet, **do not build it** — add a child issue under Linear **COL-817** with the label **`intake-deferred`**: module and repo; document type (Obligations Register row); who sends it and whether it carries resident health information; where it files and what done looks like; the current workaround. Name those issue IDs in your segment handoff.
 
 ## Commands
 
