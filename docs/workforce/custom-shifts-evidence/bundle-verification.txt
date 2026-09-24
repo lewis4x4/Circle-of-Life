@@ -1,0 +1,12 @@
+
+Bundle size snapshot:
+  Total JS: 22970.9 KB
+  chunks: 22969.4 KB
+  static_extras: 1.5 KB
+
+Total JS within budget (22970.9 KB vs 20932.0 KB limit).
+
+Route first-load JS (gzip):
+  /admin: 449.8 kB gzip (cap 450 kB, diagnostics/route-bundle-stats.json) ✓
+  /admin/executive: 441.5 kB gzip (cap 450 kB, diagnostics/route-bundle-stats.json) ✓
+Bundle size check passed.

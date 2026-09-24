@@ -1,0 +1,41 @@
+{
+  "checked_at": "2026-09-24T15:10:44.644Z",
+  "scope": "Synthetic local Supabase/route/shell adapters; actual Schedule component, Workforce context, and production CSS. Not hosted authentication, database, notification, or staff acceptance.",
+  "actual_component": "src/app/(admin)/schedules/[id]/page.tsx",
+  "screenshots": {
+    "desktop": {
+      "file": "schedule-desktop.png",
+      "viewport": "1440×1000",
+      "state": "Draft after a Custom overnight shift was saved"
+    },
+    "phone": {
+      "file": "schedule-phone.png",
+      "viewport": "390×844",
+      "state": "Published, read only"
+    }
+  },
+  "checks": [
+    "Real grid cycled Off → Day → Night → Custom → Off; cancel retained Night, equal times were rejected, overnight preview was accurate, and Off removed the no-op change.",
+    "Save submitted the configured shift ID to the fixture RPC; reload displayed its saved 06:00–18:00 times.",
+    "Custom times survived the save/reload path; editing reopened the stored times and cancel preserved them.",
+    "Publishing the synthetic week refreshed the actual component into read-only mode with edit/publish controls removed.",
+    "390px phone viewport kept page width contained while the seven-day table remained horizontally scrollable."
+  ],
+  "phone_layout": {
+    "pageWidth": 390,
+    "documentScrollWidth": 390,
+    "gridWidth": 353,
+    "gridScrollWidth": 1040
+  },
+  "page_errors": [],
+  "external_requests": [],
+  "accessibility": {
+    "standard": "WCAG 2 A/AA + 2.1 AA",
+    "desktop_violations": 0,
+    "phone_violations": 0,
+    "dialog_violations": 0,
+    "phone_dialog_violations": 0,
+    "violations": []
+  },
+  "production_mutations": false
+}
