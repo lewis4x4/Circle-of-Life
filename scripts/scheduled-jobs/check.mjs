@@ -56,7 +56,9 @@ try {
   if (!args.has('--secrets-only')) {
     const timezone=await sql("select coalesce(current_setting('cron.timezone',true),'GMT') timezone");
     if (!['GMT','UTC','Etc/UTC'].includes(timezone[0]?.timezone)) throw new Error('Monitor requires UTC cron timezone');
-    const collect=async()=>{
+    // rechecked: jobids held on the previous pass, stamped before the policy so urgent jobs
+    // still failing after their re-check page this run instead of waiting out the hold.
+    const collect=async(rechecked=new Set())=>{
       await sql('select job_monitor.collect()');
       const records=await sql(`select coalesce(j.jobid,m.jobid) jobid,m.installed_at,
       coalesce(j.jobname,m.jobname) jobname,j.jobid is null removed,
@@ -69,7 +71,10 @@ try {
         from cron.job_run_details where jobid=coalesce(j.jobid,m.jobid) order by start_time desc limit 100) r),'[]') cron_runs
       from cron.job j full outer join job_monitor.jobs m on m.jobid=j.jobid`);
       const now=new Date();
-      return records.map(record=>applyAlertPolicy(assessJob({...record,...jobs.find(j=>j.jobid===record.jobid)},now),now));
+      return records.map(record=>{
+        const outcome=assessJob({...record,...jobs.find(j=>j.jobid===record.jobid)},now);
+        return applyAlertPolicy(rechecked.has(outcome.jobid) ? {...outcome,rechecked:true} : outcome,now);
+      });
     };
     outcomes=await collect();
     // Retry once: a transient failure still inside its hold is re-collected after a short
@@ -77,7 +82,7 @@ try {
     for (let attempt=0; attempt<ALERT_POLICY.recheckRetries && outcomes.some(o=>o.held); attempt++) {
       const held=new Set(outcomes.filter(o=>o.held).map(o=>o.jobid));
       await new Promise(resolve=>setTimeout(resolve,recheckDelay));
-      outcomes=(await collect()).map(o=>held.has(o.jobid) ? {...o,rechecked:true} : o);
+      outcomes=await collect(held);
     }
     report.jobs=outcomes;
     // Quiet log: held transient failures appear here and in report.jobs, never as alerts.

@@ -121,3 +121,19 @@ test('assessments report the last success time',()=>{
   assert.equal(assessJob({...job,runs},now).last_success_at,'2026-09-14T12:00:01Z');
   assert.equal(assessJob({...job,runs:[{...run,outcome:'error'}]},now).last_success_at,null);
 });
+
+test('urgent jobs skip the transient hold only after a failed re-check', () => {
+  const now=new Date('2026-09-14T12:45:00Z');
+  const blip={state:'error',alert:true,http_status:503,consecutive_failures:1,requested_at:'2026-09-14T12:44:00Z'};
+  // First pass: urgent or not, a single transient failure is held for the re-check.
+  assert.equal(applyAlertPolicy({...blip,jobname:'emar-missed-dose-check'},now).held,true);
+  const urgent=applyAlertPolicy({...blip,jobname:'emar-missed-dose-check',rechecked:true},now);
+  assert.equal(urgent.severity,'alert');
+  assert.equal(urgent.alert,true);
+  assert.equal(urgent.held,undefined);
+  assert.equal(urgent.alert_reason,'Urgent job still failing after re-check');
+  // Non-urgent jobs keep the hold after the re-check.
+  const routine=applyAlertPolicy({...blip,jobname:'ar-aging-check',rechecked:true},now);
+  assert.equal(routine.held,true);
+  assert.equal(routine.alert,false);
+});

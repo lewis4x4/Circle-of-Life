@@ -7,13 +7,14 @@ import { fileURLToPath } from 'node:url';
 // process; neither Supabase nor Linear is contacted.
 // Modes: persistent (two failed runs in a row), blip_recovers (one 5xx, then a success
 // by the re-check), blip_held (one 5xx that is still failing on the re-check).
-function runFixture(mode, args = ['--send-linear'], envOverrides = {}) {
+// jobname drives urgency (URGENT_JOBS); endpoint and vault mocks stay on ar-aging-check.
+function runFixture(mode, args = ['--send-linear'], envOverrides = {}, jobname = 'fixture') {
   const preload = `
     const mode=${JSON.stringify(mode)};
     let collections=0;
     const at=ms=>new Date(Date.now()-ms).toISOString();
     const failed=(id,ms)=>({request_id:id,requested_at:at(ms),outcome:'error',http_status:503,governance_refusal:false});
-    const job={jobid:1,jobname:'fixture',endpoint:'ar-aging-check',active:true,schedule:'* * * * *',
+    const job={jobid:1,jobname:${JSON.stringify(jobname)},endpoint:'ar-aging-check',active:true,schedule:'* * * * *',
       vault_names:['ar_aging_check_secret'],target_project_ref:'abcdefghijklmnopqrst'};
     const reply=data=>({ok:true,status:200,json:async()=>data});
     globalThis.fetch=async(url,options={})=>{
@@ -108,6 +109,35 @@ test('a single 5xx still failing on the re-check is held quietly inside the hold
   assert.equal(report.held.length, 1);
   assert.equal(report.held[0].jobname, 'fixture');
   assert.equal(report.jobs[0].severity, 'quiet');
+});
+
+test('an urgent job still failing after the re-check alerts Urgent on the first run', () => {
+  const result = runFixture('blip_held', ['--send-linear'], {}, 'emar-missed-dose-check');
+  assert.equal(result.status, 2, result.stderr);
+  assert.equal(result.stderr.match(/TEST_COLLECT /g).length, 2);
+  assert.equal(result.stderr.match(/TEST_LINEAR_CREATE /g).length, 1);
+  assert.ok(result.stderr.includes('TEST_LINEAR_CREATE Scheduled job alert: emar-missed-dose-check priority=1'));
+  const body = JSON.parse(result.stderr.match(/TEST_LINEAR_BODY (.*)/)[1]);
+  assert.match(body, /- Alerting because: Urgent job still failing after re-check/);
+  assert.match(body, /- Consecutive failures: 1/);
+  const report = JSON.parse(result.stdout);
+  assert.deepEqual(report.linear.created, ['COL-901']);
+  assert.deepEqual(report.held, []);
+  assert.equal(report.jobs[0].severity, 'alert');
+  assert.equal(report.jobs[0].alert_reason, 'Urgent job still failing after re-check');
+  assert.equal(report.jobs[0].held, undefined);
+  assert.equal(report.jobs[0].hold_until, undefined);
+});
+
+test('an urgent job that recovers on the re-check stays quiet and opens no issue', () => {
+  const result = runFixture('blip_recovers', ['--send-linear'], {}, 'resident-safety-sweep');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stderr.match(/TEST_COLLECT /g).length, 2);
+  assert.ok(!result.stderr.includes('TEST_LINEAR_CREATE'));
+  const report = JSON.parse(result.stdout);
+  assert.deepEqual(report.linear.created, []);
+  assert.equal(report.jobs[0].state, 'success');
+  assert.equal(report.jobs[0].rechecked, true);
 });
 
 test('no alert destination configured fails the run loudly, even with nothing to alert', () => {
