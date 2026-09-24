@@ -29,6 +29,7 @@ import {
   type ScopeStaff,
 } from "@/lib/staff/certification-scope";
 import { createClient } from "@/lib/supabase/client";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
@@ -44,12 +45,6 @@ export type CredentialScope = Omit<CertificationScopeSummary, "evaluations">;
 type QueryError = { message: string };
 type CountResult = { count: number | null; error: QueryError | null };
 type ListResult<T> = { data: T[] | null; error: QueryError | null };
-
-function requireCount(res: CountResult): number {
-  if (res.error) throw res.error;
-  if (typeof res.count !== "number") throw new Error("Count was not returned");
-  return res.count;
-}
 
 const PAGE = 1000;
 
@@ -127,7 +122,7 @@ export async function fetchStaffingCoverageScope(
     expiredRequiredCertIds: summary.expiredRequiredCertIds,
     expiredOnFile: summary.expiredOnFile,
   };
-  return { shiftsInWindow: requireCount(shiftsRes), credentials };
+  return { shiftsInWindow: requireHeadCount(shiftsRes, "Shifts in the window"), credentials };
 }
 
 export type ShiftGapPanelCopy = {
