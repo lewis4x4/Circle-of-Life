@@ -120,7 +120,7 @@ RESET ROLE;
 UPDATE storage.objects SET version='v1' WHERE id=(SELECT id FROM bo);
 -- Operating rules: readable by any benefits actor, changed only by owners/org admins, validated, never back-dated.
 SELECT pg_temp.blogin('owner'); SET LOCAL ROLE authenticated;
-SELECT pg_temp.bassert(jsonb_array_length(public.benefits_rules_list()->'rules')=8,'rules list incomplete');
+SELECT pg_temp.bassert(jsonb_array_length(public.benefits_rules_list()->'rules')=9,'rules list incomplete');
 SELECT pg_temp.bassert((SELECT jsonb_array_length(value->'value') FROM jsonb_array_elements(public.benefits_rules_list()->'rules') WHERE value->>'rule_key'='checklist.smmc_ltc')=18,'default checklist not exposed');
 SELECT pg_temp.berror($q$SELECT public.benefits_rule_set('{"rule_key":"family_collection.max_days","value":400,"effective_from":"2026-09-22","reason":"too long"}')$q$,'22023');
 SELECT pg_temp.berror($q$SELECT public.benefits_rule_set(jsonb_build_object('rule_key','renewal.warning_days','value',30,'effective_from',(current_date-1)::text,'reason','back-dated'))$q$,'22023');

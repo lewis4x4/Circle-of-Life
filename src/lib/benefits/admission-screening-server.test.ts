@@ -96,3 +96,18 @@ describe("sweep API", () => {
     expect((await getBenefitsSweep(new Request(`http://localhost/api/admin/benefits/sweep?facility_id=${facilityId}`))).status).toBe(503);
   });
 });
+
+describe("prompts API", () => {
+  it("refuses unknown prompt kinds and out-of-range set-aside periods before mutation", async () => {
+    const { startPromptCase, dismissPrompt } = await import("./server");
+    expect((await startPromptCase(post({ request_id: requestId, resident_id: residentId, kind: "vibes" }))).status).toBe(400);
+    expect((await dismissPrompt(post({ request_id: requestId, resident_id: residentId, kind: "runway", days: 365, reason: "x" }))).status).toBe(400);
+    expect((await dismissPrompt(post({ request_id: requestId, resident_id: residentId, kind: "runway", days: 30, reason: " " }))).status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("treats an unverifiable prompt list as an error", async () => {
+    const { getMedicaidPrompts } = await import("./server");
+    mocks.rpc.mockResolvedValue({ data: { as_of: "2026-09-24", runway: [] }, error: null });
+    expect((await getMedicaidPrompts(new Request("http://localhost/api/admin/benefits/prompts"))).status).toBe(503);
+  });
+});

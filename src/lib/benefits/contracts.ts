@@ -62,7 +62,7 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("void_document"), payload: z.object({ document_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict() }).strict(),
 ]);
-export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days"] as const;
+export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days"] as const;
 export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
 export const checklistRuleSchema = z.array(z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(BENEFITS_STAGES), signature_status: z.enum(["not_required", "pending"]).default("not_required") }).strict()).max(60);
 export const screeningStandardSchema = z.object({ income_cents: z.number().int().min(1).max(99_999_999), assets_cents: z.number().int().min(1).max(9_999_999_999), label: z.string().trim().min(1).max(200), source: z.string().max(500).optional() }).strict();
@@ -86,6 +86,7 @@ export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("renewal.warning_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("screening.admission_gate"), value: admissionGateSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("screening.recheck_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("runway.lead_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
 ]);
 export const SCREENING_COVERAGE = ["unknown", "none", "private_pay", "medicaid_mma", "application_pending", "smmc_ltc_enrolled"] as const;
 export const SCREENING_RESULTS = ["candidate", "not_qualified_now", "needs_answers", "already_enrolled"] as const;
@@ -118,6 +119,13 @@ export interface RecheckList { as_of: string; rechecks: RecheckRow[] }
 export const startSweepSchema = z.object({ request_id: uuid, facility_id: uuid, note: z.string().trim().max(2000).nullable().optional() }).strict();
 export interface SweepFacility { facility_id: string; facility_name: string; started_at: string | null; started_by_name: string | null; can_write: boolean; total: number; answered: number; remaining: Array<{ resident_id: string; resident_name: string; status: string }> | null }
 export interface SweepStatus { can_start: boolean; facilities: SweepFacility[] }
+export const PROMPT_KINDS = ["runway", "late_payments"] as const;
+export type PromptKind = typeof PROMPT_KINDS[number];
+export const startPromptCaseSchema = z.object({ request_id: uuid, resident_id: uuid, kind: z.enum(PROMPT_KINDS) }).strict();
+export const dismissPromptSchema = z.object({ request_id: uuid, resident_id: uuid, kind: z.enum(PROMPT_KINDS), days: z.number().int().min(1).max(180), reason: z.string().trim().min(1).max(2000) }).strict();
+export interface RunwayPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; runway_date: string; days_left: number; last_result: ScreeningResult; can_write: boolean }
+export interface LatePaymentPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; oldest_due: string; owed_cents: number; can_write: boolean }
+export interface MedicaidPrompts { as_of: string; late_signal: Array<{ facility_id: string; facility_name: string; live: boolean }>; runway: RunwayPrompt[]; late_payments: LatePaymentPrompt[] }
 export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }
 export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
 export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }
