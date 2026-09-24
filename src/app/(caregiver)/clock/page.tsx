@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Clock3, Loader2, LogIn, LogOut } from "lucide-react";
@@ -211,7 +212,7 @@ export default function CaregiverClockPage() {
             <div className="space-y-6 mt-4">
               {openPunch ? (
                 <div className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-[11px] uppercase tracking-wider font-mono text-emerald-300 font-bold w-fit mx-auto shadow-[inset_0_1px_10px_rgba(16,185,129,0.1)]">
-                  Clocked in at {new Date(openPunch.clock_in).toLocaleTimeString()}
+                  Clocked in at {formatDisplayTime(openPunch.clock_in)}
                 </div>
               ) : (
                 <div className="rounded-full border border-white/10 bg-black/40 px-5 py-3 text-[11px] uppercase tracking-wider font-mono text-muted-foreground font-bold w-fit mx-auto shadow-inner">

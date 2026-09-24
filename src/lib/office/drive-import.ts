@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type BatchStatus = "mapping" | "importing" | "complete" | "archived";
 
 export type ImportDestination =
@@ -56,7 +57,7 @@ export type ParsedManifestRow = {
 };
 
 export function destinationLabel(id: string): string {
-  return IMPORT_DESTINATIONS.find((d) => d.id === id)?.label ?? id.replace(/_/g, " ");
+  return IMPORT_DESTINATIONS.find((d) => d.id === id)?.label ?? enumLabel(id);
 }
 
 export function importStatusTone(

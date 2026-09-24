@@ -4,6 +4,7 @@
  */
 
 import { format, parseISO } from "date-fns";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const INSURANCE_RENEWAL_NO_DATE_COPY = "No date posted";
 
@@ -36,7 +37,7 @@ export function insuranceRenewalSubject(row: InsuranceRenewalSubject): string {
 
   const line = policy.policy_type?.trim();
   const head = line
-    ? `${line.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())} — ${number}`
+    ? `${enumLabel(line)} — ${number}`
     : number;
 
   const carrier = policy.carrier_name?.trim();

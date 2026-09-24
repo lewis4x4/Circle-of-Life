@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, ChevronLeft, ChevronRight, FileText, Filter, ShieldCheck, Building2 } from "lucide-react";
@@ -241,7 +242,7 @@ export function OperationsTaskRangePage({
                 <p>Assigned to: {task.assigned_to_name || "Unassigned"}</p>
                 <p>
                   {task.estimated_minutes ?? 0}m
-                  {task.due_at ? ` · Due ${new Date(task.due_at).toLocaleString()}` : " · Schedule needs confirmation"}
+                  {task.due_at ? ` · Due ${formatDisplayDateTime(task.due_at)}` : " · Schedule needs confirmation"}
                 </p>
                 {task.due_judgment === "overdue" && (
                   <p className="font-medium text-red-700">Overdue by {task.days_overdue} day{task.days_overdue === 1 ? "" : "s"}</p>

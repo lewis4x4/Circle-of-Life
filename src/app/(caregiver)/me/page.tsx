@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { enumLabel } from "@/lib/display/enum-label";
 import { formatStaffRoleLabel } from "@/lib/staff/load-staff";
 import { formatPersonName } from "@/lib/format/datetime";
+import { REQUIRED_READING_POLICIES_HREF } from "@/lib/caregiver/required-reading";
 
 type ProfileRow = Pick<Database["public"]["Tables"]["user_profiles"]["Row"], "app_role">;
 type StaffMini = Pick<
@@ -185,6 +186,22 @@ export default function CaregiverMePage() {
          </div>
       </div>
 
+      {/* "My employee file" and Required reading live under Me in every staff app (COL-714). */}
+      <nav aria-label="My records" className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/employee-file"
+          className="tap-responsive inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground"
+        >
+          My employee file
+        </Link>
+        <Link
+          href="/caregiver/acknowledgments"
+          className="tap-responsive inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground"
+        >
+          Required reading
+        </Link>
+      </nav>
+
       {pendingPolicyCount > 0 ? (
         <div className="p-8 rounded-lg border border-amber-500/30 shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-2 bg-amber-500"></div>
@@ -195,7 +212,7 @@ export default function CaregiverMePage() {
              </p>
           </div>
           <Link
-            href="/caregiver/policies"
+            href={REQUIRED_READING_POLICIES_HREF}
             className="shrink-0 inline-flex items-center justify-center h-14 px-8 rounded-full font-mono uppercase tracking-wider text-[11px] w-full md:w-auto shadow-[0_4px_20px_rgba(217,119,6,0.15)] transition-all hover:scale-[1.02] border-0 text-amber-950 font-bold bg-amber-400 hover:bg-amber-300 tap-responsive"
           >
             Review policies

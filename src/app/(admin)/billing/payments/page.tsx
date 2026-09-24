@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -43,9 +44,7 @@ type ResidentMini = { id: string; first_name: string | null; last_name: string |
 type QueryListResult<T> = { data: T[] | null; error: { message: string } | null };
 
 function formatDate(iso: string): string {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(iso.slice(0, 10), { fallback: iso });
 }
 
 export default function AdminBillingPaymentsIndexPage() {

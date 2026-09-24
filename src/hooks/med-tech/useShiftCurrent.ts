@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { MedPassItem } from "@/components/med-tech/PassCard";
@@ -86,7 +87,7 @@ function mapTapeKind(eventType: string): TapeEvent["kind"] {
 }
 
 function fmtTime(ts: string): string {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  return formatDateTimeWith(ts, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function elapsed(clockedIn: string | null): string {

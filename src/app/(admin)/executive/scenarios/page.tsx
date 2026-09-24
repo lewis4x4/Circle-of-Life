@@ -160,7 +160,7 @@ export default function ExecutiveScenariosPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full">
+    <div className="relative w-full">
       <></>
 
       <div className="relative z-10">

@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 import type { ExecutiveAlertRow } from "@/lib/exec-alerts";
+import { loadRiskScoreBands } from "@/lib/operating-rules/operating-rules";
+import type { RiskScoreBands } from "@/lib/operating-rules/risk-bands";
 
 export type RiskDriver = {
   key: string;
@@ -57,6 +59,8 @@ export type RiskPageSnapshot = {
   recentDeliveries: Array<RiskDeliveryRow & { facilityName: string }>;
   openAlerts: ExecutiveAlertRow[];
   smsSent24h: number;
+  /** The `risk.score_bands` operating rule in force (COL-710); null when it could not be read. */
+  scoreBands: RiskScoreBands | null;
 };
 
 export async function loadRiskCommandData(
@@ -109,11 +113,12 @@ export async function loadRiskCommandData(
     alertQuery = alertQuery.eq("facility_id", facilityId);
   }
 
-  const [facilityRes, snapshotRes, deliveryRes, alertRes] = await Promise.all([
+  const [facilityRes, snapshotRes, deliveryRes, alertRes, scoreBands] = await Promise.all([
     facilityQuery,
     snapshotQuery,
     deliveryQuery,
     alertQuery,
+    loadRiskScoreBands(supabase as unknown as SupabaseClient, { organizationId, facilityId }),
   ]);
 
   if (facilityRes.error) throw facilityRes.error;
@@ -157,5 +162,6 @@ export async function loadRiskCommandData(
     recentDeliveries,
     openAlerts: (alertRes.data ?? []) as ExecutiveAlertRow[],
     smsSent24h,
+    scoreBands,
   };
 }

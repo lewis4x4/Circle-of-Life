@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { addFacilityCalendarDays, facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const CRLF = "\r\n";
 const TZ = "America/New_York";
@@ -174,7 +175,7 @@ export async function fetchMasterCalendarEvents(
       date: r.appointment_date,
       time: r.appointment_time,
       title: `${resident} — ${r.destination_name}`,
-      detail: `${r.purpose.replace(/_/g, " ")} · ${r.status.replace(/_/g, " ")}`,
+      detail: `${enumLabel(r.purpose, { case: "lower" })} · ${enumLabel(r.status, { case: "lower" })}`,
       href: `/admin/transportation/requests/${r.id}`,
     });
   }
@@ -188,7 +189,7 @@ export async function fetchMasterCalendarEvents(
       date: dateIso,
       time: etTime(r.scheduled_at),
       title: r.title,
-      detail: r.status.replace(/_/g, " "),
+      detail: enumLabel(r.status, { case: "lower" }),
       href: `/admin/meetings/${r.id}`,
     });
   }
@@ -212,7 +213,7 @@ export async function fetchMasterCalendarEvents(
       date: r.next_due_date,
       time: null,
       title: r.title,
-      detail: `${r.checklist_type.replace(/_/g, " ")} due`,
+      detail: `${enumLabel(r.checklist_type, { case: "lower" })} due`,
       href: null,
     });
   }
@@ -235,8 +236,8 @@ export async function fetchMasterCalendarEvents(
       layer: "surveys",
       date: r.survey_date,
       time: null,
-      title: `${r.survey_type.replace(/_/g, " ")} survey`,
-      detail: r.result.replace(/_/g, " "),
+      title: `${enumLabel(r.survey_type, { case: "lower" })} survey`,
+      detail: enumLabel(r.result, { case: "lower" }),
       href: null,
     });
   }

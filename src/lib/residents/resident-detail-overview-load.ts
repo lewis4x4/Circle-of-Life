@@ -1,3 +1,4 @@
+import { formatShortDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { headCountOrNull } from "@/lib/metrics/require-head-count";
@@ -32,6 +33,7 @@ import {
 import { responsiblePartyContact } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type Acuity = 1 | 2 | 3;
 export type { ResidencyStatus };
@@ -357,14 +359,7 @@ function truncateSnippet(text: string, max: number): string {
 }
 
 function formatLogTime(iso: string): string {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
+  return formatShortDateTime(iso, { fallback: iso });
 }
 
 function computeAgeYears(dateOfBirth: string | null, now: Date = new Date()): number | null {
@@ -389,7 +384,7 @@ const BEHAVIOR_TYPE_LABELS: Record<string, string> = {
 };
 
 function behaviorTypeLabel(value: string): string {
-  return BEHAVIOR_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
+  return BEHAVIOR_TYPE_LABELS[value] ?? enumLabel(value);
 }
 
 const CONDITION_TYPE_LABELS: Record<string, string> = {
@@ -405,7 +400,7 @@ const CONDITION_TYPE_LABELS: Record<string, string> = {
 };
 
 function conditionChangeTypeLabel(value: string): string {
-  return CONDITION_TYPE_LABELS[value] ?? value.replace(/_/g, " ");
+  return CONDITION_TYPE_LABELS[value] ?? enumLabel(value);
 }
 
 export async function loadResidentOverviewDetail(

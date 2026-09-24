@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Printer, RefreshCw } from "lucide-react";
@@ -15,7 +16,6 @@ import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
   fetchPreviousPublishedStandupSnapshotDetail,
-  saveStandupBoardReport,
   fetchStandupSnapshotDetail,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
@@ -32,13 +32,12 @@ import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
-  const { user, organizationId, loading: authLoading } = useHavenAuth();
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const week = typeof params?.week === "string" ? params.week : "";
@@ -109,30 +108,6 @@ export default function ExecutiveStandupBoardPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
-  async function onSaveBoardReport() {
-    if (!detail || !organizationId || !user?.id) {
-      setActionError("Sign in required.");
-      return;
-    }
-    setSavingBoardReport(true);
-    setActionError(null);
-    try {
-      await saveStandupBoardReport(supabase, {
-        organizationId,
-        userId: user.id,
-        weekOf: detail.snapshot.weekOf,
-        status: detail.snapshot.status,
-        confidenceBand: detail.snapshot.confidenceBand,
-        version: detail.snapshot.publishedVersion,
-        publishedAt: detail.snapshot.publishedAt,
-        completenessPct: detail.snapshot.completenessPct,
-      });
-    } catch (saveError) {
-      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
-    } finally {
-      setSavingBoardReport(false);
-    }
-  }
 
   async function onDownloadPdf() {
     if (!detail) return;
@@ -173,9 +148,6 @@ export default function ExecutiveStandupBoardPage() {
                 </Button>
                 <Button type="button" variant="outline" onClick={onExportBoardPacket} disabled={exportDisabled} title={noPacketReason ?? undefined}>
                   Export HTML packet
-                </Button>
-                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={exportDisabled || savingBoardReport} title={noPacketReason ?? undefined}>
-                  {savingBoardReport ? "Saving…" : "Save in executive reports"}
                 </Button>
                 {noPacketReason ? <p className="w-full text-xs text-muted-foreground">{noPacketReason}</p> : null}
               </div>
@@ -247,12 +219,12 @@ export default function ExecutiveStandupBoardPage() {
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Prepared</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{formatDisplayDateTime(detail.snapshot.generatedAt)}</div>
                   </div>
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Published</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? formatDisplayDateTime(detail.snapshot.publishedAt) : "Not yet"}</div>
                     <div className="mt-2 tabular-nums text-muted-foreground">Version {detail.snapshot.publishedVersion}</div>
                   </div>
                 </div>

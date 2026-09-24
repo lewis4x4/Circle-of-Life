@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -5,6 +6,7 @@ import {
   FAMILY_CARE_PLAN_RESIDENT_NAME_FALLBACK,
 } from "@/lib/family/family-portal-copy";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type FamilyCarePlanItemRow = {
   id: string;
@@ -52,24 +54,16 @@ function formatMediumDate(ymd: string | null | undefined): string {
   if (!ymd?.trim()) return FAMILY_CARE_PLAN_NOT_POSTED;
   const d = new Date(`${ymd}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return FAMILY_CARE_PLAN_NOT_POSTED;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(d);
 }
 
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso?.trim()) return FAMILY_CARE_PLAN_NOT_POSTED;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return FAMILY_CARE_PLAN_NOT_POSTED;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatDisplayDateTime(iso, { fallback: FAMILY_CARE_PLAN_NOT_POSTED });
 }
 
 function statusLabel(s: Database["public"]["Enums"]["care_plan_status"]): string {
-  return s.replace(/_/g, " ");
+  return enumLabel(s);
 }
 
 function categoryLabel(c: Database["public"]["Enums"]["care_plan_item_category"]): string {
@@ -90,7 +84,7 @@ function categoryLabel(c: Database["public"]["Enums"]["care_plan_item_category"]
     pain_management: "Pain management",
     other: "Other care areas",
   };
-  return map[c] ?? c.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  return map[c] ?? enumLabel(c, { case: "title" });
 }
 
 const STATUS_RANK: Record<Database["public"]["Enums"]["care_plan_status"], number> = {

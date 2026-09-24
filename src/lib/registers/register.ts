@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * The admission and discharge register.
  *
@@ -78,7 +79,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function residentStatusLabel(status: string | null): string {
   if (!status) return "";
-  return STATUS_LABELS[status] ?? status.replace(/_/g, " ");
+  return STATUS_LABELS[status] ?? enumLabel(status);
 }
 
 export function isBedHoldEvent(event: RegisterEventType): boolean {

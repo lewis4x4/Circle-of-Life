@@ -142,7 +142,7 @@ describe("load-invoices", () => {
 
     const rows = await fetchInvoicesFromSupabase(null, null, supabase as never);
 
-    expect(rows[0]?.invoiceNumber).toBe("Invoice Aug 2026 · …00a1");
+    expect(rows[0]?.invoiceNumber).toBe("Invoice Aug 2026");
     expect(rows[0]?.invoiceNumber).not.toContain("00000000-2026-08");
     expect(rows[0]?.amountDueCents).toBe(0);
     expect(rows[0]?.totalCents).toBe(0);

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -132,9 +133,8 @@ function residentHrefSet(id: string, workspace: ResidentOverviewWorkspace): Resi
 
 function isoDayLabel(iso: string | null): string | null {
   if (!iso) return null;
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T12:00:00`) : new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  const label = formatDisplayDate(iso, { fallback: "" });
+  return label || null;
 }
 
 /** "Verified Sep 1, 2026 by Jane Doe" or null when no verification is recorded. */

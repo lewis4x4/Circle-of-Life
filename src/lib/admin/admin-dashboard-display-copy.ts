@@ -2,6 +2,8 @@
  * Quiet Operator copy for admin dashboard resident census cards.
  * Missing DOB names a real gap — never fabricate dates or show a silent em dash.
  */
+import { formatDateTimeWith } from "@/lib/format/datetime";
+
 
 export const ADMIN_DASHBOARD_NO_DATE_COPY = "No date posted";
 
@@ -65,7 +67,5 @@ export function formatAdminDashboardRelativeShort(
   if (diffMin < 60) return `${diffMin} min ago`;
   const diffHr = Math.round(diffMin / 60);
   if (diffHr < 48) return `${diffHr} hr ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
-    new Date(trimmed),
-  );
+  return formatDateTimeWith(trimmed, { month: "short", day: "numeric" });
 }

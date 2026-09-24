@@ -53,7 +53,7 @@ export function IncidentFormSheet({ packet }: { packet: CareEventPrintPacket }) 
   const admin = card.admin;
   const incident = card.incident;
 
-  const residentName = resident ? [resident.lastName, resident.firstName].filter(Boolean).join(", ") : null;
+  const residentName = resident ? [resident.firstName, resident.lastName].filter(Boolean).join(" ") : null;
   const chips = admin.correctiveActions;
 
   return (

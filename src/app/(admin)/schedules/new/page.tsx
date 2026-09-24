@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -114,7 +115,7 @@ export default function AdminNewScheduleWeekPage() {
       if (ins.error) {
         if (ins.error.code === "23505") {
           setError(
-            `A draft or published schedule for the week starting ${weekStart} already exists for this facility.`,
+            `A draft or published schedule for the week starting ${formatDisplayDate(weekStart)} already exists for this facility.`,
           );
           return;
         }

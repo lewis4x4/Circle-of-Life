@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime, formatProfileName } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -147,7 +148,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
         ((residentsResult.data ?? []) as ResidentMini[]).map((row) => [row.id, row]),
       );
       const assigneeById = new Map(
-        ((assigneesResult.data ?? []) as ProfileMini[]).map((row) => [row.id, row.full_name?.trim() || "Assigned"]),
+        ((assigneesResult.data ?? []) as ProfileMini[]).map((row) => [row.id, formatProfileName(row.full_name, { fallback: "Assigned" })]),
       );
 
       setRows(
@@ -592,7 +593,7 @@ export default function AdminIncidentOverdueFollowupsPage() {
                   <div>
                     <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Due</div>
                     <div className="mt-1 text-foreground">
-                      {new Date(row.dueAt).toLocaleString()}
+                      {formatDisplayDateTime(row.dueAt)}
                     </div>
                   </div>
                   <div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { FacilitySurveyVisitHeaderActions } from "./FacilitySurveyVisitHeaderActions";
@@ -10,6 +10,9 @@ import {
   SURVEY_VISIT_CONTEXT_ARIA_LABEL,
   SURVEY_VISIT_FACILITY_HEADER_LABEL,
 } from "@/lib/compliance/survey-visit-header-copy";
+
+const push = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn(), replace: vi.fn() }) }));
 
 const ANON_FACILITY_ID = "00000000-0000-0000-0000-000000000099";
 
@@ -49,7 +52,7 @@ describe("SurveyVisitShellToggle", () => {
   it("keeps the idle accessible name while survey visit context hydrates", () => {
     renderShellToggle(makeSurvey({ loading: true }));
 
-    expect(screen.getByRole("button", { name: SURVEY_VISIT_CONTEXT_ARIA_LABEL })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: SURVEY_VISIT_CONTEXT_ARIA_LABEL })).toHaveAttribute("href", "/admin/compliance/survey-pack");
     expect(screen.queryByRole("button", { name: /loading/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
   });
@@ -73,6 +76,21 @@ describe("SurveyVisitShellToggle", () => {
     );
 
     expect(screen.getByRole("button", { name: "End" })).toBeInTheDocument();
+  });
+
+  it("opens the survey pack once a survey visit starts, and not when it fails (COL-707)", async () => {
+    push.mockClear();
+    const ok = vi.fn().mockResolvedValue(true);
+    const { unmount } = renderShellToggle(makeSurvey({ activateSession: ok }));
+    fireEvent.click(screen.getByRole("button", { name: "Survey" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/admin/compliance/survey-pack"));
+    unmount();
+
+    push.mockClear();
+    renderShellToggle(makeSurvey({ activateSession: vi.fn().mockResolvedValue(false) }));
+    fireEvent.click(screen.getByRole("button", { name: "Survey" }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(push).not.toHaveBeenCalled();
   });
 });
 

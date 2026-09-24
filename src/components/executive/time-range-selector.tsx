@@ -10,6 +10,7 @@
  * bg-primary active state, no glass/blur. Motion uses micro-duration tier.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useState } from "react";
 import { Calendar, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -264,17 +265,9 @@ export function getDateRange(
  * Format date range for display
  */
 export function formatDateRange(startDate: Date, endDate: Date): string {
-  const options: Intl.DateTimeFormatOptions = {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  };
-
-  if (startDate.toDateString() === endDate.toDateString()) {
-    return startDate.toLocaleDateString("en-US", options);
-  }
-
-  return `${startDate.toLocaleDateString("en-US", options)} - ${endDate.toLocaleDateString("en-US", options)}`;
+  const start = formatDisplayDate(startDate);
+  const end = formatDisplayDate(endDate);
+  return start === end ? start : `${start} - ${end}`;
 }
 
 export default TimeRangeSelector;

@@ -145,7 +145,7 @@ function onboardingLinks(residentId: string | null) {
     { label: "Care plan workspace", href: `/admin/residents/${residentId}/care-plan` },
     { label: "Medication setup", href: `/admin/residents/${residentId}/medications` },
     { label: "Resident billing", href: `/admin/residents/${residentId}/billing` },
-    { label: "Family coordination", href: "/admin/family-messages" },
+    { label: "Family coordination", href: "/admin/family-portal?tab=notes" },
   ];
 }
 
@@ -499,7 +499,7 @@ export default function AdminAdmissionCaseDetailPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       {row && <div className="space-y-2 rounded border border-border p-4"><h2 className="font-semibold">Confirm actual arrival</h2><p>Ready for move-in and arrival are separate steps. This activates the resident census and records bed occupancy after readiness checks pass.</p><label>Actual arrival date<input type="date" value={arrivalDate} onChange={(e)=>setArrivalDate(e.target.value)} className="ml-3 rounded border p-2" /></label><Button disabled={!arrivalDate} onClick={()=>void confirmArrival()}>Confirm arrival</Button>{arrivalMessage&&<p role="status">{arrivalMessage}</p>}</div>}
       <></>
       

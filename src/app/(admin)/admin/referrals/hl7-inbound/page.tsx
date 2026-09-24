@@ -493,7 +493,7 @@ export default function AdminReferralsHl7InboundPage() {
   const selectedBulkCount = selectedIds.size;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <TooltipProvider delay={280}>
         <div className="relative z-10 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <PageHeader

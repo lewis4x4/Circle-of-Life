@@ -267,16 +267,6 @@ export function OfficerLinkOutPanel({
   );
 }
 
-/** Quiet note when a role board exposes fewer pills than the full nav catalog. */
-export function OfficerLiveViewsNotice({ count }: { count: number }) {
-  const label = count === 1 ? "view" : "views";
-  return (
-    <p className="text-[12px] text-muted-foreground" data-testid="officer-live-views-notice">
-      {count} live {label} on this board
-    </p>
-  );
-}
-
 /** id → name map for resolving an alert's facility. */
 export function useFacilityNameMap(facilities: Array<{ id: string; name: string }>): Map<string, string> {
   return useMemo(() => {

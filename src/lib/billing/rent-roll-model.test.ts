@@ -145,7 +145,8 @@ describe("buildRentRoll", () => {
     expect(roll.rows).toHaveLength(1);
     const row = roll.rows[0];
     expect(row).toMatchObject({
-      residentName: "Baker, Jimmie",
+      residentName: "Jimmie Baker",
+      residentSheetName: "Baker, Jimmie",
       roomLabel: "7B",
       contractedCents: 300900,
       privateShareCents: 140900,
@@ -317,11 +318,11 @@ describe("buildRentRoll", () => {
       invoices: [],
     });
     const byName = Object.fromEntries(roll.rows.map((r) => [r.residentName, r.flags]));
-    expect(byName["Byrd, Jimmie"]).toContain("Moved in Sep 14");
-    expect(byName["Shepherd, Jimmie"]).toContain("Moved out Sep 11");
-    expect(byName["Safford, Jimmie"]).toContain("Deceased Sep 10");
-    expect(byName["Britch, Jimmie"]).toContain("At hospital");
-    expect(byName["Old, Jimmie"]).toBeUndefined();
+    expect(byName["Jimmie Byrd"]).toContain("Moved in Sep 14");
+    expect(byName["Jimmie Shepherd"]).toContain("Moved out Sep 11");
+    expect(byName["Jimmie Safford"]).toContain("Deceased Sep 10");
+    expect(byName["Jimmie Britch"]).toContain("At hospital");
+    expect(byName["Jimmie Old"]).toBeUndefined();
     expect(roll.rows.map((r) => r.roomLabel)).toEqual(["11", "12B", "14A", "108A"]);
   });
 

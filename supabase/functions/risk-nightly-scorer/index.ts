@@ -21,6 +21,8 @@ import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { withTiming } from "../_shared/structured-log.ts";
 import { SITE_AUTHORITY_CLASSES } from "../_shared/operation-authority.ts";
 import { judgeDue } from "../../../src/lib/operations/schedule-evaluator.ts";
+// COL-710: the level cut-offs are the `risk.score_bands` operating rule, read per facility per night.
+import { parseRiskScoreBands, riskAlertThresholdJson, riskLevelFromBands, type RiskScoreBands } from "../../../src/lib/operating-rules/risk-bands.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACTIVE_DEFICIENCY_STATUSES = new Set(["open", "poc_submitted", "poc_accepted", "recited"]);
@@ -37,6 +39,8 @@ type FacilityRow = {
   entity_id: string | null;
   name: string;
   timezone: string | null;
+  /** Staffing-ratio check switch: on only when a ratio rule set is assigned (COL-675). */
+  facility_ratio_rule_set_id: string | null;
 };
 
 type OrgRow = { id: string };
@@ -78,13 +82,6 @@ type FacilityScoreResult = {
   alertTitle: string;
   alertBody: string;
 };
-
-function riskLevel(score: number): "low" | "moderate" | "high" | "critical" {
-  if (score >= 85) return "low";
-  if (score >= 70) return "moderate";
-  if (score >= 50) return "high";
-  return "critical";
-}
 
 function severityForRisk(level: "low" | "moderate" | "high" | "critical") {
   return level === "critical" ? "critical" : "warning";
@@ -137,6 +134,7 @@ function buildFacilityRiskScore(args: {
   deficiencies: DeficiencyRow[];
   incidents: IncidentRow[];
   safetyRows: SafetyRow[];
+  bands: RiskScoreBands;
 }): FacilityScoreResult {
   // COL-137: the shared evaluator is the only source of an overdue judgment; a
   // task with no due instant is an unknown schedule, never overdue.
@@ -147,7 +145,12 @@ function buildFacilityRiskScore(args: {
   );
   const licenseThreateningTasks = overdueTasks.filter((task) => task.license_threatening);
 
-  const nonCompliantStaffing = args.staffing.filter((snapshot) => !snapshot.is_compliant);
+  // COL-675 (Brian, 2026-09-23): the staffing-ratio check is off unless the facility has a
+  // ratio rule set assigned — the same switch the staffing console reads
+  // (src/lib/staffing/ratio-check.ts). While it is off, adequacy non-compliance is not a
+  // risk signal; assigning a rule set brings it back.
+  const staffingRatioCheckOn = Boolean(args.facility.facility_ratio_rule_set_id);
+  const nonCompliantStaffing = staffingRatioCheckOn ? args.staffing.filter((snapshot) => !snapshot.is_compliant) : [];
   const cannotCoverMax = nonCompliantStaffing.reduce(
     (max, snapshot) => Math.max(max, snapshot.cannot_cover_count ?? 0),
     0,
@@ -195,7 +198,9 @@ function buildFacilityRiskScore(args: {
       "Staffing adequacy",
       nonCompliantStaffing.length,
       Math.min(24, nonCompliantStaffing.length * 6 + cannotCoverMax * 2),
-      `${nonCompliantStaffing.length} non-compliant adequacy snapshot(s); lowest score ${lowestAdequacyScore}.`,
+      staffingRatioCheckOn
+        ? `${nonCompliantStaffing.length} non-compliant adequacy snapshot(s); lowest score ${lowestAdequacyScore}.`
+        : "Staffing ratio check is off for this facility; staffing adequacy is not scored.",
     ),
     buildDriver(
       "survey_deficiencies",
@@ -222,7 +227,7 @@ function buildFacilityRiskScore(args: {
 
   const totalPenalty = drivers.reduce((sum, driver) => sum + driver.penalty, 0);
   const riskScore = clampScore(100 - totalPenalty);
-  const level = riskLevel(riskScore);
+  const level = riskLevelFromBands(riskScore, args.bands);
   const previousLevel = args.previous?.risk_level ?? null;
   const scoreDelta = args.previous ? riskScore - args.previous.risk_score : null;
   const thresholdBreached = level === "high" || level === "critical";
@@ -257,6 +262,7 @@ function buildFacilityRiskScore(args: {
           + (drivers.find((driver) => driver.key === "overdue_operations")?.penalty ?? 0),
       },
       staffing: {
+        ratio_check_on: staffingRatioCheckOn,
         non_compliant_snapshots: nonCompliantStaffing.length,
         cannot_cover_max: cannotCoverMax,
         lowest_adequacy_score: Number.isFinite(lowestAdequacyScore) ? lowestAdequacyScore : null,
@@ -279,6 +285,7 @@ function buildFacilityRiskScore(args: {
     },
     summary: {
       top_drivers: topDrivers,
+      score_bands: args.bands,
       overdue_task_count: overdueTasks.length,
       license_threatening_count: licenseThreateningTasks.length,
       staffing_non_compliant_count: nonCompliantStaffing.length,
@@ -435,7 +442,7 @@ Deno.serve(async (req) => {
   for (const org of organizations) {
     let facilityQuery = admin
       .from("facilities")
-      .select("id, organization_id, entity_id, name, timezone")
+      .select("id, organization_id, entity_id, name, timezone, facility_ratio_rule_set_id")
       .eq("organization_id", org.id)
       .eq("status", "active")
       .is("deleted_at", null)
@@ -567,7 +574,21 @@ Deno.serve(async (req) => {
       const timezone = facility.timezone || "America/New_York";
       const snapshotDate = currentDateInTimezone(timezone);
       const previous = previousMap.get(facility.id) ?? null;
+      const { data: bandRows, error: bandError } = await admin.rpc("haven_operating_rule" as never, {
+        p_organization_id: org.id,
+        p_facility_id: facility.id,
+        p_rule_key: "risk.score_bands",
+        p_as_of: snapshotDate,
+      } as never);
+      const bandRow = Array.isArray(bandRows) ? (bandRows as Array<{ value: unknown }>)[0] : null;
+      const bands = bandError ? null : parseRiskScoreBands(bandRow?.value);
+      if (!bands) {
+        // No guessed cut-offs: a facility whose rule cannot be read is not scored tonight.
+        results.push({ organization_id: org.id, facility_id: facility.id, error: "Risk score bands unavailable" });
+        continue;
+      }
       const score = buildFacilityRiskScore({
+        bands,
         facility,
         previous,
         tasks: tasks.filter((row) => row.facility_id === facility.id),
@@ -632,7 +653,7 @@ Deno.serve(async (req) => {
                   risk_level: score.riskLevel,
                   summary: score.summary,
                 },
-                threshold_json: { alert_level: "high", score_lte: 69, critical_score_lte: 49 },
+                threshold_json: riskAlertThresholdJson(bands),
                 last_evaluated_at: now.toISOString(),
                 updated_at: now.toISOString(),
                 status: "open",
@@ -663,7 +684,7 @@ Deno.serve(async (req) => {
                   risk_level: score.riskLevel,
                   summary: score.summary,
                 },
-                threshold_json: { alert_level: "high", score_lte: 69, critical_score_lte: 49 },
+                threshold_json: riskAlertThresholdJson(bands),
                 status: "open",
                 last_evaluated_at: now.toISOString(),
                 related_link_json: {

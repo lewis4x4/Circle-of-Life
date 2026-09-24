@@ -92,6 +92,16 @@ function makeClient(staff: StaffProfileRow) {
         };
         return q;
       }
+      if (table === "staff_certification_requirements" || table === "staff_certification_settings") {
+        const q = {
+          select: () => q,
+          order: () => q,
+          range: () => q,
+          then: (resolve: (v: { data: unknown[]; error: null }) => unknown) =>
+            Promise.resolve({ data: [], error: null }).then(resolve),
+        };
+        return q;
+      }
       if (table === "shift_assignments") {
         const q = {
           select: () => q,
@@ -144,6 +154,13 @@ describe("AdminStaffDetailPage profile edit", () => {
     expect(await screen.findByText("Harbor Example")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^edit$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^offboard$/i })).not.toBeInTheDocument();
+  });
+
+  it("does not flag missing certifications when no requirement is set for any role (COL-709)", async () => {
+    render(<AdminStaffDetailPage />);
+    expect(await screen.findByText("Requirements not set up")).toBeInTheDocument();
+    expect(screen.queryByText("No certs on file")).not.toBeInTheDocument();
+    expect(screen.queryByText("Certs OK")).not.toBeInTheDocument();
   });
 
   it("shows Edit for facility_admin and saves contact patch with null phone when cleared", async () => {

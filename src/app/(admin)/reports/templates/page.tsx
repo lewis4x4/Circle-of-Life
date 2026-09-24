@@ -236,7 +236,7 @@ export default function ReportTemplatesPage() {
   const totalCatalog = PHASE1_TEMPLATE_SEED.length;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
+    <div className="relative w-full pb-12">
       <div className="relative z-10 w-full space-y-6">
         <div className="mt-4">
           <ReportsHubNav />

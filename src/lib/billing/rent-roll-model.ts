@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * Rent roll model (COL-583).
  *
@@ -11,6 +12,8 @@
  * split does not total the contracted amount the row says that too (the sheet
  * carries the same warning: "Columns E & G should total column D").
  */
+
+import { formatPersonName, formatPersonNameLastFirst } from "@/lib/format/datetime";
 
 export type RentRollPeriod = { year: number; month: number };
 
@@ -125,8 +128,10 @@ export type RentRollInvoiceInput = {
 
 export type RentRollRow = {
   residentId: string;
-  /** "Last, First" as the sheet writes it */
+  /** "First Last" — how every Haven screen shows a person (COL-686). */
   residentName: string;
+  /** "Last, First" as the office sheet writes it: the CSV column and the sort key. */
+  residentSheetName: string;
   roomLabel: string | null;
   admissionDate: string | null;
   admittedFrom: string | null;
@@ -331,7 +336,7 @@ export function buildRentRoll(input: RentRollInput): RentRoll {
             if (payer.medicaidRateUnit === null || payer.medicaidRateUnit === "monthly") {
               medicaidBilled = (medicaidBilled ?? 0) + payer.medicaidRateCents;
             } else {
-              flags.push(`Medicaid rate on file is ${payer.medicaidRateUnit.replace(/_/g, " ")}, not monthly`);
+              flags.push(`Medicaid rate on file is ${enumLabel(payer.medicaidRateUnit, { case: "lower" })}, not monthly`);
             }
           }
           if (payer.medicaidPatientResponsibilityCents !== null) {
@@ -393,7 +398,8 @@ export function buildRentRoll(input: RentRollInput): RentRoll {
 
     rows.push({
       residentId: resident.id,
-      residentName: `${resident.lastName}, ${resident.firstName}`.trim(),
+      residentName: formatPersonName({ first_name: resident.firstName, last_name: resident.lastName }),
+      residentSheetName: formatPersonNameLastFirst({ first_name: resident.firstName, last_name: resident.lastName }),
       roomLabel: resident.roomLabel,
       admissionDate: resident.admissionDate,
       admittedFrom: resident.admissionSource,
@@ -412,7 +418,7 @@ export function buildRentRoll(input: RentRollInput): RentRoll {
     });
   }
 
-  rows.sort((a, b) => compareRoomLabels(a.roomLabel, b.roomLabel) || a.residentName.localeCompare(b.residentName));
+  rows.sort((a, b) => compareRoomLabels(a.roomLabel, b.roomLabel) || a.residentSheetName.localeCompare(b.residentSheetName));
 
   const totals: RentRollTotals = {
     residentCount: rows.length,
@@ -464,7 +470,7 @@ export function rentRollToCsv(roll: RentRoll): string {
     [
       quote(row.roomLabel),
       row.admissionDate ?? "",
-      quote(row.residentName),
+      quote(row.residentSheetName),
       dollars(row.contractedCents),
       dollars(row.privateShareCents),
       dollars(row.paidPrivatelyCents),

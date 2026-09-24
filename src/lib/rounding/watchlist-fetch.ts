@@ -1,3 +1,4 @@
+import { formatProfileName } from "@/lib/format/datetime";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
 /**
  * Reads for the three Watchlist tiers. Spec 25A section 7.5.
@@ -88,7 +89,7 @@ type RawDispositionRow = Omit<WatchlistDispositionRow, "acted_by_name"> & {
  */
 function withActorName(row: RawDispositionRow): WatchlistDispositionRow {
   const { user_profiles: profile, ...rest } = row;
-  return { ...rest, acted_by_name: profile?.full_name ?? null };
+  return { ...rest, acted_by_name: profile?.full_name == null ? null : formatProfileName(profile.full_name, { fallback: "Staff" }) };
 }
 
 export interface WatchlistSignalHistoryRow {

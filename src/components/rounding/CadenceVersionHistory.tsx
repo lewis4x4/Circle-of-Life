@@ -14,6 +14,7 @@
  * after somebody undoes a mistake. The button says so.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { policyText } from "@/lib/rounding/cadence-policy-diff";
 import { useState } from "react";
 
@@ -85,11 +86,11 @@ export function CadenceVersionHistory({
                   </p>
                   <p className="text-[13px] text-muted-foreground">
                     Proposed by {entry.created_by_name ?? "somebody no longer on the record"} on{" "}
-                    {new Date(entry.created_at).toLocaleString()}
+                    {formatDisplayDateTime(entry.created_at)}
                     {entry.activated_at
                       ? `, put in force by ${
                           entry.activated_by_name ?? "somebody no longer on the record"
-                        } on ${new Date(entry.activated_at).toLocaleString()} ${applyModeLabel(
+                        } on ${formatDisplayDateTime(entry.activated_at)} ${applyModeLabel(
                           entry.apply_mode,
                         ).toLowerCase()}`
                       : ""}
@@ -101,8 +102,8 @@ export function CadenceVersionHistory({
                     </p>
                   ) : null}
                   <p className="text-[13px] tabular-nums text-muted-foreground">
-                    In force from {new Date(entry.effective_from).toLocaleString()}
-                    {entry.effective_to ? ` until ${new Date(entry.effective_to).toLocaleString()}` : ", still"}
+                    In force from {formatDisplayDateTime(entry.effective_from)}
+                    {entry.effective_to ? ` until ${formatDisplayDateTime(entry.effective_to)}` : ", still"}
                   </p>
                 </div>
 

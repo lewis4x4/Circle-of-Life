@@ -2,6 +2,8 @@
  * Quiet Operator copy for the facility detail vendors tab.
  * Missing contact phone and activity timestamps name real gaps — never fabricate phones or dates.
  */
+import { formatDisplayDate } from "@/lib/format/datetime";
+
 
 export const VENDORS_TAB_NO_PHONE_COPY = "No phone posted";
 export const VENDORS_TAB_NO_LAST_ACTIVITY_COPY = "No last activity posted";
@@ -23,5 +25,5 @@ export function formatVendorsTabLastActivityDisplay(
 ): string {
   const timestamp = lastInvoiceAt ?? lastPaymentAt;
   if (!timestamp) return VENDORS_TAB_NO_LAST_ACTIVITY_COPY;
-  return new Date(timestamp).toLocaleDateString(undefined, { dateStyle: "medium" });
+  return formatDisplayDate(timestamp);
 }

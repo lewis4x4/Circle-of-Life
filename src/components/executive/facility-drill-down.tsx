@@ -8,6 +8,7 @@
  * active alerts, and click-to-action links to relevant modules.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React from "react";
 import { X, Building2, TrendingUp, AlertTriangle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -323,16 +324,16 @@ function FacilityTrendChart({ data }: { data: Array<{ date: string; value: numbe
           <g key={`${point.date}-${point.value}`}>
             <circle cx={x} cy={y} r="4" fill="rgb(165 180 252)" />
             <circle cx={x} cy={y} r="7" fill="transparent">
-              <title>{`${new Date(point.date).toLocaleDateString()}: ${point.value}`}</title>
+              <title>{`${formatDisplayDate(point.date)}: ${point.value}`}</title>
             </circle>
           </g>
         ))}
       </svg>
       <div className="flex items-center justify-between text-[11px] text-chrome-foreground-muted">
-        <span>{new Date(data[0].date).toLocaleDateString()}</span>
+        <span>{formatDisplayDate(data[0].date)}</span>
         <span className="font-mono">Min {min}</span>
         <span className="font-mono">Max {max}</span>
-        <span>{new Date(data[data.length - 1].date).toLocaleDateString()}</span>
+        <span>{formatDisplayDate(data[data.length - 1].date)}</span>
       </div>
     </div>
   );

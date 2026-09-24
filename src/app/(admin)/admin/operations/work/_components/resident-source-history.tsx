@@ -4,6 +4,7 @@ import { z } from "zod";
 import { residentReviewHistoryReplySchema as historySchema } from "@/lib/operations/resident-review-sources";
 import { CONTROL } from "./work-inputs";
 import { localTime } from "./receipt-history";
+import { enumLabel } from "@/lib/display/enum-label";
 type Props = { taskId: string; actorId: string; facilityId: string; timezone: string };
 export function ResidentSourceHistory(props: Props) { return <History key={`${props.taskId}:${props.actorId}:${props.facilityId}`} {...props} />; }
 function History({ taskId, timezone }: Props) {
@@ -51,7 +52,7 @@ function History({ taskId, timezone }: Props) {
       {data?.reviews.length === 0 ? <p>No versioned source reviews recorded.</p> : null}
       {data?.reviews.map(review => <div key={review.receipt_id} className="border-l border-border pl-3"><p>Original review: {localTime(review.recorded_at, timezone)}</p>{review.references.map(reference => <div key={reference.reference_id}>
         <p>Current source eligibility/version: {reference.current_state}. {reference.requires_review || reference.current_state !== "current" ? "Review required." : "Current version matches the recorded reference."}</p>
-        {reference.source_id && reference.family ? <p>{reference.family?.replaceAll("_", " ")} · Version {reference.source_version?.slice(0, 12)} · Review period {reference.period?.start_date} to {reference.period?.end_date}</p> : <p>Source details unavailable under current access.</p>}
+        {reference.source_id && reference.family ? <p>{enumLabel(reference.family)} · Version {reference.source_version?.slice(0, 12)} · Review period {reference.period?.start_date} to {reference.period?.end_date}</p> : <p>Source details unavailable under current access.</p>}
         <button type="button" className={CONTROL} disabled={busy || pending !== null} onClick={() => void recheck(JSON.stringify({ request_key: crypto.randomUUID(), reference_id: reference.reference_id }))}>Recheck source version</button>
         <ul>{reference.checks.map((check, index) => <li key={`${check.checked_at}:${index}`}>{localTime(check.checked_at, timezone)}: {check.state}</li>)}</ul>
       </div>)}</div>)}

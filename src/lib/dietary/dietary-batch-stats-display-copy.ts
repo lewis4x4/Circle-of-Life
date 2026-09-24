@@ -2,6 +2,8 @@
  * Quiet Operator copy for dietary hub therapeutic-context batch stats (`/admin/dietary`).
  * Loading and missing states name real gaps — never fabricate percentages.
  */
+import { formatDateTimeWith } from "@/lib/format/datetime";
+
 
 export type DietaryBatchStatMetric = "thickened" | "swallow" | "allergy" | "texture";
 
@@ -56,7 +58,7 @@ export function formatDietaryHubRelativeUpdatedAt(iso: string | null | undefined
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 48) return `${hrs}h ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
+  return formatDateTimeWith(iso, { month: "short", day: "numeric" });
 }
 
 export type DietaryBatchStats = {

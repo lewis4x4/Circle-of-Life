@@ -163,15 +163,15 @@ export default function CeoDashboardPageClient({
       href: "/admin/executive/benchmarks",
     },
     {
-      stat: "Board packets",
+      stat: "Reports",
       title: "Reports",
-      description: "Executive KPI exports and board-packet archive.",
-      href: "/admin/executive/reports",
+      description: "Report templates, saved views, schedules and packs.",
+      href: "/admin/reports",
     },
   ];
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full">
+    <div className="relative w-full">
       <div className="border-b border-border px-6 py-3 sm:px-12">
         <ExecutiveHubNav />
       </div>

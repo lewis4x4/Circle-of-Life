@@ -51,7 +51,7 @@ export function Cockpit() {
                 : "text-lg font-semibold text-rose-300 mb-2"
             }
           >
-            {noShift ? "Cockpit is waiting on a shift" : "Shift Not Available"}
+            {noShift ? "No shift open yet" : "Your shift could not be loaded"}
           </h2>
           <p className="text-sm text-muted-foreground">
             {noShift

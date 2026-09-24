@@ -3,7 +3,9 @@
  * Used by run preview, CSV export, and print/PDF popup HTML.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { REPORTS_NO_METRIC_VALUE_COPY } from "@/lib/reports/reports-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type MetricFormat = "integer" | "percent" | "currency_cents" | "decimal" | "text";
 
@@ -273,7 +275,7 @@ export function escapeHtml(s: string): string {
 }
 
 function humanizeKey(key: string): string {
-  const withSpaces = key.replace(/([A-Z])/g, " $1").replace(/_/g, " ");
+  const withSpaces = enumLabel(key.replace(/([A-Z])/g, " $1"), { case: "lower" });
   const trimmed = withSpaces.trim();
   if (!trimmed) return key;
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
@@ -354,10 +356,7 @@ export function buildReportPrintHtml(props: {
   footnotes?: string[];
 }): string {
   const { reportTitle, templateLabel, scopeLabel, summary, footnotes } = props;
-  const generatedAt = new Date().toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const generatedAt = formatDisplayDateTime(new Date());
 
   const byGroup = new Map<string, SummaryRow[]>();
   for (const row of summary) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock3, UserRound } from "lucide-react";
 
 import { minutesFromMs } from "@/lib/rounding/duration-units";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type TaskStatus =
   | "upcoming"
@@ -62,7 +63,7 @@ function statusTone(status: TaskStatus) {
 }
 
 function formatStatus(status: TaskStatus) {
-  return status.replaceAll("_", " ");
+  return enumLabel(status);
 }
 
 function formatDueLabel(value: string) {

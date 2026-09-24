@@ -243,31 +243,31 @@ export const TIER_META: Record<
     label: "Knowledge Base",
     color: "#8b5cf6",
     bgClass: "bg-primary/10 dark:bg-primary/20",
-    textClass: "text-primary",
+    textClass: "text-foreground",
   },
   clinical: {
     label: "Clinical",
     color: "#06b6d4",
     bgClass: "bg-cyan-500/10 dark:bg-cyan-500/20",
-    textClass: "text-cyan-600 dark:text-cyan-400",
+    textClass: "text-cyan-800 dark:text-cyan-300",
   },
   operational: {
     label: "Operational",
     color: "#f59e0b",
     bgClass: "bg-amber-500/10 dark:bg-amber-500/20",
-    textClass: "text-amber-600 dark:text-amber-400",
+    textClass: "text-amber-800 dark:text-amber-300",
   },
   financial: {
     label: "Financial",
     color: "#10b981",
     bgClass: "bg-emerald-500/10 dark:bg-emerald-500/20",
-    textClass: "text-emerald-600 dark:text-emerald-400",
+    textClass: "text-emerald-800 dark:text-emerald-300",
   },
   payroll: {
     label: "Payroll",
     color: "#ef4444",
     bgClass: "bg-red-500/10 dark:bg-red-500/20",
-    textClass: "text-red-600 dark:text-red-400",
+    textClass: "text-red-800 dark:text-red-300",
   },
 };
 

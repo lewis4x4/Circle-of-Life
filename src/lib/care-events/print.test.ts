@@ -126,7 +126,7 @@ describe("the log's ticks and shift words", () => {
     expect(printShift("day")).toBe("Day");
     expect(printShift("evening")).toBe("Evening");
     expect(printShift("night")).toBe("Night");
-    expect(printShift("split_shift")).toBe("split shift");
+    expect(printShift("split_shift")).toBe("Split shift");
     expect(printShift(null)).toBe("");
   });
 });

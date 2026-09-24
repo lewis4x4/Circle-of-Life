@@ -616,7 +616,7 @@ export default function AdminTrainingHubPage() {
   ]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
@@ -717,7 +717,7 @@ export default function AdminTrainingHubPage() {
             ) : completionRows.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No completion rows yet</p>
-                <p className="mt-1 text-sm opacity-80">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Florida catalog programs are ready to assign. Use{" "}
                   <span className="font-mono">+ Log completion</span> to add a live completion row.
                 </p>
@@ -920,7 +920,7 @@ export default function AdminTrainingHubPage() {
             ) : attestationRows.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No attestations yet</p>
-                <p className="mt-1 text-sm opacity-80">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Staff attestation records will appear here once signed.
                 </p>
               </div>
@@ -1017,7 +1017,7 @@ export default function AdminTrainingHubPage() {
             ) : inserviceRows.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No in-service sessions yet</p>
-                <p className="mt-1 text-sm opacity-80">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Use <span className="font-mono">+ New in-service session</span> to log attendance.
                 </p>
               </div>
@@ -1108,7 +1108,7 @@ export default function AdminTrainingHubPage() {
                   {attentionRows.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground bg-card rounded-xl border border-border">
                       <p className="font-medium text-foreground">No open demonstrations</p>
-                      <p className="text-sm opacity-80 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Nothing in draft, submitted, or failed status in the loaded batch (last 50 records
                         {orgWideMode ? " across accessible facilities" : " for this facility"}).
                       </p>

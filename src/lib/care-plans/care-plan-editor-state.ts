@@ -15,6 +15,7 @@
  */
 
 import { formatCarePlanDateOnly } from "./care-plan-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type CarePlanVersionSummary = {
   id: string;
@@ -128,12 +129,12 @@ export const CARE_PLAN_ASSISTANCE_LABELS: Record<string, string> = {
 
 export function formatCarePlanCategory(value: string | null | undefined): string {
   if (!value) return "No category";
-  return CARE_PLAN_CATEGORY_LABELS[value] ?? value.replace(/_/g, " ");
+  return CARE_PLAN_CATEGORY_LABELS[value] ?? enumLabel(value);
 }
 
 export function formatCarePlanAssistance(value: string | null | undefined): string {
   if (!value) return "No assistance level";
-  return CARE_PLAN_ASSISTANCE_LABELS[value] ?? value.replace(/_/g, " ");
+  return CARE_PLAN_ASSISTANCE_LABELS[value] ?? enumLabel(value);
 }
 
 /** Copy the editor shows for each mode. */
