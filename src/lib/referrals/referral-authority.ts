@@ -52,6 +52,9 @@ export type ReferralRecordedSourceKind =
   | "hl7"
   | "system_compatibility";
 
+export type ReferralInteractionMethod =
+  Database["public"]["Enums"]["referral_interaction_method"];
+
 export type ReferralEpisodeReply = {
   episode_id: string;
   episode_revision: string;
@@ -118,6 +121,8 @@ export type ReferralEpisodeHistory = {
     recorded_at: string;
     actor_id: string;
     actor_role: string;
+    /** Display name of whoever recorded the event; null when the profile has none. */
+    actor_name: string | null;
     request_key: string;
     source_kind: ReferralRecordedSourceKind;
     source_reference: Record<string, unknown>;
@@ -221,7 +226,7 @@ type ReferralCommandSource = {
 export type ReferralEpisodeCommand =
   | ({ kind: "assign"; owner_user_id: string; backup_user_id?: string | null; next_action?: string | null; next_action_at?: string | null; override_reason?: string | null } & ReferralCommandSource)
   | ({ kind: "accept_coverage"; coverage_reason?: string | null } & ReferralCommandSource)
-  | ({ kind: "record_interaction"; summary: string; effective: ReferralEffectiveValue; next_action?: string | null; next_action_at?: string | null } & ReferralCommandSource)
+  | ({ kind: "record_interaction"; summary: string; method?: ReferralInteractionMethod | null; contacted_name?: string | null; person_contact_id?: string | null; effective: ReferralEffectiveValue; next_action?: string | null; next_action_at?: string | null } & ReferralCommandSource)
   | ({ kind: "wait" | "review"; reason: string; follow_up_at: string } & ReferralCommandSource)
   | ({ kind: "resume" | "reopen"; reason: string } & ReferralCommandSource)
   | ({ kind: "next_action"; next_action: string; next_action_at: string } & ReferralCommandSource)
