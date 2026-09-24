@@ -1,0 +1,34 @@
+-- Rollback-only synthetic proof for COL-772 (admission screens read Medicaid status from the benefits workflow).
+BEGIN;
+CREATE TEMP TABLE tf AS SELECT gen_random_uuid() org,gen_random_uuid() entity,gen_random_uuid() site,gen_random_uuid() other_site;
+CREATE TEMP TABLE tr AS SELECT label,gen_random_uuid() id,CASE WHEN label='elsewhere' THEN 'other' ELSE 'site' END place FROM unnest(ARRAY['cased','stopped','unasked','elsewhere']) label;
+CREATE TEMP TABLE ta AS SELECT role,gen_random_uuid() id,gen_random_uuid() session FROM unnest(ARRAY['owner','manager']) role;
+GRANT ALL ON tf,tr,ta TO authenticated,service_role;
+INSERT INTO public.organizations(id,name) SELECT org,'COL772 synthetic' FROM tf;
+INSERT INTO public.entities(id,organization_id,name) SELECT entity,org,'COL772 synthetic' FROM tf;
+INSERT INTO public.facilities(id,organization_id,entity_id,name,address_line_1,city,zip,total_licensed_beds,timezone) SELECT site,org,entity,'COL772 synthetic','Test','Test','00000',4,'America/New_York' FROM tf UNION ALL SELECT other_site,org,entity,'COL772 other','Test','Test','00000',2,'America/New_York' FROM tf;
+INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data) SELECT id,id||'@col772.invalid',jsonb_build_object('organization_id',org,'app_role',role),'{}'::jsonb FROM ta,tf;
+INSERT INTO public.user_profiles(id,organization_id,full_name,email,app_role,is_active) SELECT id,org,'COL772 '||role,id||'@col772.invalid',role::public.app_role,true FROM ta,tf ON CONFLICT(id) DO UPDATE SET organization_id=excluded.organization_id,app_role=excluded.app_role,is_active=true;
+INSERT INTO auth.sessions(id,user_id) SELECT session,id FROM ta;
+INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT id,site,org FROM ta,tf;
+INSERT INTO public.staff(user_id,facility_id,organization_id,first_name,last_name,staff_role,employment_status,hire_date) SELECT id,site,org,'COL772',role,'cna','active',current_date FROM ta,tf WHERE role<>'owner';
+INSERT INTO public.residents(id,organization_id,facility_id,first_name,last_name,date_of_birth,gender,status) SELECT tr.id,org,CASE WHEN place='other' THEN other_site ELSE site END,'COL772',label,DATE '1940-01-01','female'::public.gender,'active'::public.resident_status FROM tr,tf;
+CREATE FUNCTION pg_temp.tlogin(p_role text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$ DECLARE a record; BEGIN SELECT ta.*,p.auth_claim_version INTO a FROM ta JOIN public.user_profiles p USING(id) WHERE ta.role=p_role; PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',a.id,'session_id',a.session,'role','authenticated','auth_claim_version',a.auth_claim_version,'iat',extract(epoch FROM clock_timestamp())::bigint)::text,true); END $$;
+CREATE FUNCTION pg_temp.tassert(ok boolean,msg text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION 'COL772 %',msg; END IF; END $$;
+CREATE FUNCTION pg_temp.tlabel(p_label text) RETURNS text LANGUAGE sql AS $$ SELECT x->>'label' FROM jsonb_array_elements(public.benefits_medicaid_status((SELECT array_agg(id) FROM tr))) x WHERE x->>'resident_id'=(SELECT id::text FROM tr WHERE label=p_label) $$;
+SELECT pg_temp.tassert(NOT has_function_privilege('anon','public.benefits_medicaid_status(uuid[])','EXECUTE'),'anonymous status');
+SELECT pg_temp.tlogin('owner'); SET LOCAL ROLE authenticated;
+SELECT public.benefits_case_create((SELECT id FROM tr WHERE label='cased'),NULL,'smmc_ltc',gen_random_uuid());
+SELECT public.benefits_screening_record(jsonb_build_object('resident_id',(SELECT id FROM tr WHERE label='stopped'),'source','manual','coverage','private_pay','q_property_non_primary','yes','q_income_over_limit','no','q_life_insurance','no','q_burial_contract','no','q_assets','no','q_power_of_attorney','no'),gen_random_uuid());
+SELECT pg_temp.tassert(pg_temp.tlabel('cased')='Next: Intake requested','case next step');
+SELECT pg_temp.tassert(pg_temp.tlabel('stopped')='Does not qualify now','screening result');
+SELECT pg_temp.tassert(pg_temp.tlabel('unasked')='Not asked','not asked');
+RESET ROLE;
+-- Scope: a facility without Medicaid access returns nothing for that resident (never a guess).
+SELECT pg_temp.tlogin('owner'); SET LOCAL ROLE authenticated;
+SELECT public.benefits_access_set(jsonb_build_object('facility_id',site,'user_id',(SELECT id FROM ta WHERE role='manager'),'can_write',false,'can_review',false,'expires_at',now()+interval '1 day','reason','Synthetic read grant')) FROM tf;
+RESET ROLE; SELECT pg_temp.tlogin('manager'); SET LOCAL ROLE authenticated;
+SELECT pg_temp.tassert(pg_temp.tlabel('elsewhere') IS NULL,'other facility resident disclosed');
+SELECT pg_temp.tassert(pg_temp.tlabel('cased')='Next: Intake requested','granted reader sees status');
+RESET ROLE;
+ROLLBACK;

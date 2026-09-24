@@ -55,12 +55,6 @@ export function formatAdmissionsHubConferenceScheduledDate(
   return formatDateTimeWith(scheduledStart.trim(), { month: "short", day: "numeric" });
 }
 
-/** Medicaid pipeline stage when the field is unset on a case row. */
-export function formatAdmissionsHubMedicaidStage(stage: string | null | undefined): string {
-  if (!stage || !stage.trim()) return "Not set";
-  return stage;
-}
-
 /** Target move-in line on an admission card. */
 export function formatAdmissionsHubTargetMoveInDate(
   targetMoveInDate: string | null | undefined,

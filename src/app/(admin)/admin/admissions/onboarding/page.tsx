@@ -14,11 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
-import { formatColLabel } from "@/lib/col-labels";
-import {
-  formatAdmissionsHubMedicaidStage,
-  formatAdmissionsHubRelativeDate,
-} from "@/lib/admissions/admissions-hub-display-copy";
+import { formatAdmissionsHubRelativeDate } from "@/lib/admissions/admissions-hub-display-copy";
+import { loadMedicaidStatuses, type MedicaidStatus } from "@/lib/benefits/medicaid-status";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -27,7 +24,7 @@ import type { Database } from "@/types/database";
 
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
-  "id" | "status" | "updated_at" | "resident_id" | "target_move_in_date" | "medicaid_pipeline_stage"
+  "id" | "status" | "updated_at" | "resident_id" | "target_move_in_date"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -52,16 +49,13 @@ function onboardingChecklist(counts: { carePlans: number; medications: number; p
   ];
 }
 
-function formatMedicaidStage(stage: string | null) {
-  if (!stage) return formatAdmissionsHubMedicaidStage(stage);
-  return formatColLabel(stage);
-}
-
 export default function AdminAdmissionsOnboardingPage() {
   const supabase = useMemo(() => createClient(), []);
   const { selectedFacilityId } = useFacilityStore();
 
   const [rows, setRows] = useState<QueueRow[]>([]);
+  // Medicaid status comes from the benefits workflow (COL-772); null = no Medicaid access, show nothing.
+  const [medicaid, setMedicaid] = useState<Map<string, MedicaidStatus> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [missingFilter, setMissingFilter] = useState<MissingFilter>("all");
@@ -79,7 +73,7 @@ export default function AdminAdmissionsOnboardingPage() {
     try {
       const { data, error: queryError } = await supabase
         .from("admission_cases")
-        .select("id, status, updated_at, resident_id, target_move_in_date, medicaid_pipeline_stage, residents(first_name, last_name)")
+        .select("id, status, updated_at, resident_id, target_move_in_date, residents(first_name, last_name)")
         .eq("facility_id", selectedFacilityId)
         .eq("status", "move_in")
         .is("deleted_at", null)
@@ -93,6 +87,7 @@ export default function AdminAdmissionsOnboardingPage() {
         return;
       }
 
+      void loadMedicaidStatuses(supabase, residentIds).then(setMedicaid);
       const [carePlansRes, medsRes, payersRes, consentsRes] = await Promise.all([
         supabase.from("care_plans").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
         supabase.from("resident_medications").select("resident_id").in("resident_id", residentIds).is("deleted_at", null),
@@ -285,9 +280,11 @@ export default function AdminAdmissionsOnboardingPage() {
                         {row.target_move_in_date}
                       </Badge>
                     ) : null}
-                    <Badge variant="outline" className="border-border bg-muted/40 text-muted-foreground">
-                      Medicaid: {formatMedicaidStage(row.medicaid_pipeline_stage)}
-                    </Badge>
+                    {row.resident_id && medicaid?.get(row.resident_id) ? (
+                      <Badge variant="outline" className="border-border bg-muted/40 text-muted-foreground">
+                        Medicaid: {medicaid.get(row.resident_id)!.label}
+                      </Badge>
+                    ) : null}
                   </div>
                 </div>
               </CardHeader>

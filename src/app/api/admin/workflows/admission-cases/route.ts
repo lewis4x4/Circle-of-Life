@@ -15,17 +15,6 @@ const ALLOWED_ROLES = [
   "med_tech",
 ] as const;
 
-type MedicaidPipelineStage = "prospect" | "app_requested" | "pending" | "approved" | "denied" | "waitlist";
-
-const MEDICAID_PIPELINE_STAGES: MedicaidPipelineStage[] = [
-  "prospect",
-  "app_requested",
-  "pending",
-  "approved",
-  "denied",
-  "waitlist",
-];
-
 type AnticipatedPayerSource =
   | "private_pay"
   | "medicaid_pending"
@@ -71,7 +60,6 @@ type RequestBody = {
   notes?: string | null;
   /** Optional intake classification from the admissions form (e.g. long_term). */
   intake_program_type?: string | null;
-  medicaid_pipeline_stage?: MedicaidPipelineStage;
   /** `draft` = save for later (no bed reservation; date optional). `submit` = open active case. */
   create_intent?: "draft" | "submit";
   anticipated_payer_source?: AnticipatedPayerSource | null;
@@ -124,13 +112,6 @@ export async function POST(request: NextRequest) {
     && !ANTICIPATED_PAYER_SOURCES.includes(body.anticipated_payer_source as AnticipatedPayerSource)
   ) {
     return NextResponse.json({ error: "Invalid anticipated payer source" }, { status: 400 });
-  }
-
-  if (
-    body.medicaid_pipeline_stage !== undefined
-    && !MEDICAID_PIPELINE_STAGES.includes(body.medicaid_pipeline_stage as MedicaidPipelineStage)
-  ) {
-    return NextResponse.json({ error: "Invalid Medicaid pipeline stage" }, { status: 400 });
   }
 
   if (
@@ -214,7 +195,6 @@ export async function POST(request: NextRequest) {
       target_move_in_date: moveInDate,
       notes: body.notes ?? null,
       intake_program_type: body.intake_program_type ?? null,
-      medicaid_pipeline_stage: body.medicaid_pipeline_stage ?? "prospect",
       anticipated_payer_source: payerSource,
       anticipated_payer_other: payerOther,
       source: admissionCaseSource,
