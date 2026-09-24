@@ -103,6 +103,25 @@ export function formatDisplayDate(
   return instant ? formatter({ ...DATE_OPTIONS, timeZone: resolveTimeZone(timeZone) }).format(instant) : fallback;
 }
 
+/**
+ * Any other shape ("Mon, Sep 22", "September 2026", "22:05") with the same zone
+ * rules as the formatters above: a `YYYY-MM-DD` value is its calendar day, an
+ * instant is read in `timeZone`. For call sites whose layout the standard
+ * formatters do not cover; the options must not carry their own `timeZone`.
+ */
+export function formatDateTimeWith(
+  value: DisplayInstant | null | undefined,
+  options: Omit<Intl.DateTimeFormatOptions, "timeZone">,
+  { timeZone, fallback = DATE_TIME_NOT_POSTED_COPY }: TimeZoneOption & { fallback?: string } = {},
+): string {
+  if (isDateOnlyString(value)) {
+    const noon = dateOnlyAsUtcNoon(value);
+    return noon ? formatter({ ...options, timeZone: "UTC" }).format(noon) : fallback;
+  }
+  const instant = toInstant(value);
+  return instant ? formatter({ ...options, timeZone: resolveTimeZone(timeZone) }).format(instant) : fallback;
+}
+
 /** Date and time, "Sep 22, 2026, 10:05 PM", in the facility's zone. */
 export function formatDisplayDateTime(
   value: DisplayInstant | null | undefined,

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -394,10 +395,7 @@ function formatSnake(value: string): string {
 }
 
 function formatShiftLabel(shiftDate: string, shiftType: string): string {
-  const parsed = new Date(`${shiftDate}T12:00:00`);
-  const datePart = Number.isNaN(parsed.getTime())
-    ? shiftDate
-    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parsed);
+  const datePart = formatDateTimeWith(shiftDate.slice(0, 10), { month: "short", day: "numeric" }, { fallback: shiftDate });
   const typeLabel =
     shiftType === "day"
       ? "Day"

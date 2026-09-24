@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -36,13 +37,7 @@ const ORDER_TYPES = [
 type OrderType = (typeof ORDER_TYPES)[number]["value"];
 
 function formatDueDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTimeWith(date, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 export default function NewVerbalOrderPage() {

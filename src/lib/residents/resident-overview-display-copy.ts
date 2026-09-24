@@ -51,6 +51,7 @@ export function formatResidentOverviewAdmissionLabel(value: string | null | unde
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(parsed);
 }
 
@@ -68,6 +69,7 @@ export function formatResidentOverviewDobLabel(value: string | null | undefined)
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(parsed);
 }
 

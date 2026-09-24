@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useMemo } from "react";
 import { AlertTriangle, ArrowRight, CircleCheckBig, FileText, LayoutGrid, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -90,7 +91,7 @@ export default function OnboardingDashboardPage() {
       .sort();
     const last = times[times.length - 1];
     const lastUpdatedLabel = last
-      ? new Date(last).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+      ? formatDisplayDateTime(last)
       : "No answers yet";
 
     const readinessLabel =

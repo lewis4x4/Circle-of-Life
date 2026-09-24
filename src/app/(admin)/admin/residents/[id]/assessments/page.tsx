@@ -131,7 +131,7 @@ export default function ResidentAssessmentHistoryPage() {
   }, [rows, typeFilter]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-[var(--motion-duration)]">
         {/* COL-432: the resident name <h1> and the back-to-roster link live in
             AdminResidentDetailShell. This tab contributes a toolbar row and an

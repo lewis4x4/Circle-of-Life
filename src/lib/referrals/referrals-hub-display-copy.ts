@@ -2,6 +2,8 @@
  * Quiet Operator copy for the admin referrals hub (`/admin/referrals`) KPI tiles and row fields.
  * Copy reflects real data gaps — never fabricates lead, pipeline, or conversion counts.
  */
+import { formatDisplayDateTime } from "@/lib/format/datetime";
+
 
 export type ReferralsHubKpiKey =
   | "new_leads"
@@ -82,9 +84,7 @@ export function formatReferralsHubTourScheduledFor(
   tourScheduledFor: string | null | undefined,
 ): string {
   if (!tourScheduledFor || !tourScheduledFor.trim()) return REFERRALS_HUB_NO_TOUR_TIME_COPY;
-  const d = new Date(tourScheduledFor);
-  if (Number.isNaN(d.getTime())) return REFERRALS_HUB_NO_TOUR_TIME_COPY;
-  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return formatDisplayDateTime(tourScheduledFor, { fallback: REFERRALS_HUB_NO_TOUR_TIME_COPY });
 }
 
 /**

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith, formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, TrendingUp } from "lucide-react";
 
@@ -35,10 +36,7 @@ function monthKey(isoDate: string): string {
 }
 
 function monthLabel(key: string): string {
-  const [y, m] = key.split("-").map(Number);
-  const d = new Date(y, (m ?? 1) - 1, 1);
-  if (Number.isNaN(d.getTime())) return key;
-  return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(d);
+  return formatDateTimeWith(`${key.slice(0, 7)}-01`, { month: "short", year: "numeric" }, { fallback: key });
 }
 
 export default function AdminRevenuePage() {
@@ -104,7 +102,7 @@ export default function AdminRevenuePage() {
   const grand = useMemo(() => byMonth.reduce((acc, r) => acc + r.cents, 0), [byMonth]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2">
         <BillingHubNav />
@@ -140,7 +138,7 @@ export default function AdminRevenuePage() {
                      </p>
                      <p className="font-mono text-sm tracking-wider uppercase text-emerald-600/60 dark:text-emerald-400/60 mt-1">Across {byMonth.length} active months</p>
                      <p className="mt-2 text-sm text-muted-foreground">
-                       Includes payments dated on or after {lookbackStart} Eastern.
+                       Includes payments dated on or after {formatDisplayDate(lookbackStart)}.
                      </p>
                    </div>
                  </div>

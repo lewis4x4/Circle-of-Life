@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -209,5 +210,5 @@ export default function AdminScheduleWeekDetailPage() {
 }
 
 function formatDate(date: string): string {
-  return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(new Date(`${date}T12:00:00`));
+  return formatDateTimeWith(date, { weekday: "short", month: "short", day: "numeric" }, { fallback: date });
 }

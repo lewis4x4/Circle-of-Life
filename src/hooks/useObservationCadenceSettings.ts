@@ -14,6 +14,7 @@
  * window arithmetic in the browser.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -231,7 +232,7 @@ export function useObservationCadenceSettings(facilityId: string) {
           });
           setNotice(
             answer.scheduled
-              ? `Scheduled. It takes effect ${new Date(answer.effective_from).toLocaleString()}, and nothing on the board changes before then.`
+              ? `Scheduled. It takes effect ${formatDisplayDateTime(answer.effective_from)}, and nothing on the board changes before then.`
               : "In force now. Pending checks past this moment were cancelled and will be rebuilt on the new schedule. Nothing completed, missed or already escalated was touched.",
           );
           resetDrafts();

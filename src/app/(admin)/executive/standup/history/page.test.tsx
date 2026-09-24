@@ -164,3 +164,18 @@ describe("ExecutiveStandupHistoryPage auth hydration", () => {
     );
   });
 });
+
+describe("ExecutiveStandupHistoryPage empty archive (COL-662)", () => {
+  it("offers one Generate first draft action, not two", () => {
+    authMock.loading = false;
+    authMock.organizationId = "org-1";
+    authMock.user = { id: "user-1" };
+    queryMock.data = { rows: [], importJobs: [], importJobsError: null };
+    queryMock.isFetching = false;
+    queryMock.error = null;
+
+    render(<ExecutiveStandupHistoryPage />);
+
+    expect(screen.getAllByRole("button", { name: /generate first draft/i })).toHaveLength(1);
+  });
+});

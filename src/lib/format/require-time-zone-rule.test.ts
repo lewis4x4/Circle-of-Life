@@ -45,3 +45,19 @@ describe("haven-time/require-time-zone", () => {
     expect(lint(code)).toHaveLength(0);
   });
 });
+
+describe("the require-time-zone baseline stays empty (COL-684)", () => {
+  it("has no suppressed call sites left in eslint-suppressions.json", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const suppressions = JSON.parse(readFileSync(resolve(__dirname, "../../../eslint-suppressions.json"), "utf8")) as Record<
+      string,
+      Record<string, { count: number }>
+    >;
+    const suppressed = Object.entries(suppressions)
+      .filter(([, rules]) => (rules["haven-time/require-time-zone"]?.count ?? 0) > 0)
+      .map(([file]) => file);
+    // Format through @/lib/format/datetime instead of suppressing the rule.
+    expect(suppressed).toEqual([]);
+  });
+});

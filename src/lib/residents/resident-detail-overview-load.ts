@@ -1,3 +1,4 @@
+import { formatShortDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { headCountOrNull } from "@/lib/metrics/require-head-count";
@@ -357,14 +358,7 @@ function truncateSnippet(text: string, max: number): string {
 }
 
 function formatLogTime(iso: string): string {
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
+  return formatShortDateTime(iso, { fallback: iso });
 }
 
 function computeAgeYears(dateOfBirth: string | null, now: Date = new Date()): number | null {

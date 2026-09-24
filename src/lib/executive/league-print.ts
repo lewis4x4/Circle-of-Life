@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { formatLeagueScore } from "@/lib/executive/league";
 import type { ExecutiveLeagueData } from "@/lib/executive/load-league-data";
 import {
@@ -69,7 +70,7 @@ export function buildExecutiveLeaguePrintHtml(data: ExecutiveLeagueData) {
   </head>
   <body>
     <h1>Executive League Table</h1>
-    <p>Generated ${escapeHtml(new Date().toLocaleString())}</p>
+    <p>Generated ${escapeHtml(formatDisplayDateTime(new Date()))}</p>
     <div class="summary">
       <div class="card"><div class="metric-label">Published week</div><div class="metric-value">${escapeHtml(data.boardSummary.weekOf ?? "None")}</div></div>
       <div class="card"><div class="metric-label">Packet confidence</div><div class="metric-value">${escapeHtml(formatLeaguePrintConfidenceBand(data.boardSummary.confidenceBand))}</div></div>

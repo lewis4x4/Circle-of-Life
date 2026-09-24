@@ -2,6 +2,8 @@
  * Quiet Operator copy for the admin training hub (`/admin/training`).
  * Missing facility, program, staff, dates, hours, PDFs, and signers name real gaps — never fabricate labels.
  */
+import { formatDisplayDate } from "@/lib/format/datetime";
+
 
 export const TRAINING_HUB_NO_FACILITY_COPY = "No facility posted";
 export const TRAINING_HUB_NO_PROGRAM_COPY = "No program posted";
@@ -36,9 +38,7 @@ export function formatTrainingHubStaffName(
 /** Calendar date on a hub row — never invents a day. */
 export function formatTrainingHubDate(iso: string | null | undefined): string {
   if (!iso || !iso.trim()) return TRAINING_HUB_NO_DATE_COPY;
-  const d = iso.includes("T") ? new Date(iso) : new Date(`${iso}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return TRAINING_HUB_NO_DATE_COPY;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return formatDisplayDate(iso.trim(), { fallback: TRAINING_HUB_NO_DATE_COPY });
 }
 
 /** Training hours on a completion or in-service row — real zero stays numeric. */

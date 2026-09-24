@@ -295,14 +295,14 @@ export default function ReportsOverviewPage() {
   const lastRunLabel = (iso: string | null) => (iso ? formatRunTime(iso) : "Never");
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-16">
+    <div className="relative w-full pb-16">
       <div className="relative z-10 w-full space-y-6">
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <ReportsHubNav />
         </div>
 
         <nav aria-label="Breadcrumb" className="text-[13px]">
-          <Link href={homeHref} className="text-muted-foreground hover:text-foreground">
+          <Link href={homeHref} className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
             Dashboard
           </Link>
           <span className="mx-2 text-muted-foreground" aria-hidden>

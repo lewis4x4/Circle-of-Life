@@ -1,3 +1,4 @@
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
@@ -99,11 +100,7 @@ function todayLongEt(): string {
 function formatDateLong(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return formatDateTimeWith(iso.slice(0, 10), { year: "numeric", month: "long", day: "numeric" }, { fallback: iso });
   } catch {
     return iso;
   }

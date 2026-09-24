@@ -4,6 +4,7 @@
 
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import {
   Table,
   TableBody,
@@ -50,13 +51,7 @@ export function UserDataTable({
 }: UserDataTableProps) {
   const formatLastLogin = (value: string | null) => {
     if (!value) return "Never";
-    return new Date(value).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return formatDisplayDateTime(value);
   };
 
   if (isLoading) {

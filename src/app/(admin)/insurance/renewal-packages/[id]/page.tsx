@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -304,12 +305,12 @@ export default function RenewalPackageDetailPage() {
           )}
           <div className="text-xs text-muted-foreground">
             {row.narrative_reviewed_at ? (
-              <p>Reviewed {new Date(row.narrative_reviewed_at).toLocaleString()}</p>
+              <p>Reviewed {formatDisplayDateTime(row.narrative_reviewed_at)}</p>
             ) : (
               <p>Not reviewed</p>
             )}
             {row.narrative_published_at ? (
-              <p>Published {new Date(row.narrative_published_at).toLocaleString()}</p>
+              <p>Published {formatDisplayDateTime(row.narrative_published_at)}</p>
             ) : (
               <p>Not published</p>
             )}

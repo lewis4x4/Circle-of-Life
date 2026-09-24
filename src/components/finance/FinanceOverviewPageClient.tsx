@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import Link from "next/link";
 import { Landmark } from "lucide-react";
 
@@ -46,7 +47,7 @@ export default function AdminFinanceHubPageClient({
   });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <FinanceHubNav />
         <div className="flex items-center gap-3">
@@ -133,7 +134,7 @@ export default function AdminFinanceHubPageClient({
                 </p>
                 {postedLookbackStart ? (
                   <p className="text-xs text-muted-foreground">
-                    Includes entries dated on or after {postedLookbackStart} Eastern.
+                    Includes entries dated on or after {formatDisplayDate(postedLookbackStart)}.
                   </p>
                 ) : null}
               </div>

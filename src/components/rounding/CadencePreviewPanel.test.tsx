@@ -188,7 +188,7 @@ describe("the preview before commit", () => {
   it("asks for no acknowledgment on a clean change at the next shift boundary", () => {
     render(<CadencePreviewPanel {...props(clean())} />);
     expect(screen.queryByLabelText(/Confirm by typing/)).not.toBeInTheDocument();
-    expect(screen.getByText("The next boundary is " + new Date("2026-09-18T22:00:00.000Z").toLocaleString() + ".")).toBeInTheDocument();
+    expect(screen.getByText("The next boundary is Sep 18, 2026, 6:00 PM.")).toBeInTheDocument();
   });
 
   it("always asks for an acknowledgment on an immediate apply", () => {
