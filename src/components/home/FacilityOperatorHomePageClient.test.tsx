@@ -353,4 +353,29 @@ describe("FacilityOperatorHomePageClient", () => {
       }),
     );
   });
+
+  it("renders a read-only preview for owners: no claim, clear, quick action or note control, and writes refuse (COL-707)", () => {
+    const queueRow = row({ id: "oti:queue" });
+    render(
+      <FacilityOperatorHomePageClient
+        initial={initial({
+          feed: feed({ rows: [generator, queueRow] }),
+          releasedModules: ["record_payment", "quick_note", "call_out", "collections_log", "past_due"],
+        })}
+        initialFacilityId={FACILITY}
+        currentUserId="owner"
+        fullName={null}
+        readOnly
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Facility admin Home — preview");
+    expect(screen.getByTestId("home-preview-note")).toBeInTheDocument();
+    expect(screen.getByText("Generator weekly run — listen and confirm it ran")).toBeInTheDocument();
+    for (const name of ["Claim", "It ran", "Did not run"]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: /record payment|quick note|call-out|call out/i })).not.toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
 });
