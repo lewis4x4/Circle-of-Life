@@ -14,9 +14,7 @@ const ROLE_APP_SHELLS = [
   "src/components/layout/FamilyShell.tsx",
 ] as const;
 
-const PENDING: readonly string[] = [
-  "src/components/layout/FamilyShell.tsx",
-];
+const PENDING: readonly string[] = [];
 
 const read = (file: string) => readFileSync(path.join(process.cwd(), file), "utf8");
 
