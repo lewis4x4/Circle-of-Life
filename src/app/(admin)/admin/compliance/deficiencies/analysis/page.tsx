@@ -166,7 +166,7 @@ export default function DeficienciesAnalysisPage() {
   }));
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-12">
+    <div className="relative w-full pb-12">
       <div className="relative z-10 space-y-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between py-6">
           <div>

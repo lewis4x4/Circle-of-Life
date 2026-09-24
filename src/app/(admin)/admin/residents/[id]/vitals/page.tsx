@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -83,7 +84,7 @@ export default function ResidentVitalsPage() {
   });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       {loading && <p role="status">Loading clinical data…</p>}
       {(logsError || alertsError) && <div role="alert" className="rounded border border-amber-500 p-4">{logsError && <p>Vitals unavailable: {logsError}</p>}{alertsError && <p>Alerts unavailable: {alertsError}</p>}<button onClick={() => void load()}>Retry</button></div>}
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)] ease-[var(--motion-ease)]">
@@ -190,7 +191,7 @@ export default function ResidentVitalsPage() {
                       <span className="font-medium uppercase tracking-wider text-[11px] text-destructive">{a.vital_type}</span>
                       <Badge className="bg-destructive text-primary-foreground uppercase tracking-wider font-bold text-[9px] px-2 shadow-none border-none">{a.status}</Badge>
                     </div>
-                    <span className="text-xs tabular-nums text-destructive/70 mt-2">{new Date(a.created_at).toLocaleString()}</span>
+                    <span className="text-xs tabular-nums text-destructive/70 mt-2">{formatDisplayDateTime(a.created_at)}</span>
                   </li>
                 ))}
                 {alertsPanel.emptyCopy && (

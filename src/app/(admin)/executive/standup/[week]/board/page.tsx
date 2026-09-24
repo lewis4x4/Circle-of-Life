@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, Printer, RefreshCw } from "lucide-react";
@@ -98,6 +99,11 @@ export default function ExecutiveStandupBoardPage() {
 
   const packet = useMemo(() => (detail ? buildStandupPacketDocument(detail, previousDetail) : null), [detail, previousDetail]);
 
+  // Export actions need a packet: with no snapshot for the week they would print
+  // or save an empty board, so they stay off and say why (COL-662).
+  const noPacketReason = loading ? null : !detail ? "No standup packet for this week yet." : null;
+  const exportDisabled = loading || !detail;
+
   function onExportBoardPacket() {
     if (!detail) return;
     const html = buildStandupBoardPrintHtml(detail, previousDetail);
@@ -159,19 +165,20 @@ export default function ExecutiveStandupBoardPage() {
                   <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                   Refresh
                 </Button>
-                <Button type="button" onClick={() => window.print()}>
+                <Button type="button" onClick={() => window.print()} disabled={exportDisabled} title={noPacketReason ?? undefined}>
                   <Printer className="mr-2 h-4 w-4" />
                   Print / Save PDF
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
+                <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={exportDisabled || downloadingPdf} title={noPacketReason ?? undefined}>
                   {downloadingPdf ? "Generating PDF…" : "Download PDF"}
                 </Button>
-                <Button type="button" variant="outline" onClick={onExportBoardPacket}>
+                <Button type="button" variant="outline" onClick={onExportBoardPacket} disabled={exportDisabled} title={noPacketReason ?? undefined}>
                   Export HTML packet
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
+                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={exportDisabled || savingBoardReport} title={noPacketReason ?? undefined}>
                   {savingBoardReport ? "Saving…" : "Save in executive reports"}
                 </Button>
+                {noPacketReason ? <p className="w-full text-xs text-muted-foreground">{noPacketReason}</p> : null}
               </div>
             }
           />
@@ -241,12 +248,12 @@ export default function ExecutiveStandupBoardPage() {
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Prepared</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.generatedByName ?? detail.snapshot.generatedById ?? "System"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{new Date(detail.snapshot.generatedAt).toLocaleString()}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{formatDisplayDateTime(detail.snapshot.generatedAt)}</div>
                   </div>
                   <div className="rounded-[8px] border border-border bg-muted/10 px-5 py-5 text-sm">
                     <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Published</div>
                     <div className="mt-2 text-xl font-semibold text-foreground">{detail.snapshot.publishedByName ?? detail.snapshot.publishedById ?? "Not published"}</div>
-                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet"}</div>
+                    <div className="mt-2 tabular-nums text-muted-foreground">{detail.snapshot.publishedAt ? formatDisplayDateTime(detail.snapshot.publishedAt) : "Not yet"}</div>
                     <div className="mt-2 tabular-nums text-muted-foreground">Version {detail.snapshot.publishedVersion}</div>
                   </div>
                 </div>

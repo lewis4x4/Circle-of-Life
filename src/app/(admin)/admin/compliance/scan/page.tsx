@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
@@ -124,7 +125,7 @@ export default function ComplianceScanPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Scan Results</CardTitle>
               <Badge variant="outline" className="text-sm">
-                {new Date(result.scan.scanned_at).toLocaleString()}
+                {formatDisplayDateTime(result.scan.scanned_at)}
               </Badge>
             </div>
             <CardDescription>
@@ -221,7 +222,7 @@ export default function ComplianceScanPage() {
                       )}
                       <div>
                         <p className="font-medium text-slate-900 dark:text-slate-100">
-                          {new Date(scan.scanned_at).toLocaleDateString()}
+                          {formatDisplayDate(scan.scanned_at)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {scan.rules_passed}/{scan.total_rules_checked} rules passed

@@ -49,7 +49,7 @@ export function UserFilterBar({
             onClick={() => onStatusChange(option.value)}
             className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
               status === option.value
-                ? "border-teal-500 bg-teal-500/10 text-teal-600"
+                ? "border-teal-500 bg-teal-500/10 text-teal-800 dark:text-teal-200"
                 : "border-input text-muted-foreground hover:bg-muted"
             }`}
           >

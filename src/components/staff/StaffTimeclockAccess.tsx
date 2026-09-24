@@ -7,6 +7,7 @@
  * value and the PIN are sent to the server once and never displayed again.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -150,7 +151,7 @@ export function StaffTimeclockAccess({ staffId, canEdit, className, fetchImpl }:
 
           <DetailRow label="Employee number" value={status?.employee_number ?? "Not set"} />
           <DetailRow label="Badge" value={status?.has_badge ? "Registered" : "Not registered"} />
-          <DetailRow label="PIN" value={status?.exists ? `Set ${status.pin_set_at ? new Date(status.pin_set_at).toLocaleDateString("en-US") : ""}`.trim() : "Not set"} />
+          <DetailRow label="PIN" value={status?.exists ? `Set ${status.pin_set_at ? formatDisplayDate(status.pin_set_at) : ""}`.trim() : "Not set"} />
           {locked ? <DetailRow label="Lock" value="Locked after failed PIN attempts" /> : null}
 
           {revealedPin ? (

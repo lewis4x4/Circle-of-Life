@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/format/datetime";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CalendarClock, CheckCircle2, FileText, Loader2, NotebookPen } from "lucide-react";
@@ -464,7 +465,7 @@ export default function KnowledgeDocumentReviewPage() {
                     <div className="rounded-[8px] border border-border bg-muted/10 p-3">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">Due</div>
                       <div className="mt-1 text-sm font-medium tabular-nums text-foreground">
-                        {document.review_due_at ? new Date(document.review_due_at).toLocaleDateString() : "Not set"}
+                        {document.review_due_at ? formatDisplayDate(document.review_due_at) : "Not set"}
                       </div>
                     </div>
                     <div className="rounded-[8px] border border-border bg-muted/10 p-3 sm:col-span-2">
@@ -472,7 +473,7 @@ export default function KnowledgeDocumentReviewPage() {
                       <div className="mt-1 text-sm font-medium tabular-nums text-foreground">
                         {reviewCompletedCurrent
                           ? latestReviewCompletedEvent
-                            ? new Date(latestReviewCompletedEvent.created_at).toLocaleString()
+                            ? formatDisplayDateTime(latestReviewCompletedEvent.created_at)
                             : "Recorded"
                           : "Not recorded"}
                       </div>
@@ -505,7 +506,7 @@ export default function KnowledgeDocumentReviewPage() {
                               {formatEventTitle(event.event_type)}
                             </div>
                             <div className="text-xs tabular-nums text-muted-foreground">
-                              {new Date(event.created_at).toLocaleString()}
+                              {formatDisplayDateTime(event.created_at)}
                             </div>
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">

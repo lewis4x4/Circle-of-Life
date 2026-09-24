@@ -10,6 +10,7 @@
  * The CSV matches the column order of the paper log it replaces.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,7 @@ export function WatchlistDispositionLedger({
               {entries.map((entry) => (
                 <tr key={entry.id} className="h-9">
                   <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                    {new Date(entry.acted_at).toLocaleDateString()}
+                    {formatDisplayDate(entry.acted_at)}
                   </td>
                   <td className="px-3 py-2 text-[13px] text-foreground">{entry.signal_label}</td>
                   <td className="px-3 py-2">

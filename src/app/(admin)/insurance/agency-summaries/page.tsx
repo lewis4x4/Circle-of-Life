@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { useQuery } from "@tanstack/react-query";
 
 import { InsuranceHubNav } from "../insurance-hub-nav";
@@ -58,7 +59,7 @@ function SummaryTable({ connection }: { connection: AgencySummaryConnection }) {
               <td className="py-2 pr-4">{row.summary.carrier ?? "Not recorded"}</td>
               <td className="py-2 pr-4 text-muted-foreground">{row.summary.line_of_business ?? "Not recorded"}</td>
               <td className="py-2 pr-4 font-mono text-xs tabular-nums">
-                {row.summary.effective_date ?? "?"} → {row.summary.expiration_date ?? "?"}
+                {formatDisplayDate(row.summary.effective_date, { fallback: "Not posted" })} → {formatDisplayDate(row.summary.expiration_date, { fallback: "Not posted" })}
               </td>
               <td className="py-2 pr-4 tabular-nums">
                 {/* Deliberately not Haven's money formatter: this is the agency's

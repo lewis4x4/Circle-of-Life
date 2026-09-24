@@ -452,10 +452,7 @@ export function SearchToolDashboard() {
                                   style={{ color: meta.color }}
                                 />
                               )}
-                              <span
-                                className="text-xs font-semibold uppercase tracking-wider"
-                                style={{ color: meta.color }}
-                              >
+                              <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
                                 {meta.label}
                               </span>
                               <span className="text-[10px] text-muted-foreground">

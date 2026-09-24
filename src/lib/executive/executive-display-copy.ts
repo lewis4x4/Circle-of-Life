@@ -1,3 +1,4 @@
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/format/datetime";
 import { enumLabel } from "@/lib/display/enum-label";
 
 /**
@@ -135,12 +136,12 @@ export function formatExecutiveCompletenessPct(value: number | null | undefined)
 
 export function formatExecutiveLastSavedAt(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_LAST_SAVED_COPY;
-  return new Date(value).toLocaleString();
+  return formatDisplayDateTime(value);
 }
 
 export function formatExecutivePacketDate(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_PACKET_DATE_POSTED_COPY;
-  return new Date(value).toLocaleDateString();
+  return formatDisplayDate(value);
 }
 
 /** Executive snapshot revenue (integer cents) — real zero stays formatted; missing gets explicit copy. */
@@ -210,7 +211,7 @@ export function formatExecutiveOnLeaveCount(presence: PresenceCensus | null | un
 /** Saved report last-generated timestamp — posted datetimes stay formatted. */
 export function formatExecutiveLastGeneratedAt(value: string | null | undefined): string {
   if (value == null || value.trim() === "") return EXECUTIVE_NO_GENERATE_TIME_POSTED_COPY;
-  return new Date(value).toLocaleString();
+  return formatDisplayDateTime(value);
 }
 
 /** Generic Quiet Operator gap copy — lowercases the metric label for readability. */

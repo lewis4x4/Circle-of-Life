@@ -146,7 +146,7 @@ export default function CareServicesPage() {
               <div className="rounded-3xl bg-[#FAF7F2] border-2 border-stone-200 shadow-md hover:shadow-xl transition-all overflow-hidden flex flex-col justify-between">
                 <div className="relative h-64 w-full bg-stone-900">
                   <Image
-                    src="https://images.unsplash.com/photo-1540518614846-7ede433c4ef7?auto=format&fit=crop&w=1000&q=80"
+                    src="https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80"
                     alt="Caregiver Respite Stay"
                     className="w-full h-full object-cover" unoptimized loading="eager" fill sizes="100vw"
                   />
