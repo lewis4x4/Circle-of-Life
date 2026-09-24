@@ -48,10 +48,11 @@ interface CadenceWindowRow {
  * One row of `resolve_observation_task_assignees`. `assignment_source` is the
  * step of the fallback chain that answered, and `none_scheduled` is the one that
  * means nobody on the schedule or on the clock can work this resident's checks.
- * `awaiting_clock_in` is the next shift at a building that staffs from punches:
- * nobody can be on the clock for a shift that has not started, so the checks
- * are written unowned and `assign_unowned_observation_tasks` gives them owners
- * once it does. It is not a staffing gap.
+ * `awaiting_clock_in` is the next shift at a building that staffs from punches,
+ * or the shift in progress during its handoff grace while nobody has clocked in
+ * for it: the checks are written unowned and `assign_unowned_observation_tasks`
+ * gives them owners once the relief clocks in (or, after the grace, to whoever
+ * is on the clock). It is not a staffing gap.
  */
 interface ResolvedAssigneeRow {
   resident_id: string;
@@ -429,10 +430,10 @@ export async function runObservationTaskGenerator(options: {
         // assignee: a task assigned to somebody who is not working is worse than a
         // task nobody is assigned, because the first one looks covered.
         //
-        // `awaiting_clock_in` is excluded: that is the next shift at a building
-        // that staffs from punches, and its owners come from the clock once it
-        // starts. Counting it would report every such building as unstaffed on
-        // every tick.
+        // `awaiting_clock_in` is excluded: the next shift, or the shift in
+        // progress inside its handoff grace, at a building that staffs from
+        // punches. Its owners come from the clock. Counting it would report
+        // every such building as unstaffed on every tick.
         const unassigned = [...residentsWithWork].filter((residentId) => {
           const assignee = assignees.get(residentId);
           return !assignee?.staff_id && assignee?.assignment_source !== "awaiting_clock_in";

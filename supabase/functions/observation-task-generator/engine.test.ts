@@ -262,3 +262,28 @@ Deno.test("nothing to resolve counts nothing, a gap is never resolved, and a fai
   assertEquals(summary.ok, true);
   assert(log.entries.some((entry) => entry.event === "staffing_gap_resolve_failed"));
 });
+
+Deno.test("the shift in progress inside its handoff grace waits for the relief: no owner, no gap, no resolve", async () => {
+  const { admin, calls } = fakeAdmin({
+    facilities: [FACILITY_A],
+    resolve: (args) => ({
+      data: (args.p_resident_ids as string[]).map((resident_id) => ({
+        resident_id,
+        shift_assignment_id: null,
+        staff_id: null,
+        assignment_source: "awaiting_clock_in",
+      })),
+      error: null,
+    }),
+    assignUnowned: () => ({ data: 0, error: null }),
+  });
+  const summary = await runObservationTaskGenerator({ admin, organizationId: ORG, facilityId: FACILITY_A, atIso: AT, log: recordingLog() });
+
+  const rows = calls.filter((call) => call.name === "record_cadence_observation_tasks")
+    .flatMap((call) => call.args.p_rows as { assigned_staff_id: string | null }[]);
+  assert(rows.length > 0 && rows.every((row) => row.assigned_staff_id === null));
+  assertEquals(calls.filter((call) => call.name === "record_observation_staffing_gap").length, 0);
+  assertEquals(calls.filter((call) => call.name === "resolve_observation_staffing_gap").length, 0);
+  assertEquals(summary.staffing_gaps, []);
+  assertEquals(summary.ok, true);
+});

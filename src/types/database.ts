@@ -1379,6 +1379,9 @@ export type Database = {
           roster_roles: string[] | null
           throttled_until: string | null
           token_hash: string
+          visitor_failure_count: number
+          visitor_failure_window_started_at: string | null
+          visitor_throttled_until: string | null
         }
         Insert: {
           device_kind?: string
@@ -1396,6 +1399,9 @@ export type Database = {
           roster_roles?: string[] | null
           throttled_until?: string | null
           token_hash: string
+          visitor_failure_count?: number
+          visitor_failure_window_started_at?: string | null
+          visitor_throttled_until?: string | null
         }
         Update: {
           device_kind?: string
@@ -1413,6 +1419,9 @@ export type Database = {
           roster_roles?: string[] | null
           throttled_until?: string | null
           token_hash?: string
+          visitor_failure_count?: number
+          visitor_failure_window_started_at?: string | null
+          visitor_throttled_until?: string | null
         }
         Relationships: []
       }

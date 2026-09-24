@@ -139,6 +139,13 @@ SELECT org, other_fac, true FROM ro
 UNION ALL
 SELECT org, hand_fac, true FROM ro;
 
+-- The main probe building runs with no handoff window (lead 0): its sections
+-- are about who is eligible, not about shift changes, and a zero window keeps
+-- them independent of the time of day the probe runs. The handoff window is
+-- proven in section 9, in its own building, at explicit instants.
+UPDATE public.timeclock_facility_settings SET rounding_clock_in_lead_minutes = 0
+WHERE facility_id = '0a820000-0000-4000-8000-000000000003';
+
 INSERT INTO public.residents (id, facility_id, organization_id, first_name, last_name, status, gender, admission_date)
 SELECT ('0a820000-0000-4000-8000-0000000001' || lpad(i::text, 2, '0'))::uuid, fac, org, 'Probe', 'Resident', 'active'::public.resident_status, 'prefer_not_to_say'::public.gender, current_date - 30
 FROM ro, generate_series(1, 8) AS i
@@ -219,7 +226,7 @@ DO $$
 BEGIN
   PERFORM pg_temp.ro_assert ((SELECT rounding_owner_roles FROM public.timeclock_facility_settings JOIN ro ON facility_id = ro.fac) = ARRAY['med_tech'], 'rounding_owner_roles does not default to med_tech only');
   PERFORM pg_temp.ro_assert ((SELECT count(*) FROM ro_shift) = 2, 'the probe facility resolves no current and next shift; the seeded shift model did not land');
-  PERFORM pg_temp.ro_assert ((SELECT rounding_clock_in_lead_minutes FROM public.timeclock_facility_settings JOIN ro ON facility_id = ro.fac) = 30, 'rounding_clock_in_lead_minutes does not default to 30');
+  PERFORM pg_temp.ro_assert ((SELECT rounding_clock_in_lead_minutes FROM public.timeclock_facility_settings JOIN ro ON facility_id = ro.hand_fac) = 30, 'rounding_clock_in_lead_minutes does not default to 30');
   PERFORM pg_temp.ro_assert ((SELECT row(s.starts_at_utc, s.roster_shift_type, s.shift_service_date) FROM ro, public.facility_shift_window_at (ro.hand_fac, now()) s)
     = (SELECT row(starts_at_utc, roster_shift_type, shift_service_date) FROM ro_shift WHERE phase = 'current'), 'the handoff building does not share the probe building''s shift model');
   PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.shift_assignments sa JOIN ro ON sa.facility_id = ro.fac), 'the probe facility must have no shift_assignments');
@@ -381,12 +388,12 @@ $$;
 --    that was already written; new checks spread over both by the stable hash,
 --    and the same question asked twice gets the same answer.
 -- ---------------------------------------------------------------------------
--- Mike clocked in 20 minutes before the shift started (inside the default 30
--- minute lead) and is on a meal break half way between then and now.
+-- Mike clocked in during this shift (a third of the way from its start to now)
+-- and went on a meal break two thirds of the way.
 INSERT INTO public.time_punches (organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
-SELECT org, fac, m_staff, 'in', s.starts_at_utc - interval '20 minutes', gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current'
+SELECT org, fac, m_staff, 'in', s.starts_at_utc + (now() - s.starts_at_utc) / 3, gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current'
 UNION ALL
-SELECT org, fac, m_staff, 'meal_start', s.starts_at_utc - interval '20 minutes' + (now() - s.starts_at_utc + interval '20 minutes') / 2, gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current';
+SELECT org, fac, m_staff, 'meal_start', s.starts_at_utc + (now() - s.starts_at_utc) * 2 / 3, gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current';
 
 DO $$
 DECLARE
@@ -544,7 +551,7 @@ WHERE facility_id = '0a820000-0000-4000-8000-000000000003';
 INSERT INTO public.time_punches (organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
 SELECT org, fac, a_staff, 'out', now(), gen_random_uuid() FROM ro
 UNION ALL
-SELECT org, fac, m_staff, 'meal_end', now() - interval '1 minute', gen_random_uuid() FROM ro
+SELECT org, fac, m_staff, 'meal_end', s.starts_at_utc + (now() - s.starts_at_utc) * 5 / 6, gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current'
 UNION ALL
 SELECT org, fac, m_staff, 'out', now(), gen_random_uuid() FROM ro;
 
@@ -561,17 +568,68 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- 9. Shift handoff, in its own building. Nightingale clocked in 45 minutes
---    before the shift in progress started (outside the default 30 minute
---    lead: the outgoing shift) and is still on the clock. Daybreak clocked in
---    10 minutes before it started. Daybreak owns the shift's checks and
---    Nightingale owns nothing; with Daybreak gone, Nightingale is the fallback.
+-- 9. Shift handoff, in its own building, at explicit instants relative to the
+--    start S of the shift in progress (default 30 minute window). Nightingale
+--    clocked in at S - 45 minutes (the outgoing shift) and is still on the
+--    clock. Daybreak, the relief, punches at S + 10 minutes.
+--      S + 5   nobody clocked in for the shift and the grace runs: the checks
+--              wait (awaiting_clock_in), Nightingale owns nothing, no gap.
+--      S + 31  grace over, nobody clocked in for the shift: Nightingale is the
+--              fallback (a double shift is covered).
+--      S + 11  after Daybreak's punch: Daybreak gets every check.
+--    The instants go through haven.resolve_observation_task_assignees_at, the
+--    same core the public resolver calls with now(), and
+--    assign_unowned_observation_tasks, which takes the tick.
 -- ---------------------------------------------------------------------------
-DO $$
-BEGIN
-  PERFORM pg_temp.ro_assert (pg_temp.ro_generate_at ((SELECT hand_fac FROM ro), 'current', 'hand_a', (SELECT now() + (ends_at_utc - now()) / 2 FROM ro_shift WHERE phase = 'current')) = 4, 'the handoff building''s checks were not written');
-END
+CREATE FUNCTION pg_temp.ro_hand_answer (p_at timestamptz)
+  RETURNS text[]
+  LANGUAGE sql
+  AS $$
+  SELECT
+    array_agg(DISTINCT a.assignment_source || ':' || COALESCE(a.staff_id::text, '') ORDER BY a.assignment_source || ':' || COALESCE(a.staff_id::text, ''))
+  FROM
+    ro,
+    ro_shift s,
+    haven.resolve_observation_task_assignees_at (ro.hand_fac, s.shift_service_date, s.roster_shift_type::text, ARRAY (
+        SELECT
+          r.id
+        FROM public.residents r
+        WHERE
+          r.facility_id = ro.hand_fac), p_at) a
+  WHERE
+    s.phase = 'current';
 $$;
+
+CREATE FUNCTION pg_temp.ro_hand_state (p_at timestamptz)
+  RETURNS text
+  LANGUAGE sql
+  AS $$
+  SELECT
+    haven.observation_shift_staffing_state (ro.hand_fac, s.shift_key, s.shift_service_date, p_at)
+  FROM
+    ro,
+    ro_shift s
+  WHERE
+    s.phase = 'current';
+$$;
+
+-- Four unowned checks due at the middle of the shift, written through the
+-- generator's writer with no owner.
+SELECT
+  public.record_cadence_observation_tasks (jsonb_agg(jsonb_build_object('organization_id', ro.org, 'entity_id', ro.entity, 'facility_id', ro.hand_fac, 'resident_id', r.id, 'cadence_version_id', (
+          SELECT
+            v.id
+          FROM public.facility_cadence_versions v
+          WHERE
+            v.facility_id = ro.hand_fac
+            AND v.status = 'active'
+            AND v.deleted_at IS NULL
+          ORDER BY v.effective_from DESC
+          LIMIT 1), 'window_key', 'hand_a', 'service_date', s.shift_service_date, 'shift_assignment_id', NULL, 'assigned_staff_id', NULL, 'scheduled_for', s.starts_at_utc + (s.ends_at_utc - s.starts_at_utc) / 2 - interval '30 minutes', 'due_at', s.starts_at_utc + (s.ends_at_utc - s.starts_at_utc) / 2, 'grace_ends_at', s.starts_at_utc + (s.ends_at_utc - s.starts_at_utc) / 2 + interval '30 minutes', 'status', 'upcoming')))
+FROM
+  ro
+  JOIN ro_shift s ON s.phase = 'current'
+  JOIN public.residents r ON r.facility_id = ro.hand_fac;
 
 INSERT INTO public.time_punches (organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
 SELECT org, hand_fac, night_staff, 'in', s.starts_at_utc - interval '45 minutes', gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current';
@@ -582,14 +640,26 @@ DECLARE
   v_answer text[];
 BEGIN
   SELECT * INTO v_cur FROM ro_shift WHERE phase = 'current';
-  SELECT array_agg(DISTINCT a.assignment_source || ':' || a.staff_id) INTO v_answer
-  FROM ro, public.resolve_observation_task_assignees (ro.hand_fac, v_cur.shift_service_date, v_cur.roster_shift_type::text, ARRAY (SELECT r.id FROM public.residents r WHERE r.facility_id = ro.hand_fac)) a;
-  PERFORM pg_temp.ro_assert (v_answer = (SELECT ARRAY['on_clock:' || night_staff] FROM ro), format('with only the outgoing tech on the clock, the fallback should give them the shift''s checks; got %s', v_answer));
+  PERFORM pg_temp.ro_assert ((SELECT count(*) FROM public.resident_observation_tasks t JOIN ro ON t.facility_id = ro.hand_fac WHERE t.window_key = 'hand_a' AND t.assigned_staff_id IS NULL) = 4, 'the handoff building''s unowned checks were not written');
+
+  -- S + 5: inside the grace, the outgoing tech owns nothing and nothing is a gap.
+  v_answer := pg_temp.ro_hand_answer (v_cur.starts_at_utc + interval '5 minutes');
+  PERFORM pg_temp.ro_assert (v_answer = ARRAY['awaiting_clock_in:'], format('inside the handoff grace with only the outgoing tech on the clock the checks must wait (awaiting_clock_in, no owner); got %s', v_answer));
+  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM ro, haven.observation_shift_owner_staff (ro.hand_fac, v_cur.starts_at_utc + interval '5 minutes', v_cur.starts_at_utc)), 'inside the handoff grace the outgoing tech was counted as an owner of the incoming shift');
+  PERFORM pg_temp.ro_assert (public.assign_unowned_observation_tasks ((SELECT hand_fac FROM ro), v_cur.starts_at_utc + interval '5 minutes') = 0, 'inside the handoff grace the unowned pass gave the outgoing tech the incoming shift''s checks');
+  PERFORM pg_temp.ro_assert (pg_temp.ro_hand_state (v_cur.starts_at_utc + interval '5 minutes') = 'awaiting_clock_in', format('inside the handoff grace the shift must read awaiting_clock_in so no gap is raised; got %s', pg_temp.ro_hand_state (v_cur.starts_at_utc + interval '5 minutes')));
+
+  -- S + 31: the grace is over and nobody clocked in for the shift, so the
+  -- person on the clock owns the checks.
+  v_answer := pg_temp.ro_hand_answer (v_cur.starts_at_utc + interval '31 minutes');
+  PERFORM pg_temp.ro_assert (v_answer = (SELECT ARRAY['on_clock:' || night_staff] FROM ro), format('after the handoff grace with only the outgoing tech on the clock, the fallback should give them the checks; got %s', v_answer));
+  PERFORM pg_temp.ro_assert (pg_temp.ro_hand_state (v_cur.starts_at_utc + interval '31 minutes') = 'staffed', 'after the grace the fallback owner did not count as staffed');
 END
 $$;
 
+-- The relief punches at S + 10, inside the grace.
 INSERT INTO public.time_punches (organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
-SELECT org, hand_fac, day_staff, 'in', s.starts_at_utc - interval '10 minutes', gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current';
+SELECT org, hand_fac, day_staff, 'in', s.starts_at_utc + interval '10 minutes', gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current';
 
 DO $$
 DECLARE
@@ -599,21 +669,22 @@ DECLARE
   v_refused boolean;
 BEGIN
   SELECT * INTO v_cur FROM ro_shift WHERE phase = 'current';
-  SELECT array_agg(DISTINCT a.assignment_source || ':' || a.staff_id) INTO v_answer
-  FROM ro, public.resolve_observation_task_assignees (ro.hand_fac, v_cur.shift_service_date, v_cur.roster_shift_type::text, ARRAY (SELECT r.id FROM public.residents r WHERE r.facility_id = ro.hand_fac)) a;
-  PERFORM pg_temp.ro_assert (v_answer = (SELECT ARRAY['on_clock:' || day_staff] FROM ro), format('the outgoing tech, still clocked in, was offered the incoming shift''s checks; got %s', v_answer));
+  v_answer := pg_temp.ro_hand_answer (v_cur.starts_at_utc + interval '11 minutes');
+  PERFORM pg_temp.ro_assert (v_answer = (SELECT ARRAY['on_clock:' || day_staff] FROM ro), format('once the relief clocked in inside the grace, only the relief should be offered the checks; got %s', v_answer));
+  v_answer := pg_temp.ro_hand_answer (v_cur.starts_at_utc + interval '31 minutes');
+  PERFORM pg_temp.ro_assert (v_answer = (SELECT ARRAY['on_clock:' || day_staff] FROM ro), format('after the grace the outgoing tech, still clocked in, was offered the incoming shift''s checks; got %s', v_answer));
 
-  -- The first day tick through the real write path: every check goes to the
-  -- incoming tech, none to the outgoing one.
-  PERFORM pg_temp.ro_assert (pg_temp.ro_generate_at ((SELECT hand_fac FROM ro), 'current', 'hand_a', now() + (v_cur.ends_at_utc - now()) / 2) = 4, 'the handoff checks were not adopted');
-  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.resident_observation_tasks t JOIN ro ON t.facility_id = ro.hand_fac WHERE t.assigned_staff_id IS DISTINCT FROM ro.day_staff), 'a handoff check is not owned by the incoming tech');
-  PERFORM pg_temp.ro_assert (public.assign_unowned_observation_tasks ((SELECT hand_fac FROM ro), now()) = 0, 'the unowned pass found something left at the handoff building');
+  -- The next tick after the relief's punch: every check goes to the relief.
+  PERFORM pg_temp.ro_assert (public.assign_unowned_observation_tasks ((SELECT hand_fac FROM ro), v_cur.starts_at_utc + interval '11 minutes') = 4, 'the tick after the relief clocked in did not assign the 4 waiting checks');
+  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.resident_observation_tasks t JOIN ro ON t.facility_id = ro.hand_fac WHERE t.assigned_staff_id IS DISTINCT FROM ro.day_staff), 'a handoff check is not owned by the relief');
+  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.resident_observation_assignments a JOIN ro ON a.staff_id = ro.night_staff), 'the outgoing tech holds an assignment row');
+  PERFORM pg_temp.ro_assert (pg_temp.ro_hand_state (v_cur.starts_at_utc + interval '11 minutes') = 'staffed', 'with the relief on the clock the shift did not read staffed');
 
-  -- The lead time is configuration: at 60 minutes the outgoing tech counts as
-  -- having clocked in for this shift too.
+  -- The window is configuration: at 60 minutes the outgoing tech's punch
+  -- counts as clocking in for this shift too.
   UPDATE public.timeclock_facility_settings SET rounding_clock_in_lead_minutes = 60 WHERE facility_id = (SELECT hand_fac FROM ro);
-  SELECT array_agg(o.staff_id ORDER BY o.staff_id) INTO v_owners FROM ro, haven.observation_shift_owner_staff (ro.hand_fac, now(), v_cur.starts_at_utc) o;
-  PERFORM pg_temp.ro_assert (v_owners = (SELECT ARRAY(SELECT unnest(ARRAY[night_staff, day_staff]) ORDER BY 1) FROM ro), format('with a 60 minute lead both techs should count for the shift; got %s', v_owners));
+  SELECT array_agg(o.staff_id ORDER BY o.staff_id) INTO v_owners FROM ro, haven.observation_shift_owner_staff (ro.hand_fac, v_cur.starts_at_utc + interval '11 minutes', v_cur.starts_at_utc) o;
+  PERFORM pg_temp.ro_assert (v_owners = (SELECT ARRAY(SELECT unnest(ARRAY[night_staff, day_staff]) ORDER BY 1) FROM ro), format('with a 60 minute window both techs should count for the shift; got %s', v_owners));
   v_refused := false;
   BEGIN
     UPDATE public.timeclock_facility_settings SET rounding_clock_in_lead_minutes = 241 WHERE facility_id = (SELECT hand_fac FROM ro);
@@ -632,18 +703,19 @@ BEGIN
 END
 $$;
 
--- Daybreak leaves; Nightingale is the only one on the clock.
+-- The relief leaves at S + 40; the outgoing tech works a double.
 INSERT INTO public.time_punches (organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
-SELECT org, hand_fac, day_staff, 'out', now(), gen_random_uuid() FROM ro;
+SELECT org, hand_fac, day_staff, 'out', s.starts_at_utc + interval '40 minutes', gen_random_uuid() FROM ro, ro_shift s WHERE s.phase = 'current';
 
 DO $$
 DECLARE
   v_cur record;
+  v_answer text[];
 BEGIN
   SELECT * INTO v_cur FROM ro_shift WHERE phase = 'current';
-  PERFORM pg_temp.ro_assert (pg_temp.ro_generate_at ((SELECT hand_fac FROM ro), 'current', 'hand_b', now() + (v_cur.ends_at_utc - now()) / 3) = 4, 'the fallback checks were not written');
-  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.resident_observation_tasks t JOIN ro ON t.facility_id = ro.hand_fac WHERE t.window_key = 'hand_b' AND t.assigned_staff_id IS DISTINCT FROM ro.night_staff), 'with only the outgoing tech on the clock the fallback did not give them the new checks');
-  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.resident_observation_tasks t JOIN ro ON t.facility_id = ro.hand_fac WHERE t.window_key = 'hand_a' AND t.assigned_staff_id IS DISTINCT FROM ro.day_staff), 'the incoming tech''s checks moved when they clocked out');
+  v_answer := pg_temp.ro_hand_answer (v_cur.starts_at_utc + interval '41 minutes');
+  PERFORM pg_temp.ro_assert (v_answer = (SELECT ARRAY['on_clock:' || night_staff] FROM ro), format('after the grace with only the double-shift tech on the clock, the fallback should give them new checks; got %s', v_answer));
+  PERFORM pg_temp.ro_assert (NOT EXISTS (SELECT 1 FROM public.resident_observation_tasks t JOIN ro ON t.facility_id = ro.hand_fac WHERE t.window_key = 'hand_a' AND t.assigned_staff_id IS DISTINCT FROM ro.day_staff), 'the relief''s checks moved when they clocked out');
 END
 $$;
 

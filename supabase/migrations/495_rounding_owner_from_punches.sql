@@ -21,11 +21,23 @@
 --                         (allowing rounding_clock_in_lead_minutes for early
 --                         arrivals, a facility setting) and falls back to
 --                         everybody on the clock only when nobody clocked in
---                         for this shift. Without that preference the night
---                         tech still clocked in at 06:03 would own the day's
---                         checks all day, because owned checks never move.
+--                         for this shift AND the handoff grace is over. The
+--                         grace is the same rounding_clock_in_lead_minutes
+--                         after the shift start: the window around a shift
+--                         change in which the relief is expected at the door
+--                         runs from lead minutes before the start to lead
+--                         minutes after it. Inside the grace, with nobody
+--                         clocked in for the shift, the checks stay unowned
+--                         (awaiting_clock_in) and no gap is raised; after it,
+--                         whoever is on the clock owns them (a double shift is
+--                         still covered). Without this the night tech still
+--                         clocked in at 06:03 would own every day check if the
+--                         relief punched at 06:05, because owned checks never
+--                         move.
 --   4. awaiting_clock_in  nobody is scheduled for the NEXT shift at a facility
---                         that staffs from punches. Nobody is on the clock for
+--                         that staffs from punches, or for the shift in
+--                         progress while its handoff grace runs and nobody has
+--                         clocked in for it. Nobody is on the clock for
 --                         a shift that has not started, and the outgoing shift
 --                         must never own the incoming shift's checks, so the
 --                         checks are written unowned and
@@ -164,9 +176,33 @@ COMMENT ON FUNCTION haven.observation_on_clock_staff (uuid, timestamptz) IS
 REVOKE ALL ON FUNCTION haven.observation_on_clock_staff (uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
+-- 1a. The handoff window half-width for a facility, from configuration.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION haven.observation_clock_in_lead (p_facility_id uuid)
+  RETURNS interval
+  LANGUAGE sql
+  STABLE
+  SET search_path = public, pg_catalog
+  AS $func$
+  SELECT
+    make_interval(mins => COALESCE((
+        SELECT
+          t.rounding_clock_in_lead_minutes
+        FROM public.timeclock_facility_settings t
+        WHERE
+          t.facility_id = p_facility_id), 30));
+$func$;
+
+COMMENT ON FUNCTION haven.observation_clock_in_lead (uuid) IS
+  'COL-693: timeclock_facility_settings.rounding_clock_in_lead_minutes as an interval (default 30 minutes when the facility has no settings row). Before a shift start it is how early a clock-in still counts as clocking in for that shift; after the start it is the handoff grace. Private helper.';
+
+REVOKE ALL ON FUNCTION haven.observation_clock_in_lead (uuid) FROM PUBLIC, anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
 -- 1b. Who owns the checks of a shift in progress: the on-clock staff who
 --     clocked in for this shift (opening in punch no earlier than the shift
---     start less the facility's lead minutes), else everybody on the clock.
+--     start less the facility's lead minutes); inside the handoff grace,
+--     nobody else; after it, everybody on the clock.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION haven.observation_shift_owner_staff (p_facility_id uuid, p_at timestamptz, p_shift_starts_at timestamptz)
   RETURNS TABLE (
@@ -184,12 +220,7 @@ CREATE OR REPLACE FUNCTION haven.observation_shift_owner_staff (p_facility_id uu
 ),
 lead AS (
   SELECT
-    make_interval(mins => COALESCE((
-        SELECT
-          t.rounding_clock_in_lead_minutes
-        FROM public.timeclock_facility_settings t
-        WHERE
-          t.facility_id = p_facility_id), 30)) AS lead_time
+    haven.observation_clock_in_lead (p_facility_id) AS lead_time
 ),
 this_shift AS (
   SELECT
@@ -208,17 +239,87 @@ UNION ALL
 SELECT
   c.staff_id
 FROM
-  on_clock c
+  on_clock c,
+  lead l
 WHERE
   NOT EXISTS (
     SELECT
       1
     FROM
-      this_shift);
+      this_shift)
+  AND p_at >= p_shift_starts_at + l.lead_time;
 $func$;
 
 COMMENT ON FUNCTION haven.observation_shift_owner_staff (uuid, timestamptz, timestamptz) IS
-  'COL-693: the eligible on-clock staff who clocked in for the shift that starts at p_shift_starts_at (opening in punch no earlier than the start less timeclock_facility_settings.rounding_clock_in_lead_minutes, default 30), falling back to every eligible person on the clock only when nobody did. Keeps the outgoing shift, still clocked in at a handoff, from owning the incoming shift''s checks. Private helper.';
+  'COL-693: the eligible on-clock staff who clocked in for the shift that starts at p_shift_starts_at (opening in punch no earlier than the start less timeclock_facility_settings.rounding_clock_in_lead_minutes, default 30). When nobody did: no rows while p_at is inside the handoff grace (before the start plus the same lead minutes), so the checks wait for the relief; after the grace, every eligible person on the clock (a double shift). Keeps the outgoing shift, still clocked in at a handoff, from owning the incoming shift''s checks. Private helper.';
+
+-- ---------------------------------------------------------------------------
+-- 1c. Is a shift staffed from the clock at an instant? One answer for the gap
+--     raiser and the gap resolver.
+--       staffed            the shift in progress has on-clock owners
+--       awaiting_clock_in  the next shift, or the shift in progress inside its
+--                          handoff grace with nobody clocked in for it
+--       unstaffed          the shift in progress after the grace with nobody
+--                          on the clock
+--       not_from_punches   the timeclock is off, or the shift is neither the
+--                          one in progress nor the next
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION haven.observation_shift_staffing_state (p_facility_id uuid, p_shift_key text, p_service_date date, p_at timestamptz)
+  RETURNS text
+  LANGUAGE sql
+  STABLE
+  SET search_path = public, pg_catalog
+  AS $func$
+  SELECT
+    CASE WHEN NOT EXISTS (
+      SELECT
+        1
+      FROM
+        public.timeclock_facility_settings t
+      WHERE
+        t.facility_id = p_facility_id
+        AND t.timeclock_enabled) THEN
+      'not_from_punches'
+    WHEN cur.starts_at_utc IS NOT NULL THEN
+      CASE WHEN EXISTS (
+        SELECT
+          1
+        FROM
+          haven.observation_shift_owner_staff (p_facility_id, p_at, cur.starts_at_utc)) THEN
+        'staffed'
+      WHEN p_at < cur.starts_at_utc + haven.observation_clock_in_lead (p_facility_id) THEN
+        'awaiting_clock_in'
+      ELSE
+        'unstaffed'
+      END
+    WHEN EXISTS (
+      SELECT
+        1
+      FROM
+        public.facility_next_shift_window (p_facility_id, p_at) nxt
+      WHERE
+        nxt.shift_key = p_shift_key
+        AND nxt.shift_service_date = p_service_date) THEN
+      'awaiting_clock_in'
+    ELSE
+      'not_from_punches'
+    END
+  FROM (
+    SELECT
+      (
+        SELECT
+          c.starts_at_utc
+        FROM
+          public.facility_shift_window_at (p_facility_id, p_at) c
+        WHERE
+          c.shift_key = p_shift_key
+          AND c.shift_service_date = p_service_date) AS starts_at_utc) cur;
+$func$;
+
+COMMENT ON FUNCTION haven.observation_shift_staffing_state (uuid, text, date, timestamptz) IS
+  'COL-693: whether a shift at a facility that staffs from punches is staffed at an instant: staffed, awaiting_clock_in (next shift, or shift in progress inside its handoff grace with nobody clocked in for it), unstaffed, or not_from_punches (timeclock off, or a shift that is neither current nor next). record_observation_staffing_gap raises nothing for staffed or awaiting_clock_in; resolve_observation_staffing_gap resolves only for staffed. Private helper.';
+
+REVOKE ALL ON FUNCTION haven.observation_shift_staffing_state (uuid, text, date, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
 REVOKE ALL ON FUNCTION haven.observation_shift_owner_staff (uuid, timestamptz, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
@@ -308,7 +409,8 @@ phase AS (
         public.timeclock_facility_settings t
       WHERE
         t.facility_id = p_facility_id
-        AND t.timeclock_enabled) AS staffs_from_punches
+        AND t.timeclock_enabled) AS staffs_from_punches,
+    haven.observation_clock_in_lead (p_facility_id) AS lead_time
 ),
 clock_ring AS (
   SELECT
@@ -336,7 +438,8 @@ SELECT
     'shift_roster'
   WHEN punched.staff_id IS NOT NULL THEN
     'on_clock'
-  WHEN ph.is_next
+  WHEN (ph.is_next
+      OR p_at < ph.current_starts_at + ph.lead_time)
     AND ph.staffs_from_punches THEN
     'awaiting_clock_in'
   ELSE
@@ -613,33 +716,10 @@ BEGIN
         AND t.facility_id = p_facility_id
         AND t.timeclock_enabled) INTO v_staffs_from_punches;
 
-  IF v_staffs_from_punches THEN
-    IF EXISTS (
-      SELECT
-        1
-      FROM
-        public.facility_shift_window_at (p_facility_id, now()) cur
-      WHERE
-        cur.shift_key = p_shift_key
-        AND cur.shift_service_date = p_service_date)
-      AND EXISTS (
-        SELECT
-          1
-        FROM
-          haven.observation_on_clock_staff (p_facility_id, now())) THEN
-      RETURN FALSE;
-    END IF;
-
-    IF EXISTS (
-      SELECT
-        1
-      FROM
-        public.facility_next_shift_window (p_facility_id, now()) nxt
-      WHERE
-        nxt.shift_key = p_shift_key
-        AND nxt.shift_service_date = p_service_date) THEN
-      RETURN FALSE;
-    END IF;
+  -- Staffed from the clock, or not a gap yet (the next shift, or the shift in
+  -- progress inside its handoff grace with nobody clocked in for it).
+  IF v_staffs_from_punches AND haven.observation_shift_staffing_state (p_facility_id, p_shift_key, p_service_date, now()) IN ('staffed', 'awaiting_clock_in') THEN
+    RETURN FALSE;
   END IF;
 
   v_title := haven.observation_staffing_gap_title (p_facility_id, p_shift_key, p_service_date);
@@ -676,7 +756,7 @@ END;
 $func$;
 
 COMMENT ON FUNCTION public.record_observation_staffing_gap (uuid, text, date) IS
-  'Records an open exec_alerts row naming a facility, a shift and a service date for which observation tasks were generated and no staff member is scheduled to own them. COL-693: at a facility whose timeclock is enabled, the shift in progress is staffed when an eligible staff member is on the clock (returns false), and the next shift is not a gap until it starts (returns false). Idempotent against an unresolved alert with the same title, so a cron that ticks every few minutes raises the gap once. COL-37 ruling: definer required, because the task generator writes an executive alert on behalf of nobody and has no caller authority to inherit, and the on-clock check reads the private timeclock ledgers. Execute is granted to service_role only.';
+  'Records an open exec_alerts row naming a facility, a shift and a service date for which observation tasks were generated and no staff member is scheduled to own them. COL-693: at a facility whose timeclock is enabled, nothing is raised while haven.observation_shift_staffing_state is staffed (the shift in progress has on-clock owners) or awaiting_clock_in (the next shift, or the shift in progress inside its handoff grace with nobody clocked in for it); both return false. Idempotent against an unresolved alert with the same title, so a cron that ticks every few minutes raises the gap once. COL-37 ruling: definer required, because the task generator writes an executive alert on behalf of nobody and has no caller authority to inherit, and the on-clock check reads the private timeclock ledgers. Execute is granted to service_role only.';
 
 REVOKE ALL ON FUNCTION public.record_observation_staffing_gap (uuid, text, date) FROM PUBLIC, anon, authenticated;
 
@@ -697,28 +777,9 @@ DECLARE
   v_resolved integer := 0;
 BEGIN
   -- Staffed means: the facility staffs from punches, the named shift is the
-  -- one in progress, and somebody eligible is on the clock.
-  IF NOT EXISTS (
-    SELECT
-      1
-    FROM
-      public.timeclock_facility_settings t
-    WHERE
-      t.facility_id = p_facility_id
-      AND t.timeclock_enabled)
-    OR NOT EXISTS (
-      SELECT
-        1
-      FROM
-        public.facility_shift_window_at (p_facility_id, now()) cur
-      WHERE
-        cur.shift_key = p_shift_key
-        AND cur.shift_service_date = p_service_date)
-    OR NOT EXISTS (
-      SELECT
-        1
-      FROM
-        haven.observation_on_clock_staff (p_facility_id, now())) THEN
+  -- one in progress, and it has on-clock owners (the outgoing shift counts
+  -- only once the handoff grace is over).
+  IF haven.observation_shift_staffing_state (p_facility_id, p_shift_key, p_service_date, now()) IS DISTINCT FROM 'staffed' THEN
     RETURN FALSE;
   END IF;
 
@@ -748,7 +809,7 @@ END;
 $func$;
 
 COMMENT ON FUNCTION public.resolve_observation_staffing_gap (uuid, text, date) IS
-  'COL-693: resolves the open "Nobody is scheduled" exec alert for a facility, shift and service date when that shift is in progress at a facility whose timeclock is enabled and an eligible staff member is on the clock. Sets resolved_at, status resolved and a resolution note in current_value_json; returns true when an alert was resolved. Does nothing otherwise, so a genuine gap stays open. De-duplication of record_observation_staffing_gap is unchanged. COL-37 ruling: definer required -- the task generator resolves an executive alert on behalf of nobody and the on-clock check reads the private timeclock ledgers; execute is granted to service_role only.';
+  'COL-693: resolves the open "Nobody is scheduled" exec alert for a facility, shift and service date when haven.observation_shift_staffing_state says that shift is staffed: in progress at a facility whose timeclock is enabled, with on-clock owners (the outgoing shift counts only after the handoff grace). Sets resolved_at, status resolved and a resolution note in current_value_json; returns true when an alert was resolved. Does nothing otherwise, so a genuine gap stays open. De-duplication of record_observation_staffing_gap is unchanged. COL-37 ruling: definer required -- the task generator resolves an executive alert on behalf of nobody and the on-clock check reads the private timeclock ledgers; execute is granted to service_role only.';
 
 REVOKE ALL ON FUNCTION public.resolve_observation_staffing_gap (uuid, text, date) FROM PUBLIC, anon, authenticated;
 
