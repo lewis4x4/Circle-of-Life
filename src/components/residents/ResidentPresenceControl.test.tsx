@@ -116,3 +116,31 @@ describe("ResidentPresenceControl", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
+
+describe("hospital and rehab (COL-755)", () => {
+  it("sends a resident to rehab with the stay type and the time it happened", async () => {
+    const user = userEvent.setup();
+    render(<ResidentPresenceControl residentId="res-1" status="active" />);
+    await user.click(screen.getByRole("button", { name: /update presence/i }));
+    await user.click(await screen.findByText("Bed Hold — Rehab"));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByLabelText("Date it happened")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalled());
+    const patch = mocks.update.mock.calls[0][0] as Record<string, unknown>;
+    expect(patch).toMatchObject({ status: "hospital_hold", bed_hold_stay_type: "rehab" });
+  });
+
+  it("names the type of a stay recorded before Haven asked, without asking a date or changing status", async () => {
+    const user = userEvent.setup();
+    render(<ResidentPresenceControl residentId="res-1" status="hospital" stayType={null} />);
+    expect(screen.getByRole("button", { name: /currently Bed Hold — Hospital or rehab \(type not recorded\)/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /update presence/i }));
+    await user.click(await screen.findByText("Bed Hold — Hospital"));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).queryByLabelText("Date it happened")).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalled());
+    expect(mocks.update.mock.calls[0][0]).toEqual({ bed_hold_stay_type: "hospital", updated_by: "actor-1" });
+  });
+});

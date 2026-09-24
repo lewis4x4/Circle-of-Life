@@ -79,7 +79,7 @@ END $$;
 
 CREATE TEMP TABLE md_plan AS SELECT f.facility,f.other_facility,f.org,
  haven.stand_up_meeting_open_week(f.org,f.facility,'thursday',clock_timestamp()) AS open_week,
- jsonb_build_object('current_ar_cents',11710800,'current_total_census',987654,'departures_since_monday',2,'hospital_and_rehab_total',3) AS thursday_values,
+ jsonb_build_object('current_ar_cents',11710800,'current_total_census',987654,'departures_since_monday',2,'hospital_and_rehab_total',3,'hospital_total',1,'rehab_total',2) AS thursday_values,
  (SELECT jsonb_object_agg(k,CASE k WHEN 'monthly_rent_roll_cents' THEN to_jsonb(11000000) WHEN 'current_total_census' THEN to_jsonb(38) WHEN 'hospital_and_rehab_total' THEN to_jsonb(1) ELSE to_jsonb(1) END) FROM unnest(haven.stand_up_keys()) k) AS monday_values
  FROM md_fixture f;
 GRANT SELECT ON md_plan TO authenticated;
@@ -119,7 +119,7 @@ SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('save',jsonb_bui
 SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('save',jsonb_build_object('meeting_day','thursday','facility_id',%L,'week_start',%L::date,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',%L::jsonb))$q$,
  facility,open_week+7,thursday_values),'This report opens') FROM md_plan;
 SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('save',jsonb_build_object('meeting_day','thursday','facility_id',%L,'week_start',%L::date,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',%L::jsonb))$q$,
- facility,open_week,thursday_values-'departures_since_monday'),'Exactly the 4 supported figures required') FROM md_plan;
+ facility,open_week,thursday_values-'departures_since_monday'),'Exactly the 6 supported figures required') FROM md_plan;
 -- A past Thursday that was never submitted stays owner and org_admin only, as on Monday.
 SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('save',jsonb_build_object('meeting_day','thursday','facility_id',%L,'week_start',%L::date,'expected_version',0,'request_id',gen_random_uuid(),'status','draft','values',%L::jsonb,'reason','Late entry'))$q$,
  facility,open_week-7,thursday_values),'Stand Up access denied') FROM md_plan;

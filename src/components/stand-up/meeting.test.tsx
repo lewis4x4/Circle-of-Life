@@ -19,7 +19,7 @@ const schedule = [
 function thursday(patch: Partial<MeetingWorkspace> = {}): MeetingWorkspace {
   return {
     meeting_day: 'thursday', scheduled: true, current_week: '2026-09-21', window: meetingWindow, schedule: schedule as MeetingWorkspace['schedule'],
-    keys: ['current_ar_cents', 'current_total_census', 'departures_since_monday', 'hospital_and_rehab_total'],
+    keys: ['current_ar_cents', 'current_total_census', 'departures_since_monday', 'hospital_and_rehab_total', 'hospital_total', 'rehab_total'],
     facilities: [{ id: 'a', name: 'Homewood', open_week: '2026-09-21', window: meetingWindow }], reports: [],
     monday_baselines: [{ facility_id: 'a', week_start: '2026-09-21', monday_submitted: baseline }],
     can_edit: true, can_edit_submitted: true, server_now: '2026-09-24T12:30:00Z', actor_role: 'facility_admin', ...patch,
@@ -27,7 +27,7 @@ function thursday(patch: Partial<MeetingWorkspace> = {}): MeetingWorkspace {
 }
 const saved = (patch: Partial<MeetingReport> = {}): MeetingReport => ({
   id: 't1', facility_id: 'a', week_start: '2026-09-21', meeting_day: 'thursday', version: 1, revision_id: 'tr1',
-  values: { current_ar_cents: 11710800, current_total_census: 36, departures_since_monday: 2, hospital_and_rehab_total: 3 },
+  values: { current_ar_cents: 11710800, current_total_census: 36, departures_since_monday: 2, hospital_and_rehab_total: 3, hospital_total: 1, rehab_total: 2 },
   status: 'ready', source_as_of: '2026-09-24T12:31:00Z', updated_at: '2026-09-24T12:31:00Z', updated_by_name: 'Charlene',
   last_submitted_at: '2026-09-24T12:31:00Z', monday_submitted: baseline, ...patch,
 });
@@ -61,11 +61,13 @@ describe('Stand Up meets Monday and Thursday (COL-752)', () => {
     await openThursday();
     const table = screen.getByRole('table', { name: /Thursday figures beside Monday/ });
     expect(within(table).getByText('$110,000.00')).toBeInTheDocument();
-    expect(within(table).getByText('Not on Monday’s report')).toBeInTheDocument();
+    expect(within(table).getAllByText('Not on Monday’s report')).toHaveLength(3);
     fireEvent.change(screen.getByLabelText('Current A/R'), { target: { value: '117,108.00' } });
     fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '36' } });
     fireEvent.change(screen.getByLabelText('Departures since Monday'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('Residents at hospital or rehab'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('At a hospital'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('In rehab'), { target: { value: '2' } });
     expect(within(table).getByText('+$7,108.00')).toBeInTheDocument();
     expect(within(table).getByText('−2')).toBeInTheDocument();
     mocks.request.mockImplementationOnce(async () => saved());
@@ -74,7 +76,7 @@ describe('Stand Up meets Monday and Thursday (COL-752)', () => {
     const [action, payload] = mocks.request.mock.calls.at(-1)!;
     expect(action).toBe('save');
     expect(payload).toMatchObject({ meeting_day: 'thursday', facility_id: 'a', week_start: '2026-09-21', expected_version: 0, status: 'ready',
-      values: { current_ar_cents: 11710800, current_total_census: 36, departures_since_monday: 2, hospital_and_rehab_total: 3 } });
+      values: { current_ar_cents: 11710800, current_total_census: 36, departures_since_monday: 2, hospital_and_rehab_total: 3, hospital_total: 1, rehab_total: 2 } });
     expect(typeof payload.request_id).toBe('string');
   });
 

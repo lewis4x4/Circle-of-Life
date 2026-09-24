@@ -64,7 +64,8 @@ describe('Thursday is Haven only (Brian, 2026-09-24)', () => {
     for (const file of publishers) expect(read(file), file).not.toMatch(/meeting_day|stand_up_meeting_(reports|revisions|schedule)|thursday/i)
   })
   it('the client and the server hold the same Thursday figures', () => {
-    const migration = files('supabase/migrations').find(file => /_stand_up_meeting_days\.sql$/.test(file))!
+    // The latest migration that defines the Thursday figure set wins (517, then COL-755's 521).
+    const migration = files('supabase/migrations').filter(file => /FUNCTION haven\.stand_up_meeting_keys/.test(read(file))).sort().at(-1)!
     const keys = read(migration).match(/WHEN 'thursday' THEN ARRAY\[([^\]]+)\]/)![1].match(/'([a-z_]+)'/g)!.map(key => key.slice(1, -1))
     expect(keys).toEqual(THURSDAY_KEYS)
   })

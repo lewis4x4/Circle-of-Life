@@ -16,7 +16,7 @@ describe("formatColLabel", () => {
   it("keeps posted override labels unchanged", () => {
     expect(formatColLabel("private")).toBe("Private");
     expect(formatColLabel("semi_private")).toBe("Companion");
-    expect(formatColLabel("hospital_hold")).toBe("Bed Hold — Hospital");
+    expect(formatColLabel("hospital_hold")).toBe("Bed Hold — Hospital or rehab");
   });
 
   it("title-cases posted enum values without overrides", () => {

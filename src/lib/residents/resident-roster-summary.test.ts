@@ -84,16 +84,23 @@ describe("facility-wide presence line", () => {
   it("counts every scoped resident by presence", () => {
     const rows = [
       row({ id: "a", status: "active" }),
-      row({ id: "b", status: "hospital" }),
+      row({ id: "b", status: "hospital", bedHoldStayType: "hospital" }),
       row({ id: "c", status: "loa" }),
       row({ id: "d", status: "active" }),
+      row({ id: "e", status: "hospital", bedHoldStayType: "rehab" }),
     ];
-    expect(presenceBreakdown(rows)).toEqual({ total: 4, inHouse: 2, hospital: 1, onLeave: 1 });
-    expect(presenceLine(presenceBreakdown(rows))).toBe("4 residents · 2 in-house · 1 hospital · 1 on leave");
+    expect(presenceBreakdown(rows)).toEqual({ total: 5, inHouse: 2, hospital: 1, rehab: 1, holdTypeNotRecorded: 0, onLeave: 1 });
+    expect(presenceLine(presenceBreakdown(rows))).toBe("5 residents · 2 in-house · 1 hospital · 1 rehab · 1 on leave");
+  });
+
+  it("names a bed-hold stay whose type was never recorded instead of guessing it (COL-755)", () => {
+    const rows = [row({ id: "a", status: "hospital", bedHoldStayType: null }), row({ id: "b", status: "hospital", bedHoldStayType: "rehab" })];
+    expect(presenceBreakdown(rows)).toMatchObject({ hospital: 0, rehab: 1, holdTypeNotRecorded: 1 });
+    expect(presenceLine(presenceBreakdown(rows))).toBe("2 residents · 0 in-house · 0 hospital · 1 rehab · 1 hospital or rehab, type not recorded · 0 on leave");
   });
 
   it("uses the singular for one resident", () => {
-    expect(presenceLine(presenceBreakdown([row({ id: "a" })]))).toBe("1 resident · 1 in-house · 0 hospital · 0 on leave");
+    expect(presenceLine(presenceBreakdown([row({ id: "a" })]))).toBe("1 resident · 1 in-house · 0 hospital · 0 rehab · 0 on leave");
   });
 });
 

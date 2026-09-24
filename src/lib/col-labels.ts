@@ -2,7 +2,7 @@ import { COL_LABEL_NO_VALUE_COPY } from "@/lib/col-labels-display-copy";
 import { enumLabel } from "@/lib/display/enum-label";
 
 const COL_LABEL_OVERRIDES = {
-  hospital_hold: "Bed Hold — Hospital",
+  hospital_hold: "Bed Hold — Hospital or rehab",
   loa: "Bed Hold — Vacation/Family",
   semi_private: "Companion",
   private: "Private",

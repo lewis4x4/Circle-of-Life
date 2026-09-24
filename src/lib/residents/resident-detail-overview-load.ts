@@ -16,7 +16,7 @@ import {
   formatResidentOverviewDobLabel,
   formatResidentOverviewVerifiedByStaffLabel,
 } from "@/lib/residents/resident-overview-display-copy";
-import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
+import { isBedHoldStayType, mapResidencyStatus, type BedHoldStayType, type ResidencyStatus } from "@/lib/residents/presence";
 import { parseDocumentedAcuityLevel } from "@/lib/residents/resident-acuity-display";
 import {
   ACTIVITY_FEED_ROW_CAP,
@@ -93,6 +93,8 @@ export type ResidentPresenceHistoryEntry = {
   effectiveToBasis?: string | null;
   /** The reason given when the change was entered late. */
   lateEntryReason?: string | null;
+  /** COL-755: hospital or rehab on a bed-hold span (null = not recorded); undefined on other spans. */
+  bedHoldStayType?: BedHoldStayType | null;
 };
 
 export type ResidentOverviewDetail = {
@@ -109,6 +111,8 @@ export type ResidentOverviewDetail = {
   status: ResidencyStatus;
   /** Raw `resident_status` enum value — gates whether presence is editable. */
   rawStatus: string | null;
+  /** COL-755: hospital or rehab for a bed-hold stay; null when not recorded or not on a stay. */
+  bedHoldStayType: BedHoldStayType | null;
   fallRiskRaw: string | null;
   roomLabel: string;
   unitName: string;
@@ -280,6 +284,7 @@ type SupabaseResidentRow = {
   date_of_birth: string | null;
   gender: string | null;
   status: string | null;
+  bed_hold_stay_type?: string | null;
   acuity_level: string | null;
   bed_id: string | null;
   photo_url: string | null;
@@ -330,6 +335,7 @@ type PresenceHistoryRow = {
   updated_by: string | null;
   effective_basis?: string | null;
   late_entry_reason?: string | null;
+  bed_hold_stay_type?: string | null;
 };
 
 type Form1823Row = {
@@ -437,6 +443,7 @@ export async function loadResidentOverviewDetail(
     "date_of_birth",
     "gender",
     "status",
+    "bed_hold_stay_type",
     "acuity_level",
     "bed_id",
     "photo_url",
@@ -609,7 +616,7 @@ export async function loadResidentOverviewDetail(
     supabase.from("facilities").select("name").eq("id", facilityId).maybeSingle(),
     supabase
       .from("resident_status_history" as never)
-      .select("id, status, effective_from, effective_to, reason, created_by, updated_by, effective_basis, late_entry_reason")
+      .select("id, status, effective_from, effective_to, reason, created_by, updated_by, effective_basis, late_entry_reason, bed_hold_stay_type")
       .eq("resident_id", residentId)
       .is("deleted_at", null)
       .order("effective_from", { ascending: false })
@@ -793,6 +800,7 @@ export async function loadResidentOverviewDetail(
     effectiveBasis: r.effective_basis ?? null,
     effectiveToBasis: r.effective_to ? (basisByStart.get(r.effective_to) ?? null) : null,
     lateEntryReason: r.late_entry_reason?.trim() || null,
+    bedHoldStayType: r.status === "hospital_hold" ? (isBedHoldStayType(r.bed_hold_stay_type) ? r.bed_hold_stay_type : null) : undefined,
   }));
 
   const activePlan = carePlanRows[0] ?? null;
@@ -888,6 +896,7 @@ export async function loadResidentOverviewDetail(
     acuityLevel: resident.acuity_level,
     status,
     rawStatus: resident.status,
+    bedHoldStayType: status === "hospital" && isBedHoldStayType(resident.bed_hold_stay_type) ? resident.bed_hold_stay_type : null,
     fallRiskRaw: resident.fall_risk_level,
     roomLabel,
     unitName: unitName.length > 0 ? unitName : RESIDENT_NO_UNIT_COPY,

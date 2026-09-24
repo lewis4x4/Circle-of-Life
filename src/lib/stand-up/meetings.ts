@@ -25,6 +25,9 @@ export const THURSDAY_FIGURES = [
   { key: 'current_total_census', label: 'Current census', money: false, mondayKey: 'current_total_census', help: 'Residents holding a bed this morning, including anyone away whose bed is held.' },
   { key: 'departures_since_monday', label: 'Departures since Monday', money: false, mondayKey: null, help: 'Residents who left since Monday’s call: discharges and deaths.' },
   { key: 'hospital_and_rehab_total', label: 'Residents at hospital or rehab', money: false, mondayKey: 'hospital_and_rehab_total', help: 'Residents away at a hospital or in rehab this morning. Their bed is held, so they stay on census.' },
+  // COL-755: counted apart. Monday reports only the total, so neither has a Monday figure.
+  { key: 'hospital_total', label: 'At a hospital', money: false, mondayKey: null, help: 'Of those, residents at a hospital this morning.' },
+  { key: 'rehab_total', label: 'In rehab', money: false, mondayKey: null, help: 'Of those, residents in rehab this morning. A stay whose type was never recorded is in the total only.' },
 ] as const
 export type ThursdayKey = typeof THURSDAY_FIGURES[number]['key']
 export type ThursdayValues = Record<ThursdayKey, number | null>

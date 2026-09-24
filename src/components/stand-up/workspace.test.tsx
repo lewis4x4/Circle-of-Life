@@ -655,8 +655,8 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
   it('suggests the census with its components and the roster as-of, and Use roster saves roster_confirmed', async () => {
     withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed() } }));
     await start(); await choose();
-    expect(await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)')).toBeInTheDocument();
-    expect(screen.getByText('Roster: 1 at hospital')).toBeInTheDocument();
+    expect(await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)')).toBeInTheDocument();
+    expect(screen.getByText('Roster: 1 at hospital or rehab')).toBeInTheDocument();
     expect(screen.getAllByText('Roster last changed Sep 14, 7:14 a.m.')).toHaveLength(2);
     expect(screen.getByLabelText('Current census')).toHaveValue(null);
     fireEvent.click(screen.getByRole('button', { name: 'Use roster for Current census' }));
@@ -670,7 +670,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
   });
   it('blocks a differing figure until a reason is chosen, then saves it as overridden', async () => {
     withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current' }) } }));
-    await start(); await choose(); await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)');
+    await start(); await choose(); await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)');
     vi.useFakeTimers();
     changeCensus('35');
     const select = screen.getByLabelText('Why is this different?');
@@ -744,7 +744,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').every(call => (call[1] as { facility_id: string }).facility_id === 'a')).toBe(true);
     const rosterCalls = mocks.request.mock.calls.filter(call => call[0] === 'roster').length;
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-14' } });
-    await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)');
+    await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)');
     expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').length).toBe(rosterCalls + 1);
   });
   it('marks an override on the all-facilities overview and says nothing for a confirmed figure', async () => {

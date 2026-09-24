@@ -187,7 +187,7 @@ export function AdminResidentDetailShell({
             {!isPresenceStatus(detail.rawStatus) ? (
               <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
             ) : (
-              <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status)}</StatusPill>
+              <StatusPill tone={presenceTone(detail.status)}>{presenceLabel(detail.status, detail.status === "hospital" ? detail.bedHoldStayType : undefined)}</StatusPill>
             )}
             {/* Only when acuity is actually posted — see the overview header. */}
             {acuity.tone === "gap" ? null : (

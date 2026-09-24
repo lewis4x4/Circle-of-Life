@@ -36,10 +36,14 @@ import {
   shouldRequireForm1823RenewalOnPresenceChange,
 } from "@/lib/admissions/form-1823-renewal";
 import {
-  PRESENCE_OPTIONS,
+  PRESENCE_CHOICES,
+  currentPresenceChoice,
+  presenceChange,
+  presenceChoice,
   presenceLabel,
   presenceTone,
-  residencyStatusToDbValue,
+  type BedHoldStayType,
+  type PresenceChoiceKey,
   type ResidencyStatus,
 } from "@/lib/residents/presence";
 import { cn } from "@/lib/utils";
@@ -61,38 +65,50 @@ import { cn } from "@/lib/utils";
  * hospital return entered Wednesday for Tuesday is dated Tuesday everywhere
  * the status history is read.
  *
+ * COL-755: a bed hold is at a hospital or in rehab. Hospital to rehab on a
+ * recorded stay is a dated movement; naming the type of a stay recorded before
+ * the type was asked corrects that stay and asks no date.
+ *
  * BH-4: hospital_hold stamps hold_case_manager_notified_at when empty.
  * BH-6: hospital_hold → active marks latest Form 1823 renewal_due.
  */
 export function ResidentPresenceControl({
   residentId,
   status,
+  stayType,
   onChanged,
   disabled = false,
 }: {
   residentId: string;
   status: ResidencyStatus;
+  /** COL-755: the stay type when `status` is hospital; null = not recorded. */
+  stayType?: BedHoldStayType | null;
   onChanged?: (next: ResidencyStatus) => void;
   disabled?: boolean;
 }) {
   const [saving, setSaving] = useState(false);
   // Optimistic target held only until the parent reloads with the new status.
-  const [pending, setPending] = useState<ResidencyStatus | null>(null);
+  const [pending, setPending] = useState<PresenceChoiceKey | null>(null);
 
   // Once the parent reload propagates the new `status` prop, drop the optimism.
   useEffect(() => {
     setPending(null);
-  }, [status]);
+  }, [status, stayType]);
 
-  const displayed = pending ?? status;
-  // The state chosen in the menu, waiting for "when did this happen?".
-  const [target, setTarget] = useState<ResidencyStatus | null>(null);
+  const current = currentPresenceChoice(status, stayType ?? null);
+  const displayedChoice = pending ?? current;
+  const displayed: ResidencyStatus = displayedChoice ? presenceChoice(displayedChoice).status : status;
+  const displayedLabel = displayedChoice ? presenceChoice(displayedChoice).label : presenceLabel(status, status === "hospital" ? stayType ?? null : undefined);
+  // The choice made in the menu, waiting for "when did this happen?" (or, for
+  // naming an unrecorded stay's type, for confirmation).
+  const [target, setTarget] = useState<PresenceChoiceKey | null>(null);
+  const change = target ? presenceChange(status, stayType ?? null, target) : "none";
   const [when, setWhen] = useState<MovementWhenDraft>(EMPTY_MOVEMENT_WHEN);
   const [problem, setProblem] = useState<string | null>(null);
   const windowDays = useMovementBackdateWindow({ residentId, enabled: target !== null });
 
-  function choose(next: ResidencyStatus) {
-    if (next === displayed || saving) return;
+  function choose(next: PresenceChoiceKey) {
+    if (next === displayedChoice || saving) return;
     setWhen(EMPTY_MOVEMENT_WHEN);
     setProblem(null);
     setTarget(next);
@@ -105,16 +121,19 @@ export function ResidentPresenceControl({
   }
 
   async function save() {
-    const next = target;
-    if (!next || saving) return;
-    const resolved = resolveMovementWhen(when, { windowDays: windowDays ?? null });
-    if (!resolved.ok) {
+    const nextKey = target;
+    if (!nextKey || saving) return;
+    const choice = presenceChoice(nextKey);
+    const next = choice.status;
+    const recordOnly = presenceChange(status, stayType ?? null, nextKey) === "record_type";
+    const resolved = recordOnly ? null : resolveMovementWhen(when, { windowDays: windowDays ?? null });
+    if (resolved && !resolved.ok) {
       setProblem(resolved.error);
       return;
     }
     setProblem(null);
     setSaving(true);
-    setPending(next);
+    setPending(nextKey);
     const supabase = createClient();
     try {
       const {
@@ -135,17 +154,21 @@ export function ResidentPresenceControl({
 
       const previousDbStatus =
         ((currentRow as { status?: string | null } | null)?.status as string | null) ?? null;
-      const nextDb = residencyStatusToDbValue(next);
+      const nextDb = choice.dbValue;
       const notifiedAt = (currentRow as { hold_case_manager_notified_at?: string | null } | null)
         ?.hold_case_manager_notified_at;
-      const patch: Record<string, unknown> = {
-        status: nextDb,
-        updated_by: user.id,
-        ...movementPatchFields(resolved.value),
-      };
+      // Naming an unrecorded stay's type changes nothing but the type.
+      const patch: Record<string, unknown> = recordOnly
+        ? { bed_hold_stay_type: choice.stayType, updated_by: user.id }
+        : {
+            status: nextDb,
+            ...(choice.stayType ? { bed_hold_stay_type: choice.stayType } : {}),
+            updated_by: user.id,
+            ...(resolved && resolved.ok ? movementPatchFields(resolved.value) : {}),
+          };
 
       // BH-4: Medicaid hold clock — stamp case-manager notified when entering hospital hold.
-      if (nextDb === "hospital_hold" && !notifiedAt) {
+      if (!recordOnly && nextDb === "hospital_hold" && !notifiedAt) {
         patch.hold_case_manager_notified_at = new Date().toISOString();
       }
 
@@ -194,14 +217,14 @@ export function ResidentPresenceControl({
           );
         } else {
           toast.success(
-            `Presence updated — ${presenceLabel(next)}. Form 1823 marked renewal due.`,
+            `Presence updated — ${choice.label}. Form 1823 marked renewal due.`,
           );
           onChanged?.(next);
           return;
         }
       }
 
-      toast.success(`Presence updated — ${presenceLabel(next)}.`);
+      toast.success(`Presence updated — ${choice.label}.`);
       onChanged?.(next);
     } catch (e) {
       setPending(null);
@@ -219,14 +242,14 @@ export function ResidentPresenceControl({
       <DropdownMenuTrigger
         type="button"
         disabled={disabled || saving}
-        aria-label={`Update presence — currently ${presenceLabel(displayed)}`}
+        aria-label={`Update presence — currently ${displayedLabel}`}
         className={cn(
           "inline-flex items-center gap-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring",
           (disabled || saving) && "opacity-70",
         )}
       >
         <StatusPill tone={presenceTone(displayed)} className="cursor-pointer">
-          {presenceLabel(displayed)}
+          {displayedLabel}
         </StatusPill>
         {saving ? (
           <Loader2 className="size-3 animate-spin text-muted-foreground" aria-hidden />
@@ -240,14 +263,14 @@ export function ResidentPresenceControl({
         <DropdownMenuGroup>
           <DropdownMenuLabel>Update presence</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {PRESENCE_OPTIONS.map((opt) => (
+          {PRESENCE_CHOICES.map((opt) => (
             <DropdownMenuItem
-              key={opt.status}
-              onClick={() => choose(opt.status)}
+              key={opt.key}
+              onClick={() => choose(opt.key)}
               className="flex items-start gap-2"
             >
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
-                {opt.status === displayed ? <Check className="size-3.5" aria-hidden /> : null}
+                {opt.key === displayedChoice ? <Check className="size-3.5" aria-hidden /> : null}
               </span>
               <span className="flex flex-col">
                 <span className="text-[13px] font-medium text-foreground">{opt.label}</span>
@@ -261,19 +284,23 @@ export function ResidentPresenceControl({
     <Dialog open={target !== null} onOpenChange={(open) => (open ? undefined : closeDialog())}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{target ? presenceLabel(target) : "Update presence"}</DialogTitle>
+          <DialogTitle>{target ? presenceChoice(target).label : "Update presence"}</DialogTitle>
           <DialogDescription>
-            Record when the change actually happened, so reports and the Stand Up count it on the right day.
+            {change === "record_type"
+              ? "This stay was recorded before Haven asked hospital or rehab. Saving records the type for the stay in force; its dates do not change."
+              : "Record when the change actually happened, so reports and the Stand Up count it on the right day."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-sm">
-          <MovementWhenFields
-            value={when}
-            onChange={setWhen}
-            windowDays={windowDays}
-            idPrefix={`presence-${residentId}`}
-            disabled={saving}
-          />
+          {change === "record_type" ? null : (
+            <MovementWhenFields
+              value={when}
+              onChange={setWhen}
+              windowDays={windowDays}
+              idPrefix={`presence-${residentId}`}
+              disabled={saving}
+            />
+          )}
           {problem ? (
             <p role="alert" className="rounded-[8px] border border-destructive p-3 text-sm">
               {problem}
