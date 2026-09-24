@@ -99,6 +99,11 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   { source: "/clinical/residents", destination: "/admin/residents", permanent: true },
   { source: "/clinical/residents/:path*", destination: "/admin/residents/:path*", permanent: true },
   { source: "/clinical", destination: "/admin/residents", permanent: true },
+  // Executive Reports was a second reporting surface under a "Reporting has moved" banner;
+  // /admin/reports is canonical (COL-707, Brian 2026-09-23). /executive/reports already
+  // 308s into /admin/executive/reports, and from there here.
+  { source: "/admin/executive/reports", destination: "/admin/reports", permanent: true },
+  { source: "/admin/executive/reports/:path*", destination: "/admin/reports", permanent: true },
   // Cash and Trust were two pages over one resident-money ledger; Trust is canonical and
   // now carries the petty cash and trust posting workbench (COL-707, Brian 2026-09-23).
   { source: "/admin/cash", destination: "/admin/finance/trust", permanent: true },

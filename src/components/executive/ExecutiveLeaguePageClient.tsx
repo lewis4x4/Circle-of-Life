@@ -152,8 +152,8 @@ export default function ExecutiveLeaguePageClient({
               Latest board packet
             </Link>
           ) : null}
-          <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/executive/reports">
-            Executive reports
+          <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/reports">
+            Reports
           </Link>
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/insurance/renewal-packages">
             Insurance readiness
