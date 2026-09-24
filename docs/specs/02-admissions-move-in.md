@@ -100,6 +100,8 @@ See migrations **`077`** (DDL) and **`078`** (RLS, audit, `updated_at` on `admis
 
 **DCF coordination at admission:** For Medicaid residents, COL coordinates with the Department of Children and Families (DCF) for eligibility verification. Add a `medicaid_application_status` field and `dcf_eligibility_verified_at` timestamp to the admission workflow. The `DCF Eligibility Review.pdf` form documents this step.
 
+**Medicaid questions at admission (2026-09-24):** Admission intake asks the six *New Admits Medicaid Pending Criteria* questions and current Medicaid coverage, and classifies the resident as candidate / does not qualify now / needs answers. The behavior, recheck cadence and retirement of `admission_cases.medicaid_pipeline_stage` are specified in [39 — Amendment A](39-medicaid-benefits-workflow.md#amendment-a--admission-led-screening-and-the-medicaid-board-2026-09-24).
+
 **Pre-Admission Questionnaire:** COL uses a `Pre-Admission Questionnaire.pdf` for initial screening before formal admission. This form's data points (medical history, care needs, payer source, family contact) should map to the Module 01 lead profile and carry forward into the admission case on conversion.
 
 **Advance Directives tracking:** COL provides `Advance Direct. & DNRO info. for Resid_Family.pdf` at admission. The admission checklist must include: advance directive on file (yes/no), DNRO (Do Not Resuscitate Order) status (yes/no/not applicable), healthcare proxy designation. These must be surfaced prominently in the eMAR and incident reporting workflows.
