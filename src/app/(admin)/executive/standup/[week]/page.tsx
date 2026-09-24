@@ -8,6 +8,7 @@ import { CheckCircle2, FileSpreadsheet, Loader2, Save } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +29,6 @@ import {
   publishStandupSnapshot,
   saveStandupSnapshotNotes,
   saveStandupMetricInput,
-  saveStandupBoardReport,
   standupMetricDefinitionByKey,
   summarizeStandupSections,
   type StandupMetricRow,
@@ -75,7 +75,6 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
-  const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -291,34 +290,11 @@ export default function ExecutiveStandupWeekDetailPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
-  async function onSaveBoardReport() {
-    if (!detail || !user?.id || !organizationId) {
-      setActionError("Sign in required.");
-      return;
-    }
-    setSavingBoardReport(true);
-    setActionError(null);
-    try {
-      await saveStandupBoardReport(supabase, {
-        organizationId,
-        userId: user.id,
-        weekOf: detail.snapshot.weekOf,
-        status: detail.snapshot.status,
-        confidenceBand: detail.snapshot.confidenceBand,
-        version: detail.snapshot.publishedVersion,
-        publishedAt: detail.snapshot.publishedAt,
-        completenessPct: detail.snapshot.completenessPct,
-      });
-    } catch (saveError) {
-      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
-    } finally {
-      setSavingBoardReport(false);
-    }
-  }
 
   return (
     <div className="w-full space-y-6 pb-12">
       <ExecutiveHubNav />
+      <StandUpViewsNav current="/admin/executive/standup" />
 
       <RecordDetailHeader
         title={`Standup Week ${week}`}
@@ -352,10 +328,6 @@ export default function ExecutiveStandupWeekDetailPage() {
               <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
                 {downloadingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
                 Download PDF
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
-                {savingBoardReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save in executive reports
               </Button>
               <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing || !publishReadiness.canPublish}>
                 {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
