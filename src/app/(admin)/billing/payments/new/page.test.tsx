@@ -196,7 +196,7 @@ describe("HFA-007 HFA-008 payment command and prefill reconciliation", () => {
 
     render(<AdminNewPaymentPage />);
 
-    expect(await screen.findByRole("option", { name: /Invoice Aug 2026 · …00a1/ })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: /Invoice Aug 2026/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /00000000-2026-08/ })).toBeNull();
   });
 

@@ -12,6 +12,7 @@ import type {
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { ReceiptHistory, localTime } from "../work/_components/receipt-history";
 import { CONTROL } from "../work/_components/work-inputs";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const CATEGORIES: Record<AttentionCategory, string> = {
   overdue: "Overdue",
@@ -348,7 +349,7 @@ function partialLabels(body: NeedsAttentionReply): string[] {
 }
 
 function plain(value: string) {
-  return value.replaceAll("_", " ");
+  return enumLabel(value);
 }
 function display(value: unknown, fallback = "Unavailable") {
   return typeof value === "string" && value ? plain(value) : fallback;

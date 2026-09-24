@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * Quiet Operator copy for the new assessment entry page
  * (`/admin/residents/[id]/assessments/new`).
@@ -36,5 +37,5 @@ export function isPostedAssessmentRiskLevel(value: string | null | undefined): v
 /** Risk level label for lists — names a missing level; posted values keep underscore spacing. */
 export function formatAssessmentRiskLevelLabel(riskLevel: string | null | undefined): string {
   if (!isPostedAssessmentRiskLevel(riskLevel)) return ASSESSMENT_NEW_NO_RISK_COPY;
-  return riskLevel.replace(/_/g, " ");
+  return enumLabel(riskLevel);
 }

@@ -1,4 +1,5 @@
 import { addHours, addDays, format, parseISO } from "date-fns";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const CRLF = "\r\n";
 const TZ = "America/New_York";
@@ -68,7 +69,7 @@ export function buildTransportRequestsIcs(
       ? `${row.residents.first_name} ${row.residents.last_name}`.trim()
       : "Resident";
     const summary = `${resident} — ${row.destination_name}`.slice(0, 200);
-    const descParts = [`Purpose: ${row.purpose}`, `Status: ${row.status.replace(/_/g, " ")}`];
+    const descParts = [`Purpose: ${row.purpose}`, `Status: ${enumLabel(row.status, { case: "lower" })}`];
     if (row.destination_address?.trim()) descParts.push(`Address: ${row.destination_address.trim()}`);
     const description = escapeIcsText(descParts.join("\\n"));
 

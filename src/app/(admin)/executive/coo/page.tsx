@@ -38,7 +38,7 @@ export default function CooDashboardPage() {
     ? facilityName
       ? `This facility — COO operations board for ${facilityName}, not a portfolio roll-up.`
       : "This facility — COO operations board (facility name not loaded), not a portfolio roll-up."
-    : "COO operations board — all facilities in your organization, not the enterprise portfolio roll-up.";
+    : "COO operations board — all facilities in your organization.";
 
   const organizationGapMessage = resolveExecutiveOrganizationGapMessage({
     authLoading,

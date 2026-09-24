@@ -4,6 +4,7 @@
  */
 
 import { metricFromCount, type MetricState } from "@/lib/metrics/metric-state";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const SURVEY_BINDER_NO_SURVEY_HISTORY_COPY = "No survey history recorded.";
 
@@ -18,8 +19,8 @@ export function formatBinderLastSurveyLine(
   lastSurvey: BinderLastSurveyFields | null | undefined,
 ): string {
   if (!lastSurvey) return SURVEY_BINDER_NO_SURVEY_HISTORY_COPY;
-  const type = lastSurvey.type.replace(/_/g, " ");
-  const result = lastSurvey.result.replace(/_/g, " ");
+  const type = enumLabel(lastSurvey.type, { case: "lower" });
+  const result = enumLabel(lastSurvey.result, { case: "lower" });
   return `${lastSurvey.date} · ${type} · ${result}`;
 }
 

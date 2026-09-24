@@ -124,7 +124,7 @@ describe("Needs attention", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Status: open · Severity: high"),
+      screen.getByText("Status: Open · Severity: High"),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("Exact receipt chain: exact-occurrence"),

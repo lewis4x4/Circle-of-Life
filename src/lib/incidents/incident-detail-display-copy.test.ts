@@ -57,9 +57,9 @@ describe("formatIncidentDetailInjuryBodyLocation", () => {
 
 describe("formatIncidentDetailInjurySeverity", () => {
   it("returns posted severity with snake formatting", () => {
-    expect(formatIncidentDetailInjurySeverity("minor")).toBe("minor");
-    expect(formatIncidentDetailInjurySeverity("level_1")).toBe("level 1");
-    expect(formatIncidentDetailInjurySeverity("  minor  ")).toBe("minor");
+    expect(formatIncidentDetailInjurySeverity("minor")).toBe("Minor");
+    expect(formatIncidentDetailInjurySeverity("level_1")).toBe("Level 1");
+    expect(formatIncidentDetailInjurySeverity("  minor  ")).toBe("Minor");
   });
 
   it("names the gap when severity is missing, blank, or a lone em dash", () => {
@@ -96,8 +96,8 @@ describe("formatIncidentDetailFallWitnessed", () => {
 
 describe("formatIncidentDetailFallType", () => {
   it("returns posted fall type with snake formatting", () => {
-    expect(formatIncidentDetailFallType("unwitnessed")).toBe("unwitnessed");
-    expect(formatIncidentDetailFallType("same_level")).toBe("same level");
+    expect(formatIncidentDetailFallType("unwitnessed")).toBe("Unwitnessed");
+    expect(formatIncidentDetailFallType("same_level")).toBe("Same level");
   });
 
   it("names the gap when fall type is missing or blank", () => {
@@ -115,8 +115,8 @@ describe("formatIncidentDetailFallType", () => {
 
 describe("formatIncidentDetailFallActivity", () => {
   it("returns posted activity with snake formatting", () => {
-    expect(formatIncidentDetailFallActivity("ambulating")).toBe("ambulating");
-    expect(formatIncidentDetailFallActivity("to_bathroom")).toBe("to bathroom");
+    expect(formatIncidentDetailFallActivity("ambulating")).toBe("Ambulating");
+    expect(formatIncidentDetailFallActivity("to_bathroom")).toBe("To bathroom");
   });
 
   it("names the gap when activity is missing or blank", () => {

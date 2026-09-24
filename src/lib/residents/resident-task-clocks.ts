@@ -3,6 +3,7 @@ import type {
   ResidentForm1823Clock,
   ResidentIncidentFollowupClock,
 } from "@/lib/residents/resident-detail-overview-load";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * COL-599: "Tasks and due dates" covered two of the record's clocks — the
@@ -108,7 +109,7 @@ export function form1823TaskItems(
 }
 
 function followupTitle(taskType: string): string {
-  const words = taskType.replace(/_/g, " ").trim();
+  const words = enumLabel(taskType, { case: "lower" }).trim();
   return words ? `${words.charAt(0).toUpperCase()}${words.slice(1)}` : "Incident follow-up";
 }
 

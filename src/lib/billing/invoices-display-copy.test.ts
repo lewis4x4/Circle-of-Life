@@ -36,7 +36,7 @@ describe("formatInvoiceNumberForDisplay", () => {
       },
     );
 
-    expect(formatted).toBe("Invoice Aug 2026 · …00a1");
+    expect(formatted).toBe("Invoice Aug 2026");
     expect(formatted).not.toContain("00000000-2026-08");
     expect(formatted).not.toContain("c0000000-0000-0000-0000-0000000000a1");
     expect(formatted).not.toBe(EM_DASH);
@@ -48,7 +48,7 @@ describe("formatInvoiceNumberForDisplay", () => {
         invoiceDateIso: "2026-05-15",
         invoiceId: "123e4567-e89b-12d3-a456-426614174000",
       }),
-    ).toBe("Invoice May 2026 · …4000");
+    ).toBe("Invoice May 2026");
   });
 
   it("names the gap when invoice number is blank", () => {
@@ -66,7 +66,7 @@ describe("formatInvoiceRowNumberForDisplay", () => {
       invoice_date: "2026-08-01",
     });
 
-    expect(formatted).toBe("Invoice Aug 2026 · …00a1");
+    expect(formatted).toBe("Invoice Aug 2026");
     expect(formatted).not.toContain("00000000-2026-08");
   });
 

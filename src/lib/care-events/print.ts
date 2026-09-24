@@ -17,6 +17,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Client = SupabaseClient<Database>;
 
@@ -171,7 +172,7 @@ const SHIFT_WORDS: Record<string, string> = {
 
 export function printShift(shift: string | null | undefined): string {
   if (!shift) return "";
-  return SHIFT_WORDS[shift] ?? shift.replace(/_/g, " ");
+  return SHIFT_WORDS[shift] ?? enumLabel(shift);
 }
 
 /**
@@ -182,7 +183,7 @@ export function printShift(shift: string | null | undefined): string {
 export function printCodeList(codes: readonly string[] | null | undefined): string {
   if (!codes || codes.length === 0) return PRINT_BLANK;
   return codes
-    .map((code) => code.replace(/_/g, " ").replace(/^./, (first) => first.toUpperCase()))
+    .map((code) => enumLabel(code))
     .join("; ");
 }
 
@@ -190,7 +191,7 @@ export function printCodeList(codes: readonly string[] | null | undefined): stri
 export function printCode(code: string | null | undefined): string {
   const trimmed = code?.trim();
   if (!trimmed) return PRINT_BLANK;
-  return trimmed.replace(/_/g, " ").replace(/^./, (first) => first.toUpperCase());
+  return enumLabel(trimmed);
 }
 
 export function describePrintError(error: unknown): string {

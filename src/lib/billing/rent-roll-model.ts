@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * Rent roll model (COL-583).
  *
@@ -335,7 +336,7 @@ export function buildRentRoll(input: RentRollInput): RentRoll {
             if (payer.medicaidRateUnit === null || payer.medicaidRateUnit === "monthly") {
               medicaidBilled = (medicaidBilled ?? 0) + payer.medicaidRateCents;
             } else {
-              flags.push(`Medicaid rate on file is ${payer.medicaidRateUnit.replace(/_/g, " ")}, not monthly`);
+              flags.push(`Medicaid rate on file is ${enumLabel(payer.medicaidRateUnit, { case: "lower" })}, not monthly`);
             }
           }
           if (payer.medicaidPatientResponsibilityCents !== null) {

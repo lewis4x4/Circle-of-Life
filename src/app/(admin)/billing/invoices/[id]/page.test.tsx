@@ -144,7 +144,7 @@ describe("AdminInvoiceDetailPage invoice title", () => {
   it("formats internal persist keys in the detail header", async () => {
     render(<AdminInvoiceDetailPage />);
 
-    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Invoice Aug 2026 · …00a1");
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Invoice Aug 2026");
     expect(screen.queryByText(/00000000-2026-08/)).toBeNull();
   });
 

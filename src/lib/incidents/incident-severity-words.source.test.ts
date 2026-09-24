@@ -42,3 +42,14 @@ describe("incident severity words (COL-689)", () => {
     expect(findings).toEqual([]);
   });
 });
+
+describe("incident reporter name (COL-689)", async () => {
+  const { formatIncidentReporterName } = await import("@/lib/incidents/incidents-display-copy");
+  it("prefers the staff record, never shows a login handle", () => {
+    expect(formatIncidentReporterName({ first_name: "Ava", last_name: "Lopez" }, "alopez")).toBe("Ava Lopez");
+    expect(formatIncidentReporterName(null, "Michelle Norris")).toBe("Michelle Norris");
+    expect(formatIncidentReporterName(null, "cg.homewood")).toBe("Staff");
+    expect(formatIncidentReporterName(null, "ed@example.com")).toBe("Staff");
+    expect(formatIncidentReporterName(null, null)).toBe("Staff");
+  });
+});

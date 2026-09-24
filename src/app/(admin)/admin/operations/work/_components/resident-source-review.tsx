@@ -5,6 +5,7 @@ import { residentReviewMap } from "@/lib/operations/resident-review-map";
 import { recordResidentSourceReviewSchema, residentSourceCandidatesReplySchema, type ResidentReviewFamily, type ResidentSourceCandidatesReply, type ResidentSourceCandidate } from "@/lib/operations/resident-review-sources";
 import type { WorkspaceItem } from "@/lib/operations/workspace";
 import { CONTROL, WorkInputs, typedValues, type Values } from "./work-inputs";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Props = { item: WorkspaceItem; actorId: string; actorName: string | null; facilityId: string; timezone: string; disabled: boolean; onLockChange: (locked: boolean) => void; onSaved: (body: Record<string, unknown>) => void };
 const labels: Record<ResidentReviewFamily, string> = { rounding: "Recorded rounding observations", vital_observation: "Recorded vital observations", form_1823: "1823 receipt metadata", resident_contact: "Resident contact metadata" };
@@ -69,7 +70,7 @@ function Review({ item, actorId, actorName, timezone, disabled, onSaved, onLockC
     {opened ? <div role="group" className="space-y-4 pt-3" aria-label="Resident review source context">
       <p>{mapping.sourceId}: {mapping.label}. {mapping.fallback}</p>
       <p>Sources support your review; they do not prove complete clinical coverage, provider approval, a signature, or completion of native care.</p>
-      <details><summary className={`${CONTROL} cursor-pointer`}>All 36 source items and 41 components</summary><ul>{residentReviewMap.map(row => <li key={row.key}>{row.sourceId} · {row.label} · {row.kind.replaceAll("_", " ")} · {row.subjectKind ?? "Subject unknown"}: {row.families.length ? row.families.map(value => labels[value]).join(", ") : "Native or manual workflow"}. {row.fallback}</li>)}</ul></details>
+      <details><summary className={`${CONTROL} cursor-pointer`}>All 36 source items and 41 components</summary><ul>{residentReviewMap.map(row => <li key={row.key}>{row.sourceId} · {row.label} · {enumLabel(row.kind, { case: "lower" })} · {row.subjectKind ?? "Subject unknown"}: {row.families.length ? row.families.map(value => labels[value]).join(", ") : "Native or manual workflow"}. {row.fallback}</li>)}</ul></details>
       {mapping.families.length ? <>
         <p>Recorded by {actorName ?? actorId} at the current time. The review period below is separate. For earlier work or work performed by someone else, use the existing manual form without current-version proof.</p>
         {error ? <p role="alert">{error}</p> : null}{notice ? <p role="status">{notice}</p> : null}

@@ -155,7 +155,7 @@ describe("words an operator reads", () => {
   it("never prints a raw category or flag token", () => {
     expect(categoryLabel("fall_with_injury")).toBe("Fall with injury");
     expect(flagLabel("ahca_reportable")).toBe("AHCA reportable");
-    expect(flagLabel("something_new")).toBe("something new");
+    expect(flagLabel("something_new")).toBe("Something new");
   });
 });
 

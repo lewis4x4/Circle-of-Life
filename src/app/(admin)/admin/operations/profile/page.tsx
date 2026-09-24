@@ -10,6 +10,7 @@ import type { FacilityProfileReply } from "@/lib/operations/facility-profile";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { CONTROL } from "../work/_components/work-inputs";
 import { useHeaderBoundFacility } from "../_components/use-header-bound-facility";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type Entry = FacilityProfileReply["entries"][number];
 type Fields = Entry["components"][number]["fields"];
@@ -150,7 +151,7 @@ function readable(value: unknown): string {
   if (value === null || value === undefined || value === "") return "Unknown";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (Array.isArray(value)) return value.length ? value.map(readable).join(", ") : "None recorded";
-  if (typeof value === "object") return Object.entries(value).map(([key, item]) => `${key.replaceAll("_", " ")}: ${readable(item)}`).join("; ");
+  if (typeof value === "object") return Object.entries(value).map(([key, item]) => `${enumLabel(key, { case: "lower" })}: ${readable(item)}`).join("; ");
   return String(value);
 }
 
@@ -164,7 +165,7 @@ function SourceEntry({ entry }: { entry: Entry }) {
       <p>Questions: {entry.question_ids.join(", ") || "None recorded"}</p>
       {entry.components.map(component => <section key={component.activity_id} aria-label={component.label} className="border-t pt-3 space-y-2">
         <h3 className="font-semibold">{component.label}</h3>
-        <p className="text-sm">Component type: {component.kind.replaceAll("_", " ")} · Subject: {component.subject_kind ?? "Needs confirmation"}</p>
+        <p className="text-sm">Component type: {enumLabel(component.kind, { case: "lower" })} · Subject: {component.subject_kind ?? "Needs confirmation"}</p>
         <p>{component.recording.reason}</p>
         <p className="text-sm">Draft preparation: {component.drafts.status === "existing_drafts" ? "Drafts exist; approval still needs confirmation" : component.drafts.status === "published" ? "Published configuration preserved; see its source and approval details" : component.drafts.status === "needs_confirmation" ? "Source mapping needs confirmation before drafting" : "Not prepared"}</p>
         {component.publication && (component.publication.requirement || component.publication.configuration) ? <details className="rounded border p-3 text-sm">

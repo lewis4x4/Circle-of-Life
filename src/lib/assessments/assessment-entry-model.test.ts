@@ -312,7 +312,7 @@ describe("copy", () => {
 
 describe("held instruments (COL-430)", () => {
   const available = { held_reason: null };
-  const held = { held_reason: "PHQ-9 on hold until safety follow-up is added" };
+  const held = { held_reason: "PHQ-9 cannot be recorded in Haven yet." };
 
   it("treats null, undefined and blank as available", () => {
     expect(isInstrumentHeld(available)).toBe(false);
@@ -323,7 +323,7 @@ describe("held instruments (COL-430)", () => {
 
   it("treats any real reason as held and returns it trimmed", () => {
     expect(isInstrumentHeld(held)).toBe(true);
-    expect(heldInstrumentReason(held)).toBe("PHQ-9 on hold until safety follow-up is added");
+    expect(heldInstrumentReason(held)).toBe("PHQ-9 cannot be recorded in Haven yet.");
     expect(heldInstrumentReason({ held_reason: "  on hold  " })).toBe("on hold");
   });
 

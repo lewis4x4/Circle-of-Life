@@ -29,6 +29,7 @@ import {
   type SurveyBundlePacket,
 } from "@/lib/risk/survey-bundle";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type RiskSurveyBundlePageClientProps = {
   initialPacket: SurveyBundlePacket | null;
@@ -294,7 +295,7 @@ export default function RiskSurveyBundlePageClient({
                         <div>
                           <p className="font-medium text-slate-900 dark:text-white">{document.name}</p>
                           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                            {document.category.replaceAll("_", " ")}
+                            {enumLabel(document.category, { case: "lower" })}
                           </p>
                         </div>
                         <span className={documentTone(document)}>{document.status}</span>
