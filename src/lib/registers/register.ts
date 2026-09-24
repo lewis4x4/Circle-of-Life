@@ -44,6 +44,14 @@ export type RegisterRow = {
   dischargeReason: string | null;
   dischargeDestination: string | null;
   recordedByName: string | null;
+  /**
+   * COL-750: when the row was saved. `eventAt` is when it happened; the two
+   * differ when a movement was entered later and dated back.
+   */
+  recordedAt?: string | null;
+  /** save_time, entered (staff gave the time) or admission_date; null before COL-750. */
+  effectiveBasis?: string | null;
+  lateEntryReason?: string | null;
 };
 
 const EVENT_LABELS: Record<RegisterEventType, string> = {

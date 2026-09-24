@@ -2,7 +2,8 @@
  * Effective-dated operating rules (COL-710, migration 491).
  *
  * Business thresholds that used to be literals in code — the risk score bands,
- * the survey binder's look-ahead window, the compliance pass-rate alert — are
+ * the survey binder's look-ahead window, the compliance pass-rate alert, the
+ * resident-movement back-date window (COL-750, migration 503) — are
  * rows in `public.operating_rules`, resolved by `public.haven_operating_rule`
  * (facility override first, then the organization rule, latest effective date
  * on or before the day asked about; no row falls back to the database's
@@ -22,6 +23,7 @@ export const OPERATING_RULE_KEYS = [
   "risk.score_bands",
   "survey_binder.due_window_days",
   "compliance.score_alert_below_pct",
+  "resident_movement.backdate_window_days",
 ] as const;
 
 export type OperatingRuleKey = (typeof OPERATING_RULE_KEYS)[number];
@@ -80,6 +82,14 @@ export function parseDueWindowDays(value: unknown): number | null {
 }
 
 /**
+ * How many Eastern calendar days back staff may date a resident movement
+ * (COL-750). 0 is a real setting: only an owner or org admin may back-date.
+ */
+export function parseBackdateWindowDays(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 365 ? value : null;
+}
+
+/**
  * The compliance alert threshold. `{ off: true }` is a real setting (the
  * default); null means the value could not be read or is invalid.
  */
@@ -113,4 +123,13 @@ export async function loadComplianceScoreAlert(
 ): Promise<ReturnType<typeof parseScoreAlertBelowPct>> {
   const rule = await loadOperatingRule(supabase, { key: "compliance.score_alert_below_pct", ...input });
   return rule ? parseScoreAlertBelowPct(rule.value) : null;
+}
+
+/** The facility's resident-movement back-date window; null when it cannot be read. */
+export async function loadMovementBackdateWindowDays(
+  supabase: SupabaseClient,
+  input: { organizationId?: string | null; facilityId?: string | null; asOf?: string },
+): Promise<number | null> {
+  const rule = await loadOperatingRule(supabase, { key: "resident_movement.backdate_window_days", ...input });
+  return rule ? parseBackdateWindowDays(rule.value) : null;
 }

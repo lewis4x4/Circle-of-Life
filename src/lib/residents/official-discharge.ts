@@ -1,5 +1,6 @@
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { movementPatchFields, type MovementWhen } from "@/lib/residents/movement-effective-at";
 
 /**
  * Official discharge — the one write path that ends a residency.
@@ -19,6 +20,11 @@ import { enumLabel } from "@/lib/display/enum-label";
  *
  * Presence is deliberately not part of this: `ResidentPresenceControl` moves a
  * resident between the three in-census states and cannot end a residency.
+ *
+ * COL-750: the discharge also carries the time it happened
+ * (`status_effective_at`), on the discharge date, so the status history, the
+ * register and the census date it when it happened rather than when it was
+ * saved. Before, the real date survived only in `discharge_date`.
  */
 
 export type DischargeReason = Database["public"]["Enums"]["discharge_reason"];
@@ -83,9 +89,12 @@ export function officialDischargePatch(input: {
   date: string;
   destination?: string | null;
   actorId: string | null;
+  /** When it happened (COL-750); omitted or "now" lets the database stamp the save time. */
+  when?: MovementWhen | null;
   now?: Date;
 }): Record<string, unknown> {
   return {
+    ...(input.when ? movementPatchFields(input.when) : {}),
     status: dischargeStatusForReason(input.reason),
     discharge_date: input.date,
     discharge_reason: input.reason,

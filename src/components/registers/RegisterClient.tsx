@@ -20,6 +20,7 @@ import {
 import {
   easternDayEndIso,
   easternDayStartIso,
+  formatRegisterEnteredNote,
   formatRegisterEventTime,
   isCompleteDateInput,
 } from "@/lib/registers/register-display-copy";
@@ -232,7 +233,12 @@ export function RegisterClient({
                     <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
                       {residentStatusLabel(row.toStatus)}
                     </td>
-                    <td className="py-2 pr-3 text-muted-foreground">{row.recordedByName ?? ""}</td>
+                    <td className="py-2 pr-3 text-muted-foreground">
+                      {row.recordedByName ?? ""}
+                      {formatRegisterEnteredNote(row) ? (
+                        <span className="block text-xs">{formatRegisterEnteredNote(row)}</span>
+                      ) : null}
+                    </td>
                   </tr>
                 );
               })}

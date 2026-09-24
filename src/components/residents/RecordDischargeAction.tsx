@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
+import {
+  EMPTY_MOVEMENT_WHEN,
+  movementGuardMessage,
+  resolveMovementWhen,
+  type MovementWhenDraft,
+} from "@/lib/residents/movement-effective-at";
 import { createClient } from "@/lib/supabase/client";
 import {
   DISCHARGE_REASONS,
@@ -61,13 +68,15 @@ export function RecordDischargeAction({
     onOpenChange?.(next);
   }, [controlledOpen, onOpenChange]);
   const [saving, setSaving] = useState(false);
-  const [date, setDate] = useState("");
+  const [when, setWhen] = useState<MovementWhenDraft>(EMPTY_MOVEMENT_WHEN);
+  const date = when.date;
   const [reason, setReason] = useState<DischargeReason | "">("");
   const [destination, setDestination] = useState("");
   const [problems, setProblems] = useState<string[]>([]);
+  const windowDays = useMovementBackdateWindow({ residentId, enabled: open });
 
   function reset() {
-    setDate("");
+    setWhen(EMPTY_MOVEMENT_WHEN);
     setReason("");
     setDestination("");
     setProblems([]);
@@ -77,6 +86,11 @@ export function RecordDischargeAction({
     const found = validateOfficialDischarge({ date, reason });
     if (found.length > 0) {
       setProblems(found);
+      return;
+    }
+    const resolved = resolveMovementWhen(when, { windowDays: windowDays ?? null, dateRequired: true });
+    if (!resolved.ok) {
+      setProblems([resolved.error]);
       return;
     }
     setSaving(true);
@@ -98,10 +112,18 @@ export function RecordDischargeAction({
             date,
             destination,
             actorId: user.id,
+            when: resolved.value,
           }) as never,
         )
         .eq("id", residentId);
-      if (error) throw error;
+      if (error) {
+        const guard = movementGuardMessage(error);
+        if (guard) {
+          setProblems([guard]);
+          return;
+        }
+        throw error;
+      }
       toast.success(officialDischargeReceipt(reason as DischargeReason));
       setOpen(false);
       reset();
@@ -145,19 +167,18 @@ export function RecordDischargeAction({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-sm">
-            <label className="block space-y-1.5">
-              <span className="block font-medium">Date belongings were removed</span>
-              <input
-                type="date"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-                aria-label="Date belongings were removed"
-                className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <span className="block text-xs text-muted-foreground">
-                Billing stops on this date. It is not filled in for you.
-              </span>
-            </label>
+            <MovementWhenFields
+              value={when}
+              onChange={setWhen}
+              windowDays={windowDays}
+              idPrefix={`discharge-${residentId}`}
+              dateLabel="Date belongings were removed"
+              dateRequired
+              disabled={saving}
+            />
+            <p className="text-xs text-muted-foreground">
+              Billing stops on this date. It is not filled in for you.
+            </p>
             <label className="block space-y-1.5">
               <span className="block font-medium">Discharge reason</span>
               <select

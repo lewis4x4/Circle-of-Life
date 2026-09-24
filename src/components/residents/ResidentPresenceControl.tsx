@@ -13,7 +13,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { StatusPill } from "@/components/ui/status-pill";
+import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
+import {
+  EMPTY_MOVEMENT_WHEN,
+  movementGuardMessage,
+  movementPatchFields,
+  resolveMovementWhen,
+  type MovementWhenDraft,
+} from "@/lib/residents/movement-effective-at";
 import { createClient } from "@/lib/supabase/client";
 import {
   shouldRequireForm1823RenewalOnPresenceChange,
@@ -40,6 +57,10 @@ import { cn } from "@/lib/utils";
  * Only the three in-census presence states are offered — this control cannot
  * discharge or otherwise change lifecycle, by design.
  *
+ * COL-750: choosing a state asks when it happened (blank = just now), so a
+ * hospital return entered Wednesday for Tuesday is dated Tuesday everywhere
+ * the status history is read.
+ *
  * BH-4: hospital_hold stamps hold_case_manager_notified_at when empty.
  * BH-6: hospital_hold → active marks latest Form 1823 renewal_due.
  */
@@ -64,9 +85,34 @@ export function ResidentPresenceControl({
   }, [status]);
 
   const displayed = pending ?? status;
+  // The state chosen in the menu, waiting for "when did this happen?".
+  const [target, setTarget] = useState<ResidencyStatus | null>(null);
+  const [when, setWhen] = useState<MovementWhenDraft>(EMPTY_MOVEMENT_WHEN);
+  const [problem, setProblem] = useState<string | null>(null);
+  const windowDays = useMovementBackdateWindow({ residentId, enabled: target !== null });
 
-  async function choose(next: ResidencyStatus) {
+  function choose(next: ResidencyStatus) {
     if (next === displayed || saving) return;
+    setWhen(EMPTY_MOVEMENT_WHEN);
+    setProblem(null);
+    setTarget(next);
+  }
+
+  function closeDialog() {
+    if (saving) return;
+    setTarget(null);
+    setProblem(null);
+  }
+
+  async function save() {
+    const next = target;
+    if (!next || saving) return;
+    const resolved = resolveMovementWhen(when, { windowDays: windowDays ?? null });
+    if (!resolved.ok) {
+      setProblem(resolved.error);
+      return;
+    }
+    setProblem(null);
     setSaving(true);
     setPending(next);
     const supabase = createClient();
@@ -95,6 +141,7 @@ export function ResidentPresenceControl({
       const patch: Record<string, unknown> = {
         status: nextDb,
         updated_by: user.id,
+        ...movementPatchFields(resolved.value),
       };
 
       // BH-4: Medicaid hold clock — stamp case-manager notified when entering hospital hold.
@@ -112,7 +159,16 @@ export function ResidentPresenceControl({
         .from("residents")
         .update(patch as never)
         .eq("id", residentId);
-      if (error) throw error;
+      if (error) {
+        const guard = movementGuardMessage(error);
+        if (guard) {
+          setPending(null);
+          setProblem(guard);
+          return;
+        }
+        throw error;
+      }
+      setTarget(null);
 
       // BH-6: return from hospital → Form 1823 renewal due.
       if (
@@ -158,6 +214,7 @@ export function ResidentPresenceControl({
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger
         type="button"
@@ -186,7 +243,7 @@ export function ResidentPresenceControl({
           {PRESENCE_OPTIONS.map((opt) => (
             <DropdownMenuItem
               key={opt.status}
-              onClick={() => void choose(opt.status)}
+              onClick={() => choose(opt.status)}
               className="flex items-start gap-2"
             >
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
@@ -201,6 +258,39 @@ export function ResidentPresenceControl({
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+    <Dialog open={target !== null} onOpenChange={(open) => (open ? undefined : closeDialog())}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{target ? presenceLabel(target) : "Update presence"}</DialogTitle>
+          <DialogDescription>
+            Record when the change actually happened, so reports and the Stand Up count it on the right day.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
+          <MovementWhenFields
+            value={when}
+            onChange={setWhen}
+            windowDays={windowDays}
+            idPrefix={`presence-${residentId}`}
+            disabled={saving}
+          />
+          {problem ? (
+            <p role="alert" className="rounded-[8px] border border-destructive p-3 text-sm">
+              {problem}
+            </p>
+          ) : null}
+        </div>
+        <DialogFooter className="gap-2">
+          <Button type="button" variant="outline" disabled={saving} onClick={closeDialog}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={saving} onClick={() => void save()}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 

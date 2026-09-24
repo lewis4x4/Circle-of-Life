@@ -72,4 +72,52 @@ describe("admission arrival error boundary", () => {
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: errorMessage });
   });
+
+  it("dates the arrival with the Eastern time given and passes the late-entry reason (COL-750)", async () => {
+    state.rpc.mockResolvedValue({ data: "resident", error: null });
+    const response = await POST(
+      new Request("https://local.test/arrival", {
+        method: "POST",
+        body: JSON.stringify({ arrival_date: "2026-09-06", arrival_time: "14:30", late_entry_reason: "Paper log" }),
+      }) as never,
+      { params: Promise.resolve({ id: "admission" }) },
+    );
+    expect(response.status).toBe(200);
+    expect(state.rpc).toHaveBeenCalledWith("confirm_admission_arrival_review", {
+      p_case_id: "admission",
+      p_actor_id: "actor",
+      p_arrival_date: "2026-09-06",
+      p_arrival_at: "2026-09-06T18:30:00.000Z",
+      p_late_entry_reason: "Paper log",
+    });
+  });
+
+  it("sends no time when none is given, so the database dates it", async () => {
+    state.rpc.mockResolvedValue({ data: "resident", error: null });
+    await POST(
+      new Request("https://local.test/arrival", { method: "POST", body: JSON.stringify({ arrival_date: "2026-09-06" }) }) as never,
+      { params: Promise.resolve({ id: "admission" }) },
+    );
+    expect(state.rpc.mock.calls[0][1]).toMatchObject({ p_arrival_at: null, p_late_entry_reason: null });
+  });
+
+  it("refuses a malformed time before calling the database", async () => {
+    const response = await POST(
+      new Request("https://local.test/arrival", { method: "POST", body: JSON.stringify({ arrival_date: "2026-09-06", arrival_time: "25:00" }) }) as never,
+      { params: Promise.resolve({ id: "admission" }) },
+    );
+    expect(response.status).toBe(400);
+    expect(state.rpc).not.toHaveBeenCalled();
+  });
+
+  it("shows the movement guard's own wording, which is written for staff", async () => {
+    const message =
+      "Only an owner or org admin can date a resident movement more than 3 day(s) back. Ask one to enter it, with the reason it is late.";
+    state.rpc.mockResolvedValue({ data: null, error: { message } });
+    const response = await POST(
+      new Request("https://local.test/arrival", { method: "POST", body: JSON.stringify({ arrival_date: "2026-09-06", arrival_time: "09:00" }) }) as never,
+      { params: Promise.resolve({ id: "admission" }) },
+    );
+    expect(await response.json()).toEqual({ error: message });
+  });
 });

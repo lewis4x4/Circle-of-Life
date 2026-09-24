@@ -31,6 +31,12 @@ import {
   type AdmissionOnboardingCounts,
 } from "@/lib/admissions/admission-onboarding-checklist";
 import { headCountOrNull } from "@/lib/metrics/head-count";
+import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
+import {
+  EMPTY_MOVEMENT_WHEN,
+  resolveMovementWhen,
+  type MovementWhenDraft,
+} from "@/lib/residents/movement-effective-at";
 import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
@@ -184,8 +190,10 @@ export default function AdminAdmissionCaseDetailPage() {
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
   const [rateNotesDraft, setRateNotesDraft] = useState("");
   const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
-  const [arrivalDate, setArrivalDate] = useState("");
+  const [arrivalWhen, setArrivalWhen] = useState<MovementWhenDraft>(EMPTY_MOVEMENT_WHEN);
+  const arrivalDate = arrivalWhen.date;
   const [arrivalMessage, setArrivalMessage] = useState<string | null>(null);
+  const arrivalWindowDays = useMovementBackdateWindow({ facilityId: row?.facility_id ?? null, enabled: !!row?.facility_id });
   const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"] | "">("");
   const [form1823PhysicianDraft, setForm1823PhysicianDraft] = useState("");
   const [form1823ExamDateDraft, setForm1823ExamDateDraft] = useState("");
@@ -380,7 +388,10 @@ export default function AdminAdmissionCaseDetailPage() {
 
   async function confirmArrival() {
     setArrivalMessage(null);
-    try { const response = await fetch(`/api/admin/workflows/admission-cases/${id}/confirm-arrival`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ arrival_date: arrivalDate }) }); const result=await response.json(); if(!response.ok)throw new Error(result.error ?? "Arrival was not recorded"); setArrivalMessage("Arrival confirmed. Resident is active and bed occupancy is recorded."); } catch(e) { setArrivalMessage(e instanceof Error ? e.message : "Arrival was not recorded"); }
+    // COL-750: the move-in is dated when the resident arrived, not when this is saved.
+    const resolved = resolveMovementWhen(arrivalWhen, { windowDays: arrivalWindowDays ?? null, dateRequired: true });
+    if (!resolved.ok) { setArrivalMessage(resolved.error); return; }
+    try { const response = await fetch(`/api/admin/workflows/admission-cases/${id}/confirm-arrival`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ arrival_date: arrivalDate, arrival_time: arrivalWhen.time.trim() || undefined, late_entry_reason: resolved.value.reason ?? undefined }) }); const result=await response.json(); if(!response.ok)throw new Error(result.error ?? "Arrival was not recorded"); setArrivalMessage("Arrival confirmed. Resident is active and bed occupancy is recorded."); } catch(e) { setArrivalMessage(e instanceof Error ? e.message : "Arrival was not recorded"); }
   }
 
   const form1823Satisfied = isForm1823Current(form1823Record, form1823ChecklistItem);
@@ -500,7 +511,7 @@ export default function AdminAdmissionCaseDetailPage() {
 
   return (
     <div className="relative w-full space-y-6 pb-12">
-      {row && <div className="space-y-2 rounded border border-border p-4"><h2 className="font-semibold">Confirm actual arrival</h2><p>Ready for move-in and arrival are separate steps. This activates the resident census and records bed occupancy after readiness checks pass.</p><label>Actual arrival date<input type="date" value={arrivalDate} onChange={(e)=>setArrivalDate(e.target.value)} className="ml-3 rounded border p-2" /></label><Button disabled={!arrivalDate} onClick={()=>void confirmArrival()}>Confirm arrival</Button>{arrivalMessage&&<p role="status">{arrivalMessage}</p>}</div>}
+      {row && <div className="space-y-2 rounded border border-border p-4"><h2 className="font-semibold">Confirm actual arrival</h2><p>Ready for move-in and arrival are separate steps. This activates the resident census and records bed occupancy after readiness checks pass.</p><MovementWhenFields value={arrivalWhen} onChange={setArrivalWhen} windowDays={arrivalWindowDays} idPrefix="admission-arrival" dateLabel="Actual arrival date" dateRequired /><Button disabled={!arrivalDate} onClick={()=>void confirmArrival()}>Confirm arrival</Button>{arrivalMessage&&<p role="status">{arrivalMessage}</p>}</div>}
       <></>
       
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
