@@ -71,7 +71,7 @@ function bulletinItemsFromMessages(messages: StaffMessageRow[]) {
 const FAMILY_BULLETIN_GATE_REASON =
   "A bulletin note goes to a resident's family in one building. Posted notes below cover every building you can see.";
 
-export default function StaffFamilyMessagesPage() {
+export function FamilyNotesPanel() {
   const { user } = useHavenAuth();
   const searchParams = useSearchParams();
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
@@ -400,8 +400,8 @@ export default function StaffFamilyMessagesPage() {
 
   if (selectedResidentId) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 pb-12">
-        <div className="mt-4 flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="max-w-3xl space-y-6 pb-12">
+        <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-sm md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
             <button
               type="button"
@@ -564,11 +564,11 @@ export default function StaffFamilyMessagesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-12">
-      <div className="mt-4 rounded-lg border border-border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+    <div className="w-full space-y-8 pb-12">
+      <div className="rounded-lg border border-border bg-card p-8 shadow-sm">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
           {FAMILY_BULLETIN_PAGE_TITLE}
-        </h1>
+        </h2>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           {FAMILY_BULLETIN_PAGE_DESCRIPTION}
         </p>
@@ -644,7 +644,7 @@ export default function StaffFamilyMessagesPage() {
                 Filter: {residentFilter}
               </span>
               <Link
-                href="/admin/family-messages"
+                href="/admin/family-portal?tab=notes"
                 className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 Clear filter

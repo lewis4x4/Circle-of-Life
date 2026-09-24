@@ -1,3 +1,4 @@
+import { formatProfileName } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -320,7 +321,7 @@ export async function loadIncidentDetail(
   const residentName = resident
     ? `${resident.first_name ?? ""} ${resident.last_name ?? ""}`.trim() || null
     : null;
-  const reporterName = repResult.data?.full_name?.trim() || "Staff";
+  const reporterName = formatProfileName(repResult.data?.full_name, { fallback: "Staff" });
   const rawFollowups = fuResult.data ?? [];
 
   let rcaInvestigation: RcaInvestigationUi = "none";
@@ -384,7 +385,7 @@ export async function loadIncidentDetail(
   if (eventResult.error) throw eventResult.error;
 
   const assigneeById = new Map(
-    (assigneeResult.data ?? []).map((p) => [p.id, p.full_name?.trim() || "Staff"]),
+    (assigneeResult.data ?? []).map((p) => [p.id, formatProfileName(p.full_name, { fallback: "Staff" })]),
   );
 
   const followups = rawFollowups.map((f) => ({
@@ -541,7 +542,7 @@ async function loadIncidentCareEvent(
     createdAt: row.created_at,
     acknowledgedAt: row.acknowledged_at,
     acknowledgedBy: row.acknowledged_by,
-    acknowledgedByName: acknowledger.data?.full_name?.trim() || null,
+    acknowledgedByName: (formatProfileName(acknowledger.data?.full_name, { fallback: "" }) || null),
     finalLevel: row.final_level,
     flags: parseFlags(row.flags),
     admin: parseAdminAnswers(row.answers),

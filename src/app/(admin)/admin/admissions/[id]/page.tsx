@@ -145,7 +145,7 @@ function onboardingLinks(residentId: string | null) {
     { label: "Care plan workspace", href: `/admin/residents/${residentId}/care-plan` },
     { label: "Medication setup", href: `/admin/residents/${residentId}/medications` },
     { label: "Resident billing", href: `/admin/residents/${residentId}/billing` },
-    { label: "Family coordination", href: "/admin/family-messages" },
+    { label: "Family coordination", href: "/admin/family-portal?tab=notes" },
   ];
 }
 

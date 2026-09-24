@@ -48,7 +48,7 @@ describe("navigation anchoring (COL-655)", () => {
     expect(resolveNavAnchor("/admin/activities")?.pillarId).toBe("clinical");
     expect(resolveNavAnchor("/admin/nurse-dashboard")?.pillarId).toBe("clinical");
     expect(resolveNavAnchor("/admin/family-portal/consents/new")?.pillarId).toBe("pipeline");
-    expect(resolveNavAnchor("/admin/survey-binder")?.pillarId).toBe("quality");
+    expect(resolveNavAnchor("/admin/compliance/survey-pack")?.item.key).toBe("compliance");
     expect(resolveNavAnchor("/admin/settings/users")?.pillarId).toBeNull();
     expect(resolveNavAnchor("/admin/v2/settings/users")?.pillarId).toBeNull();
     expect(resolveNavAnchor("/admin")?.item.key).toBe("owner-home");

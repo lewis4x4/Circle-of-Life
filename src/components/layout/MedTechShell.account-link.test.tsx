@@ -23,6 +23,7 @@ vi.mock("@/lib/auth/account-link", () => ({
 vi.mock("@/lib/caregiver/facility-context", () => ({
   loadCaregiverFacilityContext: async () => ({ ok: true, ctx: { facilityId: "facility" } }),
 }));
+vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ fullName: "Pat Tech" }) }));
 vi.mock("@/components/feedback/PilotFeedbackLauncher", () => ({ PilotFeedbackLauncher: () => null }));
 
 import { MedTechShell } from "./MedTechShell";

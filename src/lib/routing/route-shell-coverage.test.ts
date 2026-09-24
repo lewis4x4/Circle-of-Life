@@ -137,7 +137,6 @@ describe("route shell coverage (COL-644)", () => {
 
   it.each([
     ["/risk", "/admin/risk"],
-    ["/risk/survey-bundle", "/admin/risk/survey-bundle"],
     ["/search", "/admin/search"],
     ["/assessments/overdue", "/admin/assessments/overdue"],
     ["/pipeline/discharge-management", "/admin/discharge"],

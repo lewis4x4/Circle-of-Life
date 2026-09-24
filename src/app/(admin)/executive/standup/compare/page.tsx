@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRightLeft, Loader2 } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -130,6 +131,7 @@ export default function ExecutiveStandupComparePage() {
     <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandUpViewsNav current="/admin/executive/standup/compare" />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

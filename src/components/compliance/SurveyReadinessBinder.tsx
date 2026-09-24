@@ -41,7 +41,8 @@ const STATUS_OPTIONS: { id: BinderStatus; label: string }[] = [
   { id: "not_applicable", label: "N/A" },
 ];
 
-export default function AdminSurveyBinderPage() {
+/** The readiness-binder view of the survey pack (COL-707); was /admin/survey-binder. */
+export function SurveyReadinessBinder() {
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);

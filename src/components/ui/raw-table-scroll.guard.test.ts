@@ -17,7 +17,6 @@ const PRINT_OUTPUTS = new Set<string>([
   "src/components/care-events/print/IncidentFormSheet.tsx",
   "src/components/care-events/print/IncidentReportsLogSheet.tsx",
   "src/components/care-events/print/TaxonomyPacketSheet.tsx",
-  "src/app/(admin)/executive/reports/page.tsx", // the table is inside the exported HTML report string
   "src/lib/executive/league-print.ts",
   "src/lib/executive/standup-pdf.ts",
   "src/lib/office/morning-huddle-print.ts",
