@@ -70,6 +70,7 @@ class WorkbookTests(unittest.TestCase):
         self.assertEqual(parsed['records'], [])
         self.assertEqual(len(parsed['issues']), 5)
         self.assertTrue(all(issue['code'] == 'duplicate_label' for issue in parsed['issues']))
+        self.assertTrue(all(issue['cell'].endswith('26') and issue['first_cell'] != issue['cell'] for issue in parsed['issues']))
         self.assertEqual({issue['facility_id'] for issue in parsed['issues']}, set(MAP.values()))
         self.assertTrue(all(issue['sheet'] == 'September' and issue['week_start'] == '2026-09-07' for issue in parsed['issues']))
         self.assertEqual(parsed['locations'], {})

@@ -6,7 +6,11 @@ import {
   ProviderHttpError,
   refreshGoogleAccessToken,
 } from "./google.ts";
-import { easternReportingWeek, handleStandUpGoogle } from "./handler.ts";
+import {
+  easternReportingWeek,
+  handleStandUpGoogle,
+  issueLocations,
+} from "./handler.ts";
 import type {
   ApplySnapshotInput,
   ApplySnapshotResult,
@@ -287,6 +291,27 @@ Deno.test("identical duplicate inputs stay synchronized while conflicting duplic
     conflict.issues.length === 5 &&
       conflict.issues.every((issue) => issue.code === "duplicate_label"),
     "conflicting duplicate inputs remain blocked for all facilities",
+  );
+  const homewoodConflict = conflict.issues.find((issue) =>
+    issue.facility_id === map.Homewood
+  );
+  const firstOutreach = parsed.locations[identity].cells.outreach_engagements;
+  assert(
+    homewoodConflict?.cell === "B19" &&
+      homewoodConflict.first_cell === firstOutreach &&
+      firstOutreach !== "B19" &&
+      homewoodConflict.message.includes(`${firstOutreach} and B19`),
+    "a conflicting duplicate names both cells",
+  );
+  const receipt = issueLocations(conflict.issues);
+  assert(
+    receipt.length === 5 &&
+      receipt.every((entry) =>
+        entry.code === "duplicate_label" && entry.sheet === "September" &&
+        entry.week_start === "2026-09-14" && /^[B-F]19$/.test(entry.cell) &&
+        !("message" in entry)
+      ),
+    "the failure receipt keeps where each issue is, not its values",
   );
 });
 
@@ -994,6 +1019,25 @@ Deno.test("handler records mapping failure and never applies invalid source valu
     response.status === 409 && !rpc.applied &&
       rpc.failures.includes("workbook_mapping_required"),
     "invalid workbook must stop before mutation",
+  );
+});
+
+Deno.test("failure receipt locations stay inside the 4 KiB detail cap", () => {
+  const many = Array.from({ length: 500 }, (_, index) => ({
+    code: "duplicate_label",
+    message: "x".repeat(500),
+    sheet: "S".repeat(200),
+    facility_id: crypto.randomUUID(),
+    week_start: "2026-09-21",
+    cell: `B${index}`,
+    first_cell: "B1",
+  }));
+  const receipt = issueLocations(many);
+  assert(
+    receipt.length > 0 && receipt.length < many.length &&
+      JSON.stringify(receipt).length <= 3000 &&
+      receipt.every((entry) => entry.sheet.length === 80),
+    "receipt is bounded and truncated",
   );
 });
 

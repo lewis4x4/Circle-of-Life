@@ -45,6 +45,26 @@ function required(env: EnvReader, name: string): string {
   return value;
 }
 
+// Where each workbook issue is, so whoever keeps the workbook can find the
+// cell. Locations only, never cell values; record_failure caps detail at 4 KiB.
+export function issueLocations(
+  issues: Record<string, unknown>[],
+): Record<string, string>[] {
+  const kept: Record<string, string>[] = [];
+  let size = 2;
+  for (const issue of issues) {
+    const entry = Object.fromEntries(
+      ["code", "sheet", "week_start", "facility_id", "cell", "first_cell"]
+        .filter((key) => typeof issue[key] === "string")
+        .map((key) => [key, (issue[key] as string).slice(0, 80)]),
+    );
+    size += JSON.stringify(entry).length + 1;
+    if (size > 3000) break;
+    kept.push(entry);
+  }
+  return kept;
+}
+
 function boundedFetcher(fetcher: Fetcher, overall: AbortSignal): Fetcher {
   return ((input: Parameters<Fetcher>[0], init?: Parameters<Fetcher>[1]) => {
     const timeout = AbortSignal.timeout(15_000);
@@ -191,6 +211,8 @@ export async function handleStandUpGoogle(
         observed_at: observedAt,
         detail: {
           issue_codes: [...new Set(parsed.issues.map((issue) => issue.code))],
+          issue_count: parsed.issues.length,
+          issues: issueLocations(parsed.issues),
         },
       });
       return json({
