@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { URGENT_JOBS } from './linear-alert.mjs';
 
 function cronFieldMatches(field, value, min, max, { sundaySeven = false } = {}) {
   const normalize = input => sundaySeven && input === 7 ? 0 : input;
@@ -92,6 +93,8 @@ export function assessJob(job, now = new Date()) {
 // page at once. Transient failures (timeouts, 5xx, 429, network) get one re-check inside
 // the monitor run and then wait for the job's own next run; they page only once
 // CONSECUTIVE_FAILURE_THRESHOLD runs fail in a row or the failure outlives TRANSIENT_HOLD_MS.
+// Urgent jobs (URGENT_JOBS: resident safety, eMAR, escalation, the monitor) get the same
+// re-check but skip the hold: still failing after it (outcome.rechecked) pages that run.
 export const ALERT_POLICY = Object.freeze({
   // Two failed runs in a row: the job's own next run was the retry and it failed too.
   consecutiveFailureThreshold: 2,
@@ -130,7 +133,7 @@ export function classifyFailure(outcome) {
   return { transient:false, cause:`Function rejected the request (HTTP ${status})` };
 }
 
-export function applyAlertPolicy(outcome, now = new Date(), policy = ALERT_POLICY) {
+export function applyAlertPolicy(outcome, now = new Date(), policy = ALERT_POLICY, urgent = URGENT_JOBS) {
   if (!outcome.alert) return { ...outcome, severity:'none' };
   const { transient, cause } = classifyFailure(outcome);
   const assessed = { ...outcome, likely_cause:cause, transient };
@@ -144,6 +147,9 @@ export function applyAlertPolicy(outcome, now = new Date(), policy = ALERT_POLIC
   if (held >= policy.transientHoldMs) {
     return { ...assessed, severity:'alert', alert:true,
       alert_reason:`Still failing ${Math.round(policy.transientHoldMs / 60000)} minutes after the failed run` };
+  }
+  if (outcome.rechecked && urgent.test(outcome.jobname ?? '')) {
+    return { ...assessed, severity:'alert', alert:true, alert_reason:'Urgent job still failing after re-check' };
   }
   return { ...assessed, severity:'quiet', alert:false, held:true,
     hold_until:new Date(failedAt + policy.transientHoldMs).toISOString() };
