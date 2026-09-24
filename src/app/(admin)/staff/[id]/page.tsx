@@ -29,7 +29,7 @@ import {
   STAFF_DETAIL_NO_CERTS_COPY,
   STAFF_DETAIL_NO_UPCOMING_SHIFTS_COPY,
 } from "@/lib/staff/staff-detail-display-copy";
-import { mapEmploymentToUiStatus, type StaffStatus } from "@/lib/staff/load-staff";
+import { formatStaffRoleLabel, mapEmploymentToUiStatus, type StaffStatus } from "@/lib/staff/load-staff";
 import {
   buildStaffProfileSectionPatch,
   canEditStaffProfile,
@@ -47,7 +47,6 @@ import {
 } from "@/lib/staff/certification-aggregate";
 import { enumLabel } from "@/lib/display/enum-label";
 
-type StaffRoleUi = "nurse" | "caregiver" | "med_tech" | "admin";
 type StaffStatusUi = StaffStatus;
 
 type SupabaseStaff = StaffProfileRow;
@@ -246,7 +245,6 @@ export default function AdminStaffDetailPage() {
   const last = staff.last_name?.trim() ?? "";
   const fullName = `${first} ${last}`.trim() || "Staff member";
   // initials retained for potential avatar future use
-  const roleUi = mapDbStaffRoleToUi(staff.staff_role);
   const statusUi = mapEmploymentToUiStatus(staff.employment_status);
   const certAgg = aggregateCertStatus(
     certs.map((c) => ({
@@ -258,11 +256,11 @@ export default function AdminStaffDetailPage() {
     <div className="space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
       <RecordDetailHeader
         title={fullName}
-        subtitle={`${formatSnake(staff.staff_role)} · Updated ${formatStaffDetailUpdatedAt(staff.updated_at)}${staff.preferred_name ? ` · "${staff.preferred_name}"` : ""}`}
+        subtitle={`Updated ${formatStaffDetailUpdatedAt(staff.updated_at)}${staff.preferred_name ? ` · "${staff.preferred_name}"` : ""}`}
         statusChips={
           <>
             <StatusBadge status={statusUi} />
-            <RoleBadge role={roleUi} />
+            <PositionBadge staffRole={staff.staff_role} />
             <CertificationBadge certifications={certAgg} />
             {staff.is_float_pool ? (
               <Badge variant="outline" className="text-[10px] font-medium uppercase tracking-wider">
@@ -355,45 +353,6 @@ export default function AdminStaffDetailPage() {
   );
 }
 
-function mapDbStaffRoleToUi(role: string): StaffRoleUi {
-  if (role === "rn" || role === "lpn") return "nurse";
-  if (role === "medication_tech" || role === "dietary_staff") return "med_tech";
-  if (
-    role === "administrator" ||
-    role === "assistant_administrator" ||
-    role === "admin_support_coordinator" ||
-    role === "activities_director" ||
-    role === "dietary_manager" ||
-    role === "owner" ||
-    role === "ceo" ||
-    role === "coo" ||
-    role === "cfo"
-  ) return "admin";
-  if (
-    role === "cna" ||
-    role === "resident_aide" ||
-    role === "resident_services_coordinator" ||
-    role === "maintenance" ||
-    role === "maintenance_director" ||
-    role === "maintenance_standby" ||
-    role === "housekeeping" ||
-    role === "driver" ||
-    role === "dietary_aide" ||
-    role === "cook" ||
-    role === "activity_aide" ||
-    role === "marketing_consultant" ||
-    role === "other"
-  ) {
-    return "caregiver";
-  }
-  return "admin";
-}
-
-
-function formatSnake(value: string): string {
-  return enumLabel(value);
-}
-
 function formatShiftLabel(shiftDate: string, shiftType: string): string {
   const datePart = formatDateTimeWith(shiftDate.slice(0, 10), { month: "short", day: "numeric" }, { fallback: shiftDate });
   const typeLabel =
@@ -409,17 +368,17 @@ function formatShiftLabel(shiftDate: string, shiftType: string): string {
 
 const RECORD_HEADER_CHIP = "text-[10px] font-semibold uppercase tracking-wider";
 
-function RoleBadge({ role }: { role: StaffRoleUi }) {
-  const map: Record<StaffRoleUi, string> = {
-    nurse: "Nurse",
-    caregiver: "Caregiver",
-    med_tech: "Med Tech",
-    admin: "Admin",
-  };
+/**
+ * The staff record's position ("Resident Aide", "CNA"), one label only. The
+ * old badge bucketed positions into Nurse/Caregiver/Med Tech/Admin, so a
+ * resident aide read "CAREGIVER" beside a "resident aide" subtitle and a
+ * cook or driver read "Caregiver" (COL-686). The login role is not this.
+ */
+function PositionBadge({ staffRole }: { staffRole: string }) {
   /** Role taxonomy — neutral outline only (Quiet Operator §7 — not a binary positive state). */
   return (
-    <Badge variant="outline" className={RECORD_HEADER_CHIP}>
-      {map[role]}
+    <Badge variant="outline" className={RECORD_HEADER_CHIP} aria-label={`Position: ${formatStaffRoleLabel(staffRole)}`}>
+      {formatStaffRoleLabel(staffRole)}
     </Badge>
   );
 }

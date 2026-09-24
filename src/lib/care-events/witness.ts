@@ -7,6 +7,7 @@
  * and the old incident form broke.
  */
 
+import { formatPersonName } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "@/types/database";
@@ -194,7 +195,7 @@ export async function fetchWitnessCandidates(
   if (result.error) throw result.error;
   return (result.data ?? [])
     .filter((row): row is { user_id: string; first_name: string; last_name: string } => Boolean(row.user_id))
-    .map((row) => ({ userId: row.user_id, name: `${row.last_name}, ${row.first_name}` }));
+    .map((row) => ({ userId: row.user_id, name: formatPersonName(row) }));
 }
 
 /** Plain lines for the failures this path can actually produce. */

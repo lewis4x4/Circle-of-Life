@@ -142,7 +142,7 @@ describe("IncidentFormSheet", () => {
   it("carries the identifying block the binder expects", () => {
     render(<IncidentFormSheet packet={packet()} />);
     expect(screen.getByText("HOM-2026-0007")).toBeInTheDocument();
-    expect(screen.getByText("Probe, Resident")).toBeInTheDocument();
+    expect(screen.getByText("Resident Probe")).toBeInTheDocument();
     expect(screen.getByText("114")).toBeInTheDocument();
     expect(screen.getByText("First aid given.")).toBeInTheDocument();
     // Coded factors are words on paper, never snake_case out of a column.

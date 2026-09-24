@@ -4,6 +4,7 @@
  * pure mappers are exported for tests and never touch IO.
  */
 
+import { formatProfileName } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatCaregiverFacilityResidentRoomLabel } from "@/lib/caregiver/facility-residents-display-copy";
@@ -413,8 +414,8 @@ export async function loadCareEventCard(
     resident,
     reporter: {
       id: row.reported_by,
-      fullName: reporter.data?.full_name ?? null,
-      firstName: firstNameOf(reporter.data?.full_name ?? null),
+      fullName: formatProfileName(reporter.data?.full_name, { fallback: "" }) || null,
+      firstName: firstNameOf(formatProfileName(reporter.data?.full_name, { fallback: "" }) || null),
       phone: reporter.data?.phone?.trim() || null,
     },
     incident,
