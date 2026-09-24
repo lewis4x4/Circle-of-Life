@@ -21,6 +21,7 @@ const PRINT_OUTPUTS = new Set<string>([
   "src/lib/executive/standup-pdf.ts",
   "src/lib/office/morning-huddle-print.ts",
   "src/lib/reports/metric-presentation.ts",
+  "src/lib/payroll-packets/documents.ts", // Standalone printable HTML/PDF, outside the React app.
   "src/lib/risk/survey-bundle-print.ts",
 ]);
 
