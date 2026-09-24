@@ -13,6 +13,7 @@ export default defineConfig({
       "src/**/*.test.tsx",
       "scripts/check-package-manager.test.mjs",
       "scripts/check-migration-order.test.mjs",
+      "scripts/benefits/import-medicaid-log.test.mjs",
     ],
   },
   resolve: {
