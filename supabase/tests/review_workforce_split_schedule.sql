@@ -1,5 +1,5 @@
 -- Disposable replay only. All fixtures and auth overrides roll back.
--- COL-795: one grid cell carries the cook split as two custom blocks.
+-- COL-795 (migration 513): one grid cell carries the cook split as two custom blocks.
 BEGIN;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 CREATE TEMP TABLE split_fixture AS

@@ -1,4 +1,4 @@
--- COL-795: one grid click schedules the cook split (two time blocks in one cell).
+-- COL-795 (migration 513): one grid click schedules the cook split (two time blocks in one cell).
 -- No schema/ACL changes. A cell may now carry `custom_blocks`: exactly two
 -- same-day, non-overlapping custom blocks saved as two assignments. A cell that
 -- already holds exactly two custom assignments (a split) can be replaced from
