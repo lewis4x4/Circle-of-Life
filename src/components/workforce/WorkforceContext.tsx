@@ -6,6 +6,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import type { WorkforceSnapshot } from "@/lib/workforce/model";
 import { cn } from "@/lib/utils";
+import { isWorkforcePeopleRoute, WorkforcePeopleNav } from "./WorkforcePeopleNav";
 
 type State = { data: WorkforceSnapshot | null; loading: boolean; error: string | null; refresh: () => void };
 const Context = createContext<State>({ data: null, loading: false, error: null, refresh: () => {} });
