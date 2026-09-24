@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -284,7 +285,7 @@ export default function InsuranceRenewalPackagesPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           ) : rows.length === 0 ? (
             organizationId ? (
               <p className="text-sm text-slate-600 dark:text-slate-400">No renewal data packages yet.</p>
@@ -304,17 +305,11 @@ export default function InsuranceRenewalPackagesPage() {
                 {rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="text-sm text-slate-600 dark:text-slate-400">
-                      {new Intl.DateTimeFormat("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      }).format(new Date(r.generated_at))}
+                      {formatDisplayDateTime(r.generated_at)}
                     </TableCell>
                     <TableCell>
                       {formatRenewalPackagePolicyNumber(r.insurance_policies?.policy_number)}
-                      <span className="block text-xs text-slate-500">{r.insurance_policies?.carrier_name}</span>
+                      <span className="block text-xs text-muted-foreground">{r.insurance_policies?.carrier_name}</span>
                     </TableCell>
                     <TableCell className="font-mono text-xs">
                       {r.period_start} → {r.period_end}
@@ -325,7 +320,7 @@ export default function InsuranceRenewalPackagesPage() {
                       ) : r.narrative_reviewed_at ? (
                         <span className="text-amber-800 dark:text-amber-300">Reviewed</span>
                       ) : (
-                        <span className="text-slate-500">Draft</span>
+                        <span className="text-muted-foreground">Draft</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">

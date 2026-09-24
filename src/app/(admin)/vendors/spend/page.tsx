@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { createClient } from "@/lib/supabase/client";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Agg = { vendor_id: string; name: string; cents: number };
 
@@ -96,30 +97,32 @@ export default function VendorSpendPage() {
           <CardTitle className="text-base">By vendor</CardTitle>
           <CardDescription>{loading ? "Loading…" : `${rows.length} vendor(s)`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">Vendor</th>
-                <th className="pb-2 font-medium">Total paid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.vendor_id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4">{r.name}</td>
-                  <td className="py-2">{formatUsdFromCents(r.cents)}</td>
+        <CardContent>
+          <HorizontalScroll label="Vendor spend">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="pb-2 pr-4 font-medium">Vendor</th>
+                  <th className="pb-2 font-medium">Total paid</th>
                 </tr>
-              ))}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={2} className="py-6 text-slate-500">
-                    No payment data yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.vendor_id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4">{r.name}</td>
+                    <td className="py-2">{formatUsdFromCents(r.cents)}</td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="py-6 text-muted-foreground">
+                      No payment data yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>

@@ -10,6 +10,10 @@
  * It records what the documents state. Where a document is wrong or a fact is
  * not recorded anywhere, the row carries that in `notes` rather than a guess.
  *
+ * Rows are identified by their natural keys (below), not by a marker in `notes`:
+ * staff read those notes, and a "[seed:COL-497]" tag in them was developer
+ * language on a production screen (COL-652 / COL-688).
+ *
  *   node scripts/insurance/seed-col497-insurance.mjs            # dry run
  *   node scripts/insurance/seed-col497-insurance.mjs --apply
  *   node scripts/insurance/seed-col497-insurance.mjs --revert   # soft-delete what this seeded
@@ -22,7 +26,6 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SEED_TAG = "[seed:COL-497]";
 
 const mode = process.argv.includes("--revert")
   ? "revert"
@@ -57,7 +60,7 @@ const seed = JSON.parse(await readFile(join(HERE, "col497-seed-data.json"), "utf
 const ORG = seed.organization_id;
 const ent = (name) => seed.entities[name];
 
-/** Rows this seed is responsible for, tagged so --revert can find exactly them. */
+/** Rows this seed is responsible for; --revert finds exactly them by natural key. */
 function buildPolicyRows() {
   const rows = [];
   for (const p of seed.policies) {
@@ -78,7 +81,7 @@ function buildPolicyRows() {
         deductible_cents: p.deductible_cents,
         premium_cents: p.premium_cents,
         premium_period: p.premium_period,
-        notes: `${p.notes}\n\nCovers ${e.facility} (${e.legal_name}). ${SEED_TAG}`,
+        notes: `${p.notes}\n\nCovers ${e.facility} (${e.legal_name}).`,
       });
     }
   }
@@ -96,7 +99,7 @@ function buildCoiRows() {
       `Covers ${e.facility} (${e.legal_name}).`,
     ];
     if (coi.extra_note) parts.push(coi.extra_note);
-    parts.push(`Source document: ${coi.source_file}. ${SEED_TAG}`);
+    parts.push(`Source document: ${coi.source_file}.`);
     return {
       organization_id: ORG,
       entity_id: e.id,
@@ -140,8 +143,8 @@ function buildRenewalRows(policies) {
       milestone_60_date: minus(p.expiration_date, 60),
       milestone_30_date: minus(p.expiration_date, 30),
       notes: lapsed
-        ? `The term for ${p.policy_number} ended ${p.expiration_date} and no successor term is recorded. Marked expired rather than upcoming because the renewal window has already closed. ${SEED_TAG}`
-        : `Derived from the recorded term end of ${p.policy_number} (${p.carrier_name}). No quote or bound premium is recorded — those are entered as the renewal progresses. ${SEED_TAG}`,
+        ? `The term for ${p.policy_number} ended ${p.expiration_date} and no successor term is recorded. Marked expired rather than upcoming because the renewal window has already closed.`
+        : `Derived from the recorded term end of ${p.policy_number} (${p.carrier_name}). No quote or bound premium is recorded — those are entered as the renewal progresses.`,
     };
   });
 }
@@ -172,28 +175,48 @@ async function sync(table, rows, keyOf, selectCols) {
   return created.length;
 }
 
-async function revert(table) {
-  const rows = await rest(`${table}?select=id,notes&organization_id=eq.${ORG}&deleted_at=is.null`);
-  const mine = rows.filter((r) => (r.notes ?? "").includes(SEED_TAG));
-  console.log(`\n${table}: ${mine.length} rows tagged ${SEED_TAG}`);
-  if (mine.length === 0) return 0;
-  const ids = mine.map((r) => r.id).join(",");
-  await rest(`${table}?id=in.(${ids})`, {
+/** The live policies this seed wrote: the ones whose natural key it would write. */
+async function seededPolicies() {
+  const want = new Set(buildPolicyRows().map(policyKey));
+  const rows = await rest(
+    `insurance_policies?select=id,entity_id,policy_type,policy_number,carrier_name,effective_date,expiration_date` +
+      `&organization_id=eq.${ORG}&deleted_at=is.null`,
+  );
+  return rows.filter((r) => want.has(policyKey(r)));
+}
+
+async function softDelete(table, ids) {
+  console.log(`\n${table}: ${ids.length} rows written by this seed`);
+  if (ids.length === 0) return 0;
+  await rest(`${table}?id=in.(${ids.join(",")})`, {
     method: "PATCH",
     body: JSON.stringify({ deleted_at: new Date().toISOString() }),
   });
-  console.log(`   soft-deleted ${mine.length}`);
-  return mine.length;
+  console.log(`   soft-deleted ${ids.length}`);
+  return ids.length;
+}
+
+async function revert() {
+  const policies = await seededPolicies();
+  const policyIds = new Set(policies.map((p) => p.id));
+  const renewals = await rest(
+    `insurance_renewals?select=id,insurance_policy_id&organization_id=eq.${ORG}&deleted_at=is.null`,
+  );
+  const wantCoi = new Set(buildCoiRows().map(coiKey));
+  const cois = await rest(
+    `certificates_of_insurance?select=id,entity_id,policy_number,effective_date&organization_id=eq.${ORG}&deleted_at=is.null`,
+  );
+  // Renewals reference policies, so they go first.
+  await softDelete("insurance_renewals", renewals.filter((r) => policyIds.has(r.insurance_policy_id)).map((r) => r.id));
+  await softDelete("certificates_of_insurance", cois.filter((r) => wantCoi.has(coiKey(r))).map((r) => r.id));
+  await softDelete("insurance_policies", [...policyIds]);
 }
 
 console.log(`COL-497 insurance seed — mode: ${mode}`);
 console.log(`target: ${url}`);
 
 if (mode === "revert") {
-  // Renewals reference policies, so they go first.
-  await revert("insurance_renewals");
-  await revert("certificates_of_insurance");
-  await revert("insurance_policies");
+  await revert();
 } else {
   await sync(
     "insurance_policies",
@@ -210,15 +233,9 @@ if (mode === "revert") {
 
   // Renewals hang off whatever policies are actually present, so this reads them
   // back rather than assuming the insert above just happened.
-  const seededPolicies = (
-    await rest(
-      `insurance_policies?select=id,entity_id,policy_number,carrier_name,expiration_date,notes` +
-        `&organization_id=eq.${ORG}&deleted_at=is.null`,
-    )
-  ).filter((p) => (p.notes ?? "").includes(SEED_TAG));
   await sync(
     "insurance_renewals",
-    buildRenewalRows(seededPolicies),
+    buildRenewalRows(await seededPolicies()),
     renewalKey,
     "id,entity_id,insurance_policy_id,target_effective_date",
   );

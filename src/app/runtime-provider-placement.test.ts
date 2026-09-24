@@ -20,7 +20,6 @@ describe("runtime provider placement", () => {
   it("mounts AppRuntimeProviders in authenticated app route layouts", () => {
     const runtimeLayouts = [
       "src/app/(admin)/layout.tsx",
-      "src/app/clinical/layout.tsx",
       "src/app/(caregiver)/layout.tsx",
       "src/app/(family)/layout.tsx",
       "src/app/(floor)/layout.tsx",

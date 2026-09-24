@@ -15,6 +15,7 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canOperateFacilityVendorWorkflow } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type PayRow = Pick<
   Database["public"]["Tables"]["vendor_payments"]["Row"],
@@ -103,6 +104,15 @@ export default function VendorPaymentsPage() {
   const canPay =
     !!organizationId &&
     canOperateFacilityVendorWorkflow(appRole as Database["public"]["Enums"]["app_role"]);
+
+  // Submit stays off until the payment names who paid whom, where, and how much (COL-662).
+  const amountCents = Math.round(Number.parseFloat(amount) * 100);
+  const missingPaymentFields = [
+    !entityId && "entity",
+    !vendorId && "vendor",
+    !facilityId && "facility",
+    !(Number.isFinite(amountCents) && amountCents > 0) && "amount",
+  ].filter(Boolean) as string[];
 
   async function onPay(e: React.FormEvent) {
     e.preventDefault();
@@ -234,9 +244,18 @@ export default function VendorPaymentsPage() {
                   <option value="card">Card</option>
                 </select>
               </div>
-              <Button type="submit" disabled={saving}>
+              <Button
+                type="submit"
+                disabled={saving || missingPaymentFields.length > 0}
+                aria-describedby={missingPaymentFields.length > 0 ? "vendor-payment-missing" : undefined}
+              >
                 {saving ? "Saving…" : "Record payment"}
               </Button>
+              {missingPaymentFields.length > 0 ? (
+                <p id="vendor-payment-missing" className="text-xs text-muted-foreground">
+                  Choose or enter the {missingPaymentFields.join(", ")} to record a payment.
+                </p>
+              ) : null}
             </form>
           </CardContent>
         </Card>
@@ -247,32 +266,34 @@ export default function VendorPaymentsPage() {
           <CardTitle className="text-base">Recent payments</CardTitle>
           <CardDescription>{loading ? "Loading…" : `${rows.length} shown`}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800">
-                <th className="pb-2 pr-4 font-medium">Date</th>
-                <th className="pb-2 pr-4 font-medium">Amount</th>
-                <th className="pb-2 font-medium">Method</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
-                  <td className="py-2 pr-4 tabular-nums">{r.payment_date}</td>
-                  <td className="py-2 pr-4">{formatUsdFromCents(r.amount_cents)}</td>
-                  <td className="py-2">{r.payment_method}</td>
+        <CardContent>
+          <HorizontalScroll label="Vendor payments">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800">
+                  <th className="pb-2 pr-4 font-medium">Date</th>
+                  <th className="pb-2 pr-4 font-medium">Amount</th>
+                  <th className="pb-2 font-medium">Method</th>
                 </tr>
-              ))}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-6 text-slate-500">
-                    No payments yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-slate-900">
+                    <td className="py-2 pr-4 tabular-nums">{r.payment_date}</td>
+                    <td className="py-2 pr-4">{formatUsdFromCents(r.amount_cents)}</td>
+                    <td className="py-2">{r.payment_method}</td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-muted-foreground">
+                      No payments yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </CardContent>
       </Card>
     </div>

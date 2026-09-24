@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { MotionCard } from "@/components/ui/motion-card";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type LocalInboxItem = {
   id: string;
@@ -80,6 +81,7 @@ export function AdminDashboardPageClient({
   // data for the current facility. Any later facility scope change falls
   // through to the normal load path.
   const skipNextLoadRef = useRef(initialSnapshot != null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (authLoading) return;
@@ -89,6 +91,7 @@ export function AdminDashboardPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setError(null);
     const config = getRoleDashboardConfig(appRole);
@@ -111,9 +114,11 @@ export function AdminDashboardPageClient({
       setIsLoading(false);
       try {
         const data = await fetchAdminDashboardSnapshot(selectedFacilityId);
+        if (!isCurrent()) return;
         setSnapshotCache(selectedFacilityId, data);
         setSnapshot(data);
       } catch {
+        if (!isCurrent()) return;
         /* keep showing cached snapshot */
       }
       return;
@@ -122,15 +127,17 @@ export function AdminDashboardPageClient({
     setIsLoading(true);
     try {
       const data = await fetchAdminDashboardSnapshot(selectedFacilityId);
+      if (!isCurrent()) return;
       setSnapshotCache(selectedFacilityId, data);
       setSnapshot(data);
     } catch (e) {
+      if (!isCurrent()) return;
       setSnapshot(null);
       setError(e instanceof Error ? e.message : "Unable to load triage metrics.");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId, router, authLoading, appRole, getFreshSnapshot, setSnapshotCache]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId, router, authLoading, appRole, getFreshSnapshot, setSnapshotCache]);
 
   useEffect(() => {
     void load();
@@ -326,7 +333,7 @@ export function AdminDashboardPageClient({
         : "/admin/referrals/in-admissions?phase=ready";
   const familyPrimaryHref =
     workflows.familyTriagePending > 0
-      ? "/admin/family-messages?filter=triage"
+      ? "/admin/family-portal?tab=notes&filter=triage"
       : "/admin/family-portal?conference=upcoming#care-conferences";
   const familyPrimaryTitle =
     workflows.familyTriagePending > 0 ? "Family Triage" : "Care Conferences";

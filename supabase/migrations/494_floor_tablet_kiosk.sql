@@ -93,14 +93,14 @@ ALTER TABLE public.floor_unlocks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Timeclock managers read floor unlocks for accessible facilities"
   ON public.floor_unlocks FOR SELECT
   USING (
-    organization_id = haven.organization_id()
+    organization_id = (SELECT haven.organization_id())
     AND facility_id IN (SELECT haven.accessible_facility_ids())
-    AND haven.app_role() IN ('owner', 'org_admin', 'facility_admin')
+    AND (SELECT haven.app_role()) IN ('owner', 'org_admin', 'facility_admin')
   );
 CREATE POLICY "Staff read their own floor unlocks"
   ON public.floor_unlocks FOR SELECT
   USING (
-    organization_id = haven.organization_id()
+    organization_id = (SELECT haven.organization_id())
     AND user_id = auth.uid()
   );
 -- No INSERT, UPDATE or DELETE policy and no write grant: only definer functions write.
@@ -1488,8 +1488,8 @@ CREATE UNIQUE INDEX idx_visitor_log_entries_kiosk_device_client_entry
 DROP POLICY "Staff record visitor log in accessible facilities" ON public.visitor_log_entries;
 CREATE POLICY "Staff record visitor log in accessible facilities"
   ON public.visitor_log_entries FOR INSERT WITH CHECK (
-    organization_id = haven.organization_id()
-    AND haven.app_role() <> 'family'
+    organization_id = (SELECT haven.organization_id())
+    AND (SELECT haven.app_role()) <> 'family'
     AND facility_id IN (SELECT haven.accessible_facility_ids())
     AND (signed_in_by IS NULL OR signed_in_by = auth.uid())
     AND voided_at IS NULL

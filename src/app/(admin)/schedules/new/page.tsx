@@ -1,11 +1,13 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format, parseISO, startOfWeek } from "date-fns";
 import { ArrowLeft, CalendarPlus, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -68,7 +70,6 @@ export default function AdminNewScheduleWeekPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
       return;
     }
     let weekStart: string;
@@ -114,7 +115,7 @@ export default function AdminNewScheduleWeekPage() {
       if (ins.error) {
         if (ins.error.code === "23505") {
           setError(
-            `A draft or published schedule for the week starting ${weekStart} already exists for this facility.`,
+            `A draft or published schedule for the week starting ${formatDisplayDate(weekStart)} already exists for this facility.`,
           );
           return;
         }
@@ -147,7 +148,7 @@ export default function AdminNewScheduleWeekPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <CalendarPlus className="h-6 w-6 text-slate-500" />
+        <CalendarPlus className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New schedule week</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -157,50 +158,48 @@ export default function AdminNewScheduleWeekPage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to enable this form.
-        </p>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Week</CardTitle>
-          <CardDescription>
-            Pick any date in the target week — the schedule starts on the Monday of that week ({computedMonday ?? "…"}).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 max-w-md">
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="space-y-1.5">
-              <label htmlFor="schedule-date-in-target-week" className="text-xs font-medium text-slate-600 dark:text-slate-400">Date in target week</label>
-              <Input id="schedule-date-in-target-week" type="date" value={weekAnchor} onChange={(e) => setWeekAnchor(e.target.value)} required />
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="schedule-notes-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">Notes (optional)</label>
-              <Input id="schedule-notes-optional" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Holiday coverage" />
-            </div>
-
-            <Button type="submit" disabled={submitting || !facilityReady}>
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating…
-                </>
-              ) : (
-                "Create draft week"
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Week</CardTitle>
+            <CardDescription>
+              Pick any date in the target week — the schedule starts on the Monday of that week ({computedMonday ?? "…"}).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 max-w-md">
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {error}
+                </p>
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+              <div className="space-y-1.5">
+                <label htmlFor="schedule-date-in-target-week" className="text-xs font-medium text-slate-600 dark:text-slate-400">Date in target week</label>
+                <Input id="schedule-date-in-target-week" type="date" value={weekAnchor} onChange={(e) => setWeekAnchor(e.target.value)} required />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="schedule-notes-optional" className="text-xs font-medium text-slate-600 dark:text-slate-400">Notes (optional)</label>
+                <Input id="schedule-notes-optional" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Holiday coverage" />
+              </div>
+
+              <Button type="submit" disabled={submitting || !facilityReady}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating…
+                  </>
+                ) : (
+                  "Create draft week"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="Schedule weeks are created per building and Monday, so this form opens once a facility is chosen." />
+      )}
     </div>
   );
 }

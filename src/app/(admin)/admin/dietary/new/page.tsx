@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -214,7 +215,7 @@ export default function AdminDietaryNewPage() {
       ) : null}
 
       {!facilityReady && !authLoading ? (
-        <p className="text-sm text-warning">Select a facility first.</p>
+        <FacilityGateNotice reason="A diet order belongs to a resident in one building." />
       ) : null}
 
       {fetchErrorBannerMessage ? (
@@ -223,6 +224,7 @@ export default function AdminDietaryNewPage() {
         </p>
       ) : null}
 
+      {facilityReady ? (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Draft order</CardTitle>
@@ -235,7 +237,7 @@ export default function AdminDietaryNewPage() {
             <div className="space-y-2">
               <Label htmlFor="res">Resident</Label>
               {loadingResidents || authLoading ? (
-                <p className="text-sm text-slate-500">{DIETARY_NEW_LOADING_RESIDENTS_COPY}</p>
+                <p className="text-sm text-muted-foreground">{DIETARY_NEW_LOADING_RESIDENTS_COPY}</p>
               ) : showEmptyResidentsGap ? (
                 <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                   {DIETARY_NEW_NO_RESIDENTS_AT_FACILITY_COPY}
@@ -318,6 +320,7 @@ export default function AdminDietaryNewPage() {
           </form>
         </CardContent>
       </Card>
+      ) : null}
     </div>
   );
 }

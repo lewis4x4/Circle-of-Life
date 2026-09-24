@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   INTEGRITY_NO_FACILITY_NAME_COPY,
-  INTEGRITY_SELECT_FACILITY_FIRST_COPY,
   formatIntegrityNoFlagsEmptyTitle,
   formatIntegrityPageSubtitle,
   resolveIntegrityFacilityScope,
@@ -31,9 +30,9 @@ describe("resolveIntegrityFacilityScope", () => {
 });
 
 describe("formatIntegrityPageSubtitle", () => {
-  it("uses the shared select-facility gap when unscoped", () => {
+  it("leaves the facility ask to the page's FacilityGate when unscoped (COL-651)", () => {
     const subtitle = formatIntegrityPageSubtitle({ kind: "unscoped" });
-    expect(subtitle).toContain(INTEGRITY_SELECT_FACILITY_FIRST_COPY);
+    expect(subtitle).not.toMatch(/select a facility/i);
     expect(subtitle).not.toContain("selected facility");
     expect(subtitle).not.toMatch(/ at selected facility/i);
   });
@@ -61,9 +60,9 @@ describe("formatIntegrityNoFlagsEmptyTitle", () => {
     );
   });
 
-  it("names the select-facility gap when unscoped instead of fabricating a facility", () => {
+  it("never fabricates a facility when unscoped", () => {
     const title = formatIntegrityNoFlagsEmptyTitle({ kind: "unscoped" });
-    expect(title).toContain(INTEGRITY_SELECT_FACILITY_FIRST_COPY);
+    expect(title).toBe("No integrity flags posted");
     expect(title).not.toContain("selected facility");
     expect(title).not.toMatch(/ at selected facility/i);
   });

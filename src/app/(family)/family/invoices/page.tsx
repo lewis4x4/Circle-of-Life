@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, FileText, Loader2 } from "lucide-react";
@@ -28,9 +29,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function formatDue(ymd: string): string {
-  const d = new Date(`${ymd}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return ymd;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(ymd.slice(0, 10), { fallback: ymd });
 }
 
 export default function FamilyInvoicesPage() {
@@ -118,7 +117,9 @@ export default function FamilyInvoicesPage() {
   if (!data) return null;
 
   return (
-    <div className="space-y-4 pb-16 md:pb-0">
+    // Same centred column as the other family pages, so the header is not
+    // pinned under the top edge and the card is not full-bleed (COL-687).
+    <div className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-16 pt-12 md:pb-8 md:pt-20">
       <FamilySectionIntro
         active="billing"
         title={FAMILY_INVOICES_PAGE_TITLE}

@@ -2,6 +2,8 @@
  * Quiet Operator copy for the admin admissions hub (`/admin/admissions`).
  * Empty states name real gaps — never fabricate applicants, move-ins, dates, or counts.
  */
+import { formatDateTimeWith } from "@/lib/format/datetime";
+
 
 export const ADMISSIONS_HUB_MISSING_DATE_COPY = "No date posted";
 
@@ -26,7 +28,7 @@ export function formatAdmissionsHubRelativeDate(
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return formatDateTimeWith(d, { month: "short", day: "numeric" });
 }
 
 /** Metric strip while hub bootstrap is in flight. */
@@ -50,7 +52,7 @@ export function formatAdmissionsHubConferenceScheduledDate(
   if (!scheduledStart || !scheduledStart.trim()) return "No date scheduled";
   const d = new Date(scheduledStart);
   if (Number.isNaN(d.getTime())) return "No date scheduled";
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return formatDateTimeWith(scheduledStart.trim(), { month: "short", day: "numeric" });
 }
 
 /** Medicaid pipeline stage when the field is unset on a case row. */

@@ -230,7 +230,7 @@ export default function TransportationWeekCalendarPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
 
       <div className="relative z-10 space-y-6">
@@ -256,7 +256,7 @@ export default function TransportationWeekCalendarPage() {
                   "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "week"
                     ? "bg-white text-primary shadow-sm dark:bg-white/10"
-                    : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
+                    : "text-muted-foreground hover:text-slate-800 dark:hover:text-zinc-200",
                 )}
               >
                 Week
@@ -268,7 +268,7 @@ export default function TransportationWeekCalendarPage() {
                   "h-10 rounded-full px-4 text-[10px] font-bold transition-colors",
                   viewMode === "month"
                     ? "bg-white text-primary shadow-sm dark:bg-white/10"
-                    : "text-slate-500 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200",
+                    : "text-muted-foreground hover:text-slate-800 dark:hover:text-zinc-200",
                 )}
               >
                 Month
@@ -383,7 +383,7 @@ export default function TransportationWeekCalendarPage() {
                         today && !selected && "ring-1 ring-slate-300 dark:ring-white/20",
                       )}
                     >
-                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {format(day, "EEE")}
                       </span>
                       <span className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">
@@ -392,7 +392,7 @@ export default function TransportationWeekCalendarPage() {
                       <span
                         className={cn(
                           "text-[9px] sm:text-[10px] font-bold tabular-nums",
-                          n > 0 ? "text-primary" : "text-slate-400",
+                          n > 0 ? "text-primary" : "text-muted-foreground",
                         )}
                       >
                         {formatTransportationDayTripCount(n)}
@@ -407,7 +407,7 @@ export default function TransportationWeekCalendarPage() {
                   {WEEKDAY_LABELS.map((label) => (
                     <div
                       key={label}
-                      className="py-1 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500"
+                      className="py-1 text-center text-[9px] font-bold uppercase tracking-wider text-muted-foreground"
                     >
                       {label}
                     </div>
@@ -440,7 +440,7 @@ export default function TransportationWeekCalendarPage() {
                         <span
                           className={cn(
                             "text-[8px] sm:text-[9px] font-bold tabular-nums leading-tight",
-                            n > 0 ? "text-primary" : "text-slate-400",
+                            n > 0 ? "text-primary" : "text-muted-foreground",
                           )}
                         >
                           {formatTransportationDayTripCount(n)}
@@ -457,7 +457,7 @@ export default function TransportationWeekCalendarPage() {
                 {format(selectedDay, "EEEE, MMMM d")}
               </h2>
               {loading ? (
-                <p className="text-sm font-mono text-slate-500 pl-2">Loading…</p>
+                <p className="text-sm font-mono text-muted-foreground pl-2">Loading…</p>
               ) : agendaForSelected.length === 0 ? (
                 <p className="text-sm text-slate-600 dark:text-slate-400 pl-2">No trips on this day.</p>
               ) : (

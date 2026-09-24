@@ -16,17 +16,6 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  478: "PR #788 policy_self_comparison_tautologies, on main; remove after rebasing onto main.",
-  479: "PR #789 remove_dev_notes_and_acceptance_test_rows, on main; remove after rebasing onto main.",
-  480: "med_tech_shift_follows_punch_corrections (COL-668 follow-up), on main; remove after rebasing onto main.",
-  481: "PR #808 medicaid_resident_share_invoice, on main; remove after rebasing onto main.",
-  482: "PR #811 rls_helper_initplans_everywhere, on main; remove after rebasing onto main.",
-  483: "released by COL-677 (moved to 494); expected to be filled by another branch; remove once it is.",
-  484: "released by COL-677 (moved to 495); expected to be filled by another branch; remove once it is.",
-  485: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  486: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  487: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  488: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
   489: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
   490: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
   491: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",

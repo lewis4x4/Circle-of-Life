@@ -136,7 +136,7 @@ export default function AdminInsuranceHubPage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <InsuranceHubNav />
         <CoverageLapseBanner />
@@ -173,25 +173,10 @@ export default function AdminInsuranceHubPage() {
           </p>
         )}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {[
-            { title: "Executive alerts", description: "Return to the leadership queue after checking risk exposure.", href: "/admin/executive/alerts" },
-            { title: "Finance hub", description: "Cross-check reserve pressure and policy costs against the finance controls.", href: "/admin/finance" },
-            { title: "Open claims", description: "Go straight to active claims when the risk lane needs detail.", href: "/admin/insurance/claims" },
-          ].map((item) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className="rounded-lg border border-border bg-card p-5 shadow-sm transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:border-border hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
-            >
-              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">{item.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-foreground">{item.description}</p>
-            </Link>
-          ))}
-        </div>
-
+        {/* Figures first, then the jump-off cards: on a phone the cards used to push
+            every figure below the fold (COL-687). */}
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4" staggerMs={75}>
-          <div className="h-[160px]">
+          <div className="h-[120px] md:h-[160px]">
             <V2Card hoverColor="slate">
               <MonolithicWatermark value={activePolicies ?? ""} className="text-muted-foreground/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
@@ -204,7 +189,7 @@ export default function AdminInsuranceHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
+          <div className="h-[120px] md:h-[160px]">
             <V2Card hoverColor="emerald">
               <MonolithicWatermark value={renewalsInFlight ?? ""} className="text-success/10 opacity-50" />
               <div className="relative z-10 flex flex-col h-full justify-between">
@@ -217,7 +202,7 @@ export default function AdminInsuranceHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
+          <div className="h-[120px] md:h-[160px]">
             <V2Card
               hoverColor="red"
               className={openClaims && openClaims > 0 ? "border-destructive/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
@@ -249,6 +234,23 @@ export default function AdminInsuranceHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+          {[
+            { title: "Executive alerts", description: "Return to the leadership queue after checking risk exposure.", href: "/admin/executive/alerts" },
+            { title: "Finance hub", description: "Cross-check reserve pressure and policy costs against the finance controls.", href: "/admin/finance" },
+            { title: "Open claims", description: "Go straight to active claims when the risk lane needs detail.", href: "/admin/insurance/claims" },
+          ].map((item) => (
+            <Link
+              key={item.title}
+              href={item.href}
+              className="rounded-lg border border-border bg-card p-4 shadow-sm md:p-5 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:-translate-y-0.5 hover:border-border hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
+            >
+              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">{item.title}</h3>
+              <p className="mt-3 hidden text-sm leading-relaxed text-foreground md:block">{item.description}</p>
+            </Link>
+          ))}
+        </div>
 
       <div className="relative overflow-visible z-10 w-full mt-4 space-y-8">
         <div className="relative overflow-visible z-10 w-full">

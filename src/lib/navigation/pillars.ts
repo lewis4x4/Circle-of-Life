@@ -37,7 +37,6 @@ import {
   Hotel,
   Landmark,
   LineChart,
-  Mail,
   Megaphone,
   MessageSquare,
   Pill,
@@ -47,7 +46,6 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
-  Star,
   Stethoscope,
   Truck,
   Umbrella,
@@ -55,7 +53,6 @@ import {
   UserPlus,
   Users,
   Utensils,
-  Wrench,
   Zap,
   type LucideIcon,
   Timer,
@@ -136,7 +133,7 @@ export const PILLARS: Pillar[] = [
       { key: "admissions", href: "/admin/admissions", label: "Admissions overview", icon: Home },
       { key: "benefits", href: "/admin/benefits", label: "Medicaid & benefits", icon: ClipboardCheck },
       { key: "discharge", href: "/admin/discharge", label: "Medication reconciliation", icon: DoorOpen },
-      { key: "family-messages", href: "/admin/family-messages", label: "Family notes", icon: Megaphone },
+      { key: "family-portal", href: "/admin/family-portal", label: "Family Connections", icon: Users },
     ],
   },
   {
@@ -191,8 +188,8 @@ export const PILLARS: Pillar[] = [
       { key: "finance", href: "/admin/finance", label: "Finance", icon: Landmark },
       { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
       { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
-      { key: "cash", href: "/admin/cash", label: "Cash & trust accounts", icon: Banknote },
-      { key: "letters", href: "/admin/letters", label: "Letters", icon: Mail },
+      { key: "cash", href: "/admin/finance/trust", label: "Cash & trust accounts", icon: Banknote },
+      { key: "letters", href: "/admin/letters", label: "Letters", icon: FileText },
     ],
   },
   {
@@ -258,10 +255,9 @@ export const ANCHOR_ONLY_ROUTES: AuxiliaryRoute[] = [
   { key: "nurse-dashboard", href: "/admin/nurse-dashboard", label: "Nurse dashboard", icon: Stethoscope, pillar: "clinical" },
   { key: "handoff", href: "/admin/handoff", label: "Shift handoff", icon: ArrowLeftRight, pillar: "clinical" },
   { key: "activities", href: "/admin/activities", label: "Activities", icon: CalendarDays, pillar: "clinical" },
-  { key: "family-portal", href: "/admin/family-portal", label: "Family connections", icon: Users, pillar: "pipeline" },
   { key: "survey-binder", href: "/admin/survey-binder", label: "Survey binder", icon: ClipboardCheck, pillar: "quality" },
-  { key: "operations", href: "/admin/operations", label: "Facility operations", icon: Wrench, pillar: "command" },
-  { key: "reputation", href: "/admin/reputation", label: "Reputation", icon: Star, pillar: "pipeline" },
+  { key: "operations", href: "/admin/operations", label: "Facility operations", icon: ClipboardList, pillar: "command" },
+  { key: "reputation", href: "/admin/reputation", label: "Reputation", icon: Megaphone, pillar: "pipeline" },
   { key: "approvals", href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck, pillar: "command" },
   { key: "mentions", href: "/admin/mentions", label: "Mentions", icon: MessageSquare, pillar: "command" },
   { key: "assistant-dashboard", href: "/admin/assistant-dashboard", label: "Assistant home", icon: Home, pillar: "command" },
@@ -343,7 +339,7 @@ export const SECTION_JUMP_QUICK_KEYS = [
   "executive",
   "residents",
   "billing",
-  "family-messages",
+  "family-portal",
   "rounding-live",
   "snack-pass",
 ] as const;
@@ -390,7 +386,7 @@ export function sectionJumpQuickEntries(pillars: Pillar[] = PILLARS, auxiliary: 
 
 export const PILLAR_ITEM_CAP = 9;
 
-export function pillarsForRole(config: DashboardConfig): Pillar[] {
+export function pillarsForRole(config: DashboardConfig, role?: string | null): Pillar[] {
   const groups = new Set(config.visibleGroups.map((group) =>
     group === "Clinical Ops" ? "clinical" : group === "Quality & Risk" ? "quality" : group.toLowerCase()));
   const keys = config.visibleItemKeys ? new Set(config.visibleItemKeys) : null;
@@ -402,6 +398,7 @@ export function pillarsForRole(config: DashboardConfig): Pillar[] {
           (item) => !keys || keys.has(item.key) || (item.key === "clinical-desk" && keys.has("assessments")),
         ),
         config.visibleItemKeys,
+        role,
       ),
     }))
     .filter((pillar) => pillar.items.length > 0);

@@ -1,9 +1,11 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Play, TrendingUp } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -117,25 +119,20 @@ export default function ComplianceRulesPage() {
     }
   };
 
+  if (!facilityReady) {
+    return (
+      <FacilityGateNotice
+        title="Compliance Scoring"
+        reason="Rules are scored per building: each scan checks one facility's residents, staff and records."
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <h1 className="sr-only">Compliance Scoring</h1>
-        <p className="text-sm text-slate-500">Loading compliance rules…</p>
-      </div>
-    );
-  }
-
-  if (!facilityReady) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Compliance Scoring</h1>
-        <Card className="border-amber-200 bg-amber-50">
-          <CardHeader>
-            <CardTitle>Select a Facility</CardTitle>
-            <CardDescription>Choose a facility to view compliance rules and run scans.</CardDescription>
-          </CardHeader>
-        </Card>
+        <p className="text-sm text-muted-foreground">Loading compliance rules…</p>
       </div>
     );
   }
@@ -180,7 +177,7 @@ export default function ComplianceRulesPage() {
             </div>
             <CardDescription>
               {score.passed} of {score.total} rules passing
-              {scanDate && ` • Last scan: ${new Date(scanDate).toLocaleDateString()}`}
+              {scanDate && ` • Last scan: ${formatDisplayDate(scanDate)}`}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -193,7 +190,7 @@ export default function ComplianceRulesPage() {
         </h2>
         {rules.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-slate-500">
+            <CardContent className="py-8 text-center text-muted-foreground">
               <p className="font-medium">No compliance rules configured</p>
               <p className="text-sm mt-1">Add rules to enable automated compliance scoring.</p>
             </CardContent>
@@ -226,8 +223,8 @@ export default function ComplianceRulesPage() {
                             >
                               {rule.last_result.passed ? "PASS" : "FAIL"}
                             </span>
-                            <span className="text-slate-500">
-                              Scanned {new Date(rule.last_result.scanned_at).toLocaleDateString()}
+                            <span className="text-muted-foreground">
+                              Scanned {formatDisplayDate(rule.last_result.scanned_at)}
                             </span>
                           </div>
                         )}

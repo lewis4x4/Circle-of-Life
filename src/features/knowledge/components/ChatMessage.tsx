@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import type { KBSource } from "../lib/types";
 import { createClient } from "@/lib/supabase/client";
+import { markdownToPlainText } from "@/lib/knowledge/markdown-text";
 
 interface ChatMessageProps {
   id?: string;
@@ -96,7 +97,7 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
                         </div>
                       ) : null}
                       <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                        {s.excerpt}
+                        {markdownToPlainText(s.excerpt)}
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
                         <span>{Math.round(s.confidence * 100)}% match</span>
@@ -134,6 +135,8 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
             <div className="flex gap-1">
               <button
                 type="button"
+                aria-label="Helpful answer"
+                aria-pressed={currentFeedback === "positive"}
                 onClick={() => void handleFeedback("positive")}
                 className={`rounded p-1 transition-colors ${currentFeedback === "positive" ? "text-success" : "text-muted-foreground hover:text-foreground"}`}
               >
@@ -141,6 +144,8 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
               </button>
               <button
                 type="button"
+                aria-label="Not helpful"
+                aria-pressed={currentFeedback === "negative"}
                 onClick={() => void handleFeedback("negative")}
                 className={`rounded p-1 transition-colors ${currentFeedback === "negative" ? "text-destructive" : "text-muted-foreground hover:text-foreground"}`}
               >

@@ -133,9 +133,9 @@ export function ResidentSelector({
       {/* Dropdown indicator */}
       <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
-          <ChevronDown className="h-5 w-5 text-slate-400" />
+          <ChevronDown className="h-5 w-5 text-muted-foreground" />
         )}
       </div>
 
@@ -144,13 +144,9 @@ export function ResidentSelector({
         <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">{error}</p>
       )}
 
-      {/* Selected facility hint */}
-      {!loading && residents.length === 0 && !error && (
-        <p className="mt-2 text-xs text-slate-500 dark:text-zinc-500">
-          {selectedFacilityId
-            ? "No active residents at this facility"
-            : "Select a facility in the header first"}
-        </p>
+      {/* Its only caller renders it inside a FacilityGate (COL-651). */}
+      {!loading && residents.length === 0 && !error && selectedFacilityId && (
+        <p className="mt-2 text-xs text-muted-foreground">No active residents at this facility</p>
       )}
     </div>
   );
@@ -246,7 +242,7 @@ export function ResidentSelectorCompact({
           </option>
         ))}
       </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
     </div>
   );
 }

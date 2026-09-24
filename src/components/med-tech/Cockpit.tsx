@@ -25,7 +25,7 @@ export function Cockpit() {
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
-        <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-slate-300">
+        <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
           Loading shift data...
         </div>
@@ -53,7 +53,7 @@ export function Cockpit() {
           >
             {noShift ? "Cockpit is waiting on a shift" : "Shift Not Available"}
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             {noShift
               ? "No med-tech shift is open for you, so there is no med pass to show here. Clocking in on the time clock opens your shift here; until then, work medications from the floor app."
               : error}
@@ -80,7 +80,7 @@ export function Cockpit() {
 
       <div className="px-4 pb-4 md:px-6">
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 ">
-          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             <span>Medication Pass</span>
             <span className="text-slate-600">/</span>
             <span>{passes.length} due now</span>
@@ -89,7 +89,7 @@ export function Cockpit() {
             <span className="text-slate-600">/</span>
             <span>{tape.length} shift events</span>
           </div>
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-sm text-muted-foreground">
             Work the current pass queue first, keep resident context within reach, and capture exceptions without leaving the cockpit.
           </p>
         </div>

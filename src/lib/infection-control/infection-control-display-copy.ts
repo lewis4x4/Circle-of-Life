@@ -38,3 +38,8 @@ export function formatInfectionControlHubKpiValue(
 export function infectionControlHubKpiTileIsMetric(display: string | number): boolean {
   return typeof display === "number";
 }
+
+/** Attention tone only for a count that was read and is above zero. */
+export function isPositiveCount(value: number | null | undefined): boolean {
+  return typeof value === "number" && value > 0;
+}

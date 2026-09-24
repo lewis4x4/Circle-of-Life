@@ -10,6 +10,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -86,7 +87,7 @@ export default function NewInfectionSurveillancePage() {
   async function submit() {
     setError(null);
     if (!selectedFacilityId || !orgId || !residentId) {
-      setError("Select a facility and resident.");
+      setError("Select a resident.");
       return;
     }
     if (!infectionType) {
@@ -145,12 +146,12 @@ export default function NewInfectionSurveillancePage() {
 
   if (!selectedFacilityId) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Select a facility</CardTitle>
-          <CardDescription>Use the facility selector in the header to record surveillance.</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="mx-auto max-w-lg">
+        <FacilityGateNotice
+          title="New surveillance"
+          reason="Infection surveillance is recorded for a resident in one building."
+        />
+      </div>
     );
   }
 

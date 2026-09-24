@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -11,6 +12,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -35,13 +37,7 @@ const ORDER_TYPES = [
 type OrderType = (typeof ORDER_TYPES)[number]["value"];
 
 function formatDueDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTimeWith(date, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 export default function NewVerbalOrderPage() {
@@ -69,10 +65,8 @@ export default function NewVerbalOrderPage() {
 
   const submit = useCallback(async () => {
     setError(null);
-    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Please select a facility in the header first.");
-      return;
-    }
+    // The form only renders inside a facility scope (COL-651).
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) return;
     if (!user?.id || !organizationId) {
       setError("Could not resolve your profile or organization.");
       return;
@@ -151,7 +145,6 @@ export default function NewVerbalOrderPage() {
   };
 
   const getFacilityName = (): string => {
-    if (!selectedFacilityId) return "Select a facility";
     const name = availableFacilities.find((f) => f.id === selectedFacilityId)?.name;
     return formatVerbalOrderFacilityName(name);
   };
@@ -179,7 +172,7 @@ export default function NewVerbalOrderPage() {
           </p>
 
           <div className="bg-white dark:bg-black/40 rounded-2xl p-5 mb-8 border border-emerald-200 dark:border-emerald-500/20">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Co-signature Due
             </p>
             <p className="text-lg text-emerald-700 dark:text-emerald-400">
@@ -192,7 +185,7 @@ export default function NewVerbalOrderPage() {
               href="/admin/medications/verbal-orders"
               className={cn(
                 buttonVariants(),
-                "h-14 rounded-2xl font-bold tracking-wide bg-emerald-600 text-white hover:bg-emerald-700"
+                "h-14 rounded-2xl font-bold tracking-wide"
               )}
             >
               View in Queue
@@ -222,7 +215,7 @@ export default function NewVerbalOrderPage() {
             href="/admin/medications/verbal-orders"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "mb-2 gap-1 px-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:hover:text-white"
+              "mb-2 gap-1 px-0 text-muted-foreground hover:bg-transparent hover:text-slate-900 dark:hover:text-white"
             )}
           >
             ← Back to verbal orders
@@ -239,6 +232,10 @@ export default function NewVerbalOrderPage() {
         </div>
       </div>
 
+      {!isValidFacilityIdForQuery(selectedFacilityId) ? (
+        <FacilityGateNotice reason="A verbal order is captured for a resident in one building." />
+      ) : (
+      <>
       {/* Error banner */}
       {error && (
         <div className="rounded-2xl border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 px-6 py-4 flex items-start gap-3">
@@ -257,7 +254,7 @@ export default function NewVerbalOrderPage() {
         <div className="space-y-5">
           {/* Facility (read-only) */}
           <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
               Facility
             </p>
             <div className="h-14 rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-5 flex items-center text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -267,7 +264,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Resident Selector */}
           <div className="space-y-2">
-            <label htmlFor="verbal-order-resident" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="verbal-order-resident" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
               Resident <span className="text-rose-500">*</span>
             </label>
             <ResidentSelector
@@ -282,7 +279,7 @@ export default function NewVerbalOrderPage() {
 
           {/* Order Type */}
           <div className="space-y-2">
-            <label htmlFor="order_type" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="order_type" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
               Order Type <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -298,7 +295,7 @@ export default function NewVerbalOrderPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
             </div>
           </div>
         </div>
@@ -314,7 +311,7 @@ export default function NewVerbalOrderPage() {
         <div className="space-y-5">
           {/* Verbatim Order */}
           <div className="space-y-2">
-            <label htmlFor="order_text" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="order_text" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
               Verbatim Order <span className="text-rose-500">*</span>
             </label>
             <textarea
@@ -325,14 +322,14 @@ export default function NewVerbalOrderPage() {
               placeholder="Enter the exact order as received from the prescriber..."
               className="w-full resize-none rounded-[1.2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 p-5 text-[15px] leading-relaxed text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-slate-400 dark:placeholder:text-zinc-600"
             />
-            <p className="text-xs text-slate-500 dark:text-zinc-500">
+            <p className="text-xs text-muted-foreground">
               This must match exactly what the physician said.
             </p>
           </div>
 
           {/* Indication (optional) */}
           <div className="space-y-2">
-            <label htmlFor="indication" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+            <label htmlFor="indication" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
               Indication <span className="font-normal opacity-60">(optional)</span>
             </label>
             <Input
@@ -347,7 +344,7 @@ export default function NewVerbalOrderPage() {
           {/* Prescriber Info Grid */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label htmlFor="prescriber_name" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+              <label htmlFor="prescriber_name" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
                 Prescriber Name <span className="text-rose-500">*</span>
               </label>
               <Input
@@ -359,7 +356,7 @@ export default function NewVerbalOrderPage() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="prescriber_phone" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 pl-1">
+              <label htmlFor="prescriber_phone" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground pl-1">
                 Prescriber Phone <span className="font-normal opacity-60">(optional)</span>
               </label>
               <Input
@@ -402,7 +399,7 @@ export default function NewVerbalOrderPage() {
               <span className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 block">
                 Read-back Confirmed
               </span>
-              <span className="text-xs text-slate-500 dark:text-zinc-500 block mt-1">
+              <span className="text-xs text-muted-foreground block mt-1">
                 I read the order back to the prescriber and confirmed accuracy
               </span>
             </div>
@@ -426,6 +423,8 @@ export default function NewVerbalOrderPage() {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

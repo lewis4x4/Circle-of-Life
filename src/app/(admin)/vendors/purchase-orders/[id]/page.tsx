@@ -14,6 +14,7 @@ import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import { canApprovePurchaseOrder } from "@/lib/vendors/vendor-role-helpers";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type PoRow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type LineRow = Database["public"]["Tables"]["po_line_items"]["Row"];
@@ -187,46 +188,48 @@ export default function PurchaseOrderDetailPage() {
           </RecordDetailSection>
 
           <RecordDetailSection title="Line items">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="pb-2 pr-4 font-medium">#</th>
-                    <th className="pb-2 pr-4 font-medium">Description</th>
-                    <th className="pb-2 pr-4 font-medium">Qty</th>
-                    <th className="pb-2 pr-4 font-medium">Received</th>
-                    <th className="pb-2 font-medium">Line total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((l) => (
-                    <tr key={l.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 tabular-nums">{l.line_number}</td>
-                      <td className="py-2 pr-4">{l.description}</td>
-                      <td className="py-2 pr-4 tabular-nums">{l.quantity}</td>
-                      <td className="py-2 pr-4">
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id={`rq-${l.id}`}
-                            className="h-8 w-24"
-                            defaultValue={l.received_quantity}
-                            inputMode="decimal"
-                          />
-                          <button
-                            type="button"
-                            className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
-                            disabled={saving}
-                            onClick={() => void saveReceived(l)}
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-2 tabular-nums">{formatUsdFromCents(l.line_total_cents)}</td>
+            <div>
+              <HorizontalScroll label="Purchase order lines">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="pb-2 pr-4 font-medium">#</th>
+                      <th className="pb-2 pr-4 font-medium">Description</th>
+                      <th className="pb-2 pr-4 font-medium">Qty</th>
+                      <th className="pb-2 pr-4 font-medium">Received</th>
+                      <th className="pb-2 font-medium">Line total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lines.map((l) => (
+                      <tr key={l.id} className="border-b border-border/50">
+                        <td className="py-2 pr-4 tabular-nums">{l.line_number}</td>
+                        <td className="py-2 pr-4">{l.description}</td>
+                        <td className="py-2 pr-4 tabular-nums">{l.quantity}</td>
+                        <td className="py-2 pr-4">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id={`rq-${l.id}`}
+                              className="h-8 w-24"
+                              defaultValue={l.received_quantity}
+                              inputMode="decimal"
+                            />
+                            <button
+                              type="button"
+                              className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+                              disabled={saving}
+                              onClick={() => void saveReceived(l)}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-2 tabular-nums">{formatUsdFromCents(l.line_total_cents)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </HorizontalScroll>
             </div>
           </RecordDetailSection>
         </>

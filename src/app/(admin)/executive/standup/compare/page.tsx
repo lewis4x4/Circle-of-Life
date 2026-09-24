@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRightLeft, Loader2 } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/executive/standup-page-state";
 import { formatStandupMetricDelta, formatStandupMetricValue } from "@/lib/executive/executive-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export default function ExecutiveStandupComparePage() {
   const searchParams = useSearchParams();
@@ -126,14 +128,15 @@ export default function ExecutiveStandupComparePage() {
   const rightTotals = useMemo(() => rightDetail?.facilities.find((facility) => facility.facilityId == null) ?? null, [rightDetail]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandUpViewsNav current="/admin/executive/standup/compare" />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground dark:border-white/10 dark:bg-white/5">
                 <ArrowRightLeft className="h-3.5 w-3.5" />
                 Stand Up compare
               </div>
@@ -165,7 +168,7 @@ export default function ExecutiveStandupComparePage() {
 
         {loading ? (
           <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-            <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-500 dark:text-zinc-400">
+            <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading comparison…
             </CardContent>
@@ -176,7 +179,7 @@ export default function ExecutiveStandupComparePage() {
               <CardTitle>Select two different weeks to compare</CardTitle>
               <CardDescription>Use the compare controls on standup history to launch a week-over-week view.</CardDescription>
             </CardHeader>
-            <CardContent className="text-sm text-slate-500 dark:text-zinc-400">
+            <CardContent className="text-sm text-muted-foreground">
               {historyRows.length > 0 ? `Available weeks: ${historyRows.map((row) => row.weekOf).join(", ")}` : "No standup weeks available yet."}
             </CardContent>
           </Card>
@@ -191,7 +194,7 @@ export default function ExecutiveStandupComparePage() {
               </CardHeader>
               <CardContent className="grid gap-6 lg:grid-cols-2">
                 <div>
-                  <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Portfolio deltas</div>
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Portfolio deltas</div>
                   <ul className="space-y-2 text-sm text-slate-700 dark:text-zinc-300">
                     {(comparison.portfolioDeltas.length > 0 ? comparison.portfolioDeltas : ["No material portfolio deltas between these weeks."]).map((item) => (
                       <li key={item}>{item}</li>
@@ -204,10 +207,10 @@ export default function ExecutiveStandupComparePage() {
                     const rightMetric = rightTotals?.metrics[metricKey];
                     return (
                       <div key={metricKey} className="rounded-xl border border-slate-200/80 p-4 dark:border-white/10">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{rightMetric?.label ?? leftMetric?.label ?? metricKey}</div>
-                        <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">{comparison.fromWeek}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{rightMetric?.label ?? leftMetric?.label ?? metricKey}</div>
+                        <div className="mt-2 text-sm text-muted-foreground">{comparison.fromWeek}</div>
                         <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</div>
-                        <div className="mt-2 text-sm text-slate-500 dark:text-zinc-400">{comparison.toWeek}</div>
+                        <div className="mt-2 text-sm text-muted-foreground">{comparison.toWeek}</div>
                         <div className="font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</div>
                         <div className="mt-3 text-sm font-medium text-primary">{formatStandupMetricDelta(leftMetric, rightMetric)}</div>
                       </div>
@@ -228,10 +231,10 @@ export default function ExecutiveStandupComparePage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-semibold text-slate-900 dark:text-white">{facility.facilityName}</div>
-                        <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
+                        <div className="mt-1 text-sm text-muted-foreground">
                           {comparison.fromWeek}: {facility.concernFrom}
                         </div>
-                        <div className="text-sm text-slate-500 dark:text-zinc-400">
+                        <div className="text-sm text-muted-foreground">
                           {comparison.toWeek}: {facility.concernTo}
                         </div>
                       </div>
@@ -256,36 +259,38 @@ export default function ExecutiveStandupComparePage() {
                     <CardTitle className="text-lg">{sectionLabel}</CardTitle>
                     <CardDescription>Total-row comparison across the two selected weeks.</CardDescription>
                   </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <table className="min-w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 dark:border-white/10">
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Metric</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">{comparison.fromWeek}</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">{comparison.toWeek}</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-zinc-400">Delta</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {metricKeys.map((metricKey) => {
-                          const leftMetric = leftTotals?.metrics[metricKey];
-                          const rightMetric = rightTotals?.metrics[metricKey];
-                          const sample = rightMetric ?? leftMetric;
-                          if (!sample) return null;
-                          return (
-                            <tr key={metricKey} className="border-b border-slate-100 dark:border-white/5">
-                              <td className="px-3 py-3">
-                                <div className="font-medium text-slate-900 dark:text-white">{sample.label}</div>
-                                <div className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{sample.description}</div>
-                              </td>
-                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</td>
-                              <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</td>
-                              <td className="px-3 py-3 text-primary">{formatStandupMetricDelta(leftMetric, rightMetric)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  <CardContent>
+                    <HorizontalScroll label="Stand Up comparison">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-white/10">
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Metric</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">{comparison.fromWeek}</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">{comparison.toWeek}</th>
+                            <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Delta</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {metricKeys.map((metricKey) => {
+                            const leftMetric = leftTotals?.metrics[metricKey];
+                            const rightMetric = rightTotals?.metrics[metricKey];
+                            const sample = rightMetric ?? leftMetric;
+                            if (!sample) return null;
+                            return (
+                              <tr key={metricKey} className="border-b border-slate-100 dark:border-white/5">
+                                <td className="px-3 py-3">
+                                  <div className="font-medium text-slate-900 dark:text-white">{sample.label}</div>
+                                  <div className="mt-1 text-xs text-muted-foreground">{sample.description}</div>
+                                </td>
+                                <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(leftMetric)}</td>
+                                <td className="px-3 py-3 font-semibold text-slate-900 dark:text-white">{formatStandupMetricValue(rightMetric)}</td>
+                                <td className="px-3 py-3 text-primary">{formatStandupMetricDelta(leftMetric, rightMetric)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </HorizontalScroll>
                   </CardContent>
                 </Card>
               );

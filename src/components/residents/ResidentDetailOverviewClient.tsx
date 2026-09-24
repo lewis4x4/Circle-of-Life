@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -89,11 +90,15 @@ import {
   RESPONSIBLE_PARTY_CONTACT_NOTE,
 } from "@/lib/residents/resident-responsible-party";
 import { RESIDENT_NO_UNIT_COPY as NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
-import { formatResidentOverviewGenderLabel } from "@/lib/residents/resident-overview-display-copy";
+import {
+  formatResidentOverviewGenderLabel,
+  formatResidentOverviewSpecialistCount,
+} from "@/lib/residents/resident-overview-display-copy";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 export type ResidentOverviewWorkspace = "admin" | "clinical";
 
@@ -128,9 +133,8 @@ function residentHrefSet(id: string, workspace: ResidentOverviewWorkspace): Resi
 
 function isoDayLabel(iso: string | null): string | null {
   if (!iso) return null;
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T12:00:00`) : new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  const label = formatDisplayDate(iso, { fallback: "" });
+  return label || null;
 }
 
 /** "Verified Sep 1, 2026 by Jane Doe" or null when no verification is recorded. */
@@ -340,6 +344,8 @@ export function ResidentDetailOverviewClient({
 
   const skipNextLoadRef = useRef(bootstrapped && initialError == null);
 
+  const beginLoad = useLatestLoad();
+
   const [loading, setLoading] = useState(!bootstrapped);
   const [error, setError] = useState<string | null>(initialError);
   const [notFound, setNotFound] = useState(bootstrapped && !initialDetail && !initialError);
@@ -379,6 +385,7 @@ export function ResidentDetailOverviewClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     // A silent refresh (after a quick-entry save) keeps the current page and
     // any open dialog mounted; a full load blanks the page into its loading state.
@@ -400,19 +407,21 @@ export function ResidentDetailOverviewClient({
       const row = await loadResidentOverviewDetail(residentId, selectedFacilityId, undefined, {
         activityDays: options?.activityDays ?? activityDaysRef.current,
       });
+      if (!isCurrent()) return;
       if (!row) {
         setNotFound(true);
       } else {
         setDetail(row);
       }
     } catch (err) {
+      if (!isCurrent()) return;
       setError(
         formatLiveDataLoadError(err, "Live resident profile is unavailable right now."),
       );
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [residentId, selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, residentId, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();
@@ -1045,7 +1054,7 @@ export function ResidentDetailOverviewClient({
                 <QuietButton onClick={() => openEditor("primary_physician")} label="+ Add primary care physician" />
               )}
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Specialist consults on file: <span className="font-semibold text-foreground">{detail.specialistConsultActiveCount}</span>
+                Specialist consults on file: <span className="font-semibold text-foreground">{formatResidentOverviewSpecialistCount(detail.specialistConsultActiveCount)}</span>
               </p>
             </div>
           </RecordDetailSection>

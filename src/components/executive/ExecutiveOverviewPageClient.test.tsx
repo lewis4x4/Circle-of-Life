@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, beforeAll } from "vitest";
 
 import { ExecutiveOverviewPageClient, EXECUTIVE_OVERVIEW_LOADING_MESSAGE } from "./ExecutiveOverviewPageClient";
 import { EMPTY_PRESENCE_CENSUS } from "@/lib/executive/presence-census";
@@ -31,6 +31,13 @@ function buildSupabaseChain() {
   };
   return chain;
 }
+
+// The overview's below-the-fold sections are next/dynamic chunks (COL-703).
+vi.mock("next/dynamic", async () => (await import("@/test-utils/sync-next-dynamic")).nextDynamicMock);
+beforeAll(async () => {
+  const { dynamicModulesReady } = await import("@/test-utils/sync-next-dynamic");
+  await dynamicModulesReady();
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),

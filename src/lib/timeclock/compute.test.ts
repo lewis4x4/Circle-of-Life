@@ -8,6 +8,7 @@ import {
   facilityDayStart,
   payPeriodContaining,
   statusNow,
+  unresolvedExceptionCount,
   workweekStart,
   workweekStartIso,
   workweeksBetween,
@@ -78,6 +79,48 @@ describe("workweek boundaries (Monday 00:00 America/New_York)", () => {
 describe("computeTimesheet", () => {
   const dstWeekStart = facilityDayStart("2026-11-02");
   const dstWeekEnd = facilityDayStart("2026-11-09");
+
+  it("keeps missing clock out unresolved even when a legacy acknowledgement exists", () => {
+    const clockIn = punch("2026-11-03 07:00", "in");
+    const sheet = computeTimesheet({ staffId: STAFF, punches: [clockIn], corrections: [correction({ correction_type: "acknowledge", reason: "manager_verified_time", exception_key: `missing_out:${clockIn.id}` })], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: et("2026-11-10 07:00") });
+    expect(sheet.periodWorkedMinutes).toBe(0);
+    expect(sheet.exceptions).toEqual([expect.objectContaining({ type: "missing_out", acknowledged: false })]);
+  });
+
+  it("keeps missing meal end unresolved even when a legacy acknowledgement exists", () => {
+    const mealStart = punch("2026-11-03 11:00", "meal_start");
+    const sheet = computeTimesheet({ staffId: STAFF, punches: [punch("2026-11-03 07:00", "in"), mealStart, punch("2026-11-03 15:00", "out")], corrections: [correction({ correction_type: "acknowledge", reason: "manager_verified_time", exception_key: `missing_meal_end:${mealStart.id}` })], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: et("2026-11-10 07:00") });
+    expect(sheet.periodWorkedMinutes).toBe(240);
+    expect(sheet.exceptions).toEqual([expect.objectContaining({ type: "missing_meal_end", acknowledged: false })]);
+  });
+
+  it("reviews a completed long shift without treating its verified end as missing", () => {
+    const clockIn = punch("2026-11-03 07:00", "in");
+    const verifiedEnd = correction({ correction_type: "add_punch", reason: "manager_verified_time", punch_type: "out", corrected_punched_at: et("2026-11-04 00:00").toISOString() });
+    const input = { staffId: STAFF, punches: [clockIn], corrections: [verifiedEnd], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: et("2026-11-10 07:00") };
+    const unreviewed = computeTimesheet(input);
+    expect(unreviewed.periodWorkedMinutes).toBe(1020);
+    expect(unreviewed.exceptions).toEqual([expect.objectContaining({ key: `long_shift:${clockIn.id}`, type: "long_shift", acknowledged: false })]);
+    expect(unresolvedExceptionCount([unreviewed])).toBe(1);
+
+    for (const exception_key of [`long_shift:${clockIn.id}`, `missing_out:${clockIn.id}`]) {
+      const reviewed = computeTimesheet({ ...input, corrections: [...input.corrections, correction({ correction_type: "acknowledge", reason: "manager_verified_time", exception_key })] });
+      expect(reviewed.periodWorkedMinutes).toBe(1020);
+      expect(reviewed.exceptions).toEqual([expect.objectContaining({ type: "long_shift", acknowledged: true })]);
+      expect(unresolvedExceptionCount([reviewed])).toBe(0);
+    }
+  });
+
+  it("cannot use a long-shift acknowledgement after the end punch is voided", () => {
+    const clockIn = punch("2026-11-03 07:00", "in");
+    const clockOut = punch("2026-11-04 00:00", "out");
+    const sheet = computeTimesheet({ staffId: STAFF, punches: [clockIn, clockOut], corrections: [
+      correction({ correction_type: "acknowledge", reason: "manager_verified_time", exception_key: `long_shift:${clockIn.id}` }),
+      correction({ correction_type: "void_punch", reason: "duplicate", target_punch_id: clockOut.id }),
+    ], periodStart: dstWeekStart, periodEnd: dstWeekEnd, now: et("2026-11-10 07:00") });
+    expect(sheet.periodWorkedMinutes).toBe(0);
+    expect(sheet.exceptions).toEqual([expect.objectContaining({ type: "missing_out", acknowledged: false })]);
+  });
 
   it("DST week: five 8 hour shifts with unpaid meals total 2,400 minutes and no overtime", () => {
     const punches: RawPunch[] = [];

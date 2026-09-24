@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -75,6 +76,7 @@ import {
   billingOverviewNinetyPlusShareEmptyCopy,
   billingOverviewOutstandingArEmptyCopy,
   billingOverviewOverdueCountEmptyCopy,
+  billingOverviewPercentText,
   type BillingOverviewKpiContext,
 } from "@/lib/billing/billing-overview-kpi-copy";
 import {
@@ -1143,7 +1145,7 @@ function BillingInvoiceLedgerInner({
               href="/admin/billing/ar-aging?bucket=91-plus"
               label="90+ days past due share"
               value={
-                ninetyPlusEmptyCopy ?? `${Math.round(ninetyPlusSharePct ?? 0)}%`
+                billingOverviewPercentText(ninetyPlusEmptyCopy, ninetyPlusSharePct)
               }
               valuePresentation={ninetyPlusEmptyCopy != null ? "message" : "metric"}
               valueClassName={
@@ -1157,7 +1159,7 @@ function BillingInvoiceLedgerInner({
               href="/admin/billing/invoices"
               label="Applied (sent this period)"
               value={
-                appliedPeriodEmptyCopy ?? `${Math.round(periodInvoiceSnapshot.ratePct ?? 0)}%`
+                billingOverviewPercentText(appliedPeriodEmptyCopy, periodInvoiceSnapshot.ratePct)
               }
               valuePresentation={appliedPeriodEmptyCopy != null ? "message" : "metric"}
               valueClassName={
@@ -2119,7 +2121,7 @@ function BillingInvoiceLedgerInner({
             <div className="rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60">
               <h2 className="text-[14px] font-semibold text-foreground">Activity this week</h2>
               <p className="mt-1 text-[12px] text-muted-foreground">
-                Recent cash application, rate effective dates, and upcoming schedule notes · as of {t} Eastern.
+                Recent cash application, rate effective dates, and upcoming schedule notes · as of {formatDisplayDate(t)}.
               </p>
 
               <div className="mt-4 space-y-4">

@@ -119,7 +119,7 @@ export function DayInTheLife() {
         "Certified overnight medication and urgent care response",
         "Emergency commercial generators ensuring continuous power and comfort",
       ],
-      image: "https://images.unsplash.com/photo-1540518614846-7ede433c4ef7?auto=format&fit=crop&w=1000&q=80",
+      image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1000&q=80",
       icon: Moon,
     },
   ];

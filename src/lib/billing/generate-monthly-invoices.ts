@@ -7,6 +7,7 @@
  * admission + discharge proration; due date = 5th of billing month.
  * Private-pay holds bill full monthly rent (not reduced daily bed_hold).
  */
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type QueryError = { message: string; code?: string };
@@ -44,6 +45,8 @@ export type ResidentPayer = {
   payer_type: string;
   payer_name: string | null;
   medicaid_rate: number | null;
+  /** The resident's own monthly share of a Medicaid stay (COL-678). */
+  medicaid_patient_responsibility?: number | null;
   facility_medicaid_provider_id: string | null;
 };
 
@@ -72,7 +75,47 @@ export type BillingSource =
   | "legacy_resident_rate"
   | "standard_rate_schedule"
   | "medicaid_provider_rate"
-  | "medicaid_resident_override";
+  | "medicaid_resident_override"
+  | "medicaid_resident_share";
+
+/**
+ * Which invoice a preview line becomes. A Medicaid resident can owe two for one
+ * month: the Medicaid invoice ("primary") and, when the billing rule says so,
+ * their own share billed to them or their responsible party (COL-678).
+ */
+export type InvoiceShare = "primary" | "resident_share";
+
+/** Payer type the resident-share invoice is billed under: the resident pays it. */
+export const RESIDENT_SHARE_PAYER_TYPE = "private_pay";
+
+export type BillingRateRuleRow = {
+  facility_id: string | null;
+  effective_from: string;
+  created_at: string;
+  medicaid_resident_share_invoice: boolean | null;
+};
+
+/**
+ * Whether a Medicaid resident's share is invoiced for a period. Mirrors
+ * public.haven_billing_rate_rule (migrations 477/481): the facility's own rule
+ * first, then the organization's, latest effective date first; no rule means
+ * no share invoice. Brian ruled it on from 2026-10-01 (COL-678).
+ */
+export function medicaidResidentShareInvoiced(
+  rules: ReadonlyArray<BillingRateRuleRow>,
+  facilityId: string,
+  asOfIso: string,
+): boolean {
+  const rule = rules
+    .filter((row) => (row.facility_id === facilityId || row.facility_id == null) && row.effective_from <= asOfIso)
+    .sort(
+      (a, b) =>
+        Number(b.facility_id != null) - Number(a.facility_id != null) ||
+        b.effective_from.localeCompare(a.effective_from) ||
+        b.created_at.localeCompare(a.created_at),
+    )[0];
+  return rule?.medicaid_resident_share_invoice === true;
+}
 
 /** Presence statuses that remain billable until official discharge. */
 export const BILLABLE_RESIDENT_STATUSES = ["active", "hospital_hold", "loa"] as const;
@@ -98,6 +141,7 @@ export type PreviewLine = {
   agreementId: string | null;
   prorated: boolean;
   presenceStatus: string;
+  invoiceShare: InvoiceShare;
 };
 
 /** Require an integer calendar month and a four-digit calendar year. */
@@ -128,10 +172,7 @@ export function daysInMonth(year: number, month: number): number {
 }
 
 export function monthLabel(year: number, month: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(year, month - 1, 1));
+  return formatDateTimeWith(`${year}-${String(month).padStart(2, "0")}-01`, { month: "long", year: "numeric" });
 }
 
 export function getNextBillingMonth(): { year: number; month: number } {
@@ -253,8 +294,14 @@ function selectBillablePrimary(
 ): { payer?: ResidentPayer; noBillableDays?: boolean; error?: string } {
   const admission = canonicalCivilDate(resident.admission_date);
   const discharge = resident.discharge_date === null ? null : canonicalCivilDate(resident.discharge_date);
-  if (!admission || (resident.discharge_date !== null && !discharge) || (discharge && discharge < admission)) {
-    return { error: "A resident admission/discharge interval is missing, invalid, or reversed. Review the billable dates before generating invoices." };
+  if (!admission) {
+    return { error: resident.admission_date ? "Admission date is not a valid date." : "No admission date on file." };
+  }
+  if (resident.discharge_date !== null && !discharge) {
+    return { error: "Discharge date is not a valid date." };
+  }
+  if (discharge && discharge < admission) {
+    return { error: "Discharge date is before the admission date." };
   }
   const start = admission > periodStart ? admission : periodStart;
   const end = discharge && discharge < periodEnd ? discharge : periodEnd;
@@ -281,9 +328,32 @@ function selectBillablePrimary(
   return { payer };
 }
 
+/** A resident whose dates or payer periods stop the whole facility from billing. */
+export type BillingBlocker = {
+  residentId: string;
+  residentName: string;
+  reason: string;
+};
+
+export function billingBlockerName(resident: Pick<Resident, "first_name" | "last_name">): string {
+  const name = [resident.first_name, resident.last_name]
+    .map((part) => part?.trim() ?? "")
+    .filter(Boolean)
+    .join(" ");
+  return name || "Unnamed resident";
+}
+
+export function billingBlockersSummary(count: number): string {
+  return count === 1
+    ? "1 resident's billable dates (admission, discharge or payer period) stop invoices from generating. Fix the record below, then refresh."
+    : `${count} residents' billable dates (admission, discharge or payer period) stop invoices from generating. Fix each record below, then refresh.`;
+}
+
 export type BuildPreviewResult = {
   preview: PreviewLine[];
   error: string | null;
+  /** Every resident behind `error` when the preview is blocked by resident data, so staff can fix each record. */
+  blockers?: BillingBlocker[];
   billingLabel: string;
   days: number;
   periodStart: string;
@@ -342,7 +412,7 @@ export async function buildMonthlyInvoicePreview(
 
   const payerP = supabase
     .from("resident_payers" as never)
-    .select("id, resident_id, payer_type, payer_name, medicaid_rate, facility_medicaid_provider_id, effective_date, end_date", { count: "exact" })
+    .select("id, resident_id, payer_type, payer_name, medicaid_rate, medicaid_patient_responsibility, facility_medicaid_provider_id, effective_date, end_date", { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .eq("is_primary", true);
@@ -371,7 +441,7 @@ export async function buildMonthlyInvoicePreview(
 
   const existingP = supabase
     .from("invoices" as never)
-    .select("resident_id", { count: "exact" })
+    .select("resident_id, payer_type", { count: "exact" })
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .eq("period_start", periodStart)
@@ -384,7 +454,7 @@ export async function buildMonthlyInvoicePreview(
       QR<ResidentPayer[]>,
       QR<FacilityMedicaidProvider[]>,
       QR<ResidentRateAgreement[]>,
-      QR<{ resident_id: string }[]>,
+      QR<{ resident_id: string; payer_type: string | null }[]>,
     ];
 
   for (const result of [
@@ -427,6 +497,7 @@ export async function buildMonthlyInvoicePreview(
   const medicaidProviders = medicaidResult.data ?? [];
   const agreements = agreementResult.data ?? [];
   const alreadyInvoiced = new Set((existingResult.data ?? []).map((r) => r.resident_id));
+  const invoicedPayerKeys = new Set((existingResult.data ?? []).map((r) => `${r.resident_id}:${r.payer_type ?? ""}`));
 
   if (!rate) {
     return {
@@ -449,14 +520,34 @@ export async function buildMonthlyInvoicePreview(
   }
   const payerMap = new Map<string, ResidentPayer>();
   const noBillableDays = new Set<string>();
+  const blockers: BillingBlocker[] = [];
   for (const resident of residents) {
-    if (alreadyInvoiced.has(resident.id)) continue;
     const selection = selectBillablePrimary(resident, payerRows.get(resident.id) ?? [], periodStart, periodEnd);
+    // An invoiced resident only needs its payer to decide a still-missing
+    // resident-share invoice; its payer dates were settled when it was billed.
+    if (alreadyInvoiced.has(resident.id)) {
+      if (!selection.error && !selection.noBillableDays && selection.payer) payerMap.set(resident.id, selection.payer);
+      continue;
+    }
     if (selection.error) {
-      return { preview: [], error: selection.error, billingLabel, days, periodStart, periodEnd, dueDate };
+      // Keep going so the page can name every resident to fix, not just the first.
+      blockers.push({ residentId: resident.id, residentName: billingBlockerName(resident), reason: selection.error });
+      continue;
     }
     if (selection.noBillableDays) noBillableDays.add(resident.id);
     else if (selection.payer) payerMap.set(resident.id, selection.payer);
+  }
+  if (blockers.length > 0) {
+    return {
+      preview: [],
+      error: billingBlockersSummary(blockers.length),
+      blockers,
+      billingLabel,
+      days,
+      periodStart,
+      periodEnd,
+      dueDate,
+    };
   }
   const medicaidById = new Map(medicaidProviders.map((p) => [p.id, p]));
   const agreementMap = new Map<string, ResidentRateAgreement>();
@@ -466,11 +557,25 @@ export async function buildMonthlyInvoicePreview(
     }
   }
 
+  let residentShareOn = false;
+  const organizationId = residents[0]?.organization_id;
+  if (organizationId) {
+    const ruleResult = (await supabase
+      .from("billing_rate_rules" as never)
+      .select("facility_id, effective_from, created_at, medicaid_resident_share_invoice")
+      .eq("organization_id", organizationId)
+      .lte("effective_from", periodStart)) as unknown as QR<BillingRateRuleRow[]>;
+    if (ruleResult.error) {
+      return { preview: [], error: ruleResult.error.message, billingLabel, days, periodStart, periodEnd, dueDate };
+    }
+    residentShareOn = medicaidResidentShareInvoiced(ruleResult.data ?? [], facilityId, periodStart);
+  }
+
   const medicaidRateMissing: string[] = [];
 
   const preview: PreviewLine[] = residents
-    .filter((r) => !alreadyInvoiced.has(r.id) && !noBillableDays.has(r.id))
-    .map((r): PreviewLine | null => {
+    .filter((r) => !noBillableDays.has(r.id))
+    .flatMap((r): PreviewLine[] => {
       const name = `${(r.last_name ?? "").trim()}, ${(r.first_name ?? "").trim()}`.replace(
         /^, |, $/,
         "",
@@ -480,6 +585,38 @@ export async function buildMonthlyInvoicePreview(
       const surcharge = surchargeForAcuity(rate, r.acuity_level);
       const { factor, prorated } = prorationFactorForResident(r, billingYear, billingMonth, days);
       const agreement = agreementMap.get(r.id);
+
+      // COL-678: the resident's own share of a Medicaid stay, billed to them on its own invoice.
+      const residentShareLine = (): PreviewLine[] => {
+        const share = payer?.medicaid_patient_responsibility ?? null;
+        if (!residentShareOn || !isMedicaidPayer(payerType) || share == null || share <= 0) return [];
+        if (invoicedPayerKeys.has(`${r.id}:${RESIDENT_SHARE_PAYER_TYPE}`)) return [];
+        const amount = prorateAmount(share, factor);
+        return [{
+          residentId: r.id,
+          residentName: name,
+          payerType: RESIDENT_SHARE_PAYER_TYPE,
+          payerName: "Resident or responsible party",
+          standardBaseRate: amount,
+          standardCareSurcharge: 0,
+          standardTotal: amount,
+          negotiatedBaseRate: amount,
+          negotiatedCareSurcharge: 0,
+          concessionAmount: 0,
+          baseRate: amount,
+          careSurcharge: 0,
+          total: amount,
+          acuity: "Medicaid",
+          roomClass: "other",
+          billingSource: "medicaid_resident_share",
+          concessionReason: null,
+          agreementId: null,
+          prorated,
+          presenceStatus: r.status,
+          invoiceShare: "resident_share",
+        }];
+      };
+      if (alreadyInvoiced.has(r.id)) return residentShareLine();
 
       let roomClass: "private" | "companion" | "other" = "private";
       let billingSource: BillingSource = "standard_rate_schedule";
@@ -507,9 +644,10 @@ export async function buildMonthlyInvoicePreview(
 
         if (medicaidMonthly == null || medicaidMonthly <= 0) {
           // Never fall through to the private-pay schedule for a Medicaid resident —
-          // skip and surface a warning so staff link a provider or set an override.
+          // skip the Medicaid half and surface a warning so staff link a provider or
+          // set an override. The resident's own share is still billed (COL-678).
           medicaidRateMissing.push(name || r.id);
-          return null;
+          return residentShareLine();
         }
         billingSource = override != null ? "medicaid_resident_override" : "medicaid_provider_rate";
         concessionReason = null;
@@ -559,7 +697,7 @@ export async function buildMonthlyInvoicePreview(
       negotiatedTotal = prorateAmount(negotiatedTotal, factor);
       const concessionAmount = standardTotal - negotiatedTotal;
 
-      return {
+      const primary: PreviewLine = {
         residentId: r.id,
         residentName: name,
         payerType,
@@ -580,15 +718,15 @@ export async function buildMonthlyInvoicePreview(
         agreementId,
         prorated,
         presenceStatus: r.status,
+        invoiceShare: "primary",
       };
+      return [primary, ...residentShareLine()];
     })
-    .filter((line): line is PreviewLine =>
-      line != null && (line.total > 0 || line.standardTotal > 0),
-    );
+    .filter((line) => line.total > 0 || line.standardTotal > 0);
 
   let message: string | null = null;
   if (medicaidRateMissing.length > 0) {
-    message = `Skipped ${medicaidRateMissing.length} Medicaid resident(s) with no usable rate (link a facility Medicaid provider or set a resident rate override): ${medicaidRateMissing.join("; ")}.`;
+    message = `Skipped the Medicaid invoice for ${medicaidRateMissing.length} Medicaid resident(s) with no usable rate (link a facility Medicaid provider or set a resident rate override): ${medicaidRateMissing.join("; ")}.${residentShareOn ? " Their own share is still invoiced where one is on file." : ""}`;
   } else if (alreadyInvoiced.size > 0 && preview.length === 0 && residents.length > 0) {
     message = `All ${residents.length} billable residents already have invoices for ${billingLabel}. No new invoices to generate.`;
   }
@@ -650,7 +788,8 @@ export async function persistMonthlyInvoicesFromPreview(
   const ym = `${billingYear}-${String(billingMonth).padStart(2, "0")}`;
   for (let i = 0; i < preview.length; i++) {
     const line = preview[i];
-    const invoiceNumber = `${facilityCode}-${ym}-${line.residentId}`;
+    const residentShare = line.invoiceShare === "resident_share";
+    const invoiceNumber = `${facilityCode}-${ym}-${line.residentId}${residentShare ? "-RS" : ""}`;
 
     const holdNote =
       line.presenceStatus === "hospital_hold" || line.presenceStatus === "loa"
@@ -660,7 +799,9 @@ export async function persistMonthlyInvoicesFromPreview(
     const lineItems = [
       {
         line_type: "room_and_board",
-        description: line.prorated
+        description: residentShare
+          ? `Resident share of Medicaid room and board${line.prorated ? ` — Prorated (${monthLabel(billingYear, billingMonth)})` : ""}`
+          : line.prorated
           ? `${roomClassLabel(line.roomClass)} — Prorated${holdNote} (${monthLabel(billingYear, billingMonth)})`
           : `${roomClassLabel(line.roomClass)} — Standard monthly rate${holdNote}`,
         quantity: 1,
@@ -697,7 +838,9 @@ export async function persistMonthlyInvoicesFromPreview(
     }
 
     const notes =
-      line.billingSource === "resident_rate_agreement"
+      line.billingSource === "medicaid_resident_share"
+        ? "The resident's own monthly share of a Medicaid stay (patient responsibility), billed to the resident or responsible party separately from the Medicaid invoice."
+        : line.billingSource === "resident_rate_agreement"
         ? `Generated from resident negotiated billing agreement ${line.agreementId}.`
         : line.billingSource === "legacy_resident_rate"
           ? "Generated from imported resident monthly rate until a negotiated agreement is confirmed."

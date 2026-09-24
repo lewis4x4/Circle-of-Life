@@ -7,6 +7,9 @@ import requireKpiInfo from "./eslint-rules/require-kpi-info.mjs";
 import noDirectPrimitiveImport from "./eslint-rules/no-direct-primitive-import.mjs";
 import primitiveEnforcementRoute from "./eslint-rules/primitive-enforcement-route.mjs";
 import requireTimeZone from "./eslint-rules/require-time-zone.mjs";
+import noAdhocBackLink from "./eslint-rules/no-adhoc-back-link.mjs";
+import noMonoProse from "./eslint-rules/no-mono-prose.mjs";
+import iconButtonNeedsName from "./eslint-rules/icon-button-needs-name.mjs";
 
 const uiV2Plugin = {
   rules: {
@@ -26,6 +29,18 @@ const quietOperatorPrimitivesPlugin = {
 const havenTimePlugin = {
   rules: {
     "require-time-zone": requireTimeZone,
+  },
+};
+
+const havenBackLinkPlugin = {
+  rules: {
+    "no-adhoc-back-link": noAdhocBackLink,
+  },
+};
+
+const havenUiPlugin = {
+  rules: {
+    "no-mono-prose": noMonoProse,
   },
 };
 
@@ -144,6 +159,42 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // COL-656: one back-link style. Pre-existing ad-hoc back links are
+    // baselined in `eslint-suppressions.json`; convert them to BackLink and prune.
+    // The rule covers the admin and caregiver apps. The shared-device floor
+    // tablet and front-door kiosk apps follow docs/designs/floor-tablet-kiosk/DESIGN.md
+    // (52px Back, 44px+ touch targets), which BackLink's small text link cannot meet.
+    files: ["src/**/*.{tsx,jsx}"],
+    ignores: [
+      "src/**/*.test.tsx",
+      "src/**/*.spec.tsx",
+      "src/design-system/components/BackLink/**",
+      "src/app/(floor)/**",
+      "src/components/floor/**",
+      "src/app/kiosk/**",
+      "src/components/kiosk/**",
+    ],
+    plugins: {
+      "haven-back-link": havenBackLinkPlugin,
+    },
+    rules: {
+      "haven-back-link/no-adhoc-back-link": "error",
+    },
+  },
+  {
+    // COL-656: monospace is for code and identifiers, not a house style. Pre-
+    // existing uses are baselined in `eslint-suppressions.json`; convert them
+    // (KPITile, PageHeader, IdText, tabular-nums) and prune.
+    files: ["src/**/*.{ts,tsx,js,jsx}"],
+    ignores: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    plugins: {
+      "haven-ui": havenUiPlugin,
+    },
+    rules: {
+      "haven-ui/no-mono-prose": "error",
+    },
+  },
+  {
     // React Compiler is not enabled in this app. `incompatible-library` only
     // warns that React Hook Form's `watch()` could not be auto-memoized by the
     // compiler; with no compiler there is nothing to act on, and warnings fail
@@ -156,8 +207,8 @@ const eslintConfig = defineConfig([
     // COL-658: a visible <label> must name its control — either `htmlFor` the
     // control's `id`, or wrap the control. A sibling label with neither leaves
     // the select/input unnamed for screen readers (axe `label` / `select-name`,
-    // critical). Pre-existing violations are recorded in eslint-suppressions.json
-    // and are being fixed route by route; new ones fail lint.
+    // critical). Every pre-existing violation is fixed; there are no
+    // suppressions for this rule, so any new one fails lint.
     files: ["src/**/*.{tsx,jsx}"],
     rules: {
       "jsx-a11y/label-has-associated-control": [
@@ -179,6 +230,18 @@ const eslintConfig = defineConfig([
           depth: 4,
         },
       ],
+    },
+  },
+  {
+    // COL-658: icon-only buttons must carry an accessible name. The Button
+    // primitive's icon sizes and SelectTrigger enforce this in their types;
+    // this covers native <button> and non-icon-size <Button>.
+    files: ["src/**/*.{tsx,jsx}"],
+    plugins: {
+      a11y: { rules: { "icon-button-needs-name": iconButtonNeedsName } },
+    },
+    rules: {
+      "a11y/icon-button-needs-name": "error",
     },
   },
 ]);

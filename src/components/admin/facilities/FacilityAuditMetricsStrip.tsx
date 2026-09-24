@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatMetric, metricUnavailable } from "@/lib/metrics/metric-state";
 import { cn } from "@/lib/utils";
 import type { FacilityAuditMetricsPayload } from "@/hooks/useFacilityAuditMetrics";
 import { formatDistanceToNow } from "date-fns";
@@ -11,6 +12,8 @@ import {
   formatAuditStripLastEventRelative,
   formatAuditStripTopUserDisplay,
 } from "@/lib/facilities/audit-tab-display-copy";
+
+const AUDIT_STRIP_LABELS = ["Events last 7 days", "Retention period", "Most active user (7d)", "Last event"] as const;
 
 interface FacilityAuditMetricsStripProps {
   loading: boolean;
@@ -29,21 +32,36 @@ export function FacilityAuditMetricsStrip({ loading, metrics, retentionCopy }: F
     );
   }
 
-  const last = metrics?.last_event_at != null ? new Date(metrics.last_event_at) : null;
+  if (!metrics) {
+    // The metrics read failed or has not run: say so on every tile rather than
+    // "0 events", a default retention period, or "no events yet" (COL-708).
+    return (
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {AUDIT_STRIP_LABELS.map((label) => (
+          <div key={label} className="rounded-[8px] border border-border bg-muted/10 p-5" data-metric-state="unavailable">
+            <p className="text-[13px] text-muted-foreground">{label}</p>
+            <p className="mt-2 text-lg font-semibold leading-snug text-muted-foreground">{formatMetric(metricUnavailable())}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const last = metrics.last_event_at != null ? new Date(metrics.last_event_at) : null;
   const lastMissing = auditStripLastEventIsMissing(last);
   const relative = formatAuditStripLastEventRelative(
     last,
     last != null && !Number.isNaN(last.getTime()) ? `${formatDistanceToNow(last)} ago` : "",
   );
-  const eventsLast7d = metrics?.events_last_7d ?? 0;
-  const topUserLabel = formatAuditStripTopUserDisplay(metrics?.top_user_display, eventsLast7d);
+  const eventsLast7d = metrics.events_last_7d;
+  const topUserLabel = formatAuditStripTopUserDisplay(metrics.top_user_display, eventsLast7d);
   const topUserMissing = topUserLabel === AUDIT_STRIP_NO_TOP_USER_COPY;
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       <div className="rounded-[8px] border border-border bg-muted/10 p-5">
         <p className="text-[13px] text-muted-foreground">Events last 7 days</p>
-        <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{metrics?.events_last_7d ?? 0}</p>
+        <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{eventsLast7d}</p>
       </div>
       <Tooltip>
         <TooltipTrigger
@@ -52,7 +70,7 @@ export function FacilityAuditMetricsStrip({ loading, metrics, retentionCopy }: F
         >
           <p className="text-[13px] text-muted-foreground">Retention period</p>
           <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
-            {metrics?.retention_years ?? 7} yr
+            {metrics.retention_years} yr
           </p>
         </TooltipTrigger>
         <TooltipContent className="max-w-sm text-left text-xs leading-snug">{retentionCopy}</TooltipContent>

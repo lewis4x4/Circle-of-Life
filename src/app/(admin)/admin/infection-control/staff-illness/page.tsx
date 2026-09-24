@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
@@ -91,6 +92,9 @@ export default function StaffIllnessListPage() {
           </div>
         </header>
 
+        {!facilityReady ? (
+          <FacilityGateNotice reason="Staff illness is logged and reviewed one building at a time." />
+        ) : (
         <div className="p-6 rounded-lg border border-border bg-card/60">
            <div className="flex items-center justify-between pb-4 mb-4 border-b border-border pl-2">
              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-foreground">
@@ -103,13 +107,6 @@ export default function StaffIllnessListPage() {
 
            {loading ? (
              <p className="text-[13px] text-muted-foreground pl-2">Loading records…</p>
-           ) : !facilityReady ? (
-             <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-               <p className="font-semibold text-[13px] text-foreground">Select a facility</p>
-               <p className="text-[12px] text-muted-foreground mt-1">
-                 Staff illness is logged and reviewed one building at a time. Choose a facility in the header.
-               </p>
-             </div>
            ) : loadError ? (
              <div role="alert" className="p-12 text-center bg-muted/40 rounded-lg border border-dashed border-border">
                <p className="font-semibold text-[13px] text-foreground">Couldn&apos;t load staff illness</p>
@@ -179,6 +176,7 @@ export default function StaffIllnessListPage() {
              </TableRowList>
            )}
         </div>
+        )}
       </div>
     </div>
   );

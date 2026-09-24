@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, ChevronLeft, ChevronRight, FileText, Filter, ShieldCheck, Building2 } from "lucide-react";
@@ -138,14 +139,14 @@ export function OperationsTaskRangePage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "prev"))}>
-            <ChevronLeft className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label={`Previous ${view}`} onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "prev"))}>
+            <ChevronLeft className="h-4 w-4" aria-hidden />
           </Button>
           <div className="min-w-[180px] rounded-lg bg-muted/50 px-4 py-2 text-center">
             <span className="font-medium">{range.label}</span>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "next"))}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label={`Next ${view}`} onClick={() => setAnchorDate((current) => shiftRangeAnchor(view, current, "next"))}>
+            <ChevronRight className="h-4 w-4" aria-hidden />
           </Button>
           <Link href="/admin/operations">
             <Button variant="outline" size="sm" className="ml-2">
@@ -241,7 +242,7 @@ export function OperationsTaskRangePage({
                 <p>Assigned to: {task.assigned_to_name || "Unassigned"}</p>
                 <p>
                   {task.estimated_minutes ?? 0}m
-                  {task.due_at ? ` · Due ${new Date(task.due_at).toLocaleString()}` : " · Schedule needs confirmation"}
+                  {task.due_at ? ` · Due ${formatDisplayDateTime(task.due_at)}` : " · Schedule needs confirmation"}
                 </p>
                 {task.due_judgment === "overdue" && (
                   <p className="font-medium text-red-700">Overdue by {task.days_overdue} day{task.days_overdue === 1 ? "" : "s"}</p>

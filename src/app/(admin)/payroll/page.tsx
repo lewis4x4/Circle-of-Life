@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Banknote, Download, Search } from "lucide-react";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -170,7 +171,7 @@ export default function AdminPayrollHubPage() {
   const batchCount = payrollBatchCountState({ facilityReady, loading, error, shownCount: displayRows.length });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
@@ -183,6 +184,7 @@ export default function AdminPayrollHubPage() {
           </div>
         </header>
 
+        <FacilityGate reason="Payroll export batches are built from one building's time records and pay periods.">
         <KineticGrid className="grid-cols-1 md:grid-cols-3 gap-4 mb-6" staggerMs={75}>
           <div className="h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
@@ -217,12 +219,6 @@ export default function AdminPayrollHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
-
-      {!facilityReady && (
-        <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
-          Select a facility to load payroll export batches.
-        </p>
-      )}
 
       {error && (
         <p className="rounded-[var(--radius)] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -347,6 +343,7 @@ export default function AdminPayrollHubPage() {
           </div>
         )}
       </div>
+        </FacilityGate>
       </div>
     </div>
   );

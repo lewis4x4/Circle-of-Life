@@ -15,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 function isDateDue(row: CarePlanReviewDueRow): boolean {
   return row.reasons.some((reason) => reason.kind === "review_due");
@@ -57,12 +58,15 @@ export function CarePlanReviewsDuePageClient({
 
   const skipNextLoadRef = useRef(initialError == null);
 
+  const beginLoad = useLatestLoad();
+
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
       skipNextLoadRef.current = false;
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
@@ -71,16 +75,18 @@ export function CarePlanReviewsDuePageClient({
         fetchCarePlanReviewsDue(selectedFacilityId),
         fetchActiveCarePlanCount(selectedFacilityId),
       ]);
+      if (!isCurrent()) return;
       setRows(data);
       setActivePlanCount(planCount);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(err instanceof Error ? err.message : "Unable to load care plan reviews.");
       setRows([]);
       setActivePlanCount(null);
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();
@@ -201,7 +207,7 @@ export function CarePlanReviewsDuePageClient({
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-8 py-20 text-center dark:border-white/10 dark:bg-white/[0.02]">
-          <ClipboardList className="mx-auto mb-4 h-14 w-14 text-slate-300 dark:text-slate-600" />
+          <ClipboardList className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">No reviews due</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 dark:text-slate-400">
             There are no active care plans due for review or flagged by a change in the current facility scope.
@@ -212,7 +218,7 @@ export function CarePlanReviewsDuePageClient({
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Review queue</h2>
-              <p className="text-sm text-slate-500 dark:text-zinc-400">
+              <p className="text-sm text-muted-foreground">
                 Open the resident care plan to review, sign, or revise the active version. A new active version
                 resolves the older plan&apos;s flags; acknowledge one to show it has been seen, or dismiss it with a reason.
               </p>

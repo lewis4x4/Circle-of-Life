@@ -8,6 +8,7 @@
  * active alerts, and click-to-action links to relevant modules.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React from "react";
 import { X, Building2, TrendingUp, AlertTriangle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -92,7 +93,7 @@ export function FacilityDrillDown({
                 <h2 className="text-lg font-semibold text-slate-100">
                   {facilityName}
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-chrome-foreground-muted mt-0.5">
                   {facilityId}
                 </p>
               </div>
@@ -101,7 +102,7 @@ export function FacilityDrillDown({
               type="button"
               onClick={onClose}
               aria-label="Close facility drilldown"
-              className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 text-chrome-foreground-muted hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" aria-hidden="true" />
             </button>
@@ -121,7 +122,7 @@ export function FacilityDrillDown({
                     className="bg-slate-800/50 border border-slate-700/30 rounded-xl p-4"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-chrome-foreground-muted">
                         {metric.label}
                       </p>
                       {metric.trend && (
@@ -130,7 +131,7 @@ export function FacilityDrillDown({
                             <TrendingUp className="w-3 h-3 text-emerald-400" />
                           )}
                           {metric.trendValue && (
-                            <span className="text-[10px] font-mono text-slate-400">
+                            <span className="text-[10px] font-mono text-chrome-foreground-muted">
                               {metric.trendValue}
                             </span>
                           )}
@@ -184,11 +185,11 @@ export function FacilityDrillDown({
                               {alert.title}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-xs text-chrome-foreground-muted mt-1">
                             {alert.description}
                           </p>
                         </div>
-                        <span className="text-[10px] font-mono text-slate-500 px-2 py-0.5 bg-slate-700/50 rounded">
+                        <span className="text-[10px] font-mono text-chrome-foreground-muted px-2 py-0.5 bg-slate-700/50 rounded">
                           {alert.category}
                         </span>
                       </div>
@@ -223,7 +224,7 @@ export function FacilityDrillDown({
                   <span className="text-sm font-medium text-slate-200">
                     View Incidents
                   </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-chrome-foreground-muted group-hover:text-slate-200 transition-colors" />
                 </a>
                 <a
                   href={`/admin/compliance?facility=${facilityId}`}
@@ -232,7 +233,7 @@ export function FacilityDrillDown({
                   <span className="text-sm font-medium text-slate-200">
                     View Compliance
                   </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-chrome-foreground-muted group-hover:text-slate-200 transition-colors" />
                 </a>
                 <a
                   href={`/admin/billing?facility=${facilityId}`}
@@ -241,7 +242,7 @@ export function FacilityDrillDown({
                   <span className="text-sm font-medium text-slate-200">
                     View Financials
                   </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-chrome-foreground-muted group-hover:text-slate-200 transition-colors" />
                 </a>
                 <a
                   href={`/admin/staffing?facility=${facilityId}`}
@@ -250,7 +251,7 @@ export function FacilityDrillDown({
                   <span className="text-sm font-medium text-slate-200">
                     View Staffing
                   </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-chrome-foreground-muted group-hover:text-slate-200 transition-colors" />
                 </a>
               </div>
             </div>
@@ -323,16 +324,16 @@ function FacilityTrendChart({ data }: { data: Array<{ date: string; value: numbe
           <g key={`${point.date}-${point.value}`}>
             <circle cx={x} cy={y} r="4" fill="rgb(165 180 252)" />
             <circle cx={x} cy={y} r="7" fill="transparent">
-              <title>{`${new Date(point.date).toLocaleDateString()}: ${point.value}`}</title>
+              <title>{`${formatDisplayDate(point.date)}: ${point.value}`}</title>
             </circle>
           </g>
         ))}
       </svg>
-      <div className="flex items-center justify-between text-[11px] text-slate-400">
-        <span>{new Date(data[0].date).toLocaleDateString()}</span>
+      <div className="flex items-center justify-between text-[11px] text-chrome-foreground-muted">
+        <span>{formatDisplayDate(data[0].date)}</span>
         <span className="font-mono">Min {min}</span>
         <span className="font-mono">Max {max}</span>
-        <span>{new Date(data[data.length - 1].date).toLocaleDateString()}</span>
+        <span>{formatDisplayDate(data[data.length - 1].date)}</span>
       </div>
     </div>
   );

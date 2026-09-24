@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -7,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { History, Loader2, MessageSquare } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -153,14 +155,15 @@ export default function ExecutiveStandupHistoryPage() {
   }, [rows, searchParams]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandUpViewsNav current="/admin/executive/standup/history" />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground dark:border-white/10 dark:bg-white/5">
                 <History className="h-3.5 w-3.5" />
                 Standup archive
               </div>
@@ -173,12 +176,6 @@ export default function ExecutiveStandupHistoryPage() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Refresh
             </Button>
-            {rows.length === 0 && canCreateDraft ? (
-              <Button type="button" onClick={() => void onGenerateDraft()} disabled={creatingDraft}>
-                {creatingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-                Generate first draft
-              </Button>
-            ) : null}
           </div>
         </header>
 
@@ -196,7 +193,7 @@ export default function ExecutiveStandupHistoryPage() {
 
         {loading ? (
           <Card className="rounded-lg border border-slate-200/70 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-            <CardContent className="flex items-center gap-3 p-6 text-sm text-slate-500 dark:text-zinc-400">
+            <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Loading standup history…
             </CardContent>
@@ -227,7 +224,7 @@ export default function ExecutiveStandupHistoryPage() {
               </CardHeader>
               <CardContent className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
                 <div className="space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">From week</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">From week</div>
                   <select
                     className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10"
                     value={compareFromWeek}
@@ -239,7 +236,7 @@ export default function ExecutiveStandupHistoryPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">To week</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">To week</div>
                   <select
                     className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10"
                     value={compareToWeek}
@@ -256,7 +253,7 @@ export default function ExecutiveStandupHistoryPage() {
                     aria-disabled={!compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek}
                     className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-xs font-semibold uppercase tracking-wider ${
                       !compareFromWeek || !compareToWeek || compareFromWeek === compareToWeek
-                        ? "pointer-events-none border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-zinc-500"
+                        ? "pointer-events-none border border-slate-200 bg-slate-100 text-muted-foreground dark:border-white/10 dark:bg-white/5"
                         : "border border-primary/20 bg-primary/5 text-primary transition-colors hover:bg-primary/10 dark:border-primary/30 dark:bg-primary/10 dark:hover:bg-primary/15"
                     }`}
                   >
@@ -276,8 +273,8 @@ export default function ExecutiveStandupHistoryPage() {
                         <div>
                           <CardTitle className="text-xl">{row.weekOf}</CardTitle>
                           <CardDescription className="mt-1">
-                            Generated {new Date(row.generatedAt).toLocaleString()}
-                            {row.publishedAt ? ` · Published ${new Date(row.publishedAt).toLocaleString()}` : ""}
+                            Generated {formatDisplayDateTime(row.generatedAt)}
+                            {row.publishedAt ? ` · Published ${formatDisplayDateTime(row.publishedAt)}` : ""}
                           </CardDescription>
                         </div>
                         <Badge variant="outline" className={badgeClass(row.status)}>
@@ -288,11 +285,11 @@ export default function ExecutiveStandupHistoryPage() {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Completeness</div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Completeness</div>
                           <div className="mt-1 font-semibold text-slate-900 dark:text-white">{row.completenessPct.toFixed(0)}%</div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Confidence</div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Confidence</div>
                           <div className="mt-1 font-semibold capitalize text-slate-900 dark:text-white">{row.confidenceBand}</div>
                         </div>
                       </div>
@@ -349,7 +346,7 @@ export default function ExecutiveStandupHistoryPage() {
                 </div>
               ) : null}
               {importJobs.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500 dark:border-white/10 dark:text-zinc-400">
+                <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-muted-foreground dark:border-white/10">
                   No import jobs recorded yet.
                 </div>
               ) : (
@@ -358,9 +355,9 @@ export default function ExecutiveStandupHistoryPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-medium text-slate-900 dark:text-white">{job.sourceFileName}</div>
-                        <div className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                          Created {new Date(job.createdAt).toLocaleString()}
-                          {job.finishedAt ? ` · Finished ${new Date(job.finishedAt).toLocaleString()}` : ""}
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          Created {formatDisplayDateTime(job.createdAt)}
+                          {job.finishedAt ? ` · Finished ${formatDisplayDateTime(job.finishedAt)}` : ""}
                         </div>
                       </div>
                       <Badge variant="outline" className={badgeClass(job.status)}>
@@ -369,20 +366,20 @@ export default function ExecutiveStandupHistoryPage() {
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Kind</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Kind</div>
                         <div className="mt-1 capitalize text-slate-900 dark:text-white">{job.sourceKind}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Weeks</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Weeks</div>
                         <div className="mt-1 text-slate-900 dark:text-white">{job.importedWeekCount}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Metric rows</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Metric rows</div>
                         <div className="mt-1 text-slate-900 dark:text-white">{job.importedMetricCount}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">Started</div>
-                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? new Date(job.startedAt).toLocaleString() : "Queued"}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Started</div>
+                        <div className="mt-1 text-slate-900 dark:text-white">{job.startedAt ? formatDisplayDateTime(job.startedAt) : "Queued"}</div>
                       </div>
                     </div>
                     {job.errorText ? (

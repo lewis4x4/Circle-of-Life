@@ -1,11 +1,13 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { billingCurrency } from "@/lib/billing/currency";
@@ -70,9 +72,9 @@ function RowNotes({ row }: { row: RentRollRow }) {
     <div className="space-y-0.5">
       {row.collectionNote ? (
         <p className="text-foreground">
-          <span className="tabular-nums text-muted-foreground">{row.collectionNote.date}</span> {row.collectionNote.text}
+          <span className="tabular-nums text-muted-foreground">{formatDisplayDate(row.collectionNote.date)}</span> {row.collectionNote.text}
           {row.collectionNote.followUpDate ? (
-            <span className="text-muted-foreground"> · follow up {row.collectionNote.followUpDate}</span>
+            <span className="text-muted-foreground"> · follow up {formatDisplayDate(row.collectionNote.followUpDate)}</span>
           ) : null}
         </p>
       ) : null}
@@ -189,9 +191,7 @@ function RentRollPageContent() {
         </header>
 
         {!facilityScoped ? (
-          <div className="rounded-xl border border-border bg-card p-4 text-[13px] text-muted-foreground shadow-[var(--shadow-card)] ring-1 ring-border/60">
-            The rent roll is kept per building, the way the office keeps it. Pick a facility in the header to open its month.
-          </div>
+          <FacilityGateNotice reason="The rent roll is kept per building, the way the office keeps it." />
         ) : null}
 
         {error ? <AdminLiveDataFallbackNotice message={error} onRetry={() => void reload()} /> : null}
@@ -270,7 +270,7 @@ function RentRollPageContent() {
                         <td className="px-3 py-2 tabular-nums text-foreground">
                           {row.roomLabel ?? <span className="text-muted-foreground">{RENT_ROLL_NO_BED_COPY}</span>}
                         </td>
-                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{row.admissionDate ?? "—"}</td>
+                        <td className="px-3 py-2 tabular-nums whitespace-nowrap text-muted-foreground">{row.admissionDate ? formatDisplayDate(row.admissionDate) : "—"}</td>
                         <td className="px-3 py-2 font-medium text-foreground">
                           <Link href={`/admin/residents/${row.residentId}/billing`} className="hover:underline">
                             {row.residentName}

@@ -11,14 +11,16 @@ import {
   facilityDatetimeLocalToUtcIso,
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
+import { headCountOrNull, type HeadCountReply } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
 export type AdminAssistantDashboardBrief = {
-  censusCount: number;
-  pendingDocs: number;
-  staffBulletinNotes: number;
+  /** Null when the count could not be read — never shown as 0. */
+  censusCount: number | null;
+  pendingDocs: number | null;
+  staffBulletinNotes: number | null;
   transportationToday: number | null;
   recentBulletinNotes: Array<{
     id: string;
@@ -27,7 +29,6 @@ export type AdminAssistantDashboardBrief = {
   }>;
 };
 
-type CountResponse = { count: number | null };
 type ScopedQuery<T> = { eq(column: string, value: string): T };
 type RecentBulletinRow = {
   id: string;
@@ -83,10 +84,10 @@ export async function fetchAdminAssistantDashboardBrief(
   }));
 
   return {
-    censusCount: (censusRes as CountResponse).count ?? 0,
-    pendingDocs: (docsRes as CountResponse).count ?? 0,
-    staffBulletinNotes: (bulletinRes as CountResponse).count ?? 0,
-    transportationToday: (transportRes as CountResponse).count,
+    censusCount: headCountOrNull(censusRes as HeadCountReply),
+    pendingDocs: headCountOrNull(docsRes as HeadCountReply),
+    staffBulletinNotes: headCountOrNull(bulletinRes as HeadCountReply),
+    transportationToday: headCountOrNull(transportRes as HeadCountReply),
     recentBulletinNotes,
   };
 }

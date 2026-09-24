@@ -7,6 +7,7 @@ import { ArrowLeft, Pill, Utensils } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -156,7 +157,7 @@ export default function DietaryClinicalReviewPage() {
   }, [supabase, selectedResidentId, selectedFacilityId]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
 
       <div className="relative z-10 space-y-6">
@@ -185,9 +186,7 @@ export default function DietaryClinicalReviewPage() {
         </div>
 
         {!facilityReady && (
-          <p className="rounded-[var(--radius)] border border-warning/30 bg-warning/10 px-6 py-4 text-sm text-warning">
-            Select a facility to load data.
-          </p>
+          <FacilityGateNotice reason="The review compares one building's diet orders with its residents' medications." />
         )}
 
         {error && (

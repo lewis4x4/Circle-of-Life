@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -283,8 +284,9 @@ export default function AdminCertificationsPage() {
         datasetRowCount: rows.length,
         whenDatasetEmpty: {
           title: "No certifications in this scope",
-          description:
-            "No certification rows for this facility yet. Use Add certification or import from your prior system.",
+          description: selectedFacilityId
+            ? "No certification rows for this facility yet. Use Add certification or import from your prior system."
+            : "No certification rows at any of your facilities yet. Use Add certification or import from your prior system.",
         },
         whenFiltersExcludeAll: {
           title: "No certifications match the current filters",
@@ -292,14 +294,14 @@ export default function AdminCertificationsPage() {
             "Try clearing search or broadening status filters. Rows respect your facility selector when a facility is chosen.",
         },
       }),
-    [rows.length],
+    [rows.length, selectedFacilityId],
   );
 
   const expiringCount = filteredRows.filter((r) => r.timeline === "expiring_soon").length;
   const expiredCount = filteredRows.filter((r) => r.timeline === "expired").length;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
@@ -598,9 +600,7 @@ function deriveTimelineUi(c: Pick<SupabaseCertRow, "status" | "expiration_date">
 }
 
 function formatIsoDate(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 /**

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -7,6 +8,7 @@ import { CheckCircle2, FileSpreadsheet, Loader2, Save } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice } from "@/components/common/admin-list-patterns";
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +29,6 @@ import {
   publishStandupSnapshot,
   saveStandupSnapshotNotes,
   saveStandupMetricInput,
-  saveStandupBoardReport,
   standupMetricDefinitionByKey,
   summarizeStandupSections,
   type StandupMetricRow,
@@ -45,6 +46,7 @@ import {
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 function editable(metric: StandupMetricRow, snapshot: StandupSnapshotDetail["snapshot"]): boolean {
   return snapshot.status === "draft" && metric.sourceMode !== "auto";
@@ -73,7 +75,6 @@ export default function ExecutiveStandupWeekDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
-  const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -289,34 +290,11 @@ export default function ExecutiveStandupWeekDetailPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
-  async function onSaveBoardReport() {
-    if (!detail || !user?.id || !organizationId) {
-      setActionError("Sign in required.");
-      return;
-    }
-    setSavingBoardReport(true);
-    setActionError(null);
-    try {
-      await saveStandupBoardReport(supabase, {
-        organizationId,
-        userId: user.id,
-        weekOf: detail.snapshot.weekOf,
-        status: detail.snapshot.status,
-        confidenceBand: detail.snapshot.confidenceBand,
-        version: detail.snapshot.publishedVersion,
-        publishedAt: detail.snapshot.publishedAt,
-        completenessPct: detail.snapshot.completenessPct,
-      });
-    } catch (saveError) {
-      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
-    } finally {
-      setSavingBoardReport(false);
-    }
-  }
 
   return (
     <div className="w-full space-y-6 pb-12">
       <ExecutiveHubNav />
+      <StandUpViewsNav current="/admin/executive/standup" />
 
       <RecordDetailHeader
         title={`Standup Week ${week}`}
@@ -350,10 +328,6 @@ export default function ExecutiveStandupWeekDetailPage() {
               <Button type="button" variant="outline" onClick={() => void onDownloadPdf()} disabled={downloadingPdf}>
                 {downloadingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}
                 Download PDF
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={savingBoardReport}>
-                {savingBoardReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save in executive reports
               </Button>
               <Button type="button" onClick={() => void onPublish()} disabled={!canPublish || detail.snapshot.status !== "draft" || publishing || !publishReadiness.canPublish}>
                 {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
@@ -404,8 +378,8 @@ export default function ExecutiveStandupWeekDetailPage() {
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[
-              { label: "Generated", value: new Date(detail.snapshot.generatedAt).toLocaleString() },
-              { label: "Published", value: detail.snapshot.publishedAt ? new Date(detail.snapshot.publishedAt).toLocaleString() : "Not yet" },
+              { label: "Generated", value: formatDisplayDateTime(detail.snapshot.generatedAt) },
+              { label: "Published", value: detail.snapshot.publishedAt ? formatDisplayDateTime(detail.snapshot.publishedAt) : "Not yet" },
               { label: "Completeness", value: `${detail.snapshot.completenessPct.toFixed(0)}%` },
               { label: "Confidence", value: <span className="capitalize">{detail.snapshot.confidenceBand}</span> },
             ].map(({ label, value }) => (
@@ -561,103 +535,105 @@ export default function ExecutiveStandupWeekDetailPage() {
             if (metricKeys.length === 0) return null;
             return (
               <RecordDetailSection key={sectionKey} title={sectionLabel}>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Metric</th>
-                        {facilities.map((facility) => (
-                          <th key={facility.facilityId} className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                            {facility.facilityName}
-                          </th>
-                        ))}
-                        {totals ? <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Totals</th> : null}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {metricKeys.map((metricKey) => {
-                        const sampleMetric = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
-                        if (!sampleMetric) return null;
-                        return (
-                          <tr key={metricKey} className="border-b border-border/50">
-                            <td className="px-3 py-3 align-top">
-                              <div className="font-medium text-foreground">{sampleMetric.label}</div>
-                              <div className="mt-1 text-xs text-muted-foreground">{sampleMetric.description}</div>
-                            </td>
-                            {facilities.map((facility) => {
-                              const metric = facility.metrics[metricKey];
-                              const editKey = `${facility.facilityId}:${metricKey}`;
-                              const editableMetric = editable(metric, detail.snapshot);
-                              const displayValue =
-                                editKey in edits
-                                  ? edits[editKey]
-                                  : metric.valueType === "currency"
-                                    ? metric.valueNumeric == null
-                                      ? ""
-                                      : (metric.valueNumeric / 100).toString()
-                                    : metric.valueNumeric == null
-                                      ? metric.valueText ?? ""
-                                      : metric.valueNumeric.toString();
-
-                              return (
-                                <td key={editKey} className="px-3 py-3 align-top">
-                                  {editableMetric ? (
-                                    <div className="space-y-2">
-                                      <Input
-                                        value={displayValue}
-                                        onChange={(event) =>
-                                          setEdits((current) => ({ ...current, [editKey]: event.target.value }))
-                                        }
-                                        placeholder={metric.sourceMode === "forecast" ? "Enter forecast" : "Enter value"}
-                                      />
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline">{metric.sourceMode}</Badge>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={savingKey === editKey}
-                                          onClick={() => void onSaveMetric(facility.facilityId!, metricKey, metric)}
-                                        >
-                                          {savingKey === editKey ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
-                                          Save
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2">
-                                      <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(metric)}</div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        <Badge variant="outline">{metric.sourceMode}</Badge>
-                                        <Badge variant="outline">{metric.confidenceBand}</Badge>
-                                      </div>
-                                      {standupMetricNote(metric) ? (
-                                        <div className="text-xs text-muted-foreground">{standupMetricNote(metric)}</div>
-                                      ) : null}
-                                    </div>
-                                  )}
-                                </td>
-                              );
-                            })}
-                            {totals ? (
+                <div>
+                  <HorizontalScroll label="Stand Up section">
+                    <table className="min-w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Metric</th>
+                          {facilities.map((facility) => (
+                            <th key={facility.facilityId} className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                              {facility.facilityName}
+                            </th>
+                          ))}
+                          {totals ? <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Totals</th> : null}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metricKeys.map((metricKey) => {
+                          const sampleMetric = facilities.find((facility) => facility.metrics[metricKey])?.metrics[metricKey] ?? totals?.metrics[metricKey];
+                          if (!sampleMetric) return null;
+                          return (
+                            <tr key={metricKey} className="border-b border-border/50">
                               <td className="px-3 py-3 align-top">
-                                <div className="space-y-2">
-                                  <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(totals.metrics[metricKey])}</div>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
-                                    <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>
-                                  </div>
-                                  {standupMetricNote(totals.metrics[metricKey]) ? (
-                                    <div className="text-xs text-muted-foreground">{standupMetricNote(totals.metrics[metricKey])}</div>
-                                  ) : null}
-                                </div>
+                                <div className="font-medium text-foreground">{sampleMetric.label}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{sampleMetric.description}</div>
                               </td>
-                            ) : null}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              {facilities.map((facility) => {
+                                const metric = facility.metrics[metricKey];
+                                const editKey = `${facility.facilityId}:${metricKey}`;
+                                const editableMetric = editable(metric, detail.snapshot);
+                                const displayValue =
+                                  editKey in edits
+                                    ? edits[editKey]
+                                    : metric.valueType === "currency"
+                                      ? metric.valueNumeric == null
+                                        ? ""
+                                        : (metric.valueNumeric / 100).toString()
+                                      : metric.valueNumeric == null
+                                        ? metric.valueText ?? ""
+                                        : metric.valueNumeric.toString();
+
+                                return (
+                                  <td key={editKey} className="px-3 py-3 align-top">
+                                    {editableMetric ? (
+                                      <div className="space-y-2">
+                                        <Input
+                                          value={displayValue}
+                                          onChange={(event) =>
+                                            setEdits((current) => ({ ...current, [editKey]: event.target.value }))
+                                          }
+                                          placeholder={metric.sourceMode === "forecast" ? "Enter forecast" : "Enter value"}
+                                        />
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline">{metric.sourceMode}</Badge>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={savingKey === editKey}
+                                            onClick={() => void onSaveMetric(facility.facilityId!, metricKey, metric)}
+                                          >
+                                            {savingKey === editKey ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
+                                            Save
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(metric)}</div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          <Badge variant="outline">{metric.sourceMode}</Badge>
+                                          <Badge variant="outline">{metric.confidenceBand}</Badge>
+                                        </div>
+                                        {standupMetricNote(metric) ? (
+                                          <div className="text-xs text-muted-foreground">{standupMetricNote(metric)}</div>
+                                        ) : null}
+                                      </div>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              {totals ? (
+                                <td className="px-3 py-3 align-top">
+                                  <div className="space-y-2">
+                                    <div className="font-semibold tabular-nums text-foreground">{formatStandupMetricValue(totals.metrics[metricKey])}</div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <Badge variant="outline">{totals.metrics[metricKey].sourceMode}</Badge>
+                                      <Badge variant="outline">{totals.metrics[metricKey].confidenceBand}</Badge>
+                                    </div>
+                                    {standupMetricNote(totals.metrics[metricKey]) ? (
+                                      <div className="text-xs text-muted-foreground">{standupMetricNote(totals.metrics[metricKey])}</div>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              ) : null}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
               </RecordDetailSection>
             );

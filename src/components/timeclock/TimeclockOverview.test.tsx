@@ -17,11 +17,16 @@ const tables = vi.hoisted(() => ({
   staff: [] as Record<string, unknown>[],
   time_punch_corrections: [] as Record<string, unknown>[],
   timeclock_sync_rejections: [] as Record<string, unknown>[],
+  floor_unlocks: [] as Record<string, unknown>[],
   upserts: [] as Record<string, unknown>[],
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: auth.appRole, organizationId: auth.organizationId, user: auth.user, loading: false }) }));
-vi.mock("@/hooks/useFacilityStore", () => ({ useFacilityStore: () => ({ selectedFacilityId: FACILITY, availableFacilities: [{ id: FACILITY, name: "Synthetic facility 0003" }] }) }));
+const scope = vi.hoisted(() => ({ selectedFacilityId: "00000000-0000-0000-0002-000000000003" as string | null }));
+vi.mock("@/hooks/useFacilityStore", () => ({ useFacilityStore: () => ({ selectedFacilityId: scope.selectedFacilityId, availableFacilities: [{ id: FACILITY, name: "Synthetic facility 0003" }] }) }));
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <div data-testid="facility-gate">{reason}</div>,
+}));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     from: (table: keyof typeof tables) => {
@@ -35,6 +40,7 @@ vi.mock("@/lib/supabase/client", () => ({
         lt: () => builder,
         order: () => builder,
         limit: () => builder,
+        range: (start: number, end: number) => Promise.resolve({ data: rows.slice(start, end + 1), count: rows.length, error: null }),
         maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
         upsert: async (payload: Record<string, unknown>) => {
           tables.upserts.push(payload);
@@ -51,6 +57,7 @@ const NOW = () => new Date("2026-11-04T16:00:00.000Z"); // Wednesday 11:00 a.m. 
 
 beforeEach(() => {
   auth.appRole = "owner";
+  scope.selectedFacilityId = FACILITY;
   tables.timeclock_organization_settings = [];
   tables.upserts = [];
   tables.staff = [
@@ -67,6 +74,13 @@ beforeEach(() => {
 });
 
 describe("TimeclockOverview", () => {
+  it("under All facilities shows the shared facility gate, not a pointer to the top bar (COL-651)", async () => {
+    scope.selectedFacilityId = null;
+    render(<TimeclockOverview now={NOW} />);
+    expect(await screen.findByTestId("facility-gate")).toHaveTextContent(/one facility at a time/i);
+    expect(screen.queryByText(/top bar/i)).not.toBeInTheDocument();
+  });
+
   it("shows the manager-only notice for a caregiver", async () => {
     auth.appRole = "caregiver";
     render(<TimeclockOverview now={NOW} />);

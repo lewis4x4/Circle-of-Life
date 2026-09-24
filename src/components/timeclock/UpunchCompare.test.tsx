@@ -13,6 +13,7 @@ const tables = vi.hoisted(() => ({
   staff: [] as Record<string, unknown>[],
   time_punch_corrections: [] as Record<string, unknown>[],
   timeclock_sync_rejections: [] as Record<string, unknown>[],
+  floor_unlocks: [] as Record<string, unknown>[],
 }));
 const download = vi.hoisted(() => ({ triggerCsvDownload: vi.fn() }));
 
@@ -34,6 +35,7 @@ vi.mock("@/lib/supabase/client", () => ({
         lt: () => builder,
         order: () => builder,
         limit: () => builder,
+        range: (start: number, end: number) => Promise.resolve({ data: rows.slice(start, end + 1), count: rows.length, error: null }),
         maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
         then: (resolve: (value: { data: unknown; error: null }) => unknown) => Promise.resolve({ data: rows, error: null }).then(resolve),
       };

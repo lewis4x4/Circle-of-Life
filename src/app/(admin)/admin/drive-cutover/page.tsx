@@ -150,7 +150,7 @@ export default function AdminDriveCutoverPage() {
   const showAttest = canAttest(role);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 max-w-3xl">
         <header className="mb-2 space-y-1">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
@@ -159,7 +159,7 @@ export default function AdminDriveCutoverPage() {
           </h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
             Planned cutoff recorded in the rollout plan: <strong>{DRIVE_CUTOFF_DATE}</strong>. Confirm a current cutover date and verified content before relying on Haven as the sole document store.{" "}
-            <Link href="/admin/drive-import" className="text-info hover:underline">
+            <Link href="/admin/drive-import" className="text-info underline underline-offset-4 hover:decoration-2">
               Manage imports
             </Link>
             .

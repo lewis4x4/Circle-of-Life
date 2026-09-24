@@ -22,6 +22,6 @@ describe("caregiver schedule Eastern window", () => {
     expect(source).toContain('.lte("shift_date", end)');
     expect(source).toContain("Loading your schedule…");
     expect(source).toContain("No shift assignments from");
-    expect(source).toContain("through ${scheduleWindow.end} Eastern");
+    expect(source).toContain("through ${formatDisplayDate(scheduleWindow.end)}");
   });
 });

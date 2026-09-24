@@ -13,6 +13,7 @@ import type {
 } from "@/lib/staffing/load-staffing-console";
 
 import * as staffingLoader from "@/lib/staffing/load-staffing-console";
+import * as ratioCheck from "@/lib/staffing/ratio-check";
 
 const mocks = vi.hoisted(() => ({
   useFacilityStoreMock: vi.fn(),
@@ -30,6 +31,10 @@ vi.mock("@/hooks/useFacilityStore", () => ({
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: mocks.createClientMock,
+}));
+
+vi.mock("@/components/common/FacilityGate", () => ({
+  FacilityGateNotice: ({ reason }: { reason: string }) => <div data-testid="facility-gate">{reason}</div>,
 }));
 
 const baseFacilityId = "11111111-1111-1111-1111-111111111111";
@@ -149,6 +154,28 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.getByRole("button", { name: /create open position/i })).toBeEnabled();
   });
 
+  it("under All facilities keeps the cross-facility figures and gates only the per-building actions (COL-651)", () => {
+    mocks.useFacilityStoreMock.mockReturnValue({ selectedFacilityId: null });
+
+    render(
+      <AdminStaffingConsolePageClient
+        {...loadedProps}
+        initialFacilityId={null}
+        initialStaffOptions={[]}
+        initialRequisitions={[]}
+        initialAttendance={[]}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /recent ratio snapshots/i })).toBeInTheDocument();
+    expect(screen.getByText("All facilities")).toBeInTheDocument();
+    expect(screen.queryByText("No facility selected")).not.toBeInTheDocument();
+    expect(screen.queryByText(/select a facility to load staffing metrics/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("facility-gate")).toHaveTextContent(/attendance events and open positions/i);
+    expect(screen.queryByRole("button", { name: /save attendance event/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create open position/i })).not.toBeInTheDocument();
+  });
+
   it("shows a blocked staffing-directory state when no active ADP-linked staff are available", () => {
     mocks.useFacilityStoreMock.mockReturnValue({ selectedFacilityId: baseFacilityId });
 
@@ -212,6 +239,24 @@ describe("<AdminStaffingConsolePageClient />", () => {
 
     expect(screen.getByText("Clear")).toBeInTheDocument();
     expect(screen.getByText(/coverage is currently sufficient/i)).toBeInTheDocument();
+  });
+
+  it("says the staffing ratio check is off and never shows a pass or fail (COL-675)", () => {
+    render(<AdminStaffingConsolePageClient {...loadedProps} />);
+
+    expect(screen.getAllByText(/Staffing ratio check is off/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/non-compliant/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^compliant/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/required \d/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/above the required ratio|below the required ratio/i)).not.toBeInTheDocument();
+  });
+
+  it("brings pass/fail back only when the facility's ratio check is switched on (COL-675)", () => {
+    render(<AdminStaffingConsolePageClient {...loadedProps} initialRatioCheckOn />);
+
+    expect(screen.queryByText(/Staffing ratio check is off/)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Over ratio|Within ratio/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/required 6\.0/)).toBeInTheDocument();
   });
 
   it("names the current ratio gap instead of a dash glyph when no snapshot is in scope", () => {
@@ -279,6 +324,7 @@ describe("<AdminStaffingConsolePageClient />", () => {
     vi.spyOn(staffingLoader, "fetchStaffOptions").mockResolvedValue(loadedProps.initialStaffOptions);
     vi.spyOn(staffingLoader, "fetchStaffRequisitions").mockResolvedValue(loadedProps.initialRequisitions);
     vi.spyOn(staffingLoader, "fetchCoverageScopeOrNull").mockResolvedValue(null);
+    vi.spyOn(ratioCheck, "fetchStaffingRatioCheckOn").mockResolvedValue(false);
     const reload = vi.spyOn(staffingLoader, "fetchAttendanceEvents").mockResolvedValue([
       ...loadedProps.initialAttendance,
       { id: "new-event", event_type: "callout", occurred_at: "2026-08-20T20:06:00.000Z", reason: "Reviewed command test", staff: { first_name: "Ava", last_name: "Lopez" } },

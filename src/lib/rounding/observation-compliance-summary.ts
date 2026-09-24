@@ -74,6 +74,10 @@ export const ORPHANED_SHIFT_SOURCE = "orphaned_shift";
 export const COMPLIANCE_NO_SHIFT_LABEL = "No cadence in force";
 export const COMPLIANCE_NO_HALL_LABEL = "No hall posted";
 export const COMPLIANCE_NO_STAFF_LABEL = "No assigned staff";
+/** A window no round task was ever created for: a different finding from an unassigned task. */
+export const COMPLIANCE_NO_TASK_LABEL = "No round task created";
+/** An assigned staff member whose record carries no name. */
+export const COMPLIANCE_UNNAMED_STAFF_LABEL = "Unnamed staff member";
 
 function emptyTotals(): ComplianceTotals {
   return {
@@ -158,7 +162,7 @@ export function summarizeObservationCompliance(args: {
       );
     }),
     byStaff: cutBy(args.rows, (row) => {
-      if (!row.task_id) return { key: "no_task", label: COMPLIANCE_NO_STAFF_LABEL };
+      if (!row.task_id) return { key: "no_task", label: COMPLIANCE_NO_TASK_LABEL };
       return (
         args.staffByTask.get(row.task_id) ?? {
           key: "no_staff",

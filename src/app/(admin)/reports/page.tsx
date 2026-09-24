@@ -10,6 +10,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
 import { REPORTING_SOURCE_READINESS } from "@/lib/reporting-source-readiness";
+import { requireCount } from "@/lib/metrics/require-count";
 import { createClient } from "@/lib/supabase/client";
 import { loadReportsRoleContext } from "@/lib/reports/auth";
 import { loadReportRunHistory, type ReportRunHistoryItem } from "@/lib/reports/load-report-run-history";
@@ -176,12 +177,12 @@ export default function ReportsOverviewPage() {
       const scheduleKinds = scheduleRows.map((s) => deriveReportScheduleState(s, now).kind);
 
       setCounts({
-        templates: templatesRes.count ?? 0,
-        saved: savedRes.count ?? 0,
+        templates: requireCount(templatesRes, "Report template count"),
+        saved: requireCount(savedRes, "Saved report count"),
         schedules: scheduleKinds.filter((k) => k === "active").length,
         schedulesNeedingAttention: scheduleKinds.filter((k) => k === "overdue" || k === "needs_setup" || k === "failed").length,
-        packs: packsRes.count ?? 0,
-        history: runsTotalRes.count ?? 0,
+        packs: requireCount(packsRes, "Report pack count"),
+        history: requireCount(runsTotalRes, "Report run count"),
       });
       setRecentRuns(recentItems);
 
@@ -294,14 +295,14 @@ export default function ReportsOverviewPage() {
   const lastRunLabel = (iso: string | null) => (iso ? formatRunTime(iso) : "Never");
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full pb-16">
+    <div className="relative w-full pb-16">
       <div className="relative z-10 w-full space-y-6">
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <ReportsHubNav />
         </div>
 
         <nav aria-label="Breadcrumb" className="text-[13px]">
-          <Link href={homeHref} className="text-muted-foreground hover:text-foreground">
+          <Link href={homeHref} className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
             Dashboard
           </Link>
           <span className="mx-2 text-muted-foreground" aria-hidden>
@@ -428,7 +429,7 @@ export default function ReportsOverviewPage() {
               </div>
               <Link
                 href="/admin/reports/templates"
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                className="text-sm font-medium text-primary underline underline-offset-4 hover:decoration-2"
               >
                 Open template library
               </Link>

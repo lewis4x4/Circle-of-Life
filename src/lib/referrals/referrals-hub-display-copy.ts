@@ -2,6 +2,8 @@
  * Quiet Operator copy for the admin referrals hub (`/admin/referrals`) KPI tiles and row fields.
  * Copy reflects real data gaps — never fabricates lead, pipeline, or conversion counts.
  */
+import { formatDisplayDateTime } from "@/lib/format/datetime";
+
 
 export type ReferralsHubKpiKey =
   | "new_leads"
@@ -82,7 +84,21 @@ export function formatReferralsHubTourScheduledFor(
   tourScheduledFor: string | null | undefined,
 ): string {
   if (!tourScheduledFor || !tourScheduledFor.trim()) return REFERRALS_HUB_NO_TOUR_TIME_COPY;
-  const d = new Date(tourScheduledFor);
-  if (Number.isNaN(d.getTime())) return REFERRALS_HUB_NO_TOUR_TIME_COPY;
-  return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return formatDisplayDateTime(tourScheduledFor, { fallback: REFERRALS_HUB_NO_TOUR_TIME_COPY });
+}
+
+/**
+ * HL7 inbox queue line. A count that could not be read says so instead of
+ * "Pending 0, failed 0" (COL-649).
+ */
+export function formatReferralsHubHl7Summary(input: {
+  loading: boolean;
+  pending: number | null;
+  failed: number | null;
+}): string {
+  if (input.loading) return "Loading queue counts…";
+  if (input.pending === null || input.failed === null) {
+    return "Queue counts could not be read. Open the inbox to see the messages directly.";
+  }
+  return `Pending ${input.pending}, failed ${input.failed}. Open the inbox to triage, replay, or discard messages — this count is facility-scoped.`;
 }

@@ -168,11 +168,11 @@
   --muted-foreground: 30 8% 38%;
   --accent: 205 27% 42%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 8 56% 41%;
+  --destructive: 8 56% 38%;
   --destructive-foreground: 0 0% 100%;
-  --success: 88 25% 32%;
-  --warning: 30 70% 32%;
-  --info: 204 26% 37%;
+  --success: 88 25% 29%;
+  --warning: 30 70% 29%;
+  --info: 204 26% 34%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
   --ring: 205 27% 42%;
@@ -189,7 +189,7 @@
   /* Charts — deepened for AA contrast on warm paper */
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 32%;
-  --chart-3: 30 70% 32%;
+  --chart-3: 30 70% 29%;
   --chart-4: 8 56% 41%;
   --chart-5: 204 26% 37%;
 
@@ -223,7 +223,7 @@
   --emar-held: #6E4FD1;
   --emar-unavailable: #BA503F;
   --compliance-good: #5F7A4A;
-  --compliance-warning: #8B5218;
+  --compliance-warning: #7E4A16;
   --compliance-critical: #BA503F;
 
   /* Quiet Operator extension tokens — light-mode equivalents. Same semantic
@@ -286,11 +286,11 @@
   --muted-foreground: 30 8% 38%;
   --accent: 205 27% 42%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 8 56% 41%;
+  --destructive: 8 56% 38%;
   --destructive-foreground: 0 0% 100%;
-  --success: 88 25% 32%;
-  --warning: 30 70% 32%;
-  --info: 204 26% 37%;
+  --success: 88 25% 29%;
+  --warning: 30 70% 29%;
+  --info: 204 26% 34%;
   --border: 30 8% 82%;
   --input: 30 8% 82%;
   --ring: 205 27% 42%;
@@ -303,7 +303,7 @@
 
   --chart-1: 205 27% 42%;
   --chart-2: 88 25% 32%;
-  --chart-3: 30 70% 32%;
+  --chart-3: 30 70% 29%;
   --chart-4: 8 56% 41%;
   --chart-5: 204 26% 37%;
 
@@ -333,7 +333,7 @@
   --emar-held: #6E4FD1;
   --emar-unavailable: #BA503F;
   --compliance-good: #5F7A4A;
-  --compliance-warning: #8B5218;
+  --compliance-warning: #7E4A16;
   --compliance-critical: #BA503F;
 
   --surface: rgba(255, 252, 247, 0.7);
@@ -463,6 +463,13 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* A link inside running text is underlined, not told apart by colour alone
+     (WCAG 1.4.1, axe link-in-text-block — COL-705). Zero specificity, so a
+     utility such as no-underline on a deliberate exception still wins. */
+  :where(p, dd, blockquote) :where(a) {
+    text-decoration-line: underline;
+    text-underline-offset: 0.2em;
   }
   html {
     font-feature-settings: "cv11", "ss01", "ss03", "cv02";

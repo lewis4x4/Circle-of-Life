@@ -9,6 +9,7 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
@@ -43,6 +44,7 @@ type CollectionRow = {
 
 export default function AdminCollectionsPage() {
   const { selectedFacilityId } = useFacilityStore();
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const [rows, setRows] = useState<CollectionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +52,10 @@ export default function AdminCollectionsPage() {
 
   const load = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      // Gated below: no facility is not a load failure.
       setRows([]);
       setLoading(false);
-      setError("Select a facility to view collection activities.");
+      setError(null);
       return;
     }
     setLoading(true);
@@ -83,7 +86,7 @@ export default function AdminCollectionsPage() {
   }, [load]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2">
         <BillingHubNav />
@@ -97,6 +100,7 @@ export default function AdminCollectionsPage() {
                Ledger of follow-up calls, letters, promises, and escalations for past-due balances.
             </p>
           </div>
+          {facilityReady ? (
           <div className="flex shrink-0 items-center justify-end">
             <Link
               href="/admin/billing/collections/new"
@@ -105,8 +109,13 @@ export default function AdminCollectionsPage() {
               + Log Activity
             </Link>
           </div>
+          ) : null}
         </header>
 
+        {!facilityReady ? (
+          <FacilityGateNotice reason="Collection activities are logged against one building's residents and invoices." />
+        ) : (
+        <>
         {error && (
           <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
         )}
@@ -203,6 +212,8 @@ export default function AdminCollectionsPage() {
                </MotionList>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

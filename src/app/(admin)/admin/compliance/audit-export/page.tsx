@@ -1,9 +1,11 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { invokeExportAuditLog } from "@/lib/audit-export";
@@ -59,6 +61,12 @@ export default function AuditLogExportPage() {
   const roleOk = EXPORT_ROLES.has(role);
   const { selectedFacilityId } = useFacilityStore();
   const facilityRequired = role === "facility_admin" && !isValidFacilityIdForQuery(selectedFacilityId);
+  const selectedFacilityName = useFacilityStore(
+    (s) => s.availableFacilities.find((f) => f.id === selectedFacilityId)?.name,
+  );
+  const scopeFacilityName = isValidFacilityIdForQuery(selectedFacilityId)
+    ? (selectedFacilityName ?? "the selected facility")
+    : null;
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -284,12 +292,14 @@ export default function AuditLogExportPage() {
               />
             </div>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Choose a facility in the header to export only that facility’s audit rows.
-            Owners and organization administrators can choose &quot;All facilities&quot; to include organization-wide history.
-          </p>
-          {facilityRequired && (
-            <p role="status" className="text-sm text-slate-600 dark:text-slate-400">Choose a facility in the header before exporting.</p>
+          {facilityRequired ? (
+            <FacilityGateNotice reason="Administrators export audit history one building at a time." />
+          ) : (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {scopeFacilityName
+                ? `Exports audit rows for ${scopeFacilityName} only. Switch the header to All facilities for organization-wide history.`
+                : "Exports organization-wide history across all your facilities. Switch the header to one building to export only its rows."}
+            </p>
           )}
           <Button
             type="button"
@@ -310,11 +320,11 @@ export default function AuditLogExportPage() {
         </CardHeader>
         <CardContent>
           {authLoading ? null : jobsLoading ? (
-            <p className="text-sm text-slate-500" role="status">
+            <p className="text-sm text-muted-foreground" role="status">
               {AUDIT_EXPORT_LOADING_JOBS_COPY}
             </p>
           ) : jobs.length === 0 ? (
-            <p className="text-sm text-slate-500">{AUDIT_EXPORT_NO_JOBS_COPY}</p>
+            <p className="text-sm text-muted-foreground">{AUDIT_EXPORT_NO_JOBS_COPY}</p>
           ) : (
             <Table>
               <TableHeader>
@@ -329,7 +339,7 @@ export default function AuditLogExportPage() {
                 {jobs.map((j) => (
                   <TableRow key={j.id}>
                     <TableCell className="whitespace-nowrap text-xs">
-                      {new Date(j.created_at).toLocaleString()}
+                      {formatDisplayDateTime(j.created_at)}
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">{j.status}</span>

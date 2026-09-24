@@ -1,9 +1,10 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarDays, Download } from "lucide-react";
+import { Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -25,10 +26,10 @@ import { formatSchedulePublishedAt } from "@/lib/schedules/schedules-display-cop
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { cn } from "@/lib/utils";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/v2-card";
+import { KPITile } from "@/design-system/components/KPITile";
+import { PageHeader } from "@/design-system/components/PageHeader";
+import { metricFromCount } from "@/lib/metrics/metric-state";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
@@ -95,6 +96,7 @@ export function AdminSchedulesPageClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -102,18 +104,21 @@ export function AdminSchedulesPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
     try {
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
+      if (!isCurrent()) return;
       setRows(live);
     } catch (err) {
+      if (!isCurrent()) return;
       setError(formatLiveDataLoadError(err, "Failed to load data"));
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();
@@ -170,58 +175,43 @@ export function AdminSchedulesPageClient({
         datasetRowCount: rows.length,
         whenDatasetEmpty: {
           title: "No schedules in this scope",
-          description:
-            "Live data returned no schedule weeks for the selected facility. Use New schedule week or adjust scope.",
+          description: selectedFacilityId
+            ? "Live data returned no schedule weeks for the selected facility. Use New week to start one."
+            : "Live data returned no schedule weeks at any of your facilities. Use New week to start one.",
         },
         whenFiltersExcludeAll: {
           title: "No schedules match the current filters",
-          description:
-            "Schedules are created per facility and week. Pick a facility or clear filters to see more rows.",
+          description: "Schedules are created per facility and week. Clear filters to see more rows.",
         },
       }),
-    [rows.length],
+    [rows.length, selectedFacilityId],
   );
 
   const draftCount = rows.filter((r) => r.status === "draft").length;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              Schedule Engine {draftCount > 0 && <></>}
-            </h1>
-          </div>
-        </header>
+        <PageHeader
+          className="mb-8"
+          title="Schedules"
+          subtitle="Weekly schedule containers; shift assignments roll up under each published week."
+          actions={
+            <Link href="/admin/schedules/new" className={buttonVariants({ size: "default" })}>
+              New week
+            </Link>
+          }
+        />
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
-            <V2Card hoverColor="indigo" className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
-              <></>
-              <MonolithicWatermark value={draftCount} className="text-primary/5 opacity-50" />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3 className="text-[10px] font-mono tracking-wider uppercase text-primary flex items-center gap-2">
-                  <CalendarDays className="h-3.5 w-3.5" /> Draft Weeks
-                </h3>
-                <p className="text-4xl font-mono tracking-tighter text-primary pb-1">{draftCount}</p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-3 h-[180px]">
-            <V2Card hoverColor="blue" className="p-5 lg:p-6">
-              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-slate-500 lg:block">Weekly schedule containers; shift assignments roll up under each published week.</p>
-                 <Link href="/admin/schedules/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive whitespace-nowrap")} >
-                   + Initialize Week
-                 </Link>
-              </div>
-            </V2Card>
-          </div>
-        </KineticGrid>
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <KPITile
+            label="Draft weeks"
+            state={metricFromCount({ count: error ? null : draftCount, error, loading: isLoading })}
+            info="Schedule weeks in this facility that are still drafts and not yet published to staff."
+          />
+        </div>
 
       <AdminFilterBar
         searchValue={search}
@@ -258,7 +248,7 @@ export function AdminSchedulesPageClient({
           <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Schedule weeks</h3>
-              <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400">
+              <p className="text-sm font-mono tracking-wide text-muted-foreground">
                 Monday-start weeks; publish when ready for floor use.
               </p>
             </div>
@@ -285,19 +275,19 @@ export function AdminSchedulesPageClient({
                         
                         <div className="flex items-center gap-4">
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Status</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Status</span>
                              <div><ScheduleStatusBadge status={row.status} /></div>
                            </div>
                            
                            <div className="flex flex-col gap-1">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Published</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Published</span>
                              <span className="text-xs text-slate-600 dark:text-slate-400">{formatSchedulePublishedAt(row.publishedAt)}</span>
                            </div>
 
                            {row.notes && (
                            <div className="hidden md:flex flex-col gap-1 ml-4 border-l pl-4 border-slate-300 dark:border-slate-700">
-                             <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Notes</span>
-                             <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
+                             <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Notes</span>
+                             <span className="text-xs text-muted-foreground max-w-[200px] lg:max-w-md truncate">{row.notes.trim()}</span>
                            </div>
                            )}
                         </div>
@@ -315,9 +305,8 @@ export function AdminSchedulesPageClient({
 }
 
 function formatWeekLabel(isoDate: string): string {
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return `Week of ${new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(parsed)}`;
+  const label = formatDateTimeWith(isoDate.slice(0, 10), { weekday: "short", month: "short", day: "numeric", year: "numeric" }, { fallback: "" });
+  return label ? `Week of ${label}` : isoDate;
 }
 
 function ScheduleStatusBadge({ status }: { status: string }) {

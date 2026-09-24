@@ -52,6 +52,7 @@ import {
 } from "@/lib/facilities/vendors-tab-display-copy";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Props = {
   facilityId: string;
@@ -353,36 +354,38 @@ export function VendorsTab(props: Props) {
 
       {filteredMain.length > 0 ? (
         <div className="overflow-hidden rounded-[8px] border border-border">
-          <table className="w-full caption-bottom border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40 text-[12px] text-muted-foreground">
-                <th className="h-11 px-3 text-left font-medium">Vendor</th>
-                <th className="h-11 px-2 text-left font-medium">Category</th>
-                <th className="h-11 px-2 text-left font-medium">Primary contact</th>
-                <th className="h-11 px-2 text-left font-medium">COI</th>
-                <th className="h-11 px-2 text-left font-medium">Contract</th>
-                <th className="h-11 px-2 text-right font-medium">Activity</th>
-                <th className="h-11 w-14 px-1 text-right font-medium">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMain.map((row) =>
-                isResidueRow(row) ? (
-                  <ResidueVendorRow key={row.id} row={row} onCleanup={() => setResidueOpen(row)} />
-                ) : (
-                  <PaidVendorRow
-                    key={row.id}
-                    row={row}
-                    hideMeta={suppressRedundantVendorMeta}
-                    href={rowHref(row)}
-                    router={router}
-                  />
-                ),
-              )}
-            </tbody>
-          </table>
+          <HorizontalScroll label="Facility vendors">
+            <table className="w-full caption-bottom border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40 text-[12px] text-muted-foreground">
+                  <th className="h-11 px-3 text-left font-medium">Vendor</th>
+                  <th className="h-11 px-2 text-left font-medium">Category</th>
+                  <th className="h-11 px-2 text-left font-medium">Primary contact</th>
+                  <th className="h-11 px-2 text-left font-medium">COI</th>
+                  <th className="h-11 px-2 text-left font-medium">Contract</th>
+                  <th className="h-11 px-2 text-right font-medium">Activity</th>
+                  <th className="h-11 w-14 px-1 text-right font-medium">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMain.map((row) =>
+                  isResidueRow(row) ? (
+                    <ResidueVendorRow key={row.id} row={row} onCleanup={() => setResidueOpen(row)} />
+                  ) : (
+                    <PaidVendorRow
+                      key={row.id}
+                      row={row}
+                      hideMeta={suppressRedundantVendorMeta}
+                      href={rowHref(row)}
+                      router={router}
+                    />
+                  ),
+                )}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         </div>
       ) : null}
 
@@ -393,19 +396,21 @@ export function VendorsTab(props: Props) {
             Government/community partners remain visible for surveys but are segmented from paid vendor workflows.
           </p>
           <div className="overflow-hidden rounded-[8px] border border-border border-dashed">
-            <table className="w-full border-collapse text-sm">
-              <tbody>
-                {filteredPartners.map((row) => (
-                  <PaidVendorRow
-                    key={row.id}
-                    row={row}
-                    hideMeta={suppressRedundantVendorMeta}
-                    href={rowHref(row)}
-                    router={router}
-                  />
-                ))}
-              </tbody>
-            </table>
+            <HorizontalScroll label="Other vendors">
+              <table className="w-full border-collapse text-sm">
+                <tbody>
+                  {filteredPartners.map((row) => (
+                    <PaidVendorRow
+                      key={row.id}
+                      row={row}
+                      hideMeta={suppressRedundantVendorMeta}
+                      href={rowHref(row)}
+                      router={router}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
           <p className="text-[12px] text-muted-foreground">
             Lafayette county emergency directory also lives under{" "}
@@ -459,7 +464,7 @@ export function VendorsTab(props: Props) {
           </div>
           <DialogFooter className="sm:justify-between">
             <Link
-              href="/admin/vendors/new"
+              href="/admin/vendors/directory"
               target="_blank"
               rel="noopener noreferrer"
               className={buttonVariants({ variant: "ghost", size: "sm", className: "rounded-md" })}
@@ -565,7 +570,7 @@ function RequiredCategoriesPanel(props: {
                   <>
                     <span className="text-warning">⚠ Required · not linked</span>
                     <div className="mt-2">
-                      <Link href="/admin/vendors/new" className={cn(buttonVariants({ variant: "outline", size: "sm", className: "rounded-md" }))}>
+                      <Link href="/admin/vendors/directory" className={cn(buttonVariants({ variant: "outline", size: "sm", className: "rounded-md" }))}>
                         Add →
                       </Link>
                     </div>
@@ -770,7 +775,7 @@ function CleanupSheet(props: { residue: VendorFacilityRow | null; onClose: () =>
                 <Button type="button" size="sm" variant="outline" className="rounded-md" disabled>
                   Move ↗
                 </Button>
-                <Button type="button" size="sm" variant="ghost" className="rounded-md" disabled>
+                <Button type="button" size="sm" variant="ghost" className="rounded-md" disabled aria-label="Remove">
                   <Trash2 className="size-4" aria-hidden />
                 </Button>
               </div>

@@ -13,7 +13,6 @@ const FAMILY_ADMIN_ROUTES = [
   "/admin/family",
   "/admin/family-portal",
   "/admin/family-portal/consents/new",
-  "/admin/family-messages",
 ];
 
 function operatorFacingText(context: ReturnType<typeof resolveModuleContext>): string {
@@ -33,13 +32,6 @@ describe("family admin insight context is one-way bulletin", () => {
     expect(context.systemPromptAddon.toLowerCase()).toMatch(
       /cannot reply|no family replies|do not describe family replies/,
     );
-  });
-
-  it("uses bulletin-specific context on family-messages", () => {
-    const context = resolveModuleContext("/admin/family-messages");
-    expect(context.module).toBe("Family Bulletin Notes");
-    expect(context.perspective).toMatch(/one-way/i);
-    expect(context.suggestedQuestions.some((q) => /posted|bulletin/i.test(q))).toBe(true);
   });
 
   it("uses hub context on family-portal", () => {

@@ -5,6 +5,7 @@
  * (Quiet Operator). `/pipeline/discharge-management` redirects here (COL-644).
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -57,6 +58,7 @@ import {
   formatDischargeMedRecResidentName,
 } from "@/lib/discharge/discharge-med-rec-display-copy";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 const NEW_MED_REC_PATH = "/admin/discharge/new";
 
@@ -204,6 +206,7 @@ export function DischargeMedRecHubClient({
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility and scope. Any later scope change falls through.
   const skipNextLoadRef = useRef(serverBootstrapped && !initialLoadFailed);
+  const beginLoad = useLatestLoad();
 
   type QueryPatch =
     | { mode: "set"; pairs: Record<string, string | undefined> }
@@ -244,23 +247,26 @@ export function DischargeMedRecHubClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setLoading(true);
     setLoadFailed(false);
 
     try {
       const bootstrap = await loadDischargeHubBootstrap(selectedFacilityId, scopeKey);
+      if (!isCurrent()) return;
       setRows(bootstrap.rows);
       setIsRowsCapped(bootstrap.isRowsCapped);
     } catch (e) {
+      if (!isCurrent()) return;
       logSupabasePostgrestError("discharge-hub.list", e, { facilityId: selectedFacilityId });
       setLoadFailed(true);
       setRows([]);
       setIsRowsCapped(false);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [initialFacilityId, initialScope, scopeKey, selectedFacilityId]);
+  }, [beginLoad, initialFacilityId, initialScope, scopeKey, selectedFacilityId]);
 
   useEffect(() => {
     void load();
@@ -703,10 +709,7 @@ export function DischargeMedRecHubClient({
                               <p>{phase.helperText}</p>
                             </TableCell>
                             <TableCell className="align-top text-[13px] leading-snug text-muted-foreground">
-                              {new Date(r.updated_at).toLocaleString(undefined, {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })}
+                              {formatDisplayDateTime(r.updated_at)}
                             </TableCell>
                             <TableCell className="space-y-2 text-right align-top">
                               <div className="flex flex-wrap justify-end gap-2">

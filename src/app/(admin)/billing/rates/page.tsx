@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Percent } from "lucide-react";
@@ -91,9 +92,7 @@ const RATE_SURCHARGE_FIELDS: ReadonlyArray<[label: string, get: (row: RateRow) =
 ];
 
 function formatDate(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 function buildFacilityRates(
@@ -195,7 +194,7 @@ export default function AdminBillingRatesPage() {
   }, [load]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       <div className="relative z-10 space-y-6 animate-in fade-in slide-in-from-bottom-2">
         <BillingHubNav />
@@ -229,7 +228,11 @@ export default function AdminBillingRatesPage() {
         {!isLoading && facilities.length === 0 && !error ? (
           <AdminEmptyState
             title="No rate schedules"
-            description="Add a rate schedule for this facility or pick a facility that already has pricing configured."
+            description={
+              isValidFacilityIdForQuery(selectedFacilityId)
+                ? "This facility has no posted rate schedule yet. Add one with + Add Schedule."
+                : "No facility has a posted rate schedule yet. Add one with + Add Schedule."
+            }
           />
         ) : null}
         

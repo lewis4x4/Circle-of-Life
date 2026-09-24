@@ -33,9 +33,27 @@ const SelectGroup = SelectPrimitive.Group;
 
 const SelectValue = SelectPrimitive.Value;
 
+type SelectTriggerBaseProps = Omit<
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>,
+  "id" | "aria-label" | "aria-labelledby"
+>;
+
+/**
+ * The trigger is a `role="combobox"` button; its visible value is NOT its
+ * name, so an unnamed trigger is announced as a bare "combo box" (axe
+ * `button-name`, critical — COL-658). The type requires one of: an `id`
+ * that a `<Label htmlFor>` points at, `aria-label`, or `aria-labelledby`.
+ */
+export type SelectTriggerProps = SelectTriggerBaseProps &
+  (
+    | { id: string; "aria-label"?: string; "aria-labelledby"?: string }
+    | { id?: string; "aria-label": string; "aria-labelledby"?: string }
+    | { id?: string; "aria-label"?: string; "aria-labelledby": string }
+  );
+
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+  SelectTriggerProps
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}

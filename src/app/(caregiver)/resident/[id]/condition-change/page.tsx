@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -210,7 +211,7 @@ export default function CaregiverResidentConditionChangePage() {
       <div className="space-y-4">
         <Link
           href={homeHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
         >
           <ArrowLeft className="h-4 w-4" />
           Shift home
@@ -230,7 +231,7 @@ export default function CaregiverResidentConditionChangePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading…
       </div>
@@ -255,7 +256,7 @@ export default function CaregiverResidentConditionChangePage() {
     <div className="space-y-4">
       <Link
         href={`/caregiver/resident/${residentId}`}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
       >
         <ArrowLeft className="h-4 w-4" />
         Resident
@@ -287,8 +288,8 @@ export default function CaregiverResidentConditionChangePage() {
             <div className="space-y-3 rounded-lg border border-rose-900/35 bg-black/25 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-rose-200/80">Category</Label>
-                  <select
+                  <Label htmlFor="condition-category" className="text-xs text-rose-200/80">Category</Label>
+                  <select id="condition-category"
                     className="flex h-10 w-full rounded-md border border-rose-900/50 bg-zinc-950 px-2 text-sm text-zinc-100"
                     value={changeType}
                     onChange={(e) => setChangeType(e.target.value)}
@@ -301,8 +302,8 @@ export default function CaregiverResidentConditionChangePage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-rose-200/80">Severity</Label>
-                  <select
+                  <Label htmlFor="condition-severity" className="text-xs text-rose-200/80">Severity</Label>
+                  <select id="condition-severity"
                     className="flex h-10 w-full rounded-md border border-rose-900/50 bg-zinc-950 px-2 text-sm text-zinc-100"
                     value={severity}
                     onChange={(e) => setSeverity(e.target.value)}
@@ -316,8 +317,8 @@ export default function CaregiverResidentConditionChangePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-rose-200/80">Description</Label>
-                <textarea
+                <Label htmlFor="condition-description" className="text-xs text-rose-200/80">Description</Label>
+                <textarea id="condition-description"
                   rows={4}
                   required
                   placeholder="Objective findings, vitals if taken, what changed and when…"
@@ -350,24 +351,19 @@ export default function CaregiverResidentConditionChangePage() {
           <div className="space-y-2 border-t border-rose-900/30 pt-4">
             <p className="text-xs font-medium uppercase tracking-wide text-rose-200/50">Recent reports</p>
             {rows.length === 0 ? (
-              <p className="text-sm text-zinc-400">No condition change reports yet.</p>
+              <p className="text-sm text-muted-foreground">No condition change reports yet.</p>
             ) : (
               <ul className="space-y-2">
                 {rows.map((row) => (
                   <li key={row.id} className="rounded-lg border border-rose-900/30 bg-black/20 p-3 text-sm">
                     <p className="font-medium text-rose-100">
                       {CHANGE_TYPES.find((c) => c.value === row.change_type)?.label ?? row.change_type}
-                      <span className="font-normal text-zinc-500"> · </span>
-                      <span className="capitalize text-zinc-300">{row.severity}</span>
+                      <span className="font-normal text-muted-foreground"> · </span>
+                      <span className="capitalize text-muted-foreground">{row.severity}</span>
                     </p>
                     <p className="mt-1 text-zinc-200">{row.description}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {new Date(row.reported_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatShortDateTime(row.reported_at)}{" "}
                       · {row.shift}
                       {row.nurse_notified ? <span className="text-emerald-400"> · nurse notified</span> : null}
                     </p>

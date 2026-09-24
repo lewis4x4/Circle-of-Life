@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -38,6 +39,7 @@ import {
   isDocumentsTabAttentionRequired,
 } from "@/lib/facilities/documents-tab-display-copy";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 interface DocumentsTabProps {
   facilityId: string;
@@ -473,7 +475,7 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
                   <p className={cn("mt-2 text-xs", v.className)}>{v.line}</p>
 
                   <p className="mt-2 border-t border-border pt-2 text-[12px] text-muted-foreground">
-                    Uploaded {new Date(doc.uploaded_at).toLocaleDateString()} by{" "}
+                    Uploaded {formatDisplayDate(doc.uploaded_at)} by{" "}
                     {formatDocumentsTabUploaderDisplay(doc.uploaded_by_display)}
                   </p>
 
@@ -482,31 +484,33 @@ export function DocumentsTab({ facilityId }: DocumentsTabProps) {
             })}
           </div>
         ) : (
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="py-2 pr-2 font-medium">Title</th>
-                <th className="py-2 pr-2 font-medium">Category</th>
-                <th className="py-2 pr-2 font-medium">Expiry</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSorted.map((doc) => {
-                const v = formatDocumentsTabExpirationVisual(doc.document_category, doc.expiration_date);
-                return (
-                  <tr
-                    key={doc.id}
-                    className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
-                    onClick={() => setPreviewId(doc.id)}
-                  >
-                    <td className="py-2 pr-2 font-medium">{displayTitle(doc)}</td>
-                    <td className="py-2 pr-2 text-muted-foreground">{categoryLabel(doc.document_category)}</td>
-                    <td className={cn("py-2 pr-2 text-xs", v.className)}>{v.line}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <HorizontalScroll label="Facility documents">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="py-2 pr-2 font-medium">Title</th>
+                  <th className="py-2 pr-2 font-medium">Category</th>
+                  <th className="py-2 pr-2 font-medium">Expiry</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSorted.map((doc) => {
+                  const v = formatDocumentsTabExpirationVisual(doc.document_category, doc.expiration_date);
+                  return (
+                    <tr
+                      key={doc.id}
+                      className="cursor-pointer border-b border-border/60 hover:bg-muted/40"
+                      onClick={() => setPreviewId(doc.id)}
+                    >
+                      <td className="py-2 pr-2 font-medium">{displayTitle(doc)}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{categoryLabel(doc.document_category)}</td>
+                      <td className={cn("py-2 pr-2 text-xs", v.className)}>{v.line}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </HorizontalScroll>
         )}
       </div>
 

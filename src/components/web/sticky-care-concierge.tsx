@@ -10,6 +10,10 @@ interface StickyCareConciergeProps {
 
 export function StickyCareConcierge({ onOpenTourModal }: StickyCareConciergeProps) {
   return (
+    <>
+    {/* In-flow spacer the height of the fixed bar, so the last content on the
+        page is never hidden behind it on a phone (COL-687). */}
+    <div aria-hidden data-slot="sticky-care-concierge-spacer" className="h-[calc(4.5rem+env(safe-area-inset-bottom))] lg:hidden" />
     <aside aria-label="Quick contact" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1e2b24]/95 backdrop-blur-md border-t border-stone-700/80 p-2.5 shadow-2xl safe-bottom">
       <div className="flex items-center justify-between gap-2 max-w-lg mx-auto">
         <a
@@ -30,5 +34,6 @@ export function StickyCareConcierge({ onOpenTourModal }: StickyCareConciergeProp
         </Link>
       </div>
     </aside>
+    </>
   );
 }

@@ -45,7 +45,7 @@ test("billing code requests finance tests but not a database replay", () => {
 test("every direct finance-suite source requests finance verification", () => {
   for (const file of [
     "src/lib/platform-audit/export-safety.test.ts",
-    "src/app/(admin)/admin/cash/page.tsx",
+    "src/components/finance/CashTrustLedgersClient.tsx",
     "src/lib/finance/post-to-gl.test.ts",
     "src/components/finance/FinanceReviewQueueClient.test.tsx",
   ]) {

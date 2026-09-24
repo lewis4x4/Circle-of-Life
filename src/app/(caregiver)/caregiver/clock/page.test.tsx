@@ -35,7 +35,7 @@ describe("/caregiver/clock (spec 40 §1, §10 item 7: one clock)", () => {
     await renderPage(CaregiverClockPage);
     expect(screen.getByRole("heading", { name: "Clock in at the front door" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /clock in/i })).toBeNull();
-    expect(screen.getByRole("link", { name: "Back to shift home" }).getAttribute("href")).toBe("/floor");
+    expect(screen.getByRole("link", { name: "Shift home" }).getAttribute("href")).toBe("/floor");
     expect(mock.flag).toHaveBeenCalledWith({}, "u1");
   });
 

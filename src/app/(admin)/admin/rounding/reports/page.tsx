@@ -32,6 +32,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { RoundingHubNav } from "../rounding-hub-nav";
 import { ObservationInsightsPanel } from "@/components/rounding/ObservationInsightsPanel";
 import { ReportBreakdown } from "@/components/rounding/ObservationReportBreakdown";
@@ -141,7 +142,7 @@ function ScopedAdminRoundingReportsPage() {
   const totals = summary?.totals;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <PageHeader
         title="Observation reports"
         subtitle={formatRoundingReportsPageSubtitle(scope)}
@@ -178,13 +179,7 @@ function ScopedAdminRoundingReportsPage() {
       <RoundingHubNav />
 
       {!selectedFacilityId ? (
-        <RoundingEmptyNotice
-          label="Facility scope required"
-          copy={{
-            why: "No building selected.",
-            guidance: "Choose one in the top bar to build a report for it.",
-          }}
-        />
+        <FacilityGateNotice reason="Rounding reports are built for one building at a time." />
       ) : (
         <>
           {errorMessage ? (

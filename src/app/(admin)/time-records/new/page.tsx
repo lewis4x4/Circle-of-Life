@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Loader2 } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -111,7 +112,6 @@ export default function AdminNewTimeRecordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
       return;
     }
     if (!staffId.trim()) {
@@ -216,7 +216,7 @@ export default function AdminNewTimeRecordPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Clock className="h-6 w-6 text-slate-500" />
+        <Clock className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Add time record</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -226,113 +226,111 @@ export default function AdminNewTimeRecordPage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to enable this form.
-        </p>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Punch</CardTitle>
-          <CardDescription>
-            Staff must belong to the selected facility. Hours compute from clock in/out minus unpaid break time.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => void handleSubmit(e)} className="max-w-md space-y-4">
-            {error && (
-              <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="staff">
-                Staff member
-              </label>
-              <select
-                id="staff"
-                value={staffId}
-                onChange={(e) => setStaffId(e.target.value)}
-                required
-                disabled={!facilityReady || staffLoading}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">{staffLoading ? "Loading…" : "Select staff"}</option>
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="clock-in">
-                Clock in
-              </label>
-              <Input
-                id="clock-in"
-                type="datetime-local"
-                value={clockInLocal}
-                onChange={(e) => setClockInLocal(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="clock-out">
-                Clock out (optional)
-              </label>
-              <Input
-                id="clock-out"
-                type="datetime-local"
-                value={clockOutLocal}
-                onChange={(e) => setClockOutLocal(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="break">
-                Unpaid break (minutes)
-              </label>
-              <Input
-                id="break"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                value={breakMinutes}
-                onChange={(e) => setBreakMinutes(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="notes">
-                Notes (optional)
-              </label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Kiosk missed; verified with nurse"
-              />
-            </div>
-
-            <Button type="submit" disabled={submitting || !facilityReady || staffLoading}>
-              {submitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                "Save time record"
+      {facilityReady ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Punch</CardTitle>
+            <CardDescription>
+              Staff must belong to the selected facility. Hours compute from clock in/out minus unpaid break time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="max-w-md space-y-4">
+              {error && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {error}
+                </p>
               )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="staff">
+                  Staff member
+                </label>
+                <select
+                  id="staff"
+                  value={staffId}
+                  onChange={(e) => setStaffId(e.target.value)}
+                  required
+                  disabled={!facilityReady || staffLoading}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">{staffLoading ? "Loading…" : "Select staff"}</option>
+                  {staffList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="clock-in">
+                  Clock in
+                </label>
+                <Input
+                  id="clock-in"
+                  type="datetime-local"
+                  value={clockInLocal}
+                  onChange={(e) => setClockInLocal(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="clock-out">
+                  Clock out (optional)
+                </label>
+                <Input
+                  id="clock-out"
+                  type="datetime-local"
+                  value={clockOutLocal}
+                  onChange={(e) => setClockOutLocal(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="break">
+                  Unpaid break (minutes)
+                </label>
+                <Input
+                  id="break"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  value={breakMinutes}
+                  onChange={(e) => setBreakMinutes(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400" htmlFor="notes">
+                  Notes (optional)
+                </label>
+                <Input
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g. Kiosk missed; verified with nurse"
+                />
+              </div>
+
+              <Button type="submit" disabled={submitting || !facilityReady || staffLoading}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Save time record"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <FacilityGateNotice reason="Time records are kept per building, so the staff list and this form load once a facility is chosen." />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   formatMorningHuddleStaffName,
 } from "@/lib/office/morning-huddle-display-copy";
 import type { Database } from "@/types/database";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 
 /** Calendar day in America/New_York as YYYY-MM-DD (foundation spec: COL facilities anchor to ET). */
 export function huddleTodayEtIso(): string {
@@ -240,7 +241,7 @@ export async function fetchMorningHuddleData(
     facilityId,
     dateIso,
     generatedAt: now.toISOString(),
-    census: censusRes.count ?? 0,
+    census: requireHeadCount(censusRes, "Census"),
     overnightIncidents: (incidentsRes.data ?? []).map((r) => ({
       id: r.id,
       incidentNumber: r.incident_number,
@@ -274,7 +275,7 @@ export async function fetchMorningHuddleData(
       scheduledTime: r.scheduled_time,
       reason: r.refusal_reason ?? r.hold_reason ?? r.not_available_reason,
     })),
-    overdueScheduledDoses: overdueRes.count ?? 0,
+    overdueScheduledDoses: requireHeadCount(overdueRes, "Overdue scheduled doses"),
     residentMoves,
   };
 }

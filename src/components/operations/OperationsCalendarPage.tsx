@@ -1,6 +1,9 @@
 "use client";
 
+import { formatDateTimeWith, formatDisplayTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import Link from "next/link";
 import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 
@@ -41,11 +44,14 @@ export function OperationsCalendarPage() {
   const summary = useMemo(() => summarizeOperationTasks(tasks, range.dateFrom, range.dateTo), [tasks, range.dateFrom, range.dateTo]);
   const tiles = taskSummaryTileStates(summary, { error });
 
+  // The agenda opens on today when today is in the month shown, otherwise on the
+  // month's first day. A chosen day with no tasks stays chosen: it used to bounce
+  // back to the 1st, so the agenda "opened on Sep 1" (COL-684).
   useEffect(() => {
-    if (!selectedDate || !groupedTasks.has(selectedDate)) {
-      setSelectedDate(range.dateFrom);
-    }
-  }, [groupedTasks, range.dateFrom, selectedDate]);
+    if (selectedDate && selectedDate >= range.dateFrom && selectedDate <= range.dateTo) return;
+    const today = todayFacilityDateIso();
+    setSelectedDate(today >= range.dateFrom && today <= range.dateTo ? today : range.dateFrom);
+  }, [range.dateFrom, range.dateTo, selectedDate]);
 
   const selectedDayTasks = groupedTasks.get(selectedDate) ?? [];
 
@@ -101,14 +107,14 @@ export function OperationsCalendarPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAnchorDate((current) => shiftRangeAnchor("month", current, "prev"))}>
-            <ChevronLeft className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label="Previous month" onClick={() => setAnchorDate((current) => shiftRangeAnchor("month", current, "prev"))}>
+            <ChevronLeft className="h-4 w-4" aria-hidden />
           </Button>
           <div className="min-w-[180px] rounded-lg bg-muted/50 px-4 py-2 text-center">
             <span className="font-medium">{range.label}</span>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setAnchorDate((current) => shiftRangeAnchor("month", current, "next"))}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="outline" size="sm" aria-label="Next month" onClick={() => setAnchorDate((current) => shiftRangeAnchor("month", current, "next"))}>
+            <ChevronRight className="h-4 w-4" aria-hidden />
           </Button>
           <Link href="/admin/operations">
             <Button variant="outline" size="sm" className="ml-2">
@@ -207,7 +213,7 @@ export function OperationsCalendarPage() {
         <section className="rounded-xl border bg-background p-4">
           <div className="mb-4">
             <h2 className="text-lg font-semibold">Day Agenda</h2>
-            <p className="text-sm text-muted-foreground">{selectedDate || range.dateFrom}</p>
+            <p className="text-sm text-muted-foreground">{formatDateTimeWith(selectedDate || range.dateFrom, { weekday: "long", month: "short", day: "numeric", year: "numeric" })}</p>
           </div>
 
           {selectedDayTasks.length === 0 && (
@@ -236,7 +242,7 @@ export function OperationsCalendarPage() {
                       {task.assigned_shift
                         ? OPERATION_SHIFT_LABELS[task.assigned_shift] || task.assigned_shift
                         : "Facility-wide"}
-                      {task.due_at ? ` · Due ${new Date(task.due_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
+                      {task.due_at ? ` · Due ${formatDisplayTime(task.due_at)}` : ""}
                     </p>
                     <p>Assigned to: {task.assigned_to_name || "Unassigned"}</p>
                   </div>

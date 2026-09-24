@@ -10,6 +10,7 @@
  * bg-primary active state, no glass/blur. Motion uses micro-duration tier.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useState } from "react";
 import { Calendar, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -164,10 +165,10 @@ export function TimeRangeSelector({
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
+                  <label htmlFor="time-range-start-date" className="text-xs text-muted-foreground mb-1 block">
                     Start Date
                   </label>
-                  <input
+                  <input id="time-range-start-date"
                     type="date"
                     value={startDate ? startDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => setStartDate(new Date(e.target.value))}
@@ -176,10 +177,10 @@ export function TimeRangeSelector({
                 </div>
 
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
+                  <label htmlFor="time-range-end-date" className="text-xs text-muted-foreground mb-1 block">
                     End Date
                   </label>
-                  <input
+                  <input id="time-range-end-date"
                     type="date"
                     value={endDate ? endDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => setEndDate(new Date(e.target.value))}
@@ -264,17 +265,9 @@ export function getDateRange(
  * Format date range for display
  */
 export function formatDateRange(startDate: Date, endDate: Date): string {
-  const options: Intl.DateTimeFormatOptions = {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  };
-
-  if (startDate.toDateString() === endDate.toDateString()) {
-    return startDate.toLocaleDateString("en-US", options);
-  }
-
-  return `${startDate.toLocaleDateString("en-US", options)} - ${endDate.toLocaleDateString("en-US", options)}`;
+  const start = formatDisplayDate(startDate);
+  const end = formatDisplayDate(endDate);
+  return start === end ? start : `${start} - ${end}`;
 }
 
 export default TimeRangeSelector;

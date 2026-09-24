@@ -38,6 +38,7 @@ export type RawPunch = {
 export type RawCorrection = {
   id: string;
   staff_id: string;
+  facility_id?: string;
   correction_type: CorrectionType;
   target_punch_id: string | null;
   target_correction_id: string | null;
@@ -53,6 +54,7 @@ export type RawCorrection = {
 export type RawSyncRejection = {
   id: string;
   staff_id: string | null;
+  facility_id?: string;
   punch_type: string;
   device_time: string | null;
   reason: string;
@@ -77,7 +79,7 @@ export type EffectivePunch = {
   timeChanged: boolean;
 };
 
-export type ExceptionType = "missing_out" | "missing_meal_end" | "clock_skew" | "offline_capture" | "rejected_offline_sync" | "short_turnaround" | "unlock_without_punch";
+export type ExceptionType = "missing_out" | "missing_meal_end" | "long_shift" | "clock_skew" | "offline_capture" | "rejected_offline_sync" | "short_turnaround" | "unlock_without_punch";
 
 export type TimesheetException = {
   key: string;
@@ -330,7 +332,7 @@ function walk(effective: EffectivePunch[], now: Date): Walk {
           workStart = null;
         }
         if (shiftIn && minutesBetween(shiftIn.at, p.at) > STALE_OPEN_MINUTES) {
-          exceptions.push({ key: `missing_out:${shiftIn.id}`, type: "missing_out", anchorId: shiftIn.id, at: shiftIn.at });
+          exceptions.push({ key: `long_shift:${shiftIn.id}`, type: "long_shift", anchorId: shiftIn.id, at: shiftIn.at });
         }
         shiftOpen = false;
         shiftIn = null;
@@ -400,7 +402,17 @@ export function computeTimesheet(input: ComputeTimesheetInput): Timesheet {
 
   const acknowledgedKeys = new Set(corrections.filter((c) => c.correction_type === "acknowledge" && c.exception_key).map((c) => c.exception_key as string));
 
-  const exceptions: TimesheetException[] = walked.map((e) => ({ ...e, staffId: input.staffId, acknowledged: acknowledgedKeys.has(e.key) }));
+  // Missing shift or meal ends have no verified time. Acknowledgement cannot make omitted hours exportable.
+  const exceptions: TimesheetException[] = walked.map((e) => ({
+    ...e,
+    staffId: input.staffId,
+    acknowledged: e.type !== "missing_out" && e.type !== "missing_meal_end" && (
+      acknowledgedKeys.has(e.key)
+      // Before long_shift existed, completed long shifts used this review key.
+      // The compatibility key applies only after an actual end punch is present.
+      || (e.type === "long_shift" && acknowledgedKeys.has(`missing_out:${e.anchorId}`))
+    ),
+  }));
   for (const p of effective) {
     for (const flag of p.flags) {
       if (flag === "clock_skew" || flag === "offline_capture") {

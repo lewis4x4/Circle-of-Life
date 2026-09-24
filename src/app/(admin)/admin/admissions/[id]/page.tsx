@@ -25,6 +25,13 @@ import {
 } from "@/design-system/components/record-detail";
 import { formatAdmissionsHubTargetMoveInDateValue } from "@/lib/admissions/admissions-hub-display-copy";
 import {
+  ADMISSION_ONBOARDING_STATE_LABEL,
+  EMPTY_ADMISSION_ONBOARDING_COUNTS,
+  admissionOnboardingChecklist,
+  type AdmissionOnboardingCounts,
+} from "@/lib/admissions/admission-onboarding-checklist";
+import { headCountOrNull } from "@/lib/metrics/require-head-count";
+import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
   formatAdmissionDetailCents,
@@ -38,13 +45,6 @@ type CaseDetail = Database["public"]["Tables"]["admission_cases"]["Row"] & {
   residents: { first_name: string; last_name: string } | null;
   referral_leads: { first_name: string; last_name: string } | null;
   beds: { bed_label: string } | null;
-};
-
-type OnboardingCounts = {
-  carePlans: number;
-  medications: number;
-  payers: number;
-  familyConsents: number;
 };
 
 type RateScheduleOption = Pick<
@@ -145,32 +145,7 @@ function onboardingLinks(residentId: string | null) {
     { label: "Care plan workspace", href: `/admin/residents/${residentId}/care-plan` },
     { label: "Medication setup", href: `/admin/residents/${residentId}/medications` },
     { label: "Resident billing", href: `/admin/residents/${residentId}/billing` },
-    { label: "Family coordination", href: "/admin/family-messages" },
-  ];
-}
-
-function onboardingChecklist(counts: OnboardingCounts) {
-  return [
-    {
-      key: "care_plan",
-      label: "Care plan workspace has at least one plan",
-      passed: counts.carePlans > 0,
-    },
-    {
-      key: "meds",
-      label: "Medication profile exists",
-      passed: counts.medications > 0,
-    },
-    {
-      key: "billing",
-      label: "Resident payer is configured",
-      passed: counts.payers > 0,
-    },
-    {
-      key: "family",
-      label: "Family consent is on file",
-      passed: counts.familyConsents > 0,
-    },
+    { label: "Family coordination", href: "/admin/family-portal?tab=notes" },
   ];
 }
 
@@ -185,12 +160,9 @@ export default function AdminAdmissionCaseDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [row, setRow] = useState<CaseDetail | null>(null);
   const [rateTerms, setRateTerms] = useState<Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]>([]);
-  const [onboardingCounts, setOnboardingCounts] = useState<OnboardingCounts>({
-    carePlans: 0,
-    medications: 0,
-    payers: 0,
-    familyConsents: 0,
-  });
+  const [onboardingCounts, setOnboardingCounts] = useState<AdmissionOnboardingCounts>(
+    EMPTY_ADMISSION_ONBOARDING_COUNTS,
+  );
   const [rateSchedules, setRateSchedules] = useState<RateScheduleOption[]>([]);
   const [beds, setBeds] = useState<BedOption[]>([]);
   const [form1823Record, setForm1823Record] = useState<Form1823Record | null>(null);
@@ -202,11 +174,11 @@ export default function AdminAdmissionCaseDetailPage() {
   const [bedDraft, setBedDraft] = useState("");
   const [physicianOrdersSummaryDraft, setPhysicianOrdersSummaryDraft] = useState("");
   const [caseNotesDraft, setCaseNotesDraft] = useState("");
-  const [medicaidPipelineStageDraft, setMedicaidPipelineStageDraft] = useState<MedicaidPipelineStage>("prospect");
+  // Drafts start unchosen; a quoted care level, room or 1823 status is picked, never assumed (COL-676).
+  const [medicaidPipelineStageDraft, setMedicaidPipelineStageDraft] = useState<MedicaidPipelineStage | "">("");
   const [rateScheduleDraft, setRateScheduleDraft] = useState("");
-  const [rateAccommodationDraft, setRateAccommodationDraft] =
-    useState<Database["public"]["Enums"]["admission_accommodation_quote"]>("private");
-  const [rateCareLevelDraft, setRateCareLevelDraft] = useState<"1" | "2" | "3">("2");
+  const [rateAccommodationDraft, setRateAccommodationDraft] = useState<Database["public"]["Enums"]["admission_accommodation_quote"] | "">("");
+  const [rateCareLevelDraft, setRateCareLevelDraft] = useState<"1" | "2" | "3" | "">("");
   const [quotedBaseDraft, setQuotedBaseDraft] = useState("");
   const [quotedCareDraft, setQuotedCareDraft] = useState("");
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
@@ -214,7 +186,7 @@ export default function AdminAdmissionCaseDetailPage() {
   const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
   const [arrivalDate, setArrivalDate] = useState("");
   const [arrivalMessage, setArrivalMessage] = useState<string | null>(null);
-  const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"]>("pending");
+  const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"] | "">("");
   const [form1823PhysicianDraft, setForm1823PhysicianDraft] = useState("");
   const [form1823ExamDateDraft, setForm1823ExamDateDraft] = useState("");
   const [form1823ExpirationDraft, setForm1823ExpirationDraft] = useState("");
@@ -252,7 +224,7 @@ export default function AdminAdmissionCaseDetailPage() {
       setBedDraft(caseRow?.bed_id ?? "");
       setPhysicianOrdersSummaryDraft(caseRow?.physician_orders_summary ?? "");
       setCaseNotesDraft(caseRow?.notes ?? "");
-      setMedicaidPipelineStageDraft((caseRow?.medicaid_pipeline_stage as MedicaidPipelineStage | null) ?? "prospect");
+      setMedicaidPipelineStageDraft((caseRow?.medicaid_pipeline_stage as MedicaidPipelineStage | null) ?? "");
       setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
       if (caseRow?.facility_id) {
         const [{ data: schedules, error: schedulesError }, { data: bedRows, error: bedsError }] = await Promise.all([
@@ -309,25 +281,25 @@ export default function AdminAdmissionCaseDetailPage() {
             .maybeSingle(),
         ]);
         setOnboardingCounts({
-          carePlans: carePlansRes.count ?? 0,
-          medications: medsRes.count ?? 0,
-          payers: payersRes.count ?? 0,
-          familyConsents: consentsRes.count ?? 0,
+          carePlans: headCountOrNull(carePlansRes),
+          medications: headCountOrNull(medsRes),
+          payers: headCountOrNull(payersRes),
+          familyConsents: headCountOrNull(consentsRes),
         });
         const resolvedForm1823Record = ((form1823CaseRes.data ?? form1823ResidentFallbackRes.data) ?? null) as Form1823Record | null;
         const resolvedChecklist = (form1823ChecklistRes.data ?? null) as AdmissionChecklistItem | null;
         setForm1823Record(resolvedForm1823Record);
         setForm1823ChecklistItem(resolvedChecklist);
-        setForm1823StatusDraft(resolvedForm1823Record?.status ?? "pending");
+        setForm1823StatusDraft(resolvedForm1823Record?.status ?? "");
         setForm1823PhysicianDraft(resolvedForm1823Record?.physician_name ?? "");
         setForm1823ExamDateDraft(resolvedForm1823Record?.exam_date ?? "");
         setForm1823ExpirationDraft(resolvedForm1823Record?.expiration_date ?? "");
         setForm1823NotesDraft(resolvedChecklist?.notes ?? "");
       } else {
-        setOnboardingCounts({ carePlans: 0, medications: 0, payers: 0, familyConsents: 0 });
+        setOnboardingCounts(EMPTY_ADMISSION_ONBOARDING_COUNTS);
         setForm1823Record(null);
         setForm1823ChecklistItem(null);
-        setForm1823StatusDraft("pending");
+        setForm1823StatusDraft("");
         setForm1823PhysicianDraft("");
         setForm1823ExamDateDraft("");
         setForm1823ExpirationDraft("");
@@ -371,6 +343,11 @@ export default function AdminAdmissionCaseDetailPage() {
 
   async function saveForm1823() {
     if (!row) return;
+    if (!form1823StatusDraft) {
+      setActionError("Choose the Form 1823 status.");
+      setActionMessage(null);
+      return;
+    }
     setActionLoading("form-1823");
     setActionError(null);
     setActionMessage(null);
@@ -410,11 +387,11 @@ export default function AdminAdmissionCaseDetailPage() {
   const readiness = row ? admissionReadinessChecklist(row, rateTerms, form1823Satisfied) : [];
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
   const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0 && form1823Satisfied);
-  const onboarding = onboardingChecklist(onboardingCounts);
+  const onboarding = admissionOnboardingChecklist(onboardingCounts);
   const selectedRateSchedule = rateSchedules.find((schedule) => schedule.id === rateScheduleDraft) ?? null;
 
   function prefillQuotedTermsFromSchedule() {
-    if (!selectedRateSchedule) return;
+    if (!selectedRateSchedule || !rateAccommodationDraft || !rateCareLevelDraft) return;
     const base =
       rateAccommodationDraft === "private"
         ? selectedRateSchedule.base_rate_private
@@ -432,6 +409,11 @@ export default function AdminAdmissionCaseDetailPage() {
 
   async function addRateTerm() {
     if (!row) return;
+    if (!rateAccommodationDraft) {
+      setActionError("Choose the accommodation.");
+      setActionMessage(null);
+      return;
+    }
     // Staff type dollars and the column holds cents; cents inputs invited 100x errors (COL-653).
     const base = dollarsToCents(quotedBaseDraft);
     const care = quotedCareDraft.trim() ? dollarsToCents(quotedCareDraft) : 0;
@@ -481,8 +463,8 @@ export default function AdminAdmissionCaseDetailPage() {
       }
       setEditingRateTermId(null);
       setRateScheduleDraft("");
-      setRateAccommodationDraft("private");
-      setRateCareLevelDraft("2");
+      setRateAccommodationDraft("");
+      setRateCareLevelDraft("");
       setQuotedBaseDraft("");
       setQuotedCareDraft("");
       setRateNotesDraft("");
@@ -508,8 +490,8 @@ export default function AdminAdmissionCaseDetailPage() {
   function clearRateTermForm() {
     setEditingRateTermId(null);
     setRateScheduleDraft("");
-    setRateAccommodationDraft("private");
-    setRateCareLevelDraft("2");
+    setRateAccommodationDraft("");
+    setRateCareLevelDraft("");
     setQuotedBaseDraft("");
     setQuotedCareDraft("");
     setEffectiveDateDraft(row?.target_move_in_date ?? "");
@@ -517,7 +499,7 @@ export default function AdminAdmissionCaseDetailPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       {row && <div className="space-y-2 rounded border border-border p-4"><h2 className="font-semibold">Confirm actual arrival</h2><p>Ready for move-in and arrival are separate steps. This activates the resident census and records bed occupancy after readiness checks pass.</p><label>Actual arrival date<input type="date" value={arrivalDate} onChange={(e)=>setArrivalDate(e.target.value)} className="ml-3 rounded border p-2" /></label><Button disabled={!arrivalDate} onClick={()=>void confirmArrival()}>Confirm arrival</Button>{arrivalMessage&&<p role="status">{arrivalMessage}</p>}</div>}
       <></>
       
@@ -589,7 +571,7 @@ export default function AdminAdmissionCaseDetailPage() {
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medicaid Stage</dt>
-                    <dd className="text-base font-semibold text-foreground capitalize">{formatStatus(row.medicaid_pipeline_stage ?? "prospect")}</dd>
+                    <dd className="text-base font-semibold text-foreground capitalize">{row.medicaid_pipeline_stage ? formatStatus(row.medicaid_pipeline_stage) : "Not set"}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Target Move-In</dt>
@@ -622,6 +604,9 @@ export default function AdminAdmissionCaseDetailPage() {
                           onChange={(event) => setMedicaidPipelineStageDraft(event.target.value as MedicaidPipelineStage)}
                           className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
+                          <option value="" disabled>
+                            Select stage…
+                          </option>
                           {MEDICAID_PIPELINE_STAGE_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
@@ -631,8 +616,8 @@ export default function AdminAdmissionCaseDetailPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          disabled={actionLoading === "Medicaid stage saved." || medicaidPipelineStageDraft === (row.medicaid_pipeline_stage ?? "prospect")}
-                          onClick={() => void updateCase({ medicaid_pipeline_stage: medicaidPipelineStageDraft }, "Medicaid stage saved.")}
+                          disabled={actionLoading === "Medicaid stage saved." || !medicaidPipelineStageDraft || medicaidPipelineStageDraft === (row.medicaid_pipeline_stage ?? "")}
+                          onClick={() => { if (medicaidPipelineStageDraft) void updateCase({ medicaid_pipeline_stage: medicaidPipelineStageDraft }, "Medicaid stage saved."); }}
                         >
                           {actionLoading === "Medicaid stage saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save stage"}
                         </Button>
@@ -775,6 +760,9 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setForm1823StatusDraft(event.target.value as Form1823Record["status"])}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        <option value="" disabled>
+                          Select status…
+                        </option>
                         <option value="pending">Pending</option>
                         <option value="received">Received</option>
                         <option value="expired">Expired</option>
@@ -911,11 +899,13 @@ export default function AdminAdmissionCaseDetailPage() {
                             <span className="text-sm font-medium text-foreground">{item.label}</span>
                             <span className={cn(
                               "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider",
-                              item.passed
+                              item.state === "complete"
                                 ? "bg-success/10 text-success"
-                                : "bg-warning/10 text-warning",
+                                : item.state === "missing"
+                                  ? "bg-warning/10 text-warning"
+                                  : "bg-muted text-muted-foreground",
                             )}>
-                              {item.passed ? "Complete" : "Missing"}
+                              {ADMISSION_ONBOARDING_STATE_LABEL[item.state]}
                             </span>
                           </div>
                         ))}
@@ -977,6 +967,9 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setRateAccommodationDraft(event.target.value as Database["public"]["Enums"]["admission_accommodation_quote"])}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        <option value="" disabled>
+                          Select accommodation…
+                        </option>
                         <option value="private">{formatColLabel("private")}</option>
                         <option value="semi_private">{formatColLabel("semi_private")}</option>
                       </select>
@@ -988,6 +981,9 @@ export default function AdminAdmissionCaseDetailPage() {
                         onChange={(event) => setRateCareLevelDraft(event.target.value as "1" | "2" | "3")}
                         className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
+                        <option value="" disabled>
+                          Select care level…
+                        </option>
                         <option value="1">Level 1</option>
                         <option value="2">Level 2</option>
                         <option value="3">Level 3</option>
@@ -997,7 +993,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        disabled={!selectedRateSchedule}
+                        disabled={!selectedRateSchedule || !rateAccommodationDraft || !rateCareLevelDraft}
                         onClick={() => prefillQuotedTermsFromSchedule()}
                       >
                         Prefill from schedule

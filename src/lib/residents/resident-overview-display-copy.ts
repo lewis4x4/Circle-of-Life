@@ -51,6 +51,7 @@ export function formatResidentOverviewAdmissionLabel(value: string | null | unde
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(parsed);
 }
 
@@ -68,6 +69,7 @@ export function formatResidentOverviewDobLabel(value: string | null | undefined)
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(parsed);
 }
 
@@ -96,4 +98,9 @@ export function formatResidentOverviewVerifiedByStaffLabel(
   const trimmed = joinedName.trim();
   if (!trimmed) return RESIDENT_OVERVIEW_NO_STAFF_COPY;
   return trimmed;
+}
+
+/** Specialist consult count; a count that could not be read is not "0 on file" (COL-649). */
+export function formatResidentOverviewSpecialistCount(count: number | null): string {
+  return count === null ? "Couldn't be read" : String(count);
 }

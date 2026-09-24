@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { GraduationCap } from "lucide-react";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
@@ -32,6 +33,7 @@ import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 import { V2Card } from "@/components/ui/v2-card";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type DemoRow = Database["public"]["Tables"]["competency_demonstrations"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
@@ -614,7 +616,7 @@ export default function AdminTrainingHubPage() {
   ]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
@@ -656,26 +658,15 @@ export default function AdminTrainingHubPage() {
                    >
                      {exportingCsv ? "Preparing…" : "Download demonstrations CSV"}
                    </Button>
-                   {orgWideMode ? (
-                     <Button
-                       type="button"
-                       disabled
-                       className="h-auto min-h-10 whitespace-normal text-left font-mono uppercase tracking-wider text-[10px] opacity-70 sm:whitespace-nowrap"
-                       title="Select a single facility in the header to record a new demonstration."
-                     >
-                       + New Demonstration
-                     </Button>
-                   ) : (
-                     <Link
-                       href="/admin/training/new"
-                     className={cn(
-                        buttonVariants({ size: "default" }),
-                        "h-auto min-h-10 whitespace-normal text-left font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
-                      )}
-                     >
-                       + New Demonstration
-                     </Link>
-                   )}
+                   <Link
+                     href="/admin/training/new"
+                   className={cn(
+                      buttonVariants({ size: "default" }),
+                      "h-auto min-h-10 whitespace-normal text-left font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none sm:whitespace-nowrap",
+                    )}
+                   >
+                     + New Demonstration
+                   </Link>
                  </div>
               </div>
             </V2Card>
@@ -696,26 +687,15 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                {orgWideMode ? (
-                  <Button
-                    type="button"
-                    disabled
-                    className="shrink-0 font-mono uppercase tracking-wider text-[10px] opacity-70"
-                    title="Select a single facility in the header to log a completion."
-                  >
-                    + Log completion
-                  </Button>
-                ) : (
-                  <Link
-                    href="/admin/training/completions/new"
-                    className={cn(
-                      buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
-                    )}
-                  >
-                    + Log completion
-                  </Link>
-                )}
+                <Link
+                  href="/admin/training/completions/new"
+                  className={cn(
+                    buttonVariants({ size: "default" }),
+                    "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
+                  )}
+                >
+                  + Log completion
+                </Link>
                 <Button
                   type="button"
                   variant="outline"
@@ -737,75 +717,77 @@ export default function AdminTrainingHubPage() {
             ) : completionRows.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No completion rows yet</p>
-                <p className="mt-1 text-sm opacity-80">
-                  Florida catalog programs are ready to assign. Select a facility and use{" "}
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Florida catalog programs are ready to assign. Use{" "}
                   <span className="font-mono">+ Log completion</span> to add a live completion row.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-border bg-card">
-                <table className="w-full min-w-[820px] text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Staff</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Program</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Completed</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Expires</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Hours</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Delivery</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">PDF</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {completionRows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
-                      >
-                        <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
-                          {formatTrainingHubFacilityName(row.facilities?.name)}
-                        </td>
-                        <td className="px-[13px] py-2 text-[13px]">
-                          {formatTrainingHubStaffName(row.staff)}
-                        </td>
-                        <td className="px-[13px] py-2 text-[13px]">
-                          <span className="font-medium">
-                            {formatTrainingHubProgramName(row.training_programs?.name)}
-                          </span>
-                          {row.training_programs?.code ? (
-                            <span className="ml-1 text-[12px] text-muted-foreground">
-                              ({row.training_programs.code})
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {formatTrainingHubDate(row.completed_at)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {formatTrainingHubDate(row.expires_at)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono tabular-nums">
-                          {formatTrainingHubHours(row.hours_completed)}
-                        </td>
-                        <td className="px-[13px] py-2 capitalize text-muted-foreground">
-                          {formatStatus(row.delivery_method)}
-                        </td>
-                        <td className="px-[13px] py-2">
-                          {row.attachment_path ? (
-                            <CompetencyCertificateOpenButton
-                              storagePath={row.attachment_path}
-                              label="Open PDF"
-                              className="h-7 text-[9px] px-2"
-                            />
-                          ) : (
-                            <span className="text-slate-400">{TRAINING_HUB_NO_PDF_COPY}</span>
-                          )}
-                        </td>
+              <div className="rounded-lg border border-border bg-card">
+                <HorizontalScroll label="Training programs">
+                  <table className="w-full min-w-[820px] text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Staff</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Program</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Completed</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Expires</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Hours</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Delivery</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">PDF</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {completionRows.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
+                        >
+                          <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
+                            {formatTrainingHubFacilityName(row.facilities?.name)}
+                          </td>
+                          <td className="px-[13px] py-2 text-[13px]">
+                            {formatTrainingHubStaffName(row.staff)}
+                          </td>
+                          <td className="px-[13px] py-2 text-[13px]">
+                            <span className="font-medium">
+                              {formatTrainingHubProgramName(row.training_programs?.name)}
+                            </span>
+                            {row.training_programs?.code ? (
+                              <span className="ml-1 text-[12px] text-muted-foreground">
+                                ({row.training_programs.code})
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
+                            {formatTrainingHubDate(row.completed_at)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
+                            {formatTrainingHubDate(row.expires_at)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono tabular-nums">
+                            {formatTrainingHubHours(row.hours_completed)}
+                          </td>
+                          <td className="px-[13px] py-2 capitalize text-muted-foreground">
+                            {formatStatus(row.delivery_method)}
+                          </td>
+                          <td className="px-[13px] py-2">
+                            {row.attachment_path ? (
+                              <CompetencyCertificateOpenButton
+                                storagePath={row.attachment_path}
+                                label="Open PDF"
+                                className="h-7 text-[9px] px-2"
+                              />
+                            ) : (
+                              <span className="text-muted-foreground">{TRAINING_HUB_NO_PDF_COPY}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </HorizontalScroll>
               </div>
             )}
           </div>
@@ -938,55 +920,57 @@ export default function AdminTrainingHubPage() {
             ) : attestationRows.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No attestations yet</p>
-                <p className="mt-1 text-sm opacity-80">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Staff attestation records will appear here once signed.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-border bg-card">
-                <table className="w-full min-w-[900px] text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Staff</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Type</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Signed</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Effective</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Expires</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Signer</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attestationRows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
-                      >
-                        <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
-                          {formatTrainingHubFacilityName(row.facilities?.name)}
-                        </td>
-                        <td className="px-[13px] py-2 text-[13px]">
-                          {formatTrainingHubStaffName(row.staff)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[10px] uppercase tracking-wider">
-                          {enumLabel(row.attestation_type)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {formatTrainingHubDate(row.signed_at)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {formatTrainingHubDate(row.effective_date)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {formatTrainingHubDate(row.expires_at)}
-                        </td>
-                        <td className="px-[13px] py-2 text-[13px]">
-                          {formatTrainingHubSignerName(row.signer_name)}
-                        </td>
+              <div className="rounded-xl border border-border bg-card">
+                <HorizontalScroll label="Training completions">
+                  <table className="w-full min-w-[900px] text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Staff</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Type</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Signed</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Effective</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Expires</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Signer</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {attestationRows.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
+                        >
+                          <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
+                            {formatTrainingHubFacilityName(row.facilities?.name)}
+                          </td>
+                          <td className="px-[13px] py-2 text-[13px]">
+                            {formatTrainingHubStaffName(row.staff)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[10px] uppercase tracking-wider">
+                            {enumLabel(row.attestation_type)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
+                            {formatTrainingHubDate(row.signed_at)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
+                            {formatTrainingHubDate(row.effective_date)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
+                            {formatTrainingHubDate(row.expires_at)}
+                          </td>
+                          <td className="px-[13px] py-2 text-[13px]">
+                            {formatTrainingHubSignerName(row.signer_name)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </HorizontalScroll>
               </div>
             )}
           </div>
@@ -1003,26 +987,15 @@ export default function AdminTrainingHubPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                {orgWideMode ? (
-                  <Button
-                    type="button"
-                    disabled
-                    className="shrink-0 font-mono uppercase tracking-wider text-[10px] opacity-70"
-                    title="Select a single facility in the header to record a new in-service session."
-                  >
-                    + New in-service session
-                  </Button>
-                ) : (
-                  <Link
-                    href="/admin/training/inservice/new"
-                    className={cn(
-                      buttonVariants({ size: "default" }),
-                      "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
-                    )}
-                  >
-                    + New in-service session
-                  </Link>
-                )}
+                <Link
+                  href="/admin/training/inservice/new"
+                  className={cn(
+                    buttonVariants({ size: "default" }),
+                    "shrink-0 font-mono text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none",
+                  )}
+                >
+                  + New in-service session
+                </Link>
                 <Button
                   type="button"
                   variant="outline"
@@ -1044,61 +1017,62 @@ export default function AdminTrainingHubPage() {
             ) : inserviceRows.length === 0 ? (
               <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
                 <p className="font-medium text-foreground">No in-service sessions yet</p>
-                <p className="mt-1 text-sm opacity-80">
-                  Select a facility and use <span className="font-mono">+ New in-service session</span> to log
-                  attendance.
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Use <span className="font-mono">+ New in-service session</span> to log attendance.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-border bg-card">
-                <table className="w-full min-w-[760px] text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Date</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Topic</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Trainer</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Hours</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Program</th>
-                      <th className="px-[13px] py-2 text-[10px] font-semibold">Attendees</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inserviceRows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
-                      >
-                        <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
-                          {formatTrainingHubFacilityName(row.facilities?.name)}
-                        </td>
-                        <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
-                          {formatTrainingHubDate(row.session_date)}
-                        </td>
-                        <td className="px-[13px] py-2 max-w-[200px] truncate text-[13px]" title={row.topic}>
-                          {row.topic}
-                        </td>
-                        <td className="px-[13px] py-2 text-[13px]">{row.trainer_name}</td>
-                        <td className="px-[13px] py-2 font-mono tabular-nums">
-                          {formatTrainingHubHours(row.hours)}
-                        </td>
-                        <td className="px-[13px] py-2 text-[13px]">
-                          <span
-                            className={cn(
-                              "font-medium",
-                              !row.training_programs?.name?.trim() && "text-muted-foreground",
-                            )}
-                          >
-                            {formatTrainingHubProgramName(row.training_programs?.name)}
-                          </span>
-                        </td>
-                        <td className="px-[13px] py-2 font-mono tabular-nums">
-                          {(row.inservice_log_attendees ?? []).length}
-                        </td>
+              <div className="rounded-xl border border-border bg-card">
+                <HorizontalScroll label="In-service sessions">
+                  <table className="w-full min-w-[760px] text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border uppercase tracking-wider text-muted-foreground">
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Facility</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Date</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Topic</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Trainer</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Hours</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Program</th>
+                        <th className="px-[13px] py-2 text-[10px] font-semibold">Attendees</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {inserviceRows.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-b border-border text-foreground last:border-0 hover:bg-muted/40 transition-all duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)]"
+                        >
+                          <td className="px-[13px] py-2 font-mono text-[10px] text-primary">
+                            {formatTrainingHubFacilityName(row.facilities?.name)}
+                          </td>
+                          <td className="px-[13px] py-2 font-mono text-[12px] tabular-nums">
+                            {formatTrainingHubDate(row.session_date)}
+                          </td>
+                          <td className="px-[13px] py-2 max-w-[200px] truncate text-[13px]" title={row.topic}>
+                            {row.topic}
+                          </td>
+                          <td className="px-[13px] py-2 text-[13px]">{row.trainer_name}</td>
+                          <td className="px-[13px] py-2 font-mono tabular-nums">
+                            {formatTrainingHubHours(row.hours)}
+                          </td>
+                          <td className="px-[13px] py-2 text-[13px]">
+                            <span
+                              className={cn(
+                                "font-medium",
+                                !row.training_programs?.name?.trim() && "text-muted-foreground",
+                              )}
+                            >
+                              {formatTrainingHubProgramName(row.training_programs?.name)}
+                            </span>
+                          </td>
+                          <td className="px-[13px] py-2 font-mono tabular-nums">
+                            {(row.inservice_log_attendees ?? []).length}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </HorizontalScroll>
               </div>
             )}
           </div>
@@ -1106,9 +1080,7 @@ export default function AdminTrainingHubPage() {
         )}
 
       {!facilityReady && (
-        <p className="rounded-lg border border-amber-200/70 bg-amber-50/60 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
-          Facility selection is invalid. Choose a facility or &quot;All facilities&quot; in the header.
-        </p>
+        <FacilityGateNotice reason="The saved facility choice is no longer one of yours. Open one of your facilities below, or switch the header to All facilities for the organization-wide view." />
       )}
 
       {error && (
@@ -1136,7 +1108,7 @@ export default function AdminTrainingHubPage() {
                   {attentionRows.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground bg-card rounded-xl border border-border">
                       <p className="font-medium text-foreground">No open demonstrations</p>
-                      <p className="text-sm opacity-80 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Nothing in draft, submitted, or failed status in the loaded batch (last 50 records
                         {orgWideMode ? " across accessible facilities" : " for this facility"}).
                       </p>
@@ -1241,7 +1213,7 @@ export default function AdminTrainingHubPage() {
 
                   {recentPassedRows.length > 0 && (
                     <MotionList className="mt-8 space-y-3 opacity-60 hover:opacity-100 transition-opacity">
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                         Recently passed
                       </h4>
                       {recentPassedRows.map((row) => {

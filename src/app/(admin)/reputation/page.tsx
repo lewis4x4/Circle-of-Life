@@ -9,6 +9,7 @@ import { Star } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { formatMetric } from "@/lib/metrics/metric-state";
@@ -348,7 +349,7 @@ export default function AdminReputationHubPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -408,8 +409,11 @@ export default function AdminReputationHubPage() {
             </div>
         </header>
 
-        <KineticGrid className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
+        {!facilityReady ? (
+          <FacilityGateNotice reason="Review listings, drafts and posted replies are connected per building." />
+        ) : (
+        <KineticGrid className="grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6" staggerMs={75}>
+          <div className="h-[112px] sm:h-[160px]">
             <V2Card hoverColor="indigo" className="border-primary/20 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)]">
               {trackedState.status === "value" ? (
                 <MonolithicWatermark value={trackedState.value} className="text-info/10 opacity-50" />
@@ -424,7 +428,7 @@ export default function AdminReputationHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
+          <div className="h-[112px] sm:h-[160px]">
             <V2Card
               hoverColor="red"
               className={hasDrafts ? "border-red-500/20 shadow-[inset_0_0_15px_rgba(239,68,68,0.05)]" : "border-border"}
@@ -459,7 +463,7 @@ export default function AdminReputationHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="h-[160px]">
+          <div className="h-[112px] sm:h-[160px]">
             <V2Card hoverColor="emerald" className="border-emerald-500/20 shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]">
               {postedState.status === "value" ? (
                 <MonolithicWatermark value={postedState.value} className="text-success/10 opacity-50" />
@@ -480,10 +484,10 @@ export default function AdminReputationHubPage() {
               </div>
             </V2Card>
           </div>
-          <div className="h-[180px]">
+          <div className="col-span-2 sm:col-span-1 sm:h-[180px]">
             <V2Card hoverColor="blue" className="p-5 lg:p-6">
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left sm:items-end sm:text-right">
-                 <p className="hidden max-w-md text-xs font-mono leading-relaxed text-muted-foreground sm:block">{formatReputationHubCardSubtitle(scopedFacilityName)}</p>
+                 <p className="max-w-md text-xs font-mono leading-relaxed text-muted-foreground">{formatReputationHubCardSubtitle(scopedFacilityName)}</p>
                  <div className="flex w-full gap-2 justify-start sm:justify-end">
                    <Link href="/admin/reputation/accounts/new" className={cn(buttonVariants({ size: "default" }), "font-mono text-[10px] tap-responsive whitespace-nowrap")} >
                      + Connect Listing
@@ -493,12 +497,7 @@ export default function AdminReputationHubPage() {
             </V2Card>
           </div>
         </KineticGrid>
-
-      {!facilityReady && (
-        <p className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
-          Select a facility to load reputation accounts and replies.
-        </p>
-      )}
+        )}
 
       {error && (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

@@ -145,7 +145,8 @@ describe("buildRentRoll", () => {
     expect(roll.rows).toHaveLength(1);
     const row = roll.rows[0];
     expect(row).toMatchObject({
-      residentName: "Baker, Jimmie",
+      residentName: "Jimmie Baker",
+      residentSheetName: "Baker, Jimmie",
       roomLabel: "7B",
       contractedCents: 300900,
       privateShareCents: 140900,
@@ -317,11 +318,11 @@ describe("buildRentRoll", () => {
       invoices: [],
     });
     const byName = Object.fromEntries(roll.rows.map((r) => [r.residentName, r.flags]));
-    expect(byName["Byrd, Jimmie"]).toContain("Moved in Sep 14");
-    expect(byName["Shepherd, Jimmie"]).toContain("Moved out Sep 11");
-    expect(byName["Safford, Jimmie"]).toContain("Deceased Sep 10");
-    expect(byName["Britch, Jimmie"]).toContain("At hospital");
-    expect(byName["Old, Jimmie"]).toBeUndefined();
+    expect(byName["Jimmie Byrd"]).toContain("Moved in Sep 14");
+    expect(byName["Jimmie Shepherd"]).toContain("Moved out Sep 11");
+    expect(byName["Jimmie Safford"]).toContain("Deceased Sep 10");
+    expect(byName["Jimmie Britch"]).toContain("At hospital");
+    expect(byName["Jimmie Old"]).toBeUndefined();
     expect(roll.rows.map((r) => r.roomLabel)).toEqual(["11", "12B", "14A", "108A"]);
   });
 
@@ -357,5 +358,22 @@ describe("rentRollToCsv", () => {
     );
     expect(lines[1]).toBe('"7B",2021-06-23,"Baker, Jimmie",3009.00,1409.00,1409.00,1600.00,0.00,1600.00,"UHC","","Bedrock ""Live Oak"""');
     expect(lines[2]).toBe(',,"Totals",3009.00,1409.00,1409.00,1600.00,0.00,1600.00,,,');
+  });
+});
+
+describe("rent roll counts both invoices of a Medicaid month (COL-678)", () => {
+  it("adds the Medicaid invoice and the resident share, and leaves voided invoices out", () => {
+    const roll = buildRentRoll({
+      period: { year: 2026, month: 10 },
+      residents: [resident({ id: "r" })],
+      payers: [],
+      payments: [],
+      invoices: [
+        invoice({ residentId: "r", periodStart: "2026-10-01", invoiceDate: "2026-10-01", payerType: "medicaid_oss", totalCents: 160000, balanceDueCents: 160000 }),
+        invoice({ residentId: "r", periodStart: "2026-10-01", invoiceDate: "2026-10-01", payerType: "private_pay", totalCents: 83700, balanceDueCents: 83700 }),
+        invoice({ residentId: "r", periodStart: "2026-10-01", invoiceDate: "2026-09-30", payerType: "private_pay", status: "void", totalCents: 999, balanceDueCents: 999 }),
+      ],
+    } as never);
+    expect(roll.rows[0].invoice).toEqual({ status: "draft", totalCents: 243700, balanceDueCents: 243700 });
   });
 });

@@ -10,7 +10,6 @@ import {
   fetchCarePlanReviewsDueFromSupabase,
   fetchClinicalDeskScope,
   fetchOverdueAssessmentsFromSupabase,
-  NO_FACILITY_SOURCE_NOTICE,
   type ClinicalDeskScope,
   type CarePlanReviewDueRow,
   type OverdueAssessmentRow,
@@ -18,6 +17,7 @@ import {
 import { clinicalDeskEmptyCopy, clinicalDeskQueueState } from "@/lib/assessments/overdue-assessments-display-copy";
 import { clinicalQueueCount, formatQueueChip } from "@/lib/clinical/clinical-queue-state";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { CarePlanDiffModal } from "@/components/care-plans/care-plan-diff-modal";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 // Types
 type AssessmentRow = OverdueAssessmentRow;
@@ -41,7 +42,6 @@ type AdminOverdueAssessmentsPageClientProps = {
   initialError: string | null;
   initialFacilityId: string | null;
   initialScope: ClinicalDeskScope | null;
-  initialSourceNotice: string | null;
 };
 
 export function AdminOverdueAssessmentsPageClient({
@@ -50,16 +50,17 @@ export function AdminOverdueAssessmentsPageClient({
   initialError,
   initialFacilityId,
   initialScope,
-  initialSourceNotice,
 }: AdminOverdueAssessmentsPageClientProps) {
   const { selectedFacilityId } = useFacilityStore();
+  // No cross-facility queue exists; under All facilities the desk is gated (COL-651).
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const skipNextLoadRef = useRef(initialError == null);
+  const beginLoad = useLatestLoad();
   const [assessments, setAssessments] = useState<AssessmentRow[]>(initialAssessments);
   const [carePlans, setCarePlans] = useState<CarePlanRow[]>(initialCarePlans);
   const [scope, setScope] = useState<ClinicalDeskScope | null>(initialScope);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
-  const [sourceNotice, setSourceNotice] = useState<string | null>(initialSourceNotice);
   const [diffCarePlanId, setDiffCarePlanId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -69,16 +70,15 @@ export function AdminOverdueAssessmentsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setIsLoading(true);
     setError(null);
-    setSourceNotice(null);
     try {
       if (!isValidFacilityIdForQuery(selectedFacilityId)) {
         setAssessments([]);
         setCarePlans([]);
         setScope(null);
-        setSourceNotice(NO_FACILITY_SOURCE_NOTICE);
         return;
       }
 
@@ -87,19 +87,21 @@ export function AdminOverdueAssessmentsPageClient({
         fetchCarePlanReviewsDueFromSupabase(selectedFacilityId),
         fetchClinicalDeskScope(selectedFacilityId),
       ]);
+      if (!isCurrent()) return;
 
       setAssessments(liveAssessments);
       setCarePlans(liveCarePlans);
       setScope(liveScope);
     } catch (err) {
+      if (!isCurrent()) return;
       setAssessments([]);
       setCarePlans([]);
       setScope(null);
       setError(err instanceof Error ? err.message : "Failed to load Clinical Desk");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();
@@ -168,6 +170,7 @@ export function AdminOverdueAssessmentsPageClient({
              Unified exception queue for Assessments and Care Plan drafts.
            </p>
          </div>
+         {facilityReady ? (
          <div className="flex flex-wrap gap-3">
            <div className="inline-flex items-center px-4 py-2 rounded-full border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 shadow-sm text-sm font-bold tracking-wide">
              <ClipboardCheck className="mr-2 h-4 w-4 text-rose-500" />
@@ -178,28 +181,26 @@ export function AdminOverdueAssessmentsPageClient({
              {plansDueChip}
            </div>
          </div>
+         ) : null}
       </div>
 
-      {sourceNotice ? (
-        <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 text-sm font-medium text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-          {sourceNotice}
-        </div>
-      ) : null}
-
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Assessments and care-plan reviews come due per building; the desk does not add them up across facilities." />
+      ) : (
       <div className="grid lg:grid-cols-12 gap-6 flex-1 min-h-[400px]">
         {/* Left Drawer: Overdue Assessments */}
         <div className="lg:col-span-4 flex flex-col h-full overflow-hidden">
           <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-slate-100/40 shadow-sm p-6 flex flex-col h-full">
-            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-4 pl-2">
               Action Required: Assessments
             </h3>
             <ScrollArea className="flex-1 -mx-2 px-2">
               {assessmentQueue !== "items" ? (
                 <div
                   data-queue-state={assessmentQueue}
-                  className="p-12 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
+                  className="p-12 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
                 >
-                  <ClipboardCheck className="w-12 h-12 text-slate-300 dark:text-zinc-600 mx-auto mb-3" />
+                  <ClipboardCheck className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">
                     {clinicalDeskEmptyCopy("assessments", assessmentQueue).title}
                   </p>
@@ -213,7 +214,7 @@ export function AdminOverdueAssessmentsPageClient({
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
-                              <UserSquare2 className="w-4 h-4 text-slate-500" />
+                              <UserSquare2 className="w-4 h-4 text-muted-foreground" />
                             </div>
                             <span className="font-semibold text-base text-slate-900 dark:text-slate-100 tracking-tight group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{a.residentName}</span>
                           </div>
@@ -244,7 +245,7 @@ export function AdminOverdueAssessmentsPageClient({
                                </span>
                              )}
                            </div>
-                           <span className="text-[11px] font-mono font-medium tracking-wide text-slate-500 dark:text-zinc-500">Due: {a.nextDueDate}</span>
+                           <span className="text-[11px] font-mono font-medium tracking-wide text-muted-foreground">Due: {a.nextDueDate}</span>
                         </div>
                       </div>
                     </MotionItem>
@@ -258,7 +259,7 @@ export function AdminOverdueAssessmentsPageClient({
         {/* Right Pane: Care Plan Drafts */}
         <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
           <div className="border-slate-200/60 dark:border-white/5 rounded-lg bg-card dark:bg-white/[0.015] shadow-sm p-6 flex flex-col h-full">
-            <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-4 pl-2 flex items-center gap-2">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-4 pl-2 flex items-center gap-2">
               <></>
               Generated Care Plan Drafts
             </h3>
@@ -266,9 +267,9 @@ export function AdminOverdueAssessmentsPageClient({
               {carePlanQueue !== "items" ? (
                 <div
                   data-queue-state={carePlanQueue}
-                  className="p-20 text-center text-slate-500 dark:text-zinc-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
+                  className="p-20 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 mx-2"
                 >
-                  <CalendarClock className="w-16 h-16 text-slate-300 dark:text-zinc-600 mx-auto mb-4" />
+                  <CalendarClock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <p className="font-semibold text-xl text-slate-900 dark:text-slate-100">
                     {clinicalDeskEmptyCopy("carePlans", carePlanQueue).title}
                   </p>
@@ -284,7 +285,7 @@ export function AdminOverdueAssessmentsPageClient({
                             <span className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">
                               {p.residentName}
                             </span>
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">Due: {p.reviewDueDate}</span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Due: {p.reviewDueDate}</span>
                           </div>
                           <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
                             Care Plan v{p.version} Update (Triggered by MDS)
@@ -313,6 +314,7 @@ export function AdminOverdueAssessmentsPageClient({
         </div>
 
       </div>
+      )}
 
       {/* Care Plan Diff Modal */}
       <CarePlanDiffModal

@@ -1,11 +1,18 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
-import { expect, it, vi } from "vitest";
+import { expect, it, vi, beforeAll } from "vitest";
 import { ExecutiveOverviewPageClient } from "./ExecutiveOverviewPageClient";
 import type { ExecutiveOverviewData } from "@/lib/executive/load-executive-overview";
 import { EMPTY_PRESENCE_CENSUS } from "@/lib/executive/presence-census";
 
-const mocks = vi.hoisted(() => ({ organizationId: "org-old", load: vi.fn() }));
+const mocks = vi.hoisted(() => ({ organizationId: "org-old", load: vi.fn(), client: {} as Record<string, unknown> }));
+// The overview's below-the-fold sections are next/dynamic chunks (COL-703).
+vi.mock("next/dynamic", async () => (await import("@/test-utils/sync-next-dynamic")).nextDynamicMock);
+beforeAll(async () => {
+  const { dynamicModulesReady } = await import("@/test-utils/sync-next-dynamic");
+  await dynamicModulesReady();
+});
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/admin/executive",
@@ -13,7 +20,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/contexts/haven-auth-context", () => ({
   useHavenAuth: () => ({ organizationId: mocks.organizationId, appRole: "owner", loading: false }),
 }));
-vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: () => mocks.client }));
 vi.mock("@/lib/executive/load-executive-overview", () => ({ loadExecutiveOverview: mocks.load }));
 vi.mock("@/app/(admin)/executive/executive-hub-nav", () => ({ ExecutiveHubNav: () => null }));
 
@@ -48,4 +55,26 @@ it("discards an old organization's result after a newer request completes", asyn
   await act(async () => finishOld({ ...data, facilities: [{ id: "old", name: "Stale facility", metrics: {} }] }));
   expect(screen.getByText("Current facility")).toBeInTheDocument();
   expect(screen.queryByText("Stale facility")).not.toBeInTheDocument();
+});
+
+it("starts the hand-off panel reads with the overview, not after it (COL-674)", async () => {
+  const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+  mocks.client = { rpc };
+  mocks.load.mockImplementationOnce(() => new Promise(() => undefined));
+  render(
+    <ExecutiveOverviewPageClient
+      initialMetrics={{}} initialAlerts={[]} initialFacilities={[]}
+      initialAssuranceHeatMap={[]} initialAssuranceTrends={[]}
+      initialPresenceCensus={EMPTY_PRESENCE_CENSUS} initialOccupancyContext={null}
+      initialSnapshot={{ kind: "never_recorded" }} initialResidentDayWindow={null}
+      initialMetricChanges={{}} initialMetricDates={{}} initialHasServerData={false}
+    />,
+  );
+  await act(async () => { await Promise.resolve(); });
+  expect(rpc.mock.calls.map(([name]) => name).sort()).toEqual([
+    "home_census_notices_for_executive",
+    "home_collection_escalations_for_executive",
+    "home_escalations_for_executive",
+  ]);
+  mocks.client = {};
 });

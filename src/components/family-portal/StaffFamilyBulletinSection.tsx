@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -38,13 +39,7 @@ export type StaffFamilyBulletinSectionProps = {
 };
 
 function formatLastPostedAt(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(iso));
+  return formatDisplayDateTime(iso);
 }
 
 export function StaffFamilyBulletinSection({
@@ -217,7 +212,7 @@ export function StaffFamilyBulletinSection({
             )}
             {!residentsLoading && residents.length === 0 && !residentsError ? (
               <p className="text-xs text-muted-foreground">
-                No active residents in the selected facility scope.
+                No active residents at this facility.
               </p>
             ) : null}
           </div>

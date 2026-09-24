@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronLeft, Clock, Zap } from "lucide-react";
@@ -116,7 +117,7 @@ export default function OperationsPagerPage() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div className="space-y-2">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <Zap className="h-4 w-4" />
           Pager View
         </div>
@@ -204,7 +205,7 @@ export default function OperationsPagerPage() {
                 <CardDescription>
                   {task.facility_name}
                   {task.assigned_to_name ? ` · ${task.assigned_to_name}` : ""}
-                  {task.due_at ? ` · due ${new Date(task.due_at).toLocaleString()}` : " · schedule needs confirmation"}
+                  {task.due_at ? ` · due ${formatDisplayDateTime(task.due_at)}` : " · schedule needs confirmation"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">

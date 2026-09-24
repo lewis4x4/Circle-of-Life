@@ -13,6 +13,8 @@ import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
+import { formatMetric, metricFromRead } from "@/lib/metrics/metric-state";
+import { requireHeadCount } from "@/lib/metrics/require-head-count";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
 import { V2Card } from "@/components/ui/v2-card";
@@ -58,7 +60,7 @@ export default function AdminMeetingsHubPage() {
 
   const [meetings, setMeetings] = useState<MeetingRow[]>([]);
   const [templates, setTemplates] = useState<MeetingTemplateRow[]>([]);
-  const [openActionItems, setOpenActionItems] = useState(0);
+  const [openActionItems, setOpenActionItems] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export default function AdminMeetingsHubPage() {
     if (!facilityReady) {
       setMeetings([]);
       setTemplates([]);
-      setOpenActionItems(0);
+      setOpenActionItems(null);
       setIsLoading(false);
       return;
     }
@@ -125,11 +127,12 @@ export default function AdminMeetingsHubPage() {
           default_agenda: asStringArray(t.default_agenda),
         })),
       );
-      setOpenActionItems(actionsRes.count ?? 0);
+      setOpenActionItems(requireHeadCount(actionsRes, "Open action items"));
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load meetings.");
       setMeetings([]);
       setTemplates([]);
+      setOpenActionItems(null);
     } finally {
       setIsLoading(false);
     }
@@ -154,6 +157,10 @@ export default function AdminMeetingsHubPage() {
       (m) => m.status === "completed" && new Date(m.scheduled_at).getTime() >= monthStart,
     ).length;
   }, [meetings]);
+
+  // Tiles read "Loading…" / "Unavailable" until the read succeeds, never 0 (COL-649).
+  const meetingTileValue = (value: number | null): string =>
+    formatMetric(metricFromRead({ loading: isLoading, error: loadError, value }));
 
   const createTemplate = useCallback(async () => {
     const name = templateName.trim();
@@ -189,7 +196,7 @@ export default function AdminMeetingsHubPage() {
   }, [supabase, facilityReady, selectedFacilityId, templateName, templateCadence, templateAgenda, load]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -232,9 +239,9 @@ export default function AdminMeetingsHubPage() {
         {facilityReady ? (
           <KineticGrid className="grid-cols-1 sm:grid-cols-3 gap-4 mb-2" staggerMs={60}>
             {[
-              { label: "Upcoming meetings", value: upcoming, icon: CalendarClock },
-              { label: "Completed this month", value: completedThisMonth, icon: NotebookPen },
-              { label: "Open action items", value: openActionItems, icon: ClipboardList },
+              { label: "Upcoming meetings", value: meetingTileValue(upcoming), icon: CalendarClock },
+              { label: "Completed this month", value: meetingTileValue(completedThisMonth), icon: NotebookPen },
+              { label: "Open action items", value: meetingTileValue(openActionItems), icon: ClipboardList },
             ].map((card) => {
               const Icon = card.icon;
               return (

@@ -4,12 +4,14 @@ import { enumLabel } from "@/lib/display/enum-label";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { aggregateCertStatus, type CertificationStatus } from "@/lib/staff/certification-aggregate";
 import { formatStaffRosterNextShift } from "@/lib/staff/staff-roster-display-copy";
 import type { Database } from "@/types/database";
 
+export { aggregateCertStatus, type CertificationStatus };
+
 export type StaffRole = "nurse" | "caregiver" | "med_tech" | "admin";
 export type StaffStatus = "active" | "on_leave" | "inactive";
-export type CertificationStatus = "current" | "expiring_soon" | "expired" | "not_verified";
 
 export type StaffRow = {
   id: string;
@@ -21,7 +23,19 @@ export type StaffRow = {
   certifications: CertificationStatus;
   nextShift: string;
   photoUrl?: string | null;
+  /** The building this employment record belongs to; one person can hold a record at several. */
+  facilityId?: string;
+  /** Linked login, when the record has one — the only identity shared across a person's records. */
+  userId?: string | null;
 };
+
+/**
+ * People, not employment records: records linked to the same login are one
+ * person; an unlinked record counts on its own (never matched by name or email).
+ */
+export function countDistinctStaffPeople(rows: Pick<StaffRow, "id" | "userId">[]): number {
+  return new Set(rows.map((row) => (row.userId ? `user:${row.userId}` : `staff:${row.id}`))).size;
+}
 
 type SupabaseStaffRow = {
   id: string;
@@ -236,6 +250,8 @@ export async function fetchStaffFromSupabase(
       certifications: certState,
       nextShift,
       photoUrl: s.photo_url,
+      facilityId: s.facility_id,
+      userId: s.user_id,
     };
   });
 }
@@ -283,26 +299,4 @@ export function mapEmploymentToUiStatus(employment: string): StaffStatus {
   if (employment === "on_leave") return "on_leave";
   if (employment === "terminated" || employment === "suspended") return "inactive";
   return "active";
-}
-
-export function aggregateCertStatus(certs: SupabaseCertRow[]): CertificationStatus {
-  if (certs.length === 0) return "not_verified";
-  const now = new Date();
-  const soon = new Date();
-  soon.setDate(soon.getDate() + 60);
-  let worst: CertificationStatus = "current";
-  for (const c of certs) {
-    if (c.status === "expired" || c.status === "revoked") {
-      return "expired";
-    }
-    if (c.expiration_date) {
-      const exp = new Date(`${c.expiration_date}T23:59:59`);
-      if (exp < now) return "expired";
-      if (exp <= soon) worst = "expiring_soon";
-    }
-    if (c.status === "pending_renewal") {
-      worst = "expiring_soon";
-    }
-  }
-  return worst;
 }

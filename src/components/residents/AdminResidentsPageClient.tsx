@@ -664,6 +664,7 @@ export function AdminResidentsPageClient({
   const renderRow = (resident: ResidentRow) => (
     <TableRow
       key={resident.id}
+      role="row"
       className="group relative rounded-none border-0 border-b border-border px-2 last:border-b-0 hover:translate-y-0 focus-within:bg-muted/40"
     >
       <div role="cell" className="relative z-10 flex w-10 shrink-0 items-center justify-center">
@@ -828,7 +829,7 @@ export function AdminResidentsPageClient({
         onSearchChange={setSearch}
         trailingSlot={
           <div className="flex items-center gap-1.5">
-            <span className="hidden text-[12px] text-muted-foreground sm:inline">Group by</span>
+            <span className="shrink-0 text-[12px] text-muted-foreground">Group by</span>
             <Select
               value={groupBy}
               onValueChange={(v) =>
@@ -970,7 +971,7 @@ export function AdminResidentsPageClient({
         >
           <div role="table" aria-label="Resident roster" aria-rowcount={filteredRows.length}>
           <div role="rowgroup">
-          <TableRowHeader className="hidden px-2 text-[11px] font-semibold md:flex normal-case tracking-tight">
+          <TableRowHeader role="row" className="hidden px-2 text-[11px] font-semibold md:flex normal-case tracking-tight">
             <div role="columnheader" className="flex w-10 shrink-0 items-center justify-center">
               <input
                 ref={headerCheckboxRef}

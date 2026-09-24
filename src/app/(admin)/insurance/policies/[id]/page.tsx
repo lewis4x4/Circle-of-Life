@@ -29,6 +29,7 @@ import {
 import { formatUsdFromCents } from "@/lib/insurance/format-money";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Policy = Database["public"]["Tables"]["insurance_policies"]["Row"];
 type Renewal = Database["public"]["Tables"]["insurance_renewals"]["Row"];
@@ -257,26 +258,28 @@ export default function InsurancePolicyDetailPage() {
           {renewals.length === 0 ? (
             <p className="text-sm text-muted-foreground">No renewals recorded.</p>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Target effective (ET)</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 pr-4 font-medium">Quoted</th>
-                  <th className="py-2 font-medium">Bound</th>
-                </tr>
-              </thead>
-              <tbody>
-                {renewals.map((r) => (
-                  <tr key={r.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4">{formatInsuranceRenewalTargetDate(r.target_effective_date)}</td>
-                    <td className="py-2 pr-4">{enumLabel(r.status)}</td>
-                    <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.quoted_premium_cents)}</td>
-                    <td className="py-2 tabular-nums">{formatUsdFromCents(r.bound_premium_cents)}</td>
+            <HorizontalScroll label="Policy renewals">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-4 font-medium">Target effective (ET)</th>
+                    <th className="py-2 pr-4 font-medium">Status</th>
+                    <th className="py-2 pr-4 font-medium">Quoted</th>
+                    <th className="py-2 font-medium">Bound</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {renewals.map((r) => (
+                    <tr key={r.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4">{formatInsuranceRenewalTargetDate(r.target_effective_date)}</td>
+                      <td className="py-2 pr-4">{enumLabel(r.status)}</td>
+                      <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(r.quoted_premium_cents)}</td>
+                      <td className="py-2 tabular-nums">{formatUsdFromCents(r.bound_premium_cents)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           )}
         </div>
       </RecordDetailSection>
@@ -289,27 +292,29 @@ export default function InsurancePolicyDetailPage() {
           {allocs.length === 0 ? (
             <p className="text-sm text-muted-foreground">No allocations.</p>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Period (ET)</th>
-                  <th className="py-2 pr-4 font-medium">Method</th>
-                  <th className="py-2 font-medium">Allocated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allocs.map((a) => (
-                  <tr key={a.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4">
-                      {formatInsurancePolicyDetailPeriodDate(a.period_start)} –{" "}
-                      {formatInsurancePolicyDetailPeriodDate(a.period_end)}
-                    </td>
-                    <td className="py-2 pr-4">{enumLabel(a.allocation_method)}</td>
-                    <td className="py-2 tabular-nums">{formatUsdFromCents(a.allocated_premium_cents)}</td>
+            <HorizontalScroll label="Premium allocations">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-4 font-medium">Period (ET)</th>
+                    <th className="py-2 pr-4 font-medium">Method</th>
+                    <th className="py-2 font-medium">Allocated</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {allocs.map((a) => (
+                    <tr key={a.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4">
+                        {formatInsurancePolicyDetailPeriodDate(a.period_start)} –{" "}
+                        {formatInsurancePolicyDetailPeriodDate(a.period_end)}
+                      </td>
+                      <td className="py-2 pr-4">{enumLabel(a.allocation_method)}</td>
+                      <td className="py-2 tabular-nums">{formatUsdFromCents(a.allocated_premium_cents)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           )}
         </div>
       </RecordDetailSection>
@@ -322,32 +327,34 @@ export default function InsurancePolicyDetailPage() {
           {claims.length === 0 ? (
             <p className="text-sm text-muted-foreground">No linked claims.</p>
           ) : (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="py-2 pr-4 font-medium">Loss date (ET)</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 pr-4 font-medium">Reserve</th>
-                  <th className="py-2 pr-4 font-medium">Paid</th>
-                  <th className="py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {claims.map((c) => (
-                  <tr key={c.id} className="border-b border-border/50">
-                    <td className="py-2 pr-4">{formatInsuranceClaimDateOfLoss(c.date_of_loss)}</td>
-                    <td className="py-2 pr-4">{enumLabel(c.status)}</td>
-                    <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.reserve_cents)}</td>
-                    <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.paid_cents)}</td>
-                    <td className="py-2">
-                      <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/insurance/claims/${c.id}`}>
-                        Open
-                      </Link>
-                    </td>
+            <HorizontalScroll label="Linked claims">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-4 font-medium">Loss date (ET)</th>
+                    <th className="py-2 pr-4 font-medium">Status</th>
+                    <th className="py-2 pr-4 font-medium">Reserve</th>
+                    <th className="py-2 pr-4 font-medium">Paid</th>
+                    <th className="py-2" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {claims.map((c) => (
+                    <tr key={c.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4">{formatInsuranceClaimDateOfLoss(c.date_of_loss)}</td>
+                      <td className="py-2 pr-4">{enumLabel(c.status)}</td>
+                      <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.reserve_cents)}</td>
+                      <td className="py-2 pr-4 tabular-nums">{formatUsdFromCents(c.paid_cents)}</td>
+                      <td className="py-2">
+                        <Link className="text-primary underline-offset-4 hover:underline" href={`/admin/insurance/claims/${c.id}`}>
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           )}
         </div>
       </RecordDetailSection>

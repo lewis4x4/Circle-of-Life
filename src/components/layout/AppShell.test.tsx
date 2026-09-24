@@ -176,7 +176,7 @@ describe("AppShell all-sections jump list", () => {
     const jumpList = screen.getByTestId("all-sections-jump-list");
     expect(within(jumpList).getByPlaceholderText("Search all sections…")).toHaveFocus();
     expect(within(jumpList).getByText("Executive")).toBeInTheDocument();
-    expect(within(jumpList).getByText("Family notes")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Family Connections")).toBeInTheDocument();
     expect(within(jumpList).getByText("Live rounding")).toBeInTheDocument();
     expect(within(jumpList).getByText("Snack pass")).toBeInTheDocument();
     expect(within(jumpList).getByText("Ask knowledge base")).toBeInTheDocument();
@@ -186,8 +186,9 @@ describe("AppShell all-sections jump list", () => {
     expect(within(jumpList).queryByText("Medications")).not.toBeInTheDocument();
     expect(within(jumpList).queryByText("Medication errors")).not.toBeInTheDocument();
     expect(within(jumpList).queryByText("Dietary & Nutrition")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Finance")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Insurance")).not.toBeInTheDocument();
+    // Hold lifted for owners and admins (Brian, 2026-09-23).
+    expect(within(jumpList).getByText("Finance")).toBeInTheDocument();
+    expect(within(jumpList).getByText("Insurance")).toBeInTheDocument();
     expect(within(jumpList).getByText("Vendors & AP")).toBeInTheDocument();
     expect(screen.getByText("Executive page content")).toBeInTheDocument();
   });
@@ -202,19 +203,18 @@ describe("AppShell all-sections jump list", () => {
     expect(executiveLinks.every((link) => link.getAttribute("aria-current") !== "page")).toBe(true);
   });
 
-  it("puts the phone pillar strip in a sideways scroller and scrolls the current pillar into view (COL-657)", () => {
+  it("lets the phone pillar strip scroll with a faded trailing edge and scrolls the current pillar into view (COL-657)", () => {
     const scrollIntoView = vi.fn();
     const original = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = scrollIntoView;
     try {
       pathMock.pathname = "/admin/staff";
       const { container } = renderAppShell();
-      const strip = [...container.querySelectorAll('nav[aria-label="Primary"]')]
-        .find((nav) => nav.querySelector('[data-slot="horizontal-scroll-viewport"]'));
-      expect(strip).toBeDefined();
-      const viewport = strip!.querySelector('[data-slot="horizontal-scroll-viewport"]')!;
-      expect(viewport.className).toContain("overflow-x-auto");
-      const current = viewport.querySelector('a[aria-current="page"]');
+      const viewport = container.querySelector('nav[aria-label="Primary"] [data-slot="pillar-strip-viewport"]');
+      expect(viewport).not.toBeNull();
+      expect(viewport!.className).toContain("overflow-x-auto");
+      expect(viewport!.className).toContain("mask-image");
+      const current = viewport!.querySelector('a[aria-current="page"]');
       expect(current).toHaveTextContent("Workforce");
       expect(scrollIntoView.mock.contexts).toContain(current);
     } finally {
@@ -252,7 +252,7 @@ describe("AppShell all-sections jump list", () => {
 
     expect(within(jumpList).getByText("Billing & AR")).toBeInTheDocument();
     expect(within(jumpList).queryByText("Executive")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Family notes")).not.toBeInTheDocument();
+    expect(within(jumpList).queryByText("Family Connections")).not.toBeInTheDocument();
   });
 
   it("still surfaces non-common destinations when the operator searches", async () => {
@@ -283,8 +283,7 @@ describe("AppShell all-sections jump list", () => {
 
     await user.clear(search);
     await user.type(search, "finance");
-    expect(within(jumpList).queryByText("Finance")).not.toBeInTheDocument();
-    expect(within(jumpList).queryByText("Insurance")).not.toBeInTheDocument();
+    expect(within(jumpList).getByText("Finance")).toBeInTheDocument();
 
     await user.clear(search);
     await user.type(search, "vendor");
@@ -398,12 +397,20 @@ describe("AppShell nav anchoring (COL-655)", () => {
     expect(meetings.rail).toEqual(["Meetings"]);
   });
 
-  it("shows a staff-launch-held Finance item in the rail while the operator is inside Finance", () => {
+  it("shows Finance and Insurance in the Business rail for owners and admins (hold lifted 2026-09-23)", () => {
     const ledger = litLinks("/admin/finance/ledger", "facility_admin");
-    expect(ledger.pillars).toEqual(["Business"]);
+    expect(ledger.pillars).toContain("Business");
+    expect(ledger.pillars).not.toContain("Command");
     expect(ledger.rail).toEqual(["Finance"]);
-    // Off Finance pages the hold still keeps it off the rail.
-    expect(litLinks("/admin/vendors", "facility_admin").railItems).not.toContain("Finance");
+    const vendors = litLinks("/admin/vendors", "owner");
+    expect(vendors.railItems).toEqual(expect.arrayContaining(["Finance", "Insurance", "Vendors & AP"]));
+  });
+
+  it("shows a still-held item in the rail only while the operator is on it", () => {
+    const medRec = litLinks("/admin/discharge", "owner");
+    expect(medRec.pillars).toEqual(["Pipeline"]);
+    expect(medRec.rail).toEqual(["Medication reconciliation"]);
+    expect(litLinks("/admin/referrals", "owner").railItems).not.toContain("Medication reconciliation");
   });
 
   it("gives account routes no pillar and no rail", () => {

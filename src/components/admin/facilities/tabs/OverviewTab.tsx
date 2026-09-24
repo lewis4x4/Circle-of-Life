@@ -24,6 +24,7 @@ import { FacilityDataHealthPanel } from "@/components/facility-checks/FacilityDa
 import { useFacilityDataHealth } from "@/hooks/useFacilityDataHealth";
 import { useFacilityThresholds } from "@/hooks/useFacilityThresholds";
 import { facilityRecentAlertsView } from "@/lib/admin/facilities/facility-recent-alerts";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 interface OverviewTabProps {
   facilityId: string;
@@ -204,7 +205,11 @@ export function OverviewTab({
             <div className="flex justify-between text-sm">
               <span className="text-[13px] text-muted-foreground">Occupancy</span>
               <span className="font-medium tabular-nums text-foreground">
-                <span className={cn(portfolioOccupancyKpiTextClass(occupancyPctValue ?? 0))}>
+                <span
+                  className={cn(
+                    occupancyPctValue === null ? "text-muted-foreground" : portfolioOccupancyKpiTextClass(occupancyPctValue),
+                  )}
+                >
                   {occupancyDisplay}
                 </span>
                 <span className="text-muted-foreground"> · </span>
@@ -389,83 +394,85 @@ export function OverviewTab({
               ))}
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Room</th>
-                    <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Bed</th>
-                    <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Status</th>
-                    <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Availability type</th>
-                    <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Blocked</th>
-                    <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBeds.map((bed) => (
-                    <tr key={bed.id} className="border-b border-border/50 align-top">
-                      <td className="px-3 py-3 tabular-nums text-foreground">{bed.room_number}</td>
-                      <td className="px-3 py-3 tabular-nums text-foreground">{bed.bed_label}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{getBedStatusLabel(bed)}</td>
-                      <td className="px-3 py-3">
-                        <select
-                          className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
-                          value={bed.standup_availability_class ?? ""}
-                          disabled={!canEdit || bedsSaving}
-                          onChange={(event) =>
-                            void updateBed(bed.id, {
-                              standup_availability_class:
-                                event.target.value === ""
-                                  ? null
-                                  : (event.target.value as "private" | "sp_female" | "sp_male" | "sp_flexible"),
-                              is_temporarily_blocked: bed.is_temporarily_blocked,
-                              blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
-                            })
-                          }
-                        >
-                          <option value="">Needs assignment</option>
-                          <option value="private">{STANDUP_CLASS_LABELS.private}</option>
-                          <option value="sp_female">{STANDUP_CLASS_LABELS.sp_female}</option>
-                          <option value="sp_male">{STANDUP_CLASS_LABELS.sp_male}</option>
-                          <option value="sp_flexible">{STANDUP_CLASS_LABELS.sp_flexible}</option>
-                        </select>
-                      </td>
-                      <td className="px-3 py-3">
-                        <label className="inline-flex items-center gap-2 text-sm text-foreground">
-                          <input
-                            type="checkbox"
-                            className="rounded border-border"
-                            checked={bed.is_temporarily_blocked}
+            <div>
+              <HorizontalScroll label="Facility overview">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Room</th>
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Bed</th>
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Status</th>
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Availability type</th>
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Blocked</th>
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBeds.map((bed) => (
+                      <tr key={bed.id} className="border-b border-border/50 align-top">
+                        <td className="px-3 py-3 tabular-nums text-foreground">{bed.room_number}</td>
+                        <td className="px-3 py-3 tabular-nums text-foreground">{bed.bed_label}</td>
+                        <td className="px-3 py-3 text-muted-foreground">{getBedStatusLabel(bed)}</td>
+                        <td className="px-3 py-3">
+                          <select
+                            className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
+                            value={bed.standup_availability_class ?? ""}
                             disabled={!canEdit || bedsSaving}
                             onChange={(event) =>
                               void updateBed(bed.id, {
-                                standup_availability_class: bed.standup_availability_class,
-                                is_temporarily_blocked: event.target.checked,
+                                standup_availability_class:
+                                  event.target.value === ""
+                                    ? null
+                                    : (event.target.value as "private" | "sp_female" | "sp_male" | "sp_flexible"),
+                                is_temporarily_blocked: bed.is_temporarily_blocked,
                                 blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
                               })
                             }
+                          >
+                            <option value="">Needs assignment</option>
+                            <option value="private">{STANDUP_CLASS_LABELS.private}</option>
+                            <option value="sp_female">{STANDUP_CLASS_LABELS.sp_female}</option>
+                            <option value="sp_male">{STANDUP_CLASS_LABELS.sp_male}</option>
+                            <option value="sp_flexible">{STANDUP_CLASS_LABELS.sp_flexible}</option>
+                          </select>
+                        </td>
+                        <td className="px-3 py-3">
+                          <label className="inline-flex items-center gap-2 text-sm text-foreground">
+                            <input
+                              type="checkbox"
+                              className="rounded border-border"
+                              checked={bed.is_temporarily_blocked}
+                              disabled={!canEdit || bedsSaving}
+                              onChange={(event) =>
+                                void updateBed(bed.id, {
+                                  standup_availability_class: bed.standup_availability_class,
+                                  is_temporarily_blocked: event.target.checked,
+                                  blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
+                                })
+                              }
+                            />
+                            Blocked
+                          </label>
+                        </td>
+                        <td className="px-3 py-3">
+                          <input
+                            className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
+                            value={blockedReasonDrafts[bed.id] ?? bed.blocked_reason ?? ""}
+                            disabled={!canEdit || bedsSaving}
+                            placeholder="Reason if blocked"
+                            onChange={(event) =>
+                              setBlockedReasonDrafts((current) => ({
+                                ...current,
+                                [bed.id]: event.target.value,
+                              }))
+                            }
                           />
-                          Blocked
-                        </label>
-                      </td>
-                      <td className="px-3 py-3">
-                        <input
-                          className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
-                          value={blockedReasonDrafts[bed.id] ?? bed.blocked_reason ?? ""}
-                          disabled={!canEdit || bedsSaving}
-                          placeholder="Reason if blocked"
-                          onChange={(event) =>
-                            setBlockedReasonDrafts((current) => ({
-                              ...current,
-                              [bed.id]: event.target.value,
-                            }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </HorizontalScroll>
             </div>
           </div>
         )}

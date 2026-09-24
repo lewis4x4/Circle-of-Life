@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
@@ -446,12 +448,10 @@ export default function EmergencyPreparednessPage() {
 
   if (!facilityReady) {
     return (
-      <Card className="border-warning/20 bg-warning/10">
-        <CardHeader>
-          <CardTitle>Select a Facility</CardTitle>
-          <CardDescription>Choose a facility to view emergency preparedness checklist.</CardDescription>
-        </CardHeader>
-      </Card>
+      <FacilityGateNotice
+        title="Emergency Preparedness"
+        reason="Drills, generator checks and emergency maintenance are logged per building."
+      />
     );
   }
 
@@ -664,7 +664,7 @@ export default function EmergencyPreparednessPage() {
                           </div>
                           {item.last_completed_at && (
                             <div className="text-[12px] text-muted-foreground tabular-nums">
-                              Last completed: {new Date(item.last_completed_at).toLocaleDateString()}
+                              Last completed: {formatDisplayDate(item.last_completed_at)}
                             </div>
                           )}
                         </div>
@@ -819,7 +819,7 @@ export default function EmergencyPreparednessPage() {
           <Field label="Notes"><Textarea rows={2} value={newCompletion.notes} onChange={(e) => setNewCompletion((current) => ({ ...current, notes: e.target.value }))} /></Field>
           <ul className="space-y-2 text-sm">
             {maintenanceCompletions.slice(0, 6).map((completion) => (
-              <li key={completion.id} className="rounded border p-2">{new Date(completion.completed_at).toLocaleDateString()} · {completion.task_type} · {completion.completed_by_vendor || "staff"}</li>
+              <li key={completion.id} className="rounded border p-2">{formatDisplayDate(completion.completed_at)} · {completion.task_type} · {completion.completed_by_vendor || "staff"}</li>
             ))}
           </ul>
         </CardContent>

@@ -10,6 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -36,6 +37,7 @@ import {
   getNextBillingMonth,
   monthLabel,
   persistMonthlyInvoicesFromPreview,
+  type BillingBlocker,
   type PreviewLine,
 } from "@/lib/billing/generate-monthly-invoices";
 
@@ -65,6 +67,7 @@ export default function AdminInvoiceGeneratePage() {
   const [preview, setPreview] = useState<PreviewLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [blockers, setBlockers] = useState<BillingBlocker[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [generatedCount, setGeneratedCount] = useState(0);
@@ -80,14 +83,16 @@ export default function AdminInvoiceGeneratePage() {
 
   const buildPreview = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      // Gated below: no facility is not a preview failure.
       setPreview([]);
       setLoading(false);
-      setError("Select a facility to preview invoice generation.");
+      setError(null);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setBlockers([]);
     setGenerated(false);
 
     try {
@@ -98,6 +103,7 @@ export default function AdminInvoiceGeneratePage() {
       });
       setPreview(result.preview);
       setError(result.error);
+      setBlockers(result.blockers ?? []);
       setMeta({
         periodStart: result.periodStart,
         periodEnd: result.periodEnd,
@@ -214,11 +220,15 @@ export default function AdminInvoiceGeneratePage() {
         </Link>
       </div>
 
+      <FacilityGate
+        title={`Generate invoices — ${billingLabel}`}
+        reason="Invoices are generated from one building's residents and its posted rate schedule."
+      >
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+              <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
               <CardTitle className="text-xl">
                 Generate invoices — {billingLabel}
               </CardTitle>
@@ -267,16 +277,32 @@ export default function AdminInvoiceGeneratePage() {
 
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
               Building preview…
             </div>
           ) : error && preview.length === 0 ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
-              {error}
+              <p>{error}</p>
+              {blockers.length > 0 && (
+                <ul className="mt-3 space-y-1" aria-label="Residents to fix before billing">
+                  {blockers.map((blocker) => (
+                    <li key={blocker.residentId}>
+                      <Link
+                        href={`/admin/residents/${blocker.residentId}`}
+                        className="font-medium underline underline-offset-2"
+                      >
+                        {blocker.residentName}
+                      </Link>
+                      {" — "}
+                      {blocker.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ) : preview.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               No billable residents found for this facility and period.
             </p>
           ) : (
@@ -302,7 +328,7 @@ export default function AdminInvoiceGeneratePage() {
                 </TableHeader>
                 <TableBody>
                   {preview.map((line) => (
-                    <TableRow key={line.residentId}>
+                    <TableRow key={`${line.residentId}-${line.invoiceShare}`}>
                       <TableCell className="font-medium">
                         {line.residentName}
                         {line.prorated && (
@@ -346,7 +372,9 @@ export default function AdminInvoiceGeneratePage() {
 
               <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
                 <div className="text-sm text-slate-600 dark:text-slate-400">
-                  {preview.length} resident{preview.length !== 1 ? "s" : ""} ·{" "}
+                  {preview.length} invoice{preview.length !== 1 ? "s" : ""} for{" "}
+                  {new Set(preview.map((line) => line.residentId)).size} resident
+                  {new Set(preview.map((line) => line.residentId)).size !== 1 ? "s" : ""} ·{" "}
                   {formatGeneratePreviewBillingPeriodRange(meta.periodStart, meta.periodEnd)}
                   <span className="ml-2 block text-xs sm:inline">
                     {days} days in {billingLabel} · Standard{" "}
@@ -355,7 +383,7 @@ export default function AdminInvoiceGeneratePage() {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest text-slate-500">Net invoice run</div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Net invoice run</div>
                   <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                     {billingCurrency.format(grandTotal / 100)}
                   </div>
@@ -389,6 +417,7 @@ export default function AdminInvoiceGeneratePage() {
           )}
         </CardContent>
       </Card>
+      </FacilityGate>
     </div>
   );
 }

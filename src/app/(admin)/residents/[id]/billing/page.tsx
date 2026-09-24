@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -111,9 +112,7 @@ const CONCESSION_REASONS = [
 ] as const;
 
 function formatDate(isoDate: string): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return formatDisplayDate(isoDate, { fallback: isoDate });
 }
 
 function centsToInput(cents: number | null | undefined): string {
@@ -127,8 +126,8 @@ function dollarsToCents(value: string): number | null {
   return Math.round(parsed * 100);
 }
 
-function rateForRoom(schedule: RateSchedule | null, roomClass: "private" | "companion" | "other"): number {
-  if (!schedule) return 0;
+function rateForRoom(schedule: RateSchedule | null, roomClass: "private" | "companion" | "other" | ""): number {
+  if (!schedule || !roomClass) return 0;
   if (roomClass === "companion") return schedule.base_rate_semi_private ?? schedule.base_rate_private;
   return schedule.base_rate_private;
 }
@@ -165,13 +164,15 @@ export default function ResidentBillingPage() {
 
   const currentAgreement = agreements.find((agreement) => agreement.status === "active" && !agreement.end_date) ?? agreements[0] ?? null;
 
-  const [roomClass, setRoomClass] = useState<"private" | "companion" | "other">("private");
+  // Room, care mode and concession reason start unchosen when there is no agreement yet:
+  // a preselected "Legacy rate lock" recorded a concession nobody decided (COL-676).
+  const [roomClass, setRoomClass] = useState<"private" | "companion" | "other" | "">("");
   const [effectiveDate, setEffectiveDate] = useState(() => todayFacilityDateIso());
   const [negotiatedBase, setNegotiatedBase] = useState("");
-  const [careMode, setCareMode] = useState<"standard" | "flat" | "bundled" | "waived">("standard");
+  const [careMode, setCareMode] = useState<"standard" | "flat" | "bundled" | "waived" | "">("");
   const [negotiatedCare, setNegotiatedCare] = useState("");
   const [negotiatedTotal, setNegotiatedTotal] = useState("");
-  const [concessionReason, setConcessionReason] = useState("legacy_rate_lock");
+  const [concessionReason, setConcessionReason] = useState("");
   const [concessionNotes, setConcessionNotes] = useState("");
   const [expiresOn, setExpiresOn] = useState("");
   const [notes, setNotes] = useState("");
@@ -321,14 +322,14 @@ export default function ResidentBillingPage() {
       return;
     }
 
-    setRoomClass("private");
+    setRoomClass("");
     setEffectiveDate(resident.rate_effective_date ?? todayFacilityDateIso());
     setNegotiatedBase(centsToInput(resident.monthly_base_rate ?? resident.monthly_total_rate));
-    setCareMode(resident.monthly_care_surcharge && resident.monthly_care_surcharge > 0 ? "flat" : "standard");
+    setCareMode("");
     setNegotiatedCare(centsToInput(resident.monthly_care_surcharge));
     setNegotiatedTotal(centsToInput(resident.monthly_total_rate));
-    setConcessionReason(resident.monthly_total_rate ? "legacy_rate_lock" : "none");
-    setConcessionNotes(resident.monthly_total_rate ? "Imported from current Homewood A/R monthly rent." : "");
+    setConcessionReason("");
+    setConcessionNotes("");
     setExpiresOn("");
     setNotes("");
   }, [agreements, resident]);
@@ -355,6 +356,10 @@ export default function ResidentBillingPage() {
     const base = dollarsToCents(negotiatedBase);
     const care = negotiatedCare.trim() ? dollarsToCents(negotiatedCare) : null;
     const total = dollarsToCents(negotiatedTotal);
+    if (!roomClass || !careMode || !concessionReason) {
+      setError("Choose the room class, care charge mode and concession reason.");
+      return;
+    }
     if (base == null) {
       setError("Enter a valid negotiated base rent.");
       return;
@@ -434,14 +439,14 @@ export default function ResidentBillingPage() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 rounded-[3rem] bg-gradient-to-b from-amber-500/10 via-transparent to-transparent blur-3xl" aria-hidden />
       <div className="relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end justify-between bg-white/40 dark:bg-black/20 p-8 rounded-[2.5rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-sm mt-4">
           <div className="space-y-3">
             <Link
               href={`/admin/residents/${residentId}`}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> BACK TO PROFILE
             </Link>
@@ -475,46 +480,48 @@ export default function ResidentBillingPage() {
 
             <div className="grid gap-4 md:grid-cols-3 mb-6">
               <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Posted standard</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Posted standard</p>
                 <p className="mt-2 text-2xl font-display text-slate-900 dark:text-white">{billingCurrency.format(standardTotal / 100)}</p>
-                <p className="text-xs text-slate-500 mt-1">{roomClass === "companion" ? "Companion" : roomClass === "other" ? "Other" : "Private"} + current acuity</p>
+                <p className="text-xs text-muted-foreground mt-1">{roomClass === "companion" ? "Companion" : roomClass === "other" ? "Other" : roomClass === "private" ? "Private" : "Choose a room class"} + current acuity</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Actual monthly rent</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Actual monthly rent</p>
                 <p className="mt-2 text-2xl font-display text-emerald-600 dark:text-emerald-400">{billingCurrency.format(negotiatedTotalCents / 100)}</p>
-                <p className="text-xs text-slate-500 mt-1">Used for future invoices</p>
+                <p className="text-xs text-muted-foreground mt-1">Used for future invoices</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 dark:border-white/10 dark:bg-black/20">
-                <p className="text-[10px] uppercase tracking-widest text-slate-500">Monthly concession</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Monthly concession</p>
                 <p className={cn("mt-2 text-2xl font-display", concessionCents >= 0 ? "text-amber-600 dark:text-amber-400" : "text-indigo-600 dark:text-indigo-400")}>{billingCurrency.format(concessionCents / 100)}</p>
-                <p className="text-xs text-slate-500 mt-1">{concessionPct.toFixed(1)}% vs posted</p>
+                <p className="text-xs text-muted-foreground mt-1">{concessionPct.toFixed(1)}% vs posted</p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Room class</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Room class</span>
                 <select value={roomClass} onChange={(event) => setRoomClass(event.target.value as "private" | "companion" | "other")} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                  <option value="" disabled>Select room class…</option>
                   <option value="private">Private</option>
                   <option value="companion">Companion / shared</option>
                   <option value="other">Other</option>
                 </select>
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Effective date (ET)</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Effective date (ET)</span>
                 <input type="date" value={effectiveDate} onChange={(event) => setEffectiveDate(event.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Negotiated base rent</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Negotiated base rent</span>
                 <input inputMode="decimal" value={negotiatedBase} onChange={(event) => setNegotiatedBase(event.target.value)} placeholder="Monthly amount in dollars" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Actual monthly invoice amount</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Actual monthly invoice amount</span>
                 <input inputMode="decimal" value={negotiatedTotal} onChange={(event) => setNegotiatedTotal(event.target.value)} placeholder="Monthly amount in dollars" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Care charge mode</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Care charge mode</span>
                 <select value={careMode} onChange={(event) => setCareMode(event.target.value as "standard" | "flat" | "bundled" | "waived")} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                  <option value="" disabled>Select care charge mode…</option>
                   <option value="standard">Use posted acuity surcharge</option>
                   <option value="flat">Flat negotiated care amount</option>
                   <option value="bundled">Bundled in rent</option>
@@ -522,25 +529,26 @@ export default function ResidentBillingPage() {
                 </select>
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Flat care amount</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Flat care amount</span>
                 <input inputMode="decimal" value={negotiatedCare} onChange={(event) => setNegotiatedCare(event.target.value)} disabled={careMode !== "flat"} placeholder="0.00" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Concession reason</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Concession reason</span>
                 <select value={concessionReason} onChange={(event) => setConcessionReason(event.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                  <option value="" disabled>Select concession reason…</option>
                   {CONCESSION_REASONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
               <label className="space-y-1.5 text-sm font-medium">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Concession expires</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Concession expires</span>
                 <input type="date" value={expiresOn} onChange={(event) => setExpiresOn(event.target.value)} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium md:col-span-2">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Concession notes</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Concession notes</span>
                 <textarea value={concessionNotes} onChange={(event) => setConcessionNotes(event.target.value)} rows={2} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
               <label className="space-y-1.5 text-sm font-medium md:col-span-2">
-                <span className="text-xs uppercase tracking-widest text-slate-500">Internal agreement notes</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">Internal agreement notes</span>
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" />
               </label>
             </div>
@@ -558,10 +566,10 @@ export default function ResidentBillingPage() {
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white flex items-center gap-3">
                 <CreditCard className="h-5 w-5 text-brand-500" /> Payers on File
               </h3>
-              <p className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">Primary and secondary coverage</p>
+              <p className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">Primary and secondary coverage</p>
             </div>
             {payers.length === 0 ? (
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 py-4">No payer records returned.</p>
+              <p className="text-sm font-medium text-muted-foreground py-4">No payer records returned.</p>
             ) : (
               <MotionList className="space-y-4">
                 {payers.map((p) => (
@@ -573,11 +581,11 @@ export default function ResidentBillingPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-slate-900 dark:text-slate-100">{p.payer_name?.trim() || "Responsible party"}</p>
-                        <p className="text-xs text-slate-500 mt-1">Effective {formatDate(p.effective_date)}{p.end_date ? ` — ${formatDate(p.end_date)}` : " — current"}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Effective {formatDate(p.effective_date)}{p.end_date ? ` — ${formatDate(p.end_date)}` : " — current"}</p>
                       </div>
                       {mapDbPayerTypeToUi(p.payer_type) === "medicaid" ? (
                         <div className="grid gap-3 border-t border-slate-100 pt-3 dark:border-white/5 sm:grid-cols-2">
-                          <label className="space-y-1.5 text-xs font-medium uppercase tracking-widest text-slate-500">
+                          <label className="space-y-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                             Provider / MCO
                             <select
                               value={p.facility_medicaid_provider_id ?? ""}
@@ -597,7 +605,7 @@ export default function ResidentBillingPage() {
                               ))}
                             </select>
                           </label>
-                          <label className="space-y-1.5 text-xs font-medium uppercase tracking-widest text-slate-500">
+                          <label className="space-y-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
                             Medicaid rate unit
                             <select
                               value={p.medicaid_rate_unit ?? "monthly"}
@@ -610,7 +618,7 @@ export default function ResidentBillingPage() {
                               <option value="per_billable_day">Per Billable Day</option>
                             </select>
                           </label>
-                          <p className="text-xs text-slate-500 sm:col-span-2">
+                          <p className="text-xs text-muted-foreground sm:col-span-2">
                             Current: {formatResidentBillingMedicaidProviderCurrent(p.facility_medicaid_provider_id, providers, p.payer_name)} · {formatResidentBillingMedicaidRateUnitLabel(p.medicaid_rate_unit)}
                           </p>
                           {residentBillingMedicaidSplitLine(p.medicaid_rate, p.medicaid_patient_responsibility) ? (
@@ -632,30 +640,30 @@ export default function ResidentBillingPage() {
           <section className="glass-panel p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] backdrop-blur-3xl shadow-sm">
             <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
               <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white">Agreement History</h3>
-              <p className="text-sm text-slate-500 mt-1">Effective-dated versions are kept for audit and reporting.</p>
+              <p className="text-sm text-muted-foreground mt-1">Effective-dated versions are kept for audit and reporting.</p>
             </div>
             <MotionList className="space-y-3">
               {agreements.map((agreement) => (
                 <MotionItem key={agreement.id}>
                   <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.03] md:grid-cols-5 md:items-center">
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500">Version</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Version</p>
                       <p className="font-semibold">v{agreement.version} · {agreement.status}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500">Effective</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Effective</p>
                       <p className="font-mono text-sm">{formatDate(agreement.effective_date)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500">Actual</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Actual</p>
                       <p className="font-mono text-sm">{billingCurrency.format(agreement.negotiated_monthly_total / 100)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500">Concession</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Concession</p>
                       <p className="font-mono text-sm">{billingCurrency.format(agreement.concession_amount_at_signing / 100)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500">Reason</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Reason</p>
                       <p className="text-sm">{reasonLabel(agreement.concession_reason)}</p>
                     </div>
                   </div>

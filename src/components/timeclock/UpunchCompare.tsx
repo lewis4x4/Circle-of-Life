@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { AdminEmptyState, AdminErrorState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { Button } from "@/components/ui/button";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -19,7 +20,7 @@ import { triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { computeTimesheet, facilityDayStart, payPeriodContaining, type PayPeriod } from "@/lib/timeclock/compute";
-import { TIMECLOCK_MANAGER_ONLY, TIMECLOCK_PICK_FACILITY, formatDayLabel, formatMinutesCompact, formatPeriodLabel } from "@/lib/timeclock/display-copy";
+import { TIMECLOCK_MANAGER_ONLY, formatDayLabel, formatMinutesCompact, formatPeriodLabel } from "@/lib/timeclock/display-copy";
 import { canReviewTimeclock, loadEmployeeNumbers, loadOrganizationPayPeriod, loadTimeclockPeriod } from "@/lib/timeclock/load";
 import {
   MATCH_TOLERANCE_MINUTES,
@@ -34,6 +35,7 @@ import {
   type ParsedCsv,
 } from "@/lib/timeclock/reconcile";
 import { cn } from "@/lib/utils";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const FIELD = "mt-1 block h-9 w-full rounded-[8px] border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 const LABEL = "text-xs font-medium text-muted-foreground";
@@ -182,7 +184,7 @@ export function UpunchCompare({ now: nowProp, readFile }: UpunchCompareProps) {
       {error ? <AdminErrorState message={error} onRetry={() => void load()} /> : null}
 
       {!facilityId ? (
-        <AdminEmptyState title={TIMECLOCK_PICK_FACILITY} description="Use the facility selector in the top bar." />
+        <FacilityGateNotice reason="The uPunch comparison matches one building's punches against its uPunch export, so it runs for one facility at a time." />
       ) : loading || !haven ? (
         <AdminTableLoadingState />
       ) : (
@@ -196,7 +198,7 @@ export function UpunchCompare({ now: nowProp, readFile }: UpunchCompareProps) {
                 CSV file
               </label>
               <input id="upunch-file" type="file" accept=".csv,text/csv" className="mt-1 block text-sm" onChange={(e) => void onFile(e)} />
-              {fileName ? <p className="mt-1 text-xs text-muted-foreground">{fileName}, {upload?.rows.length ?? 0} rows</p> : null}
+              {fileName && upload ? <p className="mt-1 text-xs text-muted-foreground">{fileName}, {upload.rows.length} rows</p> : null}
             </div>
             {upload ? (
               <div className="grid gap-3 md:grid-cols-3">
@@ -278,38 +280,40 @@ export function UpunchCompare({ now: nowProp, readFile }: UpunchCompareProps) {
               {result.rows.length === 0 ? (
                 <AdminEmptyState title="Nothing to compare" description="No uploaded rows matched a Haven staff member in this period." />
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-border bg-card">
-                  <table className="w-full">
-                    <caption className="sr-only">Haven versus uPunch minutes per staff member per workweek</caption>
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <th scope="col" className={TH}>Staff</th>
-                        <th scope="col" className={TH}>Workweek</th>
-                        <th scope="col" className={cn(TH, "text-right")}>Haven</th>
-                        <th scope="col" className={cn(TH, "text-right")}>uPunch</th>
-                        <th scope="col" className={cn(TH, "text-right")}>Difference</th>
-                        <th scope="col" className={TH}>Result</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.rows.map((row) => (
-                        <tr key={`${row.staffId}-${row.workweekStart}`} className="border-t border-border">
-                          <td className={TD}>
-                            {row.staffName}
-                            {row.employeeNumber ? <span className="ml-2 text-xs text-muted-foreground">{row.employeeNumber}</span> : null}
-                          </td>
-                          <td className={TD}>{formatDayLabel(row.workweekStart)}</td>
-                          <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.havenMinutes)}</td>
-                          <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.upunchMinutes)}</td>
-                          <td className={cn(TD, "text-right tabular-nums")}>
-                            {row.differenceMinutes > 0 ? "+" : ""}
-                            {row.differenceMinutes} min
-                          </td>
-                          <td className={TD}>{row.match ? "Match" : "Differs"}</td>
+                <div className="rounded-xl border border-border bg-card">
+                  <HorizontalScroll label="uPunch comparison">
+                    <table className="w-full">
+                      <caption className="sr-only">Haven versus uPunch minutes per staff member per workweek</caption>
+                      <thead className="bg-muted/40">
+                        <tr>
+                          <th scope="col" className={TH}>Staff</th>
+                          <th scope="col" className={TH}>Workweek</th>
+                          <th scope="col" className={cn(TH, "text-right")}>Haven</th>
+                          <th scope="col" className={cn(TH, "text-right")}>uPunch</th>
+                          <th scope="col" className={cn(TH, "text-right")}>Difference</th>
+                          <th scope="col" className={TH}>Result</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {result.rows.map((row) => (
+                          <tr key={`${row.staffId}-${row.workweekStart}`} className="border-t border-border">
+                            <td className={TD}>
+                              {row.staffName}
+                              {row.employeeNumber ? <span className="ml-2 text-xs text-muted-foreground">{row.employeeNumber}</span> : null}
+                            </td>
+                            <td className={TD}>{formatDayLabel(row.workweekStart)}</td>
+                            <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.havenMinutes)}</td>
+                            <td className={cn(TD, "text-right tabular-nums")}>{formatMinutesCompact(row.upunchMinutes)}</td>
+                            <td className={cn(TD, "text-right tabular-nums")}>
+                              {row.differenceMinutes > 0 ? "+" : ""}
+                              {row.differenceMinutes} min
+                            </td>
+                            <td className={TD}>{row.match ? "Match" : "Differs"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </HorizontalScroll>
                 </div>
               )}
               {result.unmatched.length > 0 ? (

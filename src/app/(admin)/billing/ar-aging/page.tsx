@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { requireCount } from "@/lib/metrics/require-count";
 import { billingNyTodayIso, daysPastDueAsOf } from "@/lib/billing/ar-aging-as-of";
 import {
   formatArAgingBucketCents,
@@ -258,8 +260,7 @@ function AdminArAgingPageContent() {
         rq = rq.in("facility_id", facilityIds);
       }
       const rcount = (await rq) as unknown as { count: number | null; error: { message: string } | null };
-      if (rcount.error) throw rcount.error;
-      setResidentCount(rcount.count ?? 0);
+      setResidentCount(requireCount(rcount, "Resident count"));
 
       let iq = supabase
         .from("invoices" as never)
@@ -269,8 +270,7 @@ function AdminArAgingPageContent() {
         iq = iq.in("facility_id", facilityIds);
       }
       const icount = (await iq) as unknown as { count: number | null; error: { message: string } | null };
-      if (icount.error) throw icount.error;
-      setAnyInvoiceCount(icount.count ?? 0);
+      setAnyInvoiceCount(requireCount(icount, "Invoice count"));
 
       if (payerSelection.length > 0) {
         const allow = new Set(payerSelection);
@@ -544,8 +544,10 @@ function AdminArAgingPageContent() {
     if (isLoading) return "loading";
     if (error) return "error";
     if (!isLoading && rawInvoices.length > 0) return null;
+    // Counts are only null before the first successful read; never read them as "none".
+    if (residentCount === null || anyInvoiceCount === null) return "loading";
     if (residentCount === 0) return "no_residents";
-    if ((anyInvoiceCount ?? 0) === 0) return "no_billing";
+    if (anyInvoiceCount === 0) return "no_billing";
     return "paid_through";
   })();
 
@@ -558,7 +560,7 @@ function AdminArAgingPageContent() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <BillingHubNav />
 
@@ -851,7 +853,7 @@ function AdminArAgingPageContent() {
         {!isLoading && emptyKind === "no_billing" ? (
           <div className="rounded-lg border border-border bg-card px-5 py-8">
             <p className="text-[15px] font-semibold text-foreground">
-              No open AR — but {(residentCount ?? 0).toLocaleString()} resident{(residentCount ?? 0) === 1 ? "" : "s"} exist at{" "}
+              No open AR — but {residentCount?.toLocaleString()} resident{residentCount === 1 ? "" : "s"} exist at{" "}
               {facilityCountPhrase}.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -925,15 +927,16 @@ function AdminArAgingPageContent() {
                           <button
                             type="button"
                             aria-expanded={open}
+                            aria-label={`${open ? "Hide" : "Show"} invoices for ${r.residentName}`}
                             onClick={() => toggleExpanded(r.residentId)}
                             className="rounded p-1 hover:bg-muted"
                           >
-                            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            {open ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}
                           </button>
                         </td>
                         <td className="px-3 py-2 font-medium text-foreground">{r.residentName}</td>
                         {orgWideHub ? <td className="px-3 py-2 text-muted-foreground">{r.facilityName}</td> : null}
-                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{r.oldestDueIso}</td>
+                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{formatDisplayDate(r.oldestDueIso)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b0_30)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b31_60)}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{formatArAgingBucketCents(r.b61_90)}</td>
@@ -975,7 +978,7 @@ function AdminArAgingPageContent() {
                                     <Link href={`/admin/billing/invoices/${inv.id}`} className="text-primary underline">
                                       {formatInvoiceRowNumberForDisplay(inv)}
                                     </Link>{" "}
-                                    <span className="text-muted-foreground">due {inv.due_date.slice(0, 10)}</span>
+                                    <span className="text-muted-foreground">due {formatDisplayDate(inv.due_date.slice(0, 10))}</span>
                                   </span>
                                   <span>{billingCurrency.format(inv.balance_due / 100)}</span>
                                 </li>
@@ -1015,7 +1018,7 @@ function AdminArAgingPageContent() {
                     </td>
                     <td className="px-3 py-2">{inv.residentName}</td>
                     {orgWideHub ? <td className="px-3 py-2 text-muted-foreground">{inv.facilityName}</td> : null}
-                    <td className="px-3 py-2 tabular-nums text-muted-foreground">{inv.due_date.slice(0, 10)}</td>
+                    <td className="px-3 py-2 tabular-nums text-muted-foreground">{formatDisplayDate(inv.due_date.slice(0, 10))}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-medium">
                       {billingCurrency.format(inv.balance_due / 100)}
                     </td>

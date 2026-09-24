@@ -90,7 +90,6 @@ import {
 import { isStaffLaunchHiddenKey } from "@/lib/navigation/staff-launch-hidden";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
-import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 /** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
 const WORKSPACE_WELL =
@@ -786,7 +785,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   // role config doesn't list anything (e.g. owner / facility_admin). Legacy
   // role configs use group names ("Clinical Ops") — map them to pillar ids.
   const visiblePillars = useMemo(() => {
-    const pillars = applyFacilityOperatorNav(pillarsForRole(roleConfig), appRole, visibleFacilities);
+    const pillars = applyFacilityOperatorNav(pillarsForRole(roleConfig, appRole), appRole, visibleFacilities);
     return pillars.map((pillar) => ({
       ...pillar,
       items: applyExecutiveCommandNavToItems(pillar.items, appRole, authLoading),
@@ -811,11 +810,11 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     // allowlist) are never added back.
     const isCatalogItem = PILLARS.some((candidate) => candidate.items.some((item) => item.key === activeItemKey));
     const heldForLaunch =
-      isStaffLaunchHiddenKey(activeItemKey) &&
+      isStaffLaunchHiddenKey(activeItemKey, roleConfig.visibleItemKeys, appRole) &&
       (!roleConfig.visibleItemKeys || roleConfig.visibleItemKeys.includes(activeItemKey));
     if (isCatalogItem && !heldForLaunch) return pillar;
     return { ...pillar, items: [...pillar.items, navAnchor.item] };
-  }, [activeItemKey, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
+  }, [activeItemKey, appRole, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
 
   // Keep the current pillar visible in the phone strip (COL-657).
   useEffect(() => {
@@ -925,18 +924,20 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       {mounted && !suppressSurveyVisitChrome ? <SurveyVisitWorkspaceDock survey={surveyVisit} /> : null}
 
       {/* ── Mobile pillar scroll strip ──────────────────────────── */}
-      {/* The strip is wider than a phone: it scrolls sideways with an edge
-          shade on the side that has more, and the current pillar is scrolled
-          into view, so no pillar sits clipped at the edge (COL-657). */}
+      {/* The strip is wider than a phone: it scrolls sideways, its trailing
+          edge fades out so the cut-off pillar reads as "more this way", and
+          the current pillar is scrolled into view (COL-657). CSS-only — this
+          chrome ships on every admin route's first load. */}
       <nav
         ref={mobilePillarStripRef}
         className="lg:hidden sticky top-14 z-20 shrink-0 bg-background text-foreground border-b border-border"
         aria-label="Primary"
       >
-        <HorizontalScroll
-          label="Sections"
-          viewportClassName={cn(
-            "flex items-stretch gap-0.5 px-2",
+        <div
+          data-slot="pillar-strip-viewport"
+          className={cn(
+            "flex items-stretch gap-0.5 overflow-x-auto overscroll-x-contain pl-2 pr-8",
+            "[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]",
             "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
           )}
         >
@@ -976,7 +977,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               </HavenNavLink>
             );
           })}
-        </HorizontalScroll>
+        </div>
       </nav>
 
       {/* ── Layout row: contextual rail + main ─────────────────── */}

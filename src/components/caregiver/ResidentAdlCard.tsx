@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { CheckCircle2, Clock3, Loader2, UserRound } from "lucide-react";
 import { ADL_OPTIONS, ASSIST_OPTIONS } from "@/lib/caregiver/adl-form-options";
 import type { ResidentWithRoom } from "@/lib/caregiver/facility-residents";
@@ -24,6 +24,8 @@ export function ResidentAdlCard({
     notes: string;
   }) => Promise<boolean>;
 }) {
+  // One card per resident on the floor list: ids must be unique (COL-658).
+  const uid = useId();
   const [adlType, setAdlType] = useState("rounding");
   const [assistance, setAssistance] = useState<Database["public"]["Enums"]["assistance_level"]>("supervision");
   const [refused, setRefused] = useState(false);
@@ -42,7 +44,7 @@ export function ResidentAdlCard({
             </div>
             <div>
               <p className="text-base font-semibold text-white tracking-wide">{resident.displayName}</p>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mt-0.5">Room {resident.roomLabel}</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">Room {resident.roomLabel}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -51,7 +53,7 @@ export function ResidentAdlCard({
             >
               {passesToday === 0 ? "No entries today" : `${passesToday} entries today`}
             </Badge>
-            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-muted-foreground">
               <Clock3 className="h-3 w-3" />
               {passesToday} entr{passesToday === 1 ? "y" : "ies"} today
             </span>
@@ -60,8 +62,8 @@ export function ResidentAdlCard({
 
         <div className="grid gap-3 sm:grid-cols-2 pt-2">
           <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">ADL Type</Label>
-            <select
+            <Label htmlFor={`${uid}-adl-type`} className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground font-bold">ADL Type</Label>
+            <select id={`${uid}-adl-type`}
               className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={adlType}
               onChange={(e) => setAdlType(e.target.value)}
@@ -74,8 +76,8 @@ export function ResidentAdlCard({
             </select>
           </div>
           <div className="space-y-1.5 focus-within:text-cyan-400 transition-colors">
-            <Label className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-bold">Assistance</Label>
-            <select
+            <Label htmlFor={`${uid}-assistance`} className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground font-bold">Assistance</Label>
+            <select id={`${uid}-assistance`}
               className="flex h-12 w-full rounded-full border border-white/10 bg-black/40 px-4 text-sm text-zinc-200 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 appearance-none font-mono"
               value={assistance}
               onChange={(e) => setAssistance(e.target.value as Database["public"]["Enums"]["assistance_level"])}
@@ -100,7 +102,7 @@ export function ResidentAdlCard({
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
-            <label className="flex items-center gap-3 text-sm text-zinc-300 shrink-0 cursor-pointer group">
+            <label className="flex items-center gap-3 text-sm text-muted-foreground shrink-0 cursor-pointer group">
               <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${refused ? 'bg-cyan-500 border-cyan-500' : 'border-zinc-600 bg-black/40 group-hover:border-cyan-500/50'}`}>
                 {refused && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
               </div>

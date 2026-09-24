@@ -212,7 +212,7 @@ export default function ResetPasswordPage() {
           </div>
           <span className="font-serif text-2xl tracking-tight text-white drop-shadow-md">Haven</span>
         </div>
-        <p className="hidden text-xs uppercase tracking-[0.22em] text-slate-300 sm:block">
+        <p className="hidden text-xs uppercase tracking-[0.22em] text-chrome-foreground-muted sm:block">
           Operations Platform
         </p>
       </header>
@@ -223,7 +223,7 @@ export default function ResetPasswordPage() {
             <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white drop-shadow-sm sm:text-6xl">
               Set your <span className="text-emerald-400">new password.</span>
             </h1>
-            <p className="mx-auto max-w-md text-base leading-relaxed text-slate-300">
+            <p className="mx-auto max-w-md text-base leading-relaxed text-chrome-foreground-muted">
               Choose a new password to finish securing your Haven account.
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function ResetPasswordPage() {
           <Card className="border border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-md">
             <CardContent className="p-7 sm:p-9">
               {!sessionReady ? (
-                <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-300">
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-chrome-foreground-muted">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Verifying reset link...
                 </div>
@@ -307,7 +307,7 @@ export default function ResetPasswordPage() {
             </CardContent>
           </Card>
 
-          <p className="text-center text-sm text-slate-300">
+          <p className="text-center text-sm text-chrome-foreground-muted">
             Need a new reset link? Return to the sign-in page and request another email.
           </p>
         </div>

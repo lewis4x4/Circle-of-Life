@@ -493,7 +493,7 @@ export default function AdminReferralsHl7InboundPage() {
   const selectedBulkCount = selectedIds.size;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <TooltipProvider delay={280}>
         <div className="relative z-10 space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <PageHeader
@@ -548,7 +548,7 @@ export default function AdminReferralsHl7InboundPage() {
             Linking is manual — referrals do not auto-create pipeline leads.{` `}
             <Link
               href="/admin/referrals/sources"
-              className="text-primary underline-offset-4 hover:underline"
+              className="text-primary underline underline-offset-4 hover:decoration-2"
             >
               Learn more about sources &amp; connections
             </Link>
@@ -679,15 +679,13 @@ export default function AdminReferralsHl7InboundPage() {
                           onChange={() => toggleHeaderSelect()}
                         />
                       </TableHead>
-                      <TableHead>
+                      {/* aria-sort belongs on the column header, not the sort button (COL-658). */}
+                      <TableHead aria-sort={receivedDir === "desc" ? "descending" : "ascending"}>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="-ml-2 h-auto gap-1 px-2 py-0 text-[12px] font-semibold text-muted-foreground hover:text-foreground"
-                          aria-sort={
-                            receivedDir === "desc" ? "descending" : "ascending"
-                          }
                           onClick={toggleReceivedSort}
                         >
                           Received
@@ -724,7 +722,7 @@ export default function AdminReferralsHl7InboundPage() {
                             <p>
                               <Link
                                 href="/admin/referrals/sources"
-                                className="text-primary underline-offset-4 hover:underline"
+                                className="text-primary underline underline-offset-4 hover:decoration-2"
                               >
                                 Check inbound integration status on sources →
                               </Link>
@@ -824,7 +822,7 @@ export default function AdminReferralsHl7InboundPage() {
                             {row.linked_referral_lead_id ? (
                               <Link
                                 href={`/admin/referrals/${row.linked_referral_lead_id}`}
-                                className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                                className="text-sm font-semibold text-primary underline underline-offset-4 hover:decoration-2"
                               >
                                 Open lead
                               </Link>

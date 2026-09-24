@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -34,6 +35,7 @@ import {
 } from "@/lib/facility-wall-clock";
 import { Badge } from "@/components/ui/badge";
 import {
+  formatReferralsHubHl7Summary,
   formatReferralsHubOutreachWeek,
   formatReferralsHubReferralSource,
   formatReferralsHubTourScheduledFor,
@@ -54,6 +56,7 @@ import {
   type ReferralLeadStatus,
 } from "@/lib/referrals/referrals-hub-bootstrap";
 import { enumLabel } from "@/lib/display/enum-label";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type LeadRow = ReferralsHubLeadRow;
 type UpcomingTourRow = ReferralsHubUpcomingTourRow;
@@ -201,6 +204,7 @@ export function AdminReferralsPageClient({
   const supabase = createClient();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
   const skipNextLoadRef = useRef(serverBootstrapped && initialLoadError == null);
+  const beginLoad = useLatestLoad();
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(initialLoadError);
   const [rows, setRows] = useState<LeadRow[]>(initialBootstrap.rows);
@@ -285,6 +289,7 @@ export function AdminReferralsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setLoading(true);
     setLoadError(null);
@@ -295,7 +300,7 @@ export function AdminReferralsPageClient({
         outreachRows: [],
         activeAdmissionCaseByLeadId: {},
         handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
-        hl7Counts: { pending: 0, failed: 0 },
+        hl7Counts: { pending: null, failed: null },
         leadListTruncated: false,
       });
       setLoading(false);
@@ -304,8 +309,10 @@ export function AdminReferralsPageClient({
 
     try {
       const bootstrap = await loadReferralsHubBootstrap(selectedFacilityId, supabase);
+      if (!isCurrent()) return;
       applyBootstrap(bootstrap);
     } catch (e) {
+      if (!isCurrent()) return;
       setLoadError(e instanceof Error ? e.message : "Could not load referrals.");
       applyBootstrap({
         rows: [],
@@ -313,13 +320,13 @@ export function AdminReferralsPageClient({
         outreachRows: [],
         activeAdmissionCaseByLeadId: {},
         handoffRollup: { blocked: 0, ready: 0, onboarding: 0 },
-        hl7Counts: { pending: 0, failed: 0 },
+        hl7Counts: { pending: null, failed: null },
         leadListTruncated: false,
       });
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [applyBootstrap, initialFacilityId, selectedFacilityId, supabase]);
+  }, [beginLoad, applyBootstrap, initialFacilityId, selectedFacilityId, supabase]);
 
   useEffect(() => {
     void load();
@@ -450,7 +457,7 @@ export function AdminReferralsPageClient({
   const admissionActiveTotal = Object.keys(activeAdmissionCaseByLeadId).length;
 
   const handoffCardMuted = handoffRollup.blocked === 0;
-  const hl7NeedsReview = hl7Counts.failed > 0;
+  const hl7NeedsReview = (hl7Counts.failed ?? 0) > 0;
 
   const kpiCtx: ReferralsHubKpiContext = {
     loading,
@@ -517,7 +524,7 @@ export function AdminReferralsPageClient({
 
       {!noFacility ? (
         <section aria-label="Referral KPIs">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
             <KpiCard
               value={referralsHubKpiTileValue("new_leads", kpiMetrics?.newLeads, kpiCtx)}
               label={kpiScope === "all" ? "Open new-status leads" : "Leads created in scope"}
@@ -743,10 +750,7 @@ export function AdminReferralsPageClient({
                         </div>
                         <p className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
                           {row.scheduled_for
-                            ? new Date(row.scheduled_for).toLocaleString(undefined, {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })
+                            ? formatDisplayDateTime(row.scheduled_for)
                             : formatReferralsHubOutreachWeek(row.performed_for_week)}
                         </p>
                       </div>
@@ -837,9 +841,7 @@ export function AdminReferralsPageClient({
             <div className="min-w-0 space-y-1">
               <p className="text-[15px] font-medium text-foreground">Referral inbox (HL7 ADT)</p>
               <p className="text-[13px] text-muted-foreground">
-                {loading
-                  ? "Loading queue counts…"
-                  : `Pending ${hl7Counts.pending}, failed ${hl7Counts.failed}. Open the inbox to triage, replay, or discard messages — this count is facility-scoped.`}
+                {formatReferralsHubHl7Summary({ loading, ...hl7Counts })}
               </p>
             </div>
             <Link
@@ -1027,7 +1029,7 @@ export function AdminReferralsPageClient({
                             <span className="lg:hidden text-[12px] font-medium text-muted-foreground">Updated</span>
                           <div className="flex flex-col items-end">
                             <span className="text-[12px] font-mono tracking-wide tabular-nums text-muted-foreground">
-                              {new Date(r.updated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                              {formatDisplayDateTime(r.updated_at)}
                             </span>
                             {(() => {
                               const tourLabel = formatReferralsHubTourScheduledFor(r.tour_scheduled_for);

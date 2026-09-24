@@ -142,7 +142,7 @@ export default function AdminTeamSpaceDetail() {
   );
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6 max-w-4xl">
         <header className="mb-2 space-y-2">
           <Link
@@ -225,6 +225,7 @@ export default function AdminTeamSpaceDetail() {
                         variant="ghost"
                         size="sm"
                         className="gap-2 text-danger"
+                        aria-label={`Remove ${userLabel(m.user_id, orgUsers)} from team`}
                         disabled={busy}
                         onClick={() => void removeMember(m)}
                       >

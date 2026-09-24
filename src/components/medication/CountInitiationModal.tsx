@@ -316,7 +316,7 @@ export function CountInitiationModal({
             ) : lines.length === 0 ? (
               <div className="text-center py-8">
                 <Shield className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">No active controlled medications at this facility.</p>
+                <p className="text-chrome-foreground-muted">No active controlled medications at this facility.</p>
               </div>
             ) : (
               <>
@@ -335,9 +335,9 @@ export function CountInitiationModal({
 
                 {/* Shift Selection */}
                 <div className="space-y-2 mb-4">
-                  <Label className="text-xs text-emerald-200/80">Shift ending</Label>
+                  <Label htmlFor="count-init-shift-ending" className="text-xs text-emerald-200/80">Shift ending</Label>
                   <div className="relative">
-                    <select
+                    <select id="count-init-shift-ending"
                       value={shift}
                       onChange={(e) => setShift(e.target.value as Shift)}
                       className="w-full h-12 appearance-none rounded-lg border border-emerald-900/50 bg-zinc-950 px-4 text-sm text-zinc-100 focus:ring-2 focus:ring-emerald-500/50"
@@ -348,7 +348,7 @@ export function CountInitiationModal({
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-chrome-foreground-muted pointer-events-none" />
                   </div>
                 </div>
 
@@ -375,7 +375,7 @@ export function CountInitiationModal({
                               </span>
                             )}
                           </CardTitle>
-                          <CardDescription className="text-xs text-zinc-500">
+                          <CardDescription className="text-xs text-chrome-foreground-muted">
                             <span className="block">Resident: {formatResidentIdentity(line.med.residents)}</span>
                             <span className="block">Dose: {formatMedicationDose(line.med)}</span>
                             <span className="block">Medication record: {line.med.id}</span>
@@ -384,12 +384,12 @@ export function CountInitiationModal({
                         </CardHeader>
                         <CardContent className="flex items-center gap-4">
                           <div className="flex-1">
-                            <Label className="text-[10px] text-zinc-400">Expected</Label>
-                            <Input aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
+                            <Label htmlFor="count-init-expected" className="text-[10px] text-chrome-foreground-muted">Expected</Label>
+                            <Input id="count-init-expected" aria-label="Expected quantity from inventory ledger" inputMode="numeric" value={line.expected} onChange={(e) => setLines((prev) => prev.map((x) => x.med.id === line.med.id ? { ...x, expected: e.target.value } : x))} />
                           </div>
                           <div className="flex-1">
-                            <Label className="text-[10px] text-zinc-400">Actual</Label>
-                            <Input
+                            <Label htmlFor="count-init-actual" className="text-[10px] text-chrome-foreground-muted">Actual</Label>
+                            <Input id="count-init-actual"
                               aria-label="Actual count on hand"
                               type="number"
                               inputMode="numeric"
@@ -414,7 +414,7 @@ export function CountInitiationModal({
                   })}
                 </div>
 
-                <p className="text-sm text-zinc-300">Expected quantity must come from the verified medication inventory ledger. Count actual stock independently before requesting the incoming signature.</p>
+                <p className="text-sm text-chrome-foreground-muted">Expected quantity must come from the verified medication inventory ledger. Count actual stock independently before requesting the incoming signature.</p>
                 {/* Discrepancy Warning */}
                 {hasDiscrepancies && (
                   <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-200 flex items-start gap-2">
@@ -433,7 +433,7 @@ export function CountInitiationModal({
                     variant="outline"
                     onClick={handleClose}
                     disabled={saving}
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="border-zinc-700 text-chrome-foreground-muted hover:bg-zinc-800"
                   >
                     Cancel
                   </Button>
@@ -480,8 +480,8 @@ export function CountInitiationModal({
               )}
 
               <div className="space-y-2">
-                <Label className="text-xs text-emerald-200/80">Incoming staff email</Label>
-                <Input
+                <Label htmlFor="count-init-incoming-staff-email" className="text-xs text-emerald-200/80">Incoming staff email</Label>
+                <Input id="count-init-incoming-staff-email"
                   type="email"
                   autoComplete="off"
                   value={coEmail}
@@ -491,8 +491,8 @@ export function CountInitiationModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs text-emerald-200/80">Password</Label>
-                <Input
+                <Label htmlFor="count-init-password" className="text-xs text-emerald-200/80">Password</Label>
+                <Input id="count-init-password"
                   type="password"
                   autoComplete="off"
                   value={coPassword}
@@ -501,7 +501,7 @@ export function CountInitiationModal({
                 />
               </div>
 
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-chrome-foreground-muted">
                 This verifies the incoming staff member&apos;s credentials without switching sessions.
               </p>
             </div>
@@ -514,7 +514,7 @@ export function CountInitiationModal({
                   setCoPassword("");
                 }}
                 disabled={coBusy}
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className="border-zinc-700 text-chrome-foreground-muted hover:bg-zinc-800"
               >
                 Cancel
               </Button>

@@ -13,6 +13,7 @@ import { APPLY_MODES, APPLY_MODE_LABELS, rungDraftsFrom, windowDraftsFrom, type 
 import { fetchObservationConfigOverview } from "@/lib/rounding/cadence-settings-fetch";
 import { applyObservationTemplate, fetchTemplatePortfolio, saveObservationTemplate, type PortfolioFacility, type TemplateCatalog, type TemplateOutcome } from "@/lib/rounding/cadence-template-fetch";
 import { roundingCommandRefusal } from "@/lib/rounding/rounding-query-error";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 type Target = { facility: PortfolioFacility; applyMode: ApplyMode; effectiveFrom: string; before: WindowDraft[] | RungDraft[] };
 
@@ -48,9 +49,9 @@ export function CadenceTemplatePortfolio({ facilityId, windows, rungs, onEditTem
       <Button variant="outline" disabled={busy} onClick={() => void load()}>{data ? "Refresh portfolio" : "Load portfolio"}</Button>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {data && <fieldset disabled={busy} className="space-y-4">
-        <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Facility</th><th>Observation template</th><th>Escalation template</th><th>Drift</th><th>Apply</th></tr></thead>
+        <HorizontalScroll label="Cadence templates by facility"><table className="w-full text-left text-sm"><thead><tr><th>Facility</th><th>Observation template</th><th>Escalation template</th><th>Drift</th><th>Apply</th></tr></thead>
           <tbody>{data.portfolio.map((facility) => <tr key={facility.facility_id} className="border-t border-border"><td>{facility.facility_name}</td><td>{facility.cadence_template_name ?? "Custom"}</td><td>{facility.escalation_template_name ?? "Custom"}</td><td>{facility.cadence_drift_count} windows, {facility.escalation_drift_count} rungs</td><td><Button size="sm" variant="ghost" disabled={!selected || busy} onClick={() => void preview(facility)}>Preview for this facility</Button></td></tr>)}</tbody>
-        </table></div>
+        </table></HorizontalScroll>
         <label className="block text-sm">Template type<Select value={kind} disabled={busy} onValueChange={(value) => { setKind(value as typeof kind); setTemplateId(""); setTargets([]); setResults([]); }}><SelectTrigger aria-label="Template type"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cadence">Observation schedule</SelectItem><SelectItem value="escalation">Escalation ladder</SelectItem></SelectContent></Select></label>
         <label className="block text-sm">Template<Select value={templateId || "new"} disabled={busy} onValueChange={(value) => { setTemplateId(value === "new" ? "" : value); setName(""); setTargets([]); setResults([]); setAcknowledgment(""); }}><SelectTrigger aria-label="Template"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="new">New template</SelectItem>{templates.map((template) => <SelectItem key={template.id} value={template.id}>{template.name} · version {template.version_number}</SelectItem>)}</SelectContent></Select></label>
         {selected && proposed && onEditTemplate && <Button variant="outline" onClick={() => onEditTemplate(kind, structuredClone(proposed))}>Load selected template into the editor</Button>}
@@ -65,7 +66,7 @@ export function CadenceTemplatePortfolio({ facilityId, windows, rungs, onEditTem
           <h3 className="text-sm font-semibold">{target.facility.facility_name}: current → {selected?.name}</h3>
           <CadencePolicyDiff before={target.before} after={proposed ?? []} />
           <label className="block text-sm">Effective timing for {target.facility.facility_name}<Select value={target.applyMode} disabled={busy} onValueChange={(value) => setTargets((rows) => rows.map((row) => row === target ? { ...row, applyMode: value as ApplyMode } : row))}><SelectTrigger aria-label={`Effective timing for ${target.facility.facility_name}`}><SelectValue /></SelectTrigger><SelectContent>{APPLY_MODES.map((mode) => <SelectItem key={mode} value={mode}>{APPLY_MODE_LABELS[mode]}</SelectItem>)}</SelectContent></Select></label>
-          {target.applyMode === "scheduled" && <label className="block text-sm">Scheduled time (your local timezone)<DateTimePicker id={`template-time-${target.facility.facility_id}`} value={target.effectiveFrom} disabled={busy} onValueChange={(value) => setTargets((rows) => rows.map((row) => row === target ? { ...row, effectiveFrom: value } : row))} /></label>}
+          {target.applyMode === "scheduled" && <label htmlFor={`template-time-${target.facility.facility_id}`} className="block text-sm">Scheduled time (your local timezone)<DateTimePicker id={`template-time-${target.facility.facility_id}`} value={target.effectiveFrom} disabled={busy} onValueChange={(value) => setTargets((rows) => rows.map((row) => row === target ? { ...row, effectiveFrom: value } : row))} /></label>}
           <Button variant="ghost" size="sm" disabled={busy} onClick={() => setTargets((rows) => rows.filter((row) => row !== target))}>Remove target</Button>
         </div>)}
         {targets.length > 0 && selected && <>

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -232,7 +233,7 @@ export default function CaregiverResidentBehaviorPage() {
       <div className="space-y-4">
         <Link
           href={homeHref}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
         >
           <ArrowLeft className="h-4 w-4" />
           Shift home
@@ -252,7 +253,7 @@ export default function CaregiverResidentBehaviorPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-400">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading behavior log…
       </div>
@@ -277,7 +278,7 @@ export default function CaregiverResidentBehaviorPage() {
     <div className="space-y-4">
       <Link
         href={`/caregiver/resident/${residentId}`}
-        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-zinc-400 hover:text-white")}
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "inline-flex gap-1 text-muted-foreground hover:text-white")}
       >
         <ArrowLeft className="h-4 w-4" />
         Resident
@@ -292,7 +293,7 @@ export default function CaregiverResidentBehaviorPage() {
           <CardTitle className="flex items-center gap-2 text-lg">
             Behavior support
           </CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardDescription className="text-muted-foreground">
             {residentLabel ? (
               <>
                 Document observable behaviors for <span className="text-zinc-200">{residentLabel}</span>
@@ -313,8 +314,8 @@ export default function CaregiverResidentBehaviorPage() {
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Behavior type</Label>
-                  <select
+                  <Label htmlFor="behavior-behavior-type" className="text-xs text-muted-foreground">Behavior type</Label>
+                  <select id="behavior-behavior-type"
                     className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                     value={behaviorType}
                     onChange={(e) => setBehaviorType(e.target.value)}
@@ -327,8 +328,8 @@ export default function CaregiverResidentBehaviorPage() {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Duration (minutes)</Label>
-                  <input
+                  <Label htmlFor="behavior-duration-minutes" className="text-xs text-muted-foreground">Duration (minutes)</Label>
+                  <input id="behavior-duration-minutes"
                     type="number"
                     min={0}
                     placeholder="Optional"
@@ -339,8 +340,8 @@ export default function CaregiverResidentBehaviorPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">What was observed</Label>
-                <textarea
+                <Label htmlFor="behavior-what-was-observed" className="text-xs text-muted-foreground">What was observed</Label>
+                <textarea id="behavior-what-was-observed"
                   rows={3}
                   required
                   placeholder="Objective description"
@@ -351,8 +352,8 @@ export default function CaregiverResidentBehaviorPage() {
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Antecedent (optional)</Label>
-                  <textarea
+                  <Label htmlFor="behavior-antecedent-optional" className="text-xs text-muted-foreground">Antecedent (optional)</Label>
+                  <textarea id="behavior-antecedent-optional"
                     rows={2}
                     className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
                     value={antecedent}
@@ -360,8 +361,8 @@ export default function CaregiverResidentBehaviorPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-zinc-400">Consequence / outcome (optional)</Label>
-                  <textarea
+                  <Label htmlFor="behavior-consequence-outcome-optional" className="text-xs text-muted-foreground">Consequence / outcome (optional)</Label>
+                  <textarea id="behavior-consequence-outcome-optional"
                     rows={2}
                     className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
                     value={consequence}
@@ -370,8 +371,8 @@ export default function CaregiverResidentBehaviorPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Interventions used (comma-separated)</Label>
-                <input
+                <Label htmlFor="behavior-interventions-used-comma-separated" className="text-xs text-muted-foreground">Interventions used (comma-separated)</Label>
+                <input id="behavior-interventions-used-comma-separated"
                   type="text"
                   placeholder="e.g. redirection, music, 1:1 sitter"
                   className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
@@ -380,8 +381,8 @@ export default function CaregiverResidentBehaviorPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Intervention effective?</Label>
-                <select
+                <Label htmlFor="behavior-intervention-effective" className="text-xs text-muted-foreground">Intervention effective?</Label>
+                <select id="behavior-intervention-effective"
                   className="flex h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 text-sm text-zinc-100"
                   value={interventionEffective}
                   onChange={(e) => setInterventionEffective(e.target.value as "" | "yes" | "no")}
@@ -392,15 +393,15 @@ export default function CaregiverResidentBehaviorPage() {
                 </select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Additional notes</Label>
-                <textarea
+                <Label htmlFor="behavior-additional-notes" className="text-xs text-muted-foreground">Additional notes</Label>
+                <textarea id="behavior-additional-notes"
                   rows={2}
                   className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
-              <label className="flex items-center gap-2 text-xs text-zinc-300">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
@@ -435,9 +436,9 @@ export default function CaregiverResidentBehaviorPage() {
           ) : null}
 
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Recent entries</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recent entries</p>
             {rows.length === 0 ? (
-              <p className="text-sm text-zinc-400">No behavioral events logged yet.</p>
+              <p className="text-sm text-muted-foreground">No behavioral events logged yet.</p>
             ) : (
               <ul className="space-y-2">
                 {rows.map((row) => (
@@ -445,20 +446,15 @@ export default function CaregiverResidentBehaviorPage() {
                     <p className="font-medium capitalize text-zinc-100">
                       {BEHAVIOR_TYPES.find((b) => b.value === row.behavior_type)?.label ?? row.behavior_type}
                     </p>
-                    <p className="mt-1 text-zinc-300">{row.behavior}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {new Date(row.occurred_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
+                    <p className="mt-1 text-muted-foreground">{row.behavior}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatShortDateTime(row.occurred_at)}{" "}
                       · {row.shift}
                     </p>
-                    {row.antecedent ? <p className="mt-1 text-xs text-zinc-400">Before: {row.antecedent}</p> : null}
-                    {row.consequence ? <p className="text-xs text-zinc-400">After: {row.consequence}</p> : null}
+                    {row.antecedent ? <p className="mt-1 text-xs text-muted-foreground">Before: {row.antecedent}</p> : null}
+                    {row.consequence ? <p className="text-xs text-muted-foreground">After: {row.consequence}</p> : null}
                     {row.injury_occurred ? <p className="text-xs text-rose-400">Injury documented</p> : null}
-                    {row.notes?.trim() ? <p className="mt-1 text-xs text-zinc-400">{row.notes}</p> : null}
+                    {row.notes?.trim() ? <p className="mt-1 text-xs text-muted-foreground">{row.notes}</p> : null}
                   </li>
                 ))}
               </ul>

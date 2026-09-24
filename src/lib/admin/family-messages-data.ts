@@ -1,3 +1,4 @@
+import { formatShortDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   formatFamilyMessagesAuthorName,
@@ -282,12 +283,7 @@ export async function fetchStaffMessagesForResident(
     authorName: formatFamilyMessagesAuthorName(nameMap.get(m.author_user_id)),
     authorKind: m.author_kind,
     body: m.body,
-    createdAt: new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(m.created_at)),
+    createdAt: formatShortDateTime(m.created_at),
     deliveryMethod: m.delivery_method,
     familyAcknowledgedAt: m.family_acknowledged_at,
   }));
@@ -297,6 +293,9 @@ export async function fetchStaffMessagesForResident(
 
 const RESIDENT_LEFT_FACILITY_ERROR =
   "This resident is not an active resident of the selected facility. The note was not posted.";
+
+/** The composer only renders inside a facility scope (COL-651); this is the invariant's error, not a gate. */
+export const FAMILY_BULLETIN_NO_FACILITY_ERROR = "This note has no facility in scope, so it was not posted.";
 
 export async function postStaffMessage(
   supabase: SupabaseClient<Database>,
@@ -309,7 +308,7 @@ export async function postStaffMessage(
   if (!trimmed) return { ok: false, error: "Message cannot be empty." };
   if (trimmed.length > 8000) return { ok: false, error: "Message is too long (max 8000 characters)." };
   if (!isValidFacilityIdForQuery(facilityId)) {
-    return { ok: false, error: "Select a facility before posting this note." };
+    return { ok: false, error: FAMILY_BULLETIN_NO_FACILITY_ERROR };
   }
 
   const { data: { user } } = await supabase.auth.getUser();

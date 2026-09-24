@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { enumLabel } from "@/lib/display/enum-label";
+import { KnowledgeMarkdown } from "@/components/knowledge/KnowledgeMarkdown";
 
 type ChunkRow = {
   chunk_id: string;
@@ -86,7 +87,7 @@ export default function KnowledgeDocumentRoute() {
   if (!documentId) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <p className="text-sm text-slate-500">Missing document id.</p>
+        <p className="text-sm text-muted-foreground">Missing document id.</p>
       </div>
     );
   }
@@ -98,14 +99,14 @@ export default function KnowledgeDocumentRoute() {
       <div className="mb-6">
         <Link
           href="/admin/knowledge/admin"
-          className="text-xs text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+          className="text-xs text-muted-foreground hover:text-slate-700 dark:hover:text-zinc-200"
         >
           ← Knowledge admin
         </Link>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100 mt-2">
           {headerDoc?.document_title ?? "Knowledge document"}
         </h1>
-        <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-zinc-400">
+        <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
           {headerDoc?.compliance_category ? (
             <span className="rounded border border-slate-200 dark:border-zinc-700 px-2 py-0.5">
               {enumLabel(headerDoc.compliance_category)}
@@ -130,11 +131,11 @@ export default function KnowledgeDocumentRoute() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : error ? (
         <p className="text-sm text-rose-600">Failed to load document: {error}</p>
       ) : chunks.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           This document has no readable chunks, or you don&apos;t have access.
         </p>
       ) : (
@@ -146,13 +147,13 @@ export default function KnowledgeDocumentRoute() {
                 key={chunk.chunk_id}
                 id={`chunk-${chunk.chunk_id}`}
                 className={[
-                  "rounded border px-4 py-3 text-sm leading-6 whitespace-pre-wrap",
+                  "rounded border px-4 py-3 text-sm leading-6",
                   isAnchor
                     ? "border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/40"
                     : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900",
                 ].join(" ")}
               >
-                <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
+                <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
                   <span>
                     Section {chunk.chunk_index + 1}
                     {chunk.section_title ? ` · ${chunk.section_title}` : ""}
@@ -164,7 +165,7 @@ export default function KnowledgeDocumentRoute() {
                     </span>
                   ) : null}
                 </div>
-                <div className="text-slate-800 dark:text-zinc-100">{chunk.content}</div>
+                <KnowledgeMarkdown source={chunk.content} className="space-y-2 text-slate-800 dark:text-zinc-100" />
               </li>
             );
           })}

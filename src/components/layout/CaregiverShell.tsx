@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AlertTriangle, ClipboardList, Clock3, Home, Pill, User } from "lucide-react";
 
 import { AccountNotLinkedNotice } from "@/components/auth/AccountNotLinkedNotice";
 import { WorkingFacilitySelector } from "@/components/caregiver/WorkingFacilitySelector";
 import { RoundingOutbox } from "@/components/rounding/RoundingOutbox";
-import { BottomNav, BottomNavItem } from "@/components/ui/bottom-nav";
 import { StatusPill } from "@/components/ui/status-pill";
+import { RoleAppFrame } from "@/design-system/components/RoleAppFrame";
 import { PilotFeedbackLauncher } from "@/components/feedback/PilotFeedbackLauncher";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { hasLinkedStaffRecord, loadAccountLinkContact, type AccountLinkContact } from "@/lib/auth/account-link";
@@ -20,7 +18,6 @@ import { currentShiftFor, fetchFacilityShiftDefinitions } from "@/lib/caregiver/
 import { routeIsWithin } from "@/lib/navigation/route-match";
 import { createClient } from "@/lib/supabase/client";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
-import { cn } from "@/lib/utils";
 
 type SyncState = {
   variant: "default" | "success" | "warning" | "destructive";
@@ -60,7 +57,7 @@ function deriveSyncState({
 export function CaregiverShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { appRole, loading, organizationId, user } = useHavenAuth();
+  const { appRole, fullName, loading, organizationId, user } = useHavenAuth();
   const [workingFacilityId, setWorkingFacilityId] = useState("");
   const [facilityName, setFacilityName] = useState("Facility");
   const [shiftLabel, setShiftLabel] = useState<string | null>(null);
@@ -175,132 +172,48 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
     }
   }, [isHousekeeper, pathname, router]);
 
-  const caregiverNavItems = [
-    { href: "/caregiver", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: pathname === "/caregiver" },
-    { href: "/caregiver/meds", icon: <Pill className="h-5 w-5" aria-hidden />, label: "Meds", isActive: routeIsWithin(pathname, "/caregiver/meds") },
-    { href: "/caregiver/rounds", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Rounds", isActive: routeIsWithin(pathname, "/caregiver/rounds") },
-    { href: "/caregiver/report", icon: <AlertTriangle className="h-5 w-5" aria-hidden />, label: "Report", isActive: routeIsWithin(pathname, "/caregiver/report") },
-  ];
-  const housekeeperNavItems = [
-    { href: "/caregiver/housekeeper", icon: <Home className="h-5 w-5" aria-hidden />, label: "Home", isActive: routeIsWithin(pathname, "/caregiver/housekeeper") },
-    { href: "/caregiver/clock", icon: <Clock3 className="h-5 w-5" aria-hidden />, label: "Clock", isActive: routeIsWithin(pathname, "/caregiver/clock") },
-    { href: "/caregiver/schedules", icon: <ClipboardList className="h-5 w-5" aria-hidden />, label: "Schedule", isActive: routeIsWithin(pathname, "/caregiver/schedules") },
-  ];
-  const primaryItems = isHousekeeper ? housekeeperNavItems : caregiverNavItems;
-  const meItem = { href: "/caregiver/me", icon: <User className="h-5 w-5" aria-hidden />, label: "Me", isActive: routeIsWithin(pathname, "/caregiver/me") };
-
   return (
     <div className="dark">
-      <div className="flex min-h-screen bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom))] font-sans text-foreground antialiased md:pb-0">
-        {/* Tablet / desktop side rail (md+) */}
-        <nav
-          aria-label="Caregiver navigation (tablet)"
-          className="haven-chrome-sidebar fixed inset-y-0 left-0 z-50 hidden w-20 flex-col border-r border-border pt-4 pb-6 md:flex"
-        >
-          <div className="mt-4 flex flex-1 flex-col items-center gap-6">
-            {primaryItems.map((item) => (
-              <SideNavItem key={item.href} {...item} />
-            ))}
-          </div>
-          <div className="flex flex-col items-center">
-            <SideNavItem {...meItem} />
-          </div>
-        </nav>
-
-        <div className="flex min-w-0 flex-1 flex-col md:ml-20 md:border-l md:border-border">
-          {/* On a phone the header scrolls away with the page: the bottom tab
-              bar is the only chrome that stays, so floor work gets the screen
-              (COL-657). It pins from md up, where there is room. */}
-          <header className="haven-chrome-topnav z-40 flex flex-col items-stretch gap-1.5 border-b border-border px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-3 md:sticky md:top-0 md:px-8 md:py-4">
-            <div className="min-w-0 flex-1">
-              {/* The facility picker sits beside the heading, not inside it (COL-658). */}
-              <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
-                {facilityName}
-              </h1>
-              {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
-              {shiftLabel ? <p className="mt-0.5 text-xs haven-chrome-fg-muted">
-                {shiftLabel}
-              </p> : null}
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:shrink-0 sm:justify-end sm:gap-3 sm:text-sm">
-              {/* COL-677: /med-tech left the med-tech navigation; their home is the floor tablet app. */}
-              <Link href="/employee-file" className="underline sm:mr-3">My employee file</Link>
-              <Link href="/caregiver/acknowledgments" className="text-xs underline">Required reading</Link>
-              <PilotFeedbackLauncher shellKind="caregiver" compact />
-              <button
-                type="button"
-                onClick={() => void roundingSync.flush()}
-                className="tap-responsive rounded-full haven-chrome-tw-ring-offset-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                aria-label="Sync queued caregiver rounds"
-              >
-                <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing} className="text-chrome-foreground">
-                  {syncState.label}
-                </StatusPill>
-              </button>
-
-            </div>
-          </header>
-
-          <main className="flex-1 p-4 md:p-8">
-            <RoundingOutbox />
-            {!workingFacilityId ? (
-              <p role="status">Choose your working facility in the header to begin this shift.</p>
-            ) : staffLinked === false && !isStaffLinkOptionalPath(pathname) ? (
-              <AccountNotLinkedNotice kind="staff" contact={linkContact} />
-            ) : (
-              <div key={workingFacilityId} className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div>
-            )}
-          </main>
+      <RoleAppFrame
+        app={isHousekeeper ? "housekeeper" : "med-tech"}
+        person={fullName}
+        building={
+          <>
+            {/* The facility picker sits beside the heading, not inside it (COL-658). */}
+            <h1 className="break-words text-lg font-semibold tracking-tight haven-chrome-fg md:text-xl">
+              {facilityName}
+            </h1>
+            {user?.id && <WorkingFacilitySelector userId={user.id} onResolved={setWorkingFacilityId} />}
+            {shiftLabel ? <p className="mt-0.5 text-xs haven-chrome-fg-muted">{shiftLabel}</p> : null}
+          </>
+        }
+        headerActions={
+          <>
+            <PilotFeedbackLauncher shellKind="caregiver" compact />
+            <button
+              type="button"
+              onClick={() => void roundingSync.flush()}
+              className="tap-responsive rounded-full haven-chrome-tw-ring-offset-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Sync queued caregiver rounds"
+            >
+              <StatusPill variant={syncState.variant} dot pulsing={syncState.pulsing} className="text-chrome-foreground">
+                {syncState.label}
+              </StatusPill>
+            </button>
+          </>
+        }
+      >
+        <div className="flex-1 p-4 md:p-8">
+          <RoundingOutbox />
+          {!workingFacilityId ? (
+            <p role="status">Choose your working facility in the header to begin this shift.</p>
+          ) : staffLinked === false && !isStaffLinkOptionalPath(pathname) ? (
+            <AccountNotLinkedNotice kind="staff" contact={linkContact} />
+          ) : (
+            <div key={workingFacilityId} className={isDeeperWorkflowPage ? "space-y-4" : undefined}>{children}</div>
+          )}
         </div>
-
-        {/* Mobile bottom tab bar */}
-        <BottomNav aria-label="Caregiver navigation" className="md:hidden [&_[data-state=active]>span:last-child]:text-chrome-foreground">
-          {primaryItems.map((item) => (
-            <BottomNavItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              label={item.label}
-              active={item.isActive}
-            />
-          ))}
-          <BottomNavItem
-            href={meItem.href}
-            icon={meItem.icon}
-            label={meItem.label}
-            active={meItem.isActive}
-          />
-        </BottomNav>
-      </div>
+      </RoleAppFrame>
     </div>
-  );
-}
-
-function SideNavItem({
-  href,
-  icon,
-  label,
-  isActive,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={isActive ? "page" : undefined}
-      aria-label={label}
-      data-state={isActive ? "active" : "inactive"}
-      className={cn(
-        "tap-responsive relative flex h-16 w-16 flex-col items-center justify-center gap-1.5 rounded-lg text-[10px] font-semibold tracking-wide transition-colors",
-        "haven-chrome-tw-ring-offset-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        isActive ? "haven-chrome-narrow-rail-active" : "haven-chrome-narrow-rail-quiet",
-      )}
-    >
-      <span aria-hidden>{icon}</span>
-      <span>{label}</span>
-    </Link>
   );
 }

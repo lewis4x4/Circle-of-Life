@@ -12,6 +12,8 @@
  * carries the same warning: "Columns E & G should total column D").
  */
 
+import { formatPersonName, formatPersonNameLastFirst } from "@/lib/format/datetime";
+
 export type RentRollPeriod = { year: number; month: number };
 
 export type RentRollPeriodBounds = {
@@ -119,12 +121,16 @@ export type RentRollInvoiceInput = {
   balanceDueCents: number;
   invoiceDate: string;
   periodStart: string | null;
+  /** A Medicaid resident can hold a Medicaid invoice and a resident-share invoice for one month (COL-678). */
+  payerType?: string | null;
 };
 
 export type RentRollRow = {
   residentId: string;
-  /** "Last, First" as the sheet writes it */
+  /** "First Last" — how every Haven screen shows a person (COL-686). */
   residentName: string;
+  /** "Last, First" as the office sheet writes it: the CSV column and the sort key. */
+  residentSheetName: string;
   roomLabel: string | null;
   admissionDate: string | null;
   admittedFrom: string | null;
@@ -233,13 +239,32 @@ export function compareRoomLabels(a: string | null, b: string | null): number {
   return 0;
 }
 
-function pickInvoice(invoices: RentRollInvoiceInput[], bounds: RentRollPeriodBounds): RentRollInvoiceInput | null {
-  const inMonth = invoices.filter((inv) =>
-    inv.periodStart ? inPeriod(inv.periodStart, bounds) : inPeriod(inv.invoiceDate, bounds),
+/**
+ * The month's invoice, per payer: the latest one for each payer type (a
+ * re-issued invoice replaces the earlier one), then added together so a
+ * Medicaid invoice and the resident's own share both count (COL-678). Voided
+ * invoices were never owed and are left out.
+ */
+function pickInvoice(
+  invoices: RentRollInvoiceInput[],
+  bounds: RentRollPeriodBounds,
+): { status: string; totalCents: number; balanceDueCents: number } | null {
+  const inMonth = invoices.filter(
+    (inv) => inv.status !== "void" && (inv.periodStart ? inPeriod(inv.periodStart, bounds) : inPeriod(inv.invoiceDate, bounds)),
   );
   if (inMonth.length === 0) return null;
   inMonth.sort((x, y) => y.invoiceDate.localeCompare(x.invoiceDate));
-  return inMonth[0];
+  const latestPerPayer = new Map<string, RentRollInvoiceInput>();
+  for (const inv of inMonth) {
+    const key = inv.payerType ?? "";
+    if (!latestPerPayer.has(key)) latestPerPayer.set(key, inv);
+  }
+  const picked = [...latestPerPayer.values()];
+  return {
+    status: picked.some((inv) => inv.status === "draft") ? "draft" : picked[0].status,
+    totalCents: picked.reduce((sum, inv) => sum + inv.totalCents, 0),
+    balanceDueCents: picked.reduce((sum, inv) => sum + inv.balanceDueCents, 0),
+  };
 }
 
 export function buildRentRoll(input: RentRollInput): RentRoll {
@@ -372,7 +397,8 @@ export function buildRentRoll(input: RentRollInput): RentRoll {
 
     rows.push({
       residentId: resident.id,
-      residentName: `${resident.lastName}, ${resident.firstName}`.trim(),
+      residentName: formatPersonName({ first_name: resident.firstName, last_name: resident.lastName }),
+      residentSheetName: formatPersonNameLastFirst({ first_name: resident.firstName, last_name: resident.lastName }),
       roomLabel: resident.roomLabel,
       admissionDate: resident.admissionDate,
       admittedFrom: resident.admissionSource,
@@ -385,13 +411,13 @@ export function buildRentRoll(input: RentRollInput): RentRoll {
       outstandingCents: outstanding,
       medicaidPlan,
       medicaidPending,
-      invoice: invoice ? { status: invoice.status, totalCents: invoice.totalCents, balanceDueCents: invoice.balanceDueCents } : null,
+      invoice,
       collectionNote,
       flags,
     });
   }
 
-  rows.sort((a, b) => compareRoomLabels(a.roomLabel, b.roomLabel) || a.residentName.localeCompare(b.residentName));
+  rows.sort((a, b) => compareRoomLabels(a.roomLabel, b.roomLabel) || a.residentSheetName.localeCompare(b.residentSheetName));
 
   const totals: RentRollTotals = {
     residentCount: rows.length,
@@ -443,7 +469,7 @@ export function rentRollToCsv(roll: RentRoll): string {
     [
       quote(row.roomLabel),
       row.admissionDate ?? "",
-      quote(row.residentName),
+      quote(row.residentSheetName),
       dollars(row.contractedCents),
       dollars(row.privateShareCents),
       dollars(row.paidPrivatelyCents),

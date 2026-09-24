@@ -1,4 +1,5 @@
 "use client";
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { MedicationErrorReview } from "@/components/medications/MedicationErrorReview";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -7,8 +8,10 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { AdminTableLoadingState } from "@/components/common/admin-list-patterns";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import {
@@ -37,6 +40,7 @@ export function AdminMedicationErrorsPageClient({
 }: AdminMedicationErrorsPageClientProps) {
   const searchParams = useSearchParams();
   const { selectedFacilityId } = useFacilityStore();
+  const facilityReady = isValidFacilityIdForQuery(selectedFacilityId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [rows, setRows] = useState<MedicationErrorRow[]>(initialRows);
@@ -51,6 +55,15 @@ export function AdminMedicationErrorsPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
+      // Gated below (COL-651); a missing facility is not a load error, and a
+      // facility read still in flight must not land under the gate.
+      loadSequenceRef.current += 1;
+      setLoading(false);
+      setError(null);
+      setRows([]);
+      return;
+    }
 
     // Reads overlap when the facility store hydrates just after the mount load
     // starts (the hydration render reads the store's pre-hydration null). Only
@@ -128,6 +141,10 @@ export function AdminMedicationErrorsPageClient({
         </Link>
       </div>
 
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Medication errors are reported and reviewed per building." />
+      ) : (
+      <>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-[var(--radius)] border border-border bg-card p-4">
           <p className="text-xs font-medium uppercase text-muted-foreground">In view</p>
@@ -222,7 +239,7 @@ export function AdminMedicationErrorsPageClient({
                     <div className="flex flex-col">
                       <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Occurred</span>
                       <span className="text-[11px] font-mono tracking-wider text-muted-foreground whitespace-nowrap tabular-nums">
-                        {new Date(r.occurred_at).toLocaleString()}
+                        {formatDisplayDateTime(r.occurred_at)}
                       </span>
                     </div>
 
@@ -239,6 +256,8 @@ export function AdminMedicationErrorsPageClient({
             </MotionList>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

@@ -12,6 +12,7 @@
  * band rules, not from arithmetic performed here.
  */
 
+import { formatDisplayDate, formatDisplayDateTime } from "@/lib/format/datetime";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -19,6 +20,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 
 import { RoundingHubNav } from "../../rounding-hub-nav";
 import { PageHeader } from "@/design-system/components/PageHeader";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { WatchlistDispositionForm } from "@/components/rounding/WatchlistDispositionForm";
@@ -47,6 +49,7 @@ import {
   type WatchlistSignalRow,
 } from "@/lib/rounding/watchlist-fetch";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const LOAD_FAILED = "This resident's Watchlist record could not be loaded. Try again in a moment.";
 
@@ -174,7 +177,7 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
   const band = open[0]?.band_label ?? null;
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <PageHeader
         title={heading}
         subtitle={
@@ -213,7 +216,9 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
         </div>
       ) : null}
 
-      {!selectedFacilityId ? <p role="status">Choose a building to see this resident’s record.</p> : null}
+      {!selectedFacilityId ? (
+        <FacilityGateNotice reason="A resident's watchlist record is read inside the building that holds it." />
+      ) : null}
       {loading ? <p role="status">{hasData ? "Refreshing resident record…" : "Loading resident record…"}</p> : null}
       {hasData ? <>
       <section aria-label="Open signals" className="space-y-3">
@@ -245,7 +250,7 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
                 <div className="flex gap-2">
                   <dt className="text-muted-foreground">First seen</dt>
                   <dd className="tabular-nums text-foreground">
-                    {new Date(signal.first_detected_at).toLocaleDateString()}
+                    {formatDisplayDate(signal.first_detected_at)}
                   </dd>
                 </div>
                 <div className="flex gap-2">
@@ -279,34 +284,36 @@ function ScopedResidentWatchlist({ residentId }: { residentId: string }) {
           </div>
         ) : (
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2.5">Signal</th>
-                  <th className="px-3 py-2.5">Opened</th>
-                  <th className="px-3 py-2.5">Closed</th>
-                  <th className="px-3 py-2.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {history.map((row) => (
-                  <tr key={row.id} className="h-9">
-                    <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_label}<ObservationEvidence evidence={row.evidence} observations={observations} /></td>
-                    <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                      {new Date(row.first_detected_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                      {row.cleared_at ? new Date(row.cleared_at).toLocaleDateString() : "Open"}
-                    </td>
-                    <td className="px-3 py-2">
-                      <StatusPill tone={signalStatusTone(row.status)}>
-                        {signalStatusLabel(row.status)}
-                      </StatusPill>
-                    </td>
+            <HorizontalScroll label="Watchlist history">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2.5">Signal</th>
+                    <th className="px-3 py-2.5">Opened</th>
+                    <th className="px-3 py-2.5">Closed</th>
+                    <th className="px-3 py-2.5">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {history.map((row) => (
+                    <tr key={row.id} className="h-9">
+                      <td className="px-3 py-2 text-[13px] text-foreground">{row.signal_label}<ObservationEvidence evidence={row.evidence} observations={observations} /></td>
+                      <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
+                        {formatDisplayDate(row.first_detected_at)}
+                      </td>
+                      <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
+                        {row.cleared_at ? formatDisplayDate(row.cleared_at) : "Open"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <StatusPill tone={signalStatusTone(row.status)}>
+                          {signalStatusLabel(row.status)}
+                        </StatusPill>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </HorizontalScroll>
           </div>
         )}
       </section>
@@ -331,7 +338,7 @@ function ObservationEvidence({ evidence, observations }: {
     <summary className="cursor-pointer text-sm font-medium">View underlying observations</summary>
     {entries.length < ids.length ? <p className="mt-2 text-sm text-muted-foreground">Some referenced observations are unavailable in this building or with your access.</p> : null}
     <ul className="mt-2 space-y-3">{entries.map((row) => <li key={row.id}>
-      <time className="text-xs text-muted-foreground" dateTime={row.observed_at}>{new Date(row.observed_at).toLocaleString()}</time>
+      <time className="text-xs text-muted-foreground" dateTime={row.observed_at}>{formatDisplayDateTime(row.observed_at)}</time>
       <p className="text-sm">{row.composed_summary || "Observation narrative unavailable."}</p>
       {row.note ? <p className="text-sm text-muted-foreground">Note: {row.note}</p> : null}
     </li>)}</ul>

@@ -59,7 +59,7 @@ export default function LandingHome() {
             <span className={navChipClassName}>Operations OS</span>
           </div>
 
-          <div className="hidden items-center gap-8 text-sm font-medium text-slate-400 md:flex">
+          <div className="hidden items-center gap-8 text-sm font-medium text-chrome-foreground-muted md:flex">
             {["Platform", "Clinical", "Multi-entity", "Security"].map((label, i) => (
               <span
                 key={label}
@@ -79,7 +79,7 @@ export default function LandingHome() {
           >
             <Link
               href="/login"
-              className="text-sm font-medium text-slate-400 transition-colors hover:text-white"
+              className="text-sm font-medium text-chrome-foreground-muted transition-colors hover:text-white"
             >
               Sign in
             </Link>
@@ -118,7 +118,7 @@ export default function LandingHome() {
             </h1>
 
             <p
-              className="mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg"
+              className="mt-6 max-w-xl text-base leading-relaxed text-chrome-foreground-muted sm:text-lg"
             >
               Assisted living, home health, and HCBS on a single role-governed platform—census, clinical
               workflows, compliance signals, and owner visibility without the legacy patchwork.
@@ -143,7 +143,7 @@ export default function LandingHome() {
             </div>
 
             <div
-              className="mt-10 flex flex-wrap gap-x-8 gap-y-2 text-xs text-slate-500"
+              className="mt-10 flex flex-wrap gap-x-8 gap-y-2 text-xs text-chrome-foreground-muted"
             >
               <span className="flex items-center gap-2">
                 <span className="h-1 w-1 rounded-full bg-teal-500" />
@@ -166,11 +166,11 @@ export default function LandingHome() {
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-200/90">
                     Operations Command Layer
                   </p>
-                  <p className="text-sm leading-relaxed text-slate-300">
+                  <p className="text-sm leading-relaxed text-chrome-foreground-muted">
                     Role-based workspaces keep census, care execution, compliance evidence, and executive signals tied
                     to the facility record.
                   </p>
-                  <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
+                  <div className="flex flex-wrap gap-2 text-[11px] text-chrome-foreground-muted">
                     <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">Facility-scoped</span>
                     <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">Audit-ready</span>
                     <span className="rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1">Executive visibility</span>
@@ -198,7 +198,7 @@ export default function LandingHome() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-200/80">
                   Built for Care
                 </p>
-                <p className="mt-1 text-sm text-slate-300">
+                <p className="mt-1 text-sm text-chrome-foreground-muted">
                   Premium hospitality environments supported by invisible, high-precision operations technology.
                 </p>
               </div>
@@ -221,7 +221,7 @@ export default function LandingHome() {
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
                 </div>
                 <div className="mx-auto hidden h-6 flex-1 max-w-md items-center justify-center rounded-md border border-white/[0.06] bg-black/20 sm:flex">
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-chrome-foreground-muted">
                     app.haven.ops — secure session
                   </span>
                 </div>
@@ -291,7 +291,7 @@ export default function LandingHome() {
           <div className="landing-marquee relative overflow-hidden">
             <div className="landing-marquee-track flex w-max gap-16 px-6">
               {[...trustItems, ...trustItems].map((item, idx) => (
-                <div key={`${item.label}-${idx}`} className="flex items-center gap-2 text-slate-400">
+                <div key={`${item.label}-${idx}`} className="flex items-center gap-2 text-chrome-foreground-muted">
                   <item.icon className="h-5 w-5 shrink-0 text-teal-400/90" />
                   <span className="whitespace-nowrap text-xs font-semibold uppercase tracking-[0.18em]">
                     {item.label}
@@ -312,7 +312,7 @@ export default function LandingHome() {
             <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               Built for operators who cannot afford drift.
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-chrome-foreground-muted">
               Dense where it matters—census, clinical signals, workforce, and collections—without the noise of
               fifteen disconnected tools.
             </p>
@@ -328,7 +328,7 @@ export default function LandingHome() {
                     <Activity className="h-6 w-6 text-teal-300" />
                   </div>
                   <CardTitle className="text-2xl text-white font-semibold">Clinical velocity</CardTitle>
-                  <CardDescription className="text-base text-slate-400">
+                  <CardDescription className="text-base text-chrome-foreground-muted">
                     eMAR-aware flows, bedside-first UX, and incident discipline that stays tied to the resident
                     record.
                   </CardDescription>
@@ -350,7 +350,7 @@ export default function LandingHome() {
                   <CardTitle className="max-w-md text-2xl text-white font-semibold">
                     Multi-entity financial clarity
                   </CardTitle>
-                  <CardDescription className="max-w-lg text-base text-slate-400">
+                  <CardDescription className="max-w-lg text-base text-chrome-foreground-muted">
                     Separate legal entities, shared discipline—census, AR signals, and revenue views without
                     spreadsheet archaeology.
                   </CardDescription>
@@ -383,7 +383,7 @@ export default function LandingHome() {
                     <ShieldCheck className="h-5 w-5 text-slate-200" />
                   </div>
                   <CardTitle className="text-xl text-white font-semibold">RLS-native</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="text-chrome-foreground-muted">
                     Policies at the database—roles see the slice they should, auditors see the trail.
                   </CardDescription>
                 </CardHeader>
@@ -398,7 +398,7 @@ export default function LandingHome() {
                     <Heart className="h-5 w-5 text-rose-300" />
                   </div>
                   <CardTitle className="text-xl text-white font-semibold">Family-grade portal</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="text-chrome-foreground-muted">
                     Warm, read-forward experiences for POA and loved ones—care summaries and billing without
                     clinical clutter.
                   </CardDescription>
@@ -412,7 +412,7 @@ export default function LandingHome() {
           <div
           >
             <h3 className="text-2xl font-semibold text-white sm:text-3xl">Start with a focused pilot.</h3>
-            <p className="mt-3 text-slate-400">
+            <p className="mt-3 text-chrome-foreground-muted">
               We activate one facility pattern at a time so workflows, training, and governance stay sharp.
             </p>
             <Link
@@ -426,14 +426,14 @@ export default function LandingHome() {
       </main>
 
       <footer className="relative z-10 border-t border-white/[0.08] bg-[#020617] py-12">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 text-sm text-slate-400 md:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 text-sm text-chrome-foreground-muted md:flex-row">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
             <span className="text-slate-200 font-semibold">Haven OS</span>
           </div>
-          <p className="text-center text-slate-300 md:text-left">
+          <p className="text-center text-chrome-foreground-muted md:text-left">
             &copy; {new Date().getFullYear()} Circle of Life. All rights reserved.
           </p>
         </div>

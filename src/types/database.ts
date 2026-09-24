@@ -20978,6 +20978,7 @@ export type Database = {
           organization_id: string | null
           other: boolean | null
           resident: string | null
+          resident_display: string | null
           room: string | null
           scrapes_or_burn: boolean | null
           severity: Database["public"]["Enums"]["incident_severity"] | null

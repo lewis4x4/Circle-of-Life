@@ -103,6 +103,25 @@ export function formatDisplayDate(
   return instant ? formatter({ ...DATE_OPTIONS, timeZone: resolveTimeZone(timeZone) }).format(instant) : fallback;
 }
 
+/**
+ * Any other shape ("Mon, Sep 22", "September 2026", "22:05") with the same zone
+ * rules as the formatters above: a `YYYY-MM-DD` value is its calendar day, an
+ * instant is read in `timeZone`. For call sites whose layout the standard
+ * formatters do not cover; the options must not carry their own `timeZone`.
+ */
+export function formatDateTimeWith(
+  value: DisplayInstant | null | undefined,
+  options: Omit<Intl.DateTimeFormatOptions, "timeZone">,
+  { timeZone, fallback = DATE_TIME_NOT_POSTED_COPY }: TimeZoneOption & { fallback?: string } = {},
+): string {
+  if (isDateOnlyString(value)) {
+    const noon = dateOnlyAsUtcNoon(value);
+    return noon ? formatter({ ...options, timeZone: "UTC" }).format(noon) : fallback;
+  }
+  const instant = toInstant(value);
+  return instant ? formatter({ ...options, timeZone: resolveTimeZone(timeZone) }).format(instant) : fallback;
+}
+
 /** Date and time, "Sep 22, 2026, 10:05 PM", in the facility's zone. */
 export function formatDisplayDateTime(
   value: DisplayInstant | null | undefined,
@@ -190,4 +209,42 @@ export function formatPersonName(
   const last = person.last_name?.trim() ?? "";
   const combined = `${first} ${last}`.trim();
   return combined.length > 0 ? combined : fallback;
+}
+
+/**
+ * Last-name-first, for exports that mirror a paper or office sheet sorted by
+ * surname (the Incident Reports Log CSV, the rent-roll CSV) and for sort keys.
+ * Never rendered on screen: the screen reads "First Last" (COL-686).
+ */
+export function formatPersonNameLastFirst(
+  person: PersonNameParts | null | undefined,
+  { fallback = "No name posted" }: { fallback?: string } = {},
+): string {
+  if (!person) return fallback;
+  const first = (person.preferred_name?.trim() || person.first_name?.trim()) ?? "";
+  const last = person.last_name?.trim() ?? "";
+  if (first && last) return `${last}, ${first}`;
+  return first || last || fallback;
+}
+
+const LOGIN_HANDLE_RE = /^[a-z0-9._+-]+$/;
+
+/** True for an email or a lowercase login handle ("blewis") stored where a person's name belongs. */
+export function looksLikeLoginIdentifier(value: string | null | undefined): boolean {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.includes("@") || LOGIN_HANDLE_RE.test(trimmed);
+}
+
+/**
+ * A `user_profiles.full_name` for display. A blank value, an email or a login
+ * handle reads as `fallback` — Haven never shows a login identifier as a
+ * person's name (COL-686).
+ */
+export function formatProfileName(
+  fullName: string | null | undefined,
+  { fallback = "Staff" }: { fallback?: string } = {},
+): string {
+  const trimmed = fullName?.trim() ?? "";
+  if (trimmed.length === 0 || looksLikeLoginIdentifier(trimmed)) return fallback;
+  return trimmed;
 }

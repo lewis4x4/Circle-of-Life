@@ -10,6 +10,7 @@
  * The CSV matches the column order of the paper log it replaces.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   signalStatusTone,
   type FacilityScope,
 } from "@/lib/rounding/watchlist-display-copy";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 export interface LedgerEntry extends LedgerCsvRow {
   id: string;
@@ -77,41 +79,43 @@ export function WatchlistDispositionLedger({
           Export CSV
         </Button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2.5">Date</th>
-              <th className="px-3 py-2.5">Signal</th>
-              <th className="px-3 py-2.5">Moved to</th>
-              <th className="px-3 py-2.5">Reviewed by</th>
-              <th className="px-3 py-2.5">What was done</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {entries.map((entry) => (
-              <tr key={entry.id} className="h-9">
-                <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
-                  {new Date(entry.acted_at).toLocaleDateString()}
-                </td>
-                <td className="px-3 py-2 text-[13px] text-foreground">{entry.signal_label}</td>
-                <td className="px-3 py-2">
-                  <StatusPill tone={signalStatusTone(entry.to_status)}>
-                    {signalStatusLabel(entry.to_status)}
-                  </StatusPill>
-                </td>
-                <td className="px-3 py-2 text-[13px] text-muted-foreground">
-                  {entry.actor_kind === "system"
-                    ? "Scheduled evaluation"
-                    : ownerLabel(entry.acted_by_name)}
-                </td>
-                <td className="px-3 py-2 text-[13px] text-foreground">
-                  {entry.note?.trim() ? entry.note : "Nothing written"}
-                </td>
+      <div>
+        <HorizontalScroll label="Watchlist dispositions">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border bg-muted/40 text-[12px] font-semibold text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2.5">Date</th>
+                <th className="px-3 py-2.5">Signal</th>
+                <th className="px-3 py-2.5">Moved to</th>
+                <th className="px-3 py-2.5">Reviewed by</th>
+                <th className="px-3 py-2.5">What was done</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {entries.map((entry) => (
+                <tr key={entry.id} className="h-9">
+                  <td className="px-3 py-2 text-[13px] tabular-nums text-muted-foreground">
+                    {formatDisplayDate(entry.acted_at)}
+                  </td>
+                  <td className="px-3 py-2 text-[13px] text-foreground">{entry.signal_label}</td>
+                  <td className="px-3 py-2">
+                    <StatusPill tone={signalStatusTone(entry.to_status)}>
+                      {signalStatusLabel(entry.to_status)}
+                    </StatusPill>
+                  </td>
+                  <td className="px-3 py-2 text-[13px] text-muted-foreground">
+                    {entry.actor_kind === "system"
+                      ? "Scheduled evaluation"
+                      : ownerLabel(entry.acted_by_name)}
+                  </td>
+                  <td className="px-3 py-2 text-[13px] text-foreground">
+                    {entry.note?.trim() ? entry.note : "Nothing written"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </HorizontalScroll>
       </div>
     </section>
   );

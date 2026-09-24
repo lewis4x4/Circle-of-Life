@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X, RefreshCw } from "lucide-react";
@@ -281,7 +282,7 @@ export default function CaregiverMedsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-zinc-400">
+      <div className="flex h-[50vh] flex-col items-center justify-center gap-4 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
         <p className="text-sm font-medium tracking-wide">{CAREGIVER_EMAR_LOADING_COPY}</p>
       </div>
@@ -329,15 +330,17 @@ export default function CaregiverMedsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">eMAR Queue</h1>
-          <p className="text-zinc-400 mt-1 uppercase tracking-wider text-xs font-semibold">
+          <p className="text-muted-foreground mt-1 uppercase tracking-wider text-xs font-semibold">
             {ctx?.facilityName ?? "Document medication passes."}
           </p>
         </div>
         <button 
+           type="button"
+           aria-label="Refresh medications"
            onClick={() => void load()}
            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors border border-white/5 tap-responsive"
         >
-           <RefreshCw className="w-4 h-4 text-zinc-300" />
+           <RefreshCw className="w-4 h-4 text-muted-foreground" aria-hidden />
         </button>
       </div>
 
@@ -383,7 +386,7 @@ export default function CaregiverMedsPage() {
             role="status"
           >
             <p className="text-sm font-medium text-white">{caregiverEmarEmptyNoticeTitle()}</p>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{caregiverEmarEmptyNoticeHelper()}</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{caregiverEmarEmptyNoticeHelper()}</p>
           </section>
         ) : (
           <MotionList className="space-y-4">
@@ -428,13 +431,13 @@ function EmarMetricPill({
 
   return (
     <div className={`flex-1 min-w-[120px] rounded-[1.2rem] border px-5 py-4 flex flex-col justify-between ${toneClass}`}>
-      <div className="mb-2 uppercase tracking-wider text-[10px] font-bold text-zinc-400">
+      <div className="mb-2 uppercase tracking-wider text-[10px] font-bold text-muted-foreground">
         {label}
       </div>
       {display.mode === "number" ? (
         <div className="text-3xl font-medium tabular-nums tracking-tight">{display.text}</div>
       ) : (
-        <div className="text-[13px] font-medium leading-snug text-zinc-300">{display.text}</div>
+        <div className="text-[13px] font-medium leading-snug text-muted-foreground">{display.text}</div>
       )}
     </div>
   );
@@ -468,7 +471,7 @@ function MedicationCard({
          <div className="flex items-start justify-between gap-4">
             <div>
                <h3 className="text-xl md:text-2xl text-white tracking-wide">{item.medicationLabel}</h3>
-               <p className="text-zinc-400 text-sm font-medium mt-1">
+               <p className="text-muted-foreground text-sm font-medium mt-1">
                  {item.residentName} <span className="mx-2 opacity-50">&middot;</span> Rm {item.roomLabel}
                </p>
             </div>
@@ -482,22 +485,22 @@ function MedicationCard({
 
          {/* Instructions block */}
          <div className="flex flex-wrap items-center gap-3 py-3 border-y border-white/5">
-           <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+           <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
              <Pill className="h-3.5 w-3.5 text-primary" />
              {item.routeLabel}
            </span>
-           <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
-             <Clock3 className="h-3.5 w-3.5 text-zinc-400" />
+           <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+             <Clock3 className="h-3.5 w-3.5 text-muted-foreground" />
              {item.scheduleLabel}
            </span>
-           <span className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-300 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+           <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
              <ShieldAlert className="h-3.5 w-3.5 text-emerald-400" />
              {item.instructions}
            </span>
          </div>
 
-         {item.isPrn && <p className="text-sm text-zinc-300">Last recorded administration: {item.lastAdministrationIso ? new Date(item.lastAdministrationIso).toLocaleString() : "None recorded"}. Check the order restrictions before any repeat dose.</p>}
-         <label className="text-sm text-zinc-300">{item.isPrn ? "Indication and order restrictions checked" : "Refusal reason (required if refused)"}
+         {item.isPrn && <p className="text-sm text-muted-foreground">Last recorded administration: {item.lastAdministrationIso ? formatDisplayDateTime(item.lastAdministrationIso) : "None recorded"}. Check the order restrictions before any repeat dose.</p>}
+         <label className="text-sm text-muted-foreground">{item.isPrn ? "Indication and order restrictions checked" : "Refusal reason (required if refused)"}
            <input value={reason} onChange={(e) => setReason(e.target.value)} className="mt-2 w-full rounded-lg border border-white/20 bg-black/30 p-3" />
          </label>
          <div className="grid grid-cols-2 gap-3 mt-1">
@@ -515,7 +518,7 @@ function MedicationCard({
               type="button"
               disabled={busy}
               onClick={() => onRefused(reason)}
-              className="h-14 rounded-xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-black/40 text-zinc-300 hover:bg-white/10 hover:text-white disabled:opacity-50 tap-responsive shadow-inner"
+              className="h-14 rounded-xl flex items-center justify-center font-bold tracking-wide transition-all border border-white/10 bg-black/40 text-muted-foreground hover:bg-white/10 hover:text-white disabled:opacity-50 tap-responsive shadow-inner"
             >
               <X className="mr-2 h-5 w-5" />
               REFUSED

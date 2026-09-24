@@ -24,6 +24,7 @@ type StaffOffboardCardProps = {
   staff: StaffProfileRow;
   canEdit: boolean;
   onStaffUpdated: (staff: StaffProfileRow) => void;
+  className?: string;
 };
 
 function havenRestoreCopy(havenAccess: string | undefined): string {
@@ -39,7 +40,7 @@ function havenRestoreCopy(havenAccess: string | undefined): string {
   return "Employment restored. History stays on file.";
 }
 
-export function StaffOffboardCard({ staff, canEdit, onStaffUpdated }: StaffOffboardCardProps) {
+export function StaffOffboardCard({ staff, canEdit, onStaffUpdated, className }: StaffOffboardCardProps) {
   const inactive = isInactiveEmploymentStatus(staff.employment_status);
   const [offboardOpen, setOffboardOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
@@ -118,6 +119,7 @@ export function StaffOffboardCard({ staff, canEdit, onStaffUpdated }: StaffOffbo
   return (
     <>
       <RecordDetailSection
+        className={className}
         title="Offboard"
         description={
           inactive
@@ -132,7 +134,7 @@ export function StaffOffboardCard({ staff, canEdit, onStaffUpdated }: StaffOffbo
               {staff.termination_date ? ` as of ${staff.termination_date}` : ""}.
               Physical access-control sync is flagged for the facility vendor follow-up.
             </p>
-            <Button type="button" onClick={() => setRestoreOpen(true)}>
+            <Button type="button" className="self-start sm:self-auto" onClick={() => setRestoreOpen(true)}>
               Restore employment
             </Button>
           </div>
@@ -143,7 +145,7 @@ export function StaffOffboardCard({ staff, canEdit, onStaffUpdated }: StaffOffbo
                 ? "This profile is linked to a Haven login. Offboard revokes sign-in and facility grants."
                 : "No Haven login is linked. Offboard ends employment and flags access-control follow-up."}
             </p>
-            <Button type="button" variant="destructive" onClick={() => setOffboardOpen(true)}>
+            <Button type="button" variant="destructive" className="self-start sm:self-auto" onClick={() => setOffboardOpen(true)}>
               Offboard
             </Button>
           </div>

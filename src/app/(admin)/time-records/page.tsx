@@ -1,10 +1,11 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Clock, Download } from "lucide-react";
+import { Download } from "lucide-react";
 
 import {
   AdminEmptyState,
@@ -15,7 +16,6 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-row";
-import { cn } from "@/lib/utils";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { adminListFilteredEmptyCopy } from "@/lib/admin-list-empty-copy";
@@ -30,9 +30,9 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
-import { KineticGrid } from "@/components/ui/kinetic-grid";
-import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
-import { V2Card } from "@/components/ui/v2-card";
+import { KPITile } from "@/design-system/components/KPITile";
+import { PageHeader } from "@/design-system/components/PageHeader";
+import { metricFromCount } from "@/lib/metrics/metric-state";
 type TimeRow = {
   id: string;
   staffId: string;
@@ -262,7 +262,6 @@ export default function AdminTimeRecordsPage() {
 
   const bulkApprovePending = useCallback(async () => {
     if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setActionError("Select a facility to approve punches.");
       return;
     }
     const pending = rows.filter((r) => !r.approved && r.clockOut);
@@ -303,74 +302,29 @@ export default function AdminTimeRecordsPage() {
   }, [load, rows, selectedFacilityId, supabase, user]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6">
-        <header className="mb-8">
-          <div>
-            
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground flex items-center gap-3">
-              Time records
-            </h1>
-          </div>
-        </header>
+        <PageHeader
+          className="mb-8"
+          title="Time records"
+          subtitle="Recent clock activity with approval state for payroll readiness."
+          actions={
+            <Link href="/admin/time-records/new" className={buttonVariants({ size: "default" })}>
+              Log manual time
+            </Link>
+          }
+        />
 
-        <KineticGrid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" staggerMs={75}>
-          <div className="h-[160px]">
-            <V2Card
-              hoverColor="orange"
-              className={cn(
-                pendingApproval > 0
-                  ? "border-amber-500/20 dark:border-amber-500/20 shadow-[inset_0_0_15px_rgba(245,158,11,0.05)]"
-                  : "border-border",
-              )}
-            >
-              <></>
-              <MonolithicWatermark
-                value={pendingApproval}
-                className={cn(
-                  "opacity-50",
-                  pendingApproval > 0 ? "text-warning/10" : "text-muted-foreground/10",
-                )}
-              />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <h3
-                  className={cn(
-                    "text-[10px] font-medium tracking-wider uppercase flex items-center gap-2",
-                    pendingApproval > 0 ? "text-warning" : "text-muted-foreground",
-                  )}
-                >
-                  <Clock className="h-3.5 w-3.5" /> Pending Approval
-                </h3>
-                <p
-                  className={cn(
-                    "text-4xl font-mono tracking-tighter pb-1 tabular-nums",
-                    pendingApproval > 0 ? "text-warning" : "text-foreground",
-                  )}
-                >
-                  {pendingApproval}
-                </p>
-              </div>
-            </V2Card>
-          </div>
-          <div className="col-span-1 md:col-span-3 h-[180px]">
-            <V2Card hoverColor="blue" className="p-5 lg:p-6">
-              <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
-                 <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Recent clock activity with approval state for payroll readiness.</p>
-                 <Link
-                   href="/admin/time-records/new"
-                   className={cn(
-                     buttonVariants({ size: "default" }),
-                     "font-medium text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap",
-                   )}
-                 >
-                   + Log Manual Time
-                 </Link>
-              </div>
-            </V2Card>
-          </div>
-        </KineticGrid>
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <KPITile
+            label="Pending approval"
+            state={metricFromCount({ count: queryError ? null : pendingApproval, error: queryError, loading: isLoading })}
+            tone={pendingApproval > 0 ? "warning" : "default"}
+            info="Clock records in scope that still need a manager's approval before payroll."
+          />
+        </div>
 
       <AdminFilterBar
         searchValue={search}
@@ -412,22 +366,27 @@ export default function AdminTimeRecordsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="font-medium text-[10px] border-warning/40 text-warning hover:bg-warning/10"
-                disabled={
-                  approvingBulk ||
-                  exportingCsv ||
-                  pendingApproval === 0 ||
-                  !isValidFacilityIdForQuery(selectedFacilityId)
-                }
-                aria-busy={approvingBulk}
-                onClick={() => void bulkApprovePending()}
-              >
-                {approvingBulk ? "Approving…" : `Approve all pending (${pendingApproval})`}
-              </Button>
+              {isValidFacilityIdForQuery(selectedFacilityId) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="font-medium text-[10px] border-warning/40 text-warning hover:bg-warning/10"
+                  disabled={
+                    approvingBulk ||
+                    exportingCsv ||
+                    pendingApproval === 0
+                  }
+                  aria-busy={approvingBulk}
+                  onClick={() => void bulkApprovePending()}
+                >
+                  {approvingBulk ? "Approving…" : `Approve all pending (${pendingApproval})`}
+                </Button>
+              ) : (
+                <span className="text-[10px] text-muted-foreground">
+                  Bulk approval runs one facility at a time; switch the header from All facilities to approve.
+                </span>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -532,12 +491,5 @@ async function fetchTimeRecordsFromSupabase(selectedFacilityId: string | null): 
 }
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatShortDateTime(iso, { fallback: iso });
 }

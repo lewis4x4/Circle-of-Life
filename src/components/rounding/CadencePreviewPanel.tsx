@@ -14,6 +14,7 @@
  * administrator reads them before submitting, not instead of.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 
 import { CadencePolicyDiff } from "@/components/rounding/CadencePolicyDiff";
@@ -47,6 +48,7 @@ import {
   ACKNOWLEDGMENT_HELPER,
   ACTIVATION_REASON_HELPER,
   ACTIVATION_REASON_LABEL,
+  cadenceNowHint,
 } from "@/lib/rounding/cadence-settings-copy";
 
 export function CadencePreviewPanel({
@@ -111,7 +113,7 @@ export function CadencePreviewPanel({
         </div>
       ) : null}
 
-      {(validation?.warnings.length ?? 0) > 0 ? (
+      {validation && validation.warnings.length > 0 ? (
         <div role="status" className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-4">
           <p className="flex items-center gap-2 text-[13px] font-medium text-foreground">
             <AlertTriangle aria-hidden className="size-4 text-warning" />
@@ -133,7 +135,7 @@ export function CadencePreviewPanel({
           value={candidateShape?.windows_per_day ?? "Unavailable"}
           numericValue={candidateShape?.windows_per_day}
           thresholds={{ type: "informational" }}
-          hint={`Now ${overview.current.day_shape?.windows_per_day ?? 0}`}
+          hint={cadenceNowHint(overview.current.day_shape?.windows_per_day)}
         />
         <MetricCard
           label="Checks a day across the building"
@@ -147,7 +149,7 @@ export function CadencePreviewPanel({
           value={candidateShape ? formatSpanMinutes(candidateShape.largest_unobserved_gap_minutes) : "Unavailable"}
           numericValue={candidateShape?.largest_unobserved_gap_minutes}
           thresholds={{ type: "informational" }}
-          hint={`Now ${formatSpanMinutes(overview.current.day_shape?.largest_unobserved_gap_minutes ?? 0)}`}
+          hint={cadenceNowHint(overview.current.day_shape?.largest_unobserved_gap_minutes, formatSpanMinutes)}
         />
       </div>
 
@@ -205,7 +207,7 @@ export function CadencePreviewPanel({
           <p className="text-[13px] leading-relaxed text-muted-foreground">{APPLY_MODE_HELPERS[applyMode]}</p>
           {applyMode === "next_shift_boundary" && overview.next_shift_boundary_at ? (
             <p className="text-[13px] text-muted-foreground">
-              The next boundary is {new Date(overview.next_shift_boundary_at).toLocaleString()}.
+              The next boundary is {formatDisplayDateTime(overview.next_shift_boundary_at)}.
             </p>
           ) : null}
         </div>

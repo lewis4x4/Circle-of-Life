@@ -58,9 +58,6 @@ type SupabaseResidentMini = {
 type QueryError = { message: string };
 type QueryListResult<T> = { data: T[] | null; error: QueryError | null };
 
-export const NO_FACILITY_SOURCE_NOTICE =
-  "Select a facility to see its assessments and care plans that are due.";
-
 function easternDateString(d = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
@@ -84,10 +81,12 @@ function parseISODateOnly(value: string): number {
 function formatDisplayDate(iso: string): string {
   const t = parseISODateOnly(iso);
   if (Number.isNaN(t)) return iso;
+  // `t` is UTC midnight of a stored calendar date: format it in UTC so it stays that day.
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(t));
 }
 

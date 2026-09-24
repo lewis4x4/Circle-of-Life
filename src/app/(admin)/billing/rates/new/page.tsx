@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Percent } from "lucide-react";
 
+import { FacilityGate } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,10 +55,8 @@ export default function AdminNewRateSchedulePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidFacilityIdForQuery(selectedFacilityId)) {
-      setError("Select a facility in the header first.");
-      return;
-    }
+    // The form only renders inside the facility gate.
+    if (!isValidFacilityIdForQuery(selectedFacilityId)) return;
     const label = name.trim();
     if (!label) {
       setError("Schedule name is required.");
@@ -136,7 +135,7 @@ export default function AdminNewRateSchedulePage() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Percent className="h-6 w-6 text-slate-500" />
+        <Percent className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New rate schedule</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -146,12 +145,7 @@ export default function AdminNewRateSchedulePage() {
         </div>
       </div>
 
-      {!facilityReady && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Choose a facility from the header selector to enable this form.
-        </p>
-      )}
-
+      <FacilityGate reason="A rate schedule is the posted price list for one building.">
       <Card>
         <CardHeader>
           <CardTitle>Pricing</CardTitle>
@@ -278,6 +272,7 @@ export default function AdminNewRateSchedulePage() {
           </form>
         </CardContent>
       </Card>
+      </FacilityGate>
     </div>
   );
 }

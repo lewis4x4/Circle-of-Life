@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
@@ -153,7 +154,7 @@ export default function SavedReportsPage() {
         <div className="p-6 sm:p-8 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 shadow-sm relative overflow-visible mb-6 z-10 w-full transition-all">
           <div className="mb-6 border-b border-slate-200 dark:border-white/5 pb-4">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Create Saved Variant</h3>
-            <p className="text-sm font-mono tracking-wide text-slate-500 dark:text-slate-400 mt-1">Create from template and pin to current version.</p>
+            <p className="text-sm font-mono tracking-wide text-muted-foreground mt-1">Create from template and pin to current version.</p>
           </div>
           <div className="grid gap-4 flex-col lg:flex-row lg:grid-cols-[2fr_1fr_auto] items-center">
             <input aria-label="Variant name" className="h-12 w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-card px-5 py-2 text-sm shadow-inner focus-visible:ring-ring font-mono tracking-wide" placeholder="Variant name" value={name} onChange={(event) => setName(event.target.value)} />
@@ -169,7 +170,7 @@ export default function SavedReportsPage() {
                   </option>
                 ))}
               </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 font-bold">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-muted-foreground font-bold">
                  ↓
               </div>
             </div>
@@ -185,13 +186,13 @@ export default function SavedReportsPage() {
             <h3 className="text-xl font-semibold text-slate-900 dark:text-white">My and Shared Variants</h3>
           </div>
           {loading ? (
-            <div className="p-16 text-center text-slate-500">
+            <div className="p-16 text-center text-muted-foreground">
                <p className="text-sm font-mono tracking-wider uppercase">Loading Variants…</p>
             </div>
           ) : views.length === 0 ? (
-            <div className="p-16 text-center text-slate-500 bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
+            <div className="p-16 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                 <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Saved Variants</p>
-               <p className="text-sm opacity-80 mt-1 font-mono tracking-wide">You haven&apos;t pinned any custom report configurations yet.</p>
+               <p className="text-sm text-muted-foreground mt-1 font-mono tracking-wide">You haven&apos;t pinned any custom report configurations yet.</p>
              </div>
           ) : (
             <MotionList className="space-y-4">
@@ -202,20 +203,20 @@ export default function SavedReportsPage() {
                            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm tracking-wide">
                               {view.name}
                            </span>
-                           <span className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
+                           <span className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground">
                               Template: <span className="font-semibold text-primary">{templateNameById.get(view.template_id) ?? "Mapped template"}</span>
                            </span>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full items-center">
                            <div className="flex flex-col gap-2">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Sharing</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Sharing</span>
                               <Badge className="bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300 uppercase tracking-wider font-mono text-[9px] font-bold border border-slate-200 dark:border-white/10 shadow-sm px-2.5 py-1 rounded-full w-fit">
                                 {view.sharing_scope}
                               </Badge>
                            </div>
                            <div className="flex flex-col gap-2 align-left md:text-left">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Version Config</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Version Config</span>
                               {view.pinned_template_version ? (
                                 <Badge className="bg-primary/5 text-primary border-primary/20 uppercase tracking-wider font-mono text-[9px] font-bold shadow-sm px-2.5 py-1 rounded-full w-fit">
                                   Pinned
@@ -227,8 +228,8 @@ export default function SavedReportsPage() {
                               )}
                            </div>
                            <div className="flex flex-col gap-2 align-right text-left md:text-right">
-                              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400">Last Modified</span>
-                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-medium">{new Date(view.updated_at).toLocaleString()}</span>
+                              <span className="text-[9px] uppercase font-mono tracking-wider text-muted-foreground">Last Modified</span>
+                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-medium">{formatDisplayDateTime(view.updated_at)}</span>
                            </div>
                         </div>
 

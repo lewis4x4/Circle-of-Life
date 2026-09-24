@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -21,8 +22,10 @@ import {
   FAMILY_BULLETIN_DASHBOARD_TILE_TITLE,
 } from "@/lib/admin/family-bulletin-dashboard-copy";
 import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
+import { describeCountTile } from "@/lib/metrics/head-count";
 import { ClipboardList, FileCheck, MessageSquare, UserPlus, Activity, CalendarClock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLatestLoad } from "@/hooks/useLatestLoad";
 
 type CoordinatorDashboardPageClientProps = {
   initialBrief: CoordinatorDashboardBrief | null;
@@ -40,6 +43,7 @@ export function CoordinatorDashboardPageClient({
   const [isLoading, setIsLoading] = useState(initialBrief == null && initialError == null);
   const [error, setError] = useState<string | null>(initialError);
   const skipNextLoadRef = useRef(initialBrief != null);
+  const beginLoad = useLatestLoad();
 
   const load = useCallback(async () => {
     if (skipNextLoadRef.current && selectedFacilityId === initialFacilityId) {
@@ -47,20 +51,23 @@ export function CoordinatorDashboardPageClient({
       return;
     }
     skipNextLoadRef.current = false;
+    const isCurrent = beginLoad();
 
     setError(null);
     setIsLoading(true);
     try {
       const data = await fetchCoordinatorDashboardBrief(selectedFacilityId);
+      if (!isCurrent()) return;
       setBrief(data);
     } catch (e) {
+      if (!isCurrent()) return;
       console.error("[coordinator-dashboard]", e);
       setBrief(null);
       setError("Unable to load coordinator dashboard.");
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
-  }, [selectedFacilityId, initialFacilityId]);
+  }, [beginLoad, selectedFacilityId, initialFacilityId]);
 
   useEffect(() => {
     void load();
@@ -98,6 +105,19 @@ export function CoordinatorDashboardPageClient({
   );
 
   const metricsReady = !isLoading && brief != null;
+  const reviewsDueTile = describeCountTile(brief?.reviewsDue14d, metricsReady, {
+    positive: "Attention needed",
+    // "All current" only means something when there are active plans to be current.
+    zero: brief?.activeCarePlans === 0 ? "No active care plans" : "All current",
+  });
+  const pendingAssessmentsTile = describeCountTile(brief?.pendingAssessments, metricsReady, {
+    positive: "Awaiting completion",
+    zero: "None pending",
+  });
+  const bulletinTile = describeCountTile(brief?.staffBulletinNotes, metricsReady, {
+    positive: FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE,
+    zero: FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL,
+  });
 
   if (error && !brief) {
     return <ErrorState onRetry={load} message={error} />;
@@ -134,14 +154,8 @@ export function CoordinatorDashboardPageClient({
           display={reviewsDueDisplay}
           isMetric={coordinatorDashboardKpiTileIsMetric(reviewsDueDisplay)}
           icon={CalendarClock}
-          urgency={metricsReady && (brief?.reviewsDue14d ?? 0) > 0 ? "critical" : "normal"}
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.reviewsDue14d ?? 0) > 0
-                ? "Attention needed"
-                : "All current"
-          }
+          urgency={reviewsDueTile.attention ? "critical" : "normal"}
+          subLabel={reviewsDueTile.subLabel}
           href="/admin/care-plans/reviews-due"
         />
         <StatCard
@@ -149,14 +163,8 @@ export function CoordinatorDashboardPageClient({
           display={pendingAssessmentsDisplay}
           isMetric={coordinatorDashboardKpiTileIsMetric(pendingAssessmentsDisplay)}
           icon={FileCheck}
-          urgency={metricsReady && (brief?.pendingAssessments ?? 0) > 0 ? "critical" : "normal"}
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.pendingAssessments ?? 0) > 0
-                ? "Awaiting completion"
-                : "None pending"
-          }
+          urgency={pendingAssessmentsTile.attention ? "critical" : "normal"}
+          subLabel={pendingAssessmentsTile.subLabel}
           href="/admin/assessments/overdue"
         />
         <StatCard
@@ -165,14 +173,8 @@ export function CoordinatorDashboardPageClient({
           isMetric={coordinatorDashboardKpiTileIsMetric(bulletinDisplay)}
           icon={MessageSquare}
           urgency="normal"
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.staffBulletinNotes ?? 0) > 0
-                ? FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE
-                : FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL
-          }
-          href="/admin/family-messages"
+          subLabel={bulletinTile.subLabel}
+          href="/admin/family-portal?tab=notes"
         />
       </div>
 
@@ -181,7 +183,7 @@ export function CoordinatorDashboardPageClient({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Care Plans" href="/admin/care-plans/reviews-due" />
         <ActionTile label="Assessments" href="/admin/assessments/overdue" />
-        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-messages" />
+        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-portal?tab=notes" />
         <ActionTile label="Admissions" href="/admin/admissions" />
       </div>
 
@@ -206,7 +208,7 @@ export function CoordinatorDashboardPageClient({
                     <span className="text-[15px] font-semibold text-foreground">{cp.residentName}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">
-                    {new Date(cp.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {formatDateTimeWith(cp.reviewDate, { month: "short", day: "numeric" })}
                   </span>
                 </Link>
               ))}

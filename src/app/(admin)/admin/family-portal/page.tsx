@@ -9,6 +9,7 @@ import { AlertCircle, Calendar, ClipboardList, FileText } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { KpiCard, type KpiCardTone } from "@/components/ui/kpi-card";
 import { MotionItem, MotionList } from "@/components/ui/motion-list";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -19,7 +20,6 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database, Json } from "@/types/database";
 import {
-  familyPortalAdminKpiValue,
   formatFamilyPortalAdminConferenceRoom,
   formatFamilyPortalAdminMatchedKeywords,
   formatFamilyPortalAdminNoteBody,
@@ -28,6 +28,8 @@ import {
   resolveFamilyPortalAdminFacilityScope,
 } from "@/lib/family/family-portal-admin-display-copy";
 import { cn } from "@/lib/utils";
+import { FamilyNotesPanel } from "@/components/family-portal/FamilyNotesPanel";
+import { FAMILY_CONNECTIONS_VIEWS, familyConnectionsView } from "@/lib/family/family-connections-views";
 import { enumLabel } from "@/lib/display/enum-label";
 
 type TriageRow = Database["public"]["Tables"]["family_message_triage_items"]["Row"] & {
@@ -94,7 +96,40 @@ function QuietEmptyState({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Family Connections is the one family surface (COL-707, Brian 2026-09-23). The
+ * former /admin/family-messages page is its "Family notes" view; that URL 308s here.
+ */
 export default function AdminFamilyPortalPage() {
+  const searchParams = useSearchParams();
+  const view = familyConnectionsView(searchParams.get("tab"));
+  return (
+    <div className="mx-auto w-full max-w-[960px] space-y-6 pb-12 pt-2">
+      <header className="space-y-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Family Connections</h1>
+        <nav aria-label="Family Connections views" className="flex flex-wrap gap-1 border-b border-border pb-2">
+          {FAMILY_CONNECTIONS_VIEWS.map((item) => (
+            <Link
+              key={item.id}
+              href={item.href}
+              aria-current={item.id === view ? "page" : undefined}
+              className={cn(
+                "inline-flex h-8 items-center rounded-md px-3 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                item.id === view ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+      {view === "notes" ? <FamilyNotesPanel /> : <FamilyConnectionsOverview />}
+    </div>
+  );
+}
+
+function FamilyConnectionsOverview() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const { selectedFacilityId, availableFacilities } = useFacilityStore();
@@ -374,9 +409,8 @@ export default function AdminFamilyPortalPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-[960px] space-y-10 pb-12 pt-2">
+    <div className="w-full space-y-10">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Family Connections</h1>
         <p className="max-w-[52rem] text-[13px] leading-relaxed text-muted-foreground">
           {pageSubtitle}
         </p>
@@ -385,33 +419,27 @@ export default function AdminFamilyPortalPage() {
         </p>
       </header>
 
+      {!facilityReady ? (
+        <FacilityGateNotice reason="Family notes, care conferences and consents are kept per building." />
+      ) : (
+      <>
       <section aria-label="Needs attention" className="space-y-3">
         <h2 className="text-[13px] font-semibold text-foreground">Needs attention</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <KpiCard
-            value={familyPortalAdminKpiValue("pending_triage", facilityReady, pendingAttentionCount)}
+            value={pendingAttentionCount}
             label="Pending triage"
             tone={pendingAttentionCount > 0 ? "warning" : "neutral"}
-            footnote={
-              facilityReady ? undefined : <span>Select a facility to load operational counts.</span>
-            }
+            footnote={undefined}
           />
           <KpiCard
-            value={familyPortalAdminKpiValue(
-              "conferences_this_week",
-              facilityReady,
-              conferencesThisWeekCount,
-            )}
+            value={conferencesThisWeekCount}
             label="Conferences this week"
             tone="neutral"
             footnote={undefined}
           />
           <KpiCard
-            value={familyPortalAdminKpiValue(
-              "consents_expiring",
-              facilityReady,
-              consentsExpiringCount,
-            )}
+            value={consentsExpiringCount}
             label="Consents expiring in 30 days"
             tone={consentExpiryTone}
             footnote={
@@ -422,12 +450,6 @@ export default function AdminFamilyPortalPage() {
           />
         </div>
       </section>
-
-      {!facilityReady && (
-        <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-[13px] text-muted-foreground">
-          Select a facility in the header to load triage, conferences, and consents.
-        </div>
-      )}
 
       {loadFailed && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-[13px] text-destructive">
@@ -465,7 +487,7 @@ export default function AdminFamilyPortalPage() {
             ) : null}
           </div>
           <Link
-            href="/admin/family-messages"
+            href="/admin/family-portal?tab=notes"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
               "inline-flex items-center gap-2 self-start text-[13px] font-medium sm:self-auto",
@@ -828,6 +850,8 @@ export default function AdminFamilyPortalPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
