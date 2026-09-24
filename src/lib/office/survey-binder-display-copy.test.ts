@@ -33,6 +33,7 @@ describe("binderEvidenceTiles (COL-649)", () => {
     inservicesThisYear: 4,
     drillsOverdue: 3,
     drillsDueSoon: 0,
+    dueWindowDays: 45,
   };
 
   it("surfaces overdue drills instead of hiding them behind a due-soon zero", () => {
@@ -44,6 +45,19 @@ describe("binderEvidenceTiles (COL-649)", () => {
   it("shows a failed count as unavailable, not 0", () => {
     const tile = binderEvidenceTiles({ ...counts, drillsOverdue: null }).find((t) => t.label === "Drills overdue");
     expect(tile?.state.status).toBe("unavailable");
+  });
+
+  it("labels the window tiles with the configured window, not a fixed 60 days (COL-710)", () => {
+    const labels = binderEvidenceTiles(counts).map((t) => t.label);
+    expect(labels).toContain("Expiring ≤45d");
+    expect(labels).toContain("Drills due ≤45d");
+    expect(labels.join(" ")).not.toMatch(/60d/);
+  });
+
+  it("does not count against a guessed window when the setting could not be read", () => {
+    const tiles = binderEvidenceTiles({ ...counts, dueWindowDays: null });
+    const drillsDue = tiles.find((t) => t.label === "Drills due soon");
+    expect(drillsDue?.state).toEqual({ status: "unavailable", reason: "Window setting unavailable" });
   });
 });
 

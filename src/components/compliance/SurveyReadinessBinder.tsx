@@ -28,6 +28,7 @@ import {
   type BinderItemRow,
   type BinderStatus,
 } from "@/lib/office/survey-binder";
+import { loadSurveyBinderDueWindowDays } from "@/lib/operating-rules/operating-rules";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { enumLabel } from "@/lib/display/enum-label";
@@ -81,7 +82,8 @@ export function SurveyReadinessBinder() {
         .limit(500)) as unknown as QueryResult<BinderItemRow>;
       if (itemsRes.error) throw new Error(itemsRes.error.message);
       setItems(itemsRes.data ?? []);
-      setEvidence(await fetchBinderEvidence(supabase, fid));
+      const dueWindowDays = await loadSurveyBinderDueWindowDays(supabase, { facilityId: fid });
+      setEvidence(await fetchBinderEvidence(supabase, fid, dueWindowDays));
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load the survey binder.");
     } finally {
