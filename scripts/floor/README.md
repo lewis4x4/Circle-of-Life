@@ -22,3 +22,18 @@ supabase db query --linked -f /tmp/col695-apply.sql
 ```
 
 Read the dry run before applying. Each script is safe to run again: a second apply reports nothing left to do. The reports print ids, roles and counts, never resident or staff names.
+
+## Fidelity demo on Haven HFO Staging (COL-694)
+
+Not a Homewood script and never run against production. `seed-prototype-demo.mjs` builds one isolated organization, "Haven Demo Workspace (Fidelity)", with one facility, "Fidelity Demo - Floor Kiosk", and fills it with the prototype's fictional staff, residents, checks, tablets and visits so the floor-kiosk Playwright project and `capture-built-screens.mjs` render the reference states. It reads only `.env.staging.local`, refuses anything but `iwcnajanvjvynolltflw`, and writes device tokens, PINs and passwords to the gitignored `test-results/floor-kiosk/devices.json`. The time strategy is in its header.
+
+```bash
+node scripts/floor/seed-prototype-demo.mjs            # capture date = today, Eastern
+node scripts/floor/seed-prototype-demo.mjs --ashley-off   # Ashley off the clock, for the kiosk staff states
+
+# Remove it all again (dry run first; apply with the switch, same pattern as above):
+test "$(cat supabase/.temp/project-ref)" = "iwcnajanvjvynolltflw" || { echo "WRONG LINK"; exit 1; }
+supabase db query --linked -f scripts/floor/fidelity-demo-teardown.sql
+{ echo "SET haven.col695_apply = 'fidelity-demo-teardown';"; cat scripts/floor/fidelity-demo-teardown.sql; } > /tmp/fidelity-demo-teardown-apply.sql
+supabase db query --linked -f /tmp/fidelity-demo-teardown-apply.sql
+```
