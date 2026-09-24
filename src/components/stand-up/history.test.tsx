@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyValues, type StandUpReport } from '@/lib/stand-up/model';
-import { StandUpHistory, revisionChanges } from './history';
+import { StandUpHistory, postSubmitChangeLines, revisionChanges } from './history';
 const mocks = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 afterEach(cleanup);
@@ -80,5 +80,19 @@ describe('facility history analytics', () => {
     expect(changes[1].changes).toEqual(['Callouts last week: 0 to Not provided', 'Overtime last week: Not provided to 17h 15m']);
     expect(changes[1].origin).toBe('Submitted');
     expect(changes[0].changes).toEqual([]);
+  });
+});
+describe('post-submit edit history (COL-797)', () => {
+  it('names the field, both values in the form\'s units, the actor and the Eastern time', () => {
+    const base = { version: 2, revision_id: 'rev2', actor_id: 'u', actor_role: 'facility_admin', reason: null, created_at: '2026-09-14T14:05:00Z' };
+    expect(postSubmitChangeLines([
+      { ...base, id: 'a', field_key: 'monthly_rent_roll_cents', before_value: 9645385, after_value: 9777078, actor_name: 'Demo Administrator' },
+      { ...base, id: 'b', field_key: 'callouts_last_week', before_value: null, after_value: 0, actor_name: null },
+      { ...base, id: 'c', field_key: 'status', before_value: 'ready', after_value: 'draft', actor_name: 'Demo Administrator' },
+    ])).toEqual([
+      { id: 'a', when: 'Sep 14, 10:05 AM', who: 'Demo Administrator', field: 'Monthly rent roll', before: '$96,453.85', after: '$97,770.78', reason: null },
+      { id: 'b', when: 'Sep 14, 10:05 AM', who: 'Unknown', field: expect.any(String), before: 'Not provided', after: '0', reason: null },
+      { id: 'c', when: 'Sep 14, 10:05 AM', who: 'Demo Administrator', field: 'Status', before: 'Submitted', after: 'Draft', reason: null },
+    ]);
   });
 });
