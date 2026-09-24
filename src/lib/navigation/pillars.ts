@@ -184,7 +184,7 @@ export const PILLARS: Pillar[] = [
       { key: "finance", href: "/admin/finance", label: "Finance", icon: Landmark },
       { key: "vendors", href: "/admin/vendors", label: "Vendors & AP", icon: Truck },
       { key: "insurance", href: "/admin/insurance", label: "Insurance", icon: Umbrella },
-      { key: "cash", href: "/admin/cash", label: "Cash & trust accounts", icon: Banknote },
+      { key: "cash", href: "/admin/finance/trust", label: "Cash & trust accounts", icon: Banknote },
       { key: "letters", href: "/admin/letters", label: "Letters", icon: FileText },
     ],
   },
