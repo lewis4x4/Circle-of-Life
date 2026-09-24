@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -21,6 +22,7 @@ import {
   FAMILY_BULLETIN_DASHBOARD_TILE_TITLE,
 } from "@/lib/admin/family-bulletin-dashboard-copy";
 import { FAMILY_BULLETIN_ONE_WAY_HELPER } from "@/lib/admin/family-messages-copy";
+import { describeCountTile } from "@/lib/metrics/head-count";
 import { ClipboardList, FileCheck, MessageSquare, UserPlus, Activity, CalendarClock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
@@ -103,6 +105,19 @@ export function CoordinatorDashboardPageClient({
   );
 
   const metricsReady = !isLoading && brief != null;
+  const reviewsDueTile = describeCountTile(brief?.reviewsDue14d, metricsReady, {
+    positive: "Attention needed",
+    // "All current" only means something when there are active plans to be current.
+    zero: brief?.activeCarePlans === 0 ? "No active care plans" : "All current",
+  });
+  const pendingAssessmentsTile = describeCountTile(brief?.pendingAssessments, metricsReady, {
+    positive: "Awaiting completion",
+    zero: "None pending",
+  });
+  const bulletinTile = describeCountTile(brief?.staffBulletinNotes, metricsReady, {
+    positive: FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE,
+    zero: FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL,
+  });
 
   if (error && !brief) {
     return <ErrorState onRetry={load} message={error} />;
@@ -139,14 +154,8 @@ export function CoordinatorDashboardPageClient({
           display={reviewsDueDisplay}
           isMetric={coordinatorDashboardKpiTileIsMetric(reviewsDueDisplay)}
           icon={CalendarClock}
-          urgency={metricsReady && (brief?.reviewsDue14d ?? 0) > 0 ? "critical" : "normal"}
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.reviewsDue14d ?? 0) > 0
-                ? "Attention needed"
-                : "All current"
-          }
+          urgency={reviewsDueTile.attention ? "critical" : "normal"}
+          subLabel={reviewsDueTile.subLabel}
           href="/admin/care-plans/reviews-due"
         />
         <StatCard
@@ -154,14 +163,8 @@ export function CoordinatorDashboardPageClient({
           display={pendingAssessmentsDisplay}
           isMetric={coordinatorDashboardKpiTileIsMetric(pendingAssessmentsDisplay)}
           icon={FileCheck}
-          urgency={metricsReady && (brief?.pendingAssessments ?? 0) > 0 ? "critical" : "normal"}
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.pendingAssessments ?? 0) > 0
-                ? "Awaiting completion"
-                : "None pending"
-          }
+          urgency={pendingAssessmentsTile.attention ? "critical" : "normal"}
+          subLabel={pendingAssessmentsTile.subLabel}
           href="/admin/assessments/overdue"
         />
         <StatCard
@@ -170,13 +173,7 @@ export function CoordinatorDashboardPageClient({
           isMetric={coordinatorDashboardKpiTileIsMetric(bulletinDisplay)}
           icon={MessageSquare}
           urgency="normal"
-          subLabel={
-            !metricsReady
-              ? "Loading count…"
-              : (brief?.staffBulletinNotes ?? 0) > 0
-                ? FAMILY_BULLETIN_DASHBOARD_TILE_SUBLABEL_ACTIVE
-                : FAMILY_BULLETIN_DASHBOARD_TILE_EMPTY_SUBLABEL
-          }
+          subLabel={bulletinTile.subLabel}
           href="/admin/family-messages"
         />
       </div>
@@ -211,7 +208,7 @@ export function CoordinatorDashboardPageClient({
                     <span className="text-[15px] font-semibold text-foreground">{cp.residentName}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">
-                    {new Date(cp.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {formatDateTimeWith(cp.reviewDate, { month: "short", day: "numeric" })}
                   </span>
                 </Link>
               ))}

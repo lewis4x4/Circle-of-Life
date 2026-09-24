@@ -185,6 +185,22 @@ export default function CaregiverMePage() {
          </div>
       </div>
 
+      {/* "My employee file" and Required reading live under Me in every staff app (COL-714). */}
+      <nav aria-label="My records" className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/employee-file"
+          className="tap-responsive inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground"
+        >
+          My employee file
+        </Link>
+        <Link
+          href="/caregiver/acknowledgments"
+          className="tap-responsive inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground"
+        >
+          Required reading
+        </Link>
+      </nav>
+
       {pendingPolicyCount > 0 ? (
         <div className="p-8 rounded-lg border border-amber-500/30 shadow-[0_8px_32px_rgba(217,119,6,0.1)] relative w-full text-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-2 bg-amber-500"></div>

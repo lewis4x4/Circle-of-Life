@@ -1,7 +1,8 @@
 /**
  * COL-639: the med-tech shell's links were a `fixed` overlay, so every page
  * under them (controlled count, Required reading) rendered its title beneath
- * them on a phone. They now sit in a header row, and pages scroll inside `main`.
+ * them on a phone. COL-714: the shell now renders the shared RoleAppFrame,
+ * whose header sits in normal flow and whose pages scroll inside the frame.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -11,15 +12,18 @@ const read = (file: string) => readFileSync(path.join(process.cwd(), file), "utf
 
 describe("med-tech shell chrome does not cover page content", () => {
   const shell = read("src/components/layout/MedTechShell.tsx");
+  const frame = read("src/design-system/components/RoleAppFrame/RoleAppFrame.tsx");
 
-  it("renders its links in a header in normal flow, not a fixed overlay", () => {
-    expect(shell).toMatch(/<header className="[^"]*\bshrink-0\b/);
+  it("renders the shared frame instead of fixed chrome of its own", () => {
+    expect(shell).toMatch(/<RoleAppFrame\b/);
     expect(shell).not.toMatch(/className="[^"]*\bfixed\b[^"]*\btop-/);
   });
 
-  it("gives pages the remaining height in a scrolling main", () => {
-    expect(shell).toMatch(/<div className="[^"]*\bflex h-dvh flex-col\b/);
-    expect(shell).toMatch(/<main className="min-h-0 flex-1 overflow-y-auto">/);
+  it("keeps the frame header in normal flow and gives pages the remaining height", () => {
+    expect(frame).toMatch(/<header className="[^"]*\bmd:sticky\b/);
+    expect(frame).not.toMatch(/<header className="[^"]*(^|\s)fixed\b/);
+    expect(frame).toMatch(/"flex h-dvh\b/);
+    expect(frame).toMatch(/<main className="flex min-h-0 flex-1 flex-col">/);
   });
 
   it("sizes the full-bleed cockpit to main instead of the viewport", () => {

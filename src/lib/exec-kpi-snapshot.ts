@@ -23,6 +23,7 @@ import {
 } from "@/lib/executive/facility-occupancy-census";
 import type { PortfolioOccupancyScope } from "@/lib/occupancy/portfolio-occupancy-display";
 import { fetchExecRegisterCoverage, type ExecRegisterCoverage } from "@/lib/executive/register-coverage";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 
 /** Versioned payload shape for `exec_kpi_snapshots.metrics` when persisted by cron (Module 24). */
 export const EXEC_KPI_METRICS_VERSION = 1 as const;
@@ -358,23 +359,23 @@ export async function fetchExecutiveKpiSnapshot(
     },
     financial,
     clinical: {
-      openIncidents: incidentsOpenRes.count ?? 0,
-      medicationErrorsMtd: medErrorsMtdRes.count ?? 0,
+      openIncidents: requireHeadCount(incidentsOpenRes, "Open incidents"),
+      medicationErrorsMtd: requireHeadCount(medErrorsMtdRes, "Medication errors MTD"),
     },
     compliance: {
-      openSurveyDeficiencies: deficienciesOpenRes.count ?? 0,
+      openSurveyDeficiencies: requireHeadCount(deficienciesOpenRes, "Open survey deficiencies"),
     },
     workforce: {
-      certificationsExpiring30d: certsExpiringRes.count ?? 0,
+      certificationsExpiring30d: requireHeadCount(certsExpiringRes, "Certifications expiring"),
     },
     infection: {
-      activeOutbreaks: outbreaksActiveRes.count ?? 0,
+      activeOutbreaks: requireHeadCount(outbreaksActiveRes, "Active outbreaks"),
     },
     residentAssurance: {
-      overdueTasksCount: overdueTasksRes.count ?? 0,
+      overdueTasksCount: requireHeadCount(overdueTasksRes, "Overdue tasks"),
       missedRate: null,
-      openExceptions: openExceptionsRes.count ?? 0,
-      activeWatchCount: activeWatchRes.count ?? 0,
+      openExceptions: requireHeadCount(openExceptionsRes, "Open exceptions"),
+      activeWatchCount: requireHeadCount(activeWatchRes, "Active watches"),
     },
     registers,
   };

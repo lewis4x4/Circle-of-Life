@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ shifts: vi.fn(), ready: false, lastError: null as string | null, role: "med_tech", path: "/caregiver/rounds" }));
 vi.mock("next/navigation", () => ({ usePathname: () => mocks.path, useRouter: () => ({ replace: vi.fn() }) }));
-vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: mocks.role, loading: false, organizationId: "org", user: { id: "user", app_metadata: { app_role: mocks.role } } }) }));
+vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: mocks.role, fullName: "Pat Floor", loading: false, organizationId: "org", user: { id: "user", app_metadata: { app_role: mocks.role } } }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 vi.mock("@/lib/caregiver/facility-context", () => ({ loadCaregiverFacilityContextForUser: async () => ({ ok: true, ctx: { facilityId: "facility", facilityName: "Synthetic facility", timeZone: "America/New_York" } }) }));
 vi.mock("@/lib/caregiver/shift", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/caregiver/shift")>()), fetchFacilityShiftDefinitions: mocks.shifts }));
@@ -51,13 +51,26 @@ it("does not claim Synced after a failed Outbox snapshot", async () => {
  await screen.findByRole("heading", { level: 1 });
 });
 
-it("gives a med-tech a link back to the Med-Tech app, and a housekeeper none", async () => {
+it("gives a med-tech the one Med-Tech app's tabs, and a housekeeper only housekeeping tabs (COL-714)", async () => {
   await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
-  expect(screen.getByRole("link", { name: "Med-Tech app" })).toHaveAttribute("href", "/med-tech");
+  const medTechTabs = screen.getByRole("navigation", { name: "Med-Tech navigation" });
+  expect([...medTechTabs.querySelectorAll("a")].map((a) => a.textContent)).toEqual(["Meds", "Residents", "Rounds", "Clock", "Me"]);
+  expect(screen.getAllByRole("link", { name: "Meds" })[0]).toHaveAttribute("href", "/med-tech");
   cleanup();
   mocks.role = "housekeeper";
+  mocks.path = "/caregiver/housekeeper";
   await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
-  expect(screen.queryByRole("link", { name: "Med-Tech app" })).toBeNull();
+  const housekeeperTabs = screen.getByRole("navigation", { name: "Housekeeping navigation" });
+  expect([...housekeeperTabs.querySelectorAll("a")].map((a) => a.textContent)).toEqual(["Home", "Clock", "Schedule", "Me"]);
+  expect(screen.queryByRole("link", { name: "Meds" })).toBeNull();
+});
+
+it("shows the header's building, person and sign-out from the shared frame (COL-714)", async () => {
+  await act(async () => { render(<CaregiverShell>Content</CaregiverShell>); });
+  const header = screen.getByRole("banner");
+  expect(header).toHaveTextContent("Synthetic facility");
+  expect(header).toHaveTextContent("Pat Floor");
+  expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
 });
 
 it("lets the header scroll away on a phone so only the bottom tab bar stays (COL-657)", async () => {

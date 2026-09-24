@@ -9,7 +9,7 @@ assert.match(container ?? '', /^supabase_db_col721-scheduler-[a-z0-9-]+$/, 'An o
 const project = container.slice('supabase_db_'.length);
 const metadata = spawnSync('docker', ['inspect', container, '--format', '{{index .Config.Labels "com.supabase.cli.project"}}'], { encoding: 'utf8' });
 assert.equal(metadata.status, 0); assert.equal(metadata.stdout.trim(), project);
-const migration = readFileSync(new URL('../../supabase/migrations/486_workforce_roster_publisher.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../../supabase/migrations/496_workforce_roster_publisher.sql', import.meta.url), 'utf8');
 const scheduler = migration.match(/DO \$workforce_cron\$[\s\S]*?END \$workforce_cron\$;/)?.[0];
 assert.ok(scheduler, 'Test the exact migration scheduler block');
 const quote = (value) => `'${value.replaceAll("'", "''")}'`;

@@ -51,7 +51,7 @@ export default function TourPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Experience a Day in the Life With Mom
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               Join us for a private walkthrough, meet our on-site Executive Director, explore our
               sunlit suites, and enjoy a complimentary Southern home-cooked lunch on us.
             </p>
@@ -67,7 +67,7 @@ export default function TourPage() {
                   <h2 className="text-2xl sm:text-3xl font-bold text-[#1C2822] font-serif">
                     Select Your Preferred Campus & Time
                   </h2>
-                  <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     No high-pressure sales. Just genuine Southern hospitality, answers to your questions, and transparent numbers.
                   </p>
                 </div>
@@ -92,7 +92,7 @@ export default function TourPage() {
                         <div className="font-bold text-sm">{f.name}</div>
                         <div
                           className={`text-xs mt-1 ${
-                            selectedFacility === f.id ? "text-[#E5A952] font-semibold" : "text-stone-500"
+                            selectedFacility === f.id ? "text-[#E5A952] font-semibold" : "text-muted-foreground"
                           }`}
                         >
                           {f.address.city}, FL • {PUBLIC_AVAILABILITY_COPY}
@@ -259,7 +259,7 @@ export default function TourPage() {
                   </div>
                 </div>
 
-                <p className="text-xs text-stone-500">
+                <p className="text-xs text-muted-foreground">
                   Driving directions and your confirmation details have been sent via SMS.
                 </p>
               </div>

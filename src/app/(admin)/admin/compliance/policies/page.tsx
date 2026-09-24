@@ -13,6 +13,7 @@ import { TableRow, TableRowHeader, TableRowList } from "@/components/ui/table-ro
 import { cn } from "@/lib/utils";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import {
+  COMPLIANCE_POLICY_LIBRARY_EMPTY,
   compliancePolicyListCountLabel,
   formatCompliancePolicyPublishedDate,
 } from "@/lib/compliance/policies-display-copy";
@@ -111,8 +112,11 @@ export default function PoliciesListPage() {
              </p>
            ) : rows.length === 0 ? (
              <div className="p-12 text-center text-muted-foreground bg-muted/40 rounded-lg border border-dashed border-border">
-                <p className="font-semibold text-[13px] text-foreground">No policies</p>
-               <p className="text-[12px] opacity-80 mt-1">Upload and version your operational policies.</p>
+                <p className="font-semibold text-[13px] text-foreground">{COMPLIANCE_POLICY_LIBRARY_EMPTY.title}</p>
+               <p className="text-[12px] opacity-80 mt-1">{COMPLIANCE_POLICY_LIBRARY_EMPTY.description}</p>
+               <Link href={COMPLIANCE_POLICY_LIBRARY_EMPTY.knowledgeBaseHref} className="mt-2 inline-block text-[12px] text-primary underline-offset-4 hover:underline">
+                 {COMPLIANCE_POLICY_LIBRARY_EMPTY.knowledgeBaseLabel}
+               </Link>
              </div>
            ) : (
              <TableRowList label="Policies">

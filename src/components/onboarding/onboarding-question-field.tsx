@@ -94,7 +94,7 @@ export function OnboardingQuestionField({
                   "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
                   value === opt
                     ? "border-teal-400 bg-teal-500/20 text-teal-100"
-                    : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10",
+                    : "border-white/15 bg-white/5 text-chrome-foreground-muted hover:bg-white/10",
                 )}
               >
                 {opt}
@@ -156,14 +156,14 @@ export function OnboardingQuestionField({
           ) : null}
         </div>
         {question.helpText ? (
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            <span className="font-medium text-slate-300">Why this matters: </span>
+          <p className="mt-2 text-sm leading-relaxed text-chrome-foreground-muted">
+            <span className="font-medium text-chrome-foreground-muted">Why this matters: </span>
             {question.helpText}
           </p>
         ) : null}
         {showAdminMeta ? (
-          <p className="mt-2 text-xs text-slate-500">
-            id: <code className="text-slate-400">{question.id}</code> · {question.answerType}
+          <p className="mt-2 text-xs text-chrome-foreground-muted">
+            id: <code className="text-chrome-foreground-muted">{question.id}</code> · {question.answerType}
             {question.category ? ` · ${question.category}` : ""}
           </p>
         ) : null}
@@ -173,7 +173,7 @@ export function OnboardingQuestionField({
 
       <div className={cn("grid gap-3", showConfidence ? "sm:grid-cols-2" : "sm:grid-cols-1")}>
         {showConfidence ? (
-          <label className="block text-xs font-medium text-slate-400">
+          <label className="block text-xs font-medium text-chrome-foreground-muted">
             Confidence
             <select
               value={confidence}
@@ -188,7 +188,7 @@ export function OnboardingQuestionField({
             </select>
           </label>
         ) : null}
-        <label className="block text-xs font-medium text-slate-400">
+        <label className="block text-xs font-medium text-chrome-foreground-muted">
           Your name (for this answer)
           <Input
             value={enteredByName}

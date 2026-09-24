@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -750,7 +751,7 @@ export default function OperationsTodayPage() {
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Due</p>
                   <p className="text-foreground">
                     {selectedTask.due_at
-                      ? new Date(selectedTask.due_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+                      ? formatDisplayDateTime(selectedTask.due_at)
                       : "Schedule needs confirmation"}
                   </p>
                 </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -277,8 +278,6 @@ export default function AdminStaffDetailPage() {
         Employee file & onboarding
       </Link>
 
-      <StaffOffboardCard staff={staff} canEdit={canEditProfile} onStaffUpdated={setStaff} />
-
         <div className="grid gap-6 lg:grid-cols-2">
           <StaffProfileSections
             key={`${staff.id}-${staff.updated_at ?? ""}`}
@@ -343,6 +342,14 @@ export default function AdminStaffDetailPage() {
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{staff.notes}</p>
             </RecordDetailSection>
           ) : null}
+
+          {/* Destructive action last, after who the person is (COL-662). */}
+          <StaffOffboardCard
+            staff={staff}
+            canEdit={canEditProfile}
+            onStaffUpdated={setStaff}
+            className="lg:col-span-2"
+          />
         </div>
     </div>
   );
@@ -388,10 +395,7 @@ function formatSnake(value: string): string {
 }
 
 function formatShiftLabel(shiftDate: string, shiftType: string): string {
-  const parsed = new Date(`${shiftDate}T12:00:00`);
-  const datePart = Number.isNaN(parsed.getTime())
-    ? shiftDate
-    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parsed);
+  const datePart = formatDateTimeWith(shiftDate.slice(0, 10), { month: "short", day: "numeric" }, { fallback: shiftDate });
   const typeLabel =
     shiftType === "day"
       ? "Day"

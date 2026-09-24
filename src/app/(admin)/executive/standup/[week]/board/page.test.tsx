@@ -123,5 +123,10 @@ describe("ExecutiveStandupBoardPage auth hydration", () => {
 
     expect(await screen.findByText("No standup board packet yet")).toBeInTheDocument();
     expect(screen.getByText(/Generate a draft from the standup pack page first/i)).toBeInTheDocument();
+    // Nothing to print or save without a packet (COL-662).
+    for (const name of [/print \/ save pdf/i, /download pdf/i, /export html packet/i, /save in executive reports/i]) {
+      expect(screen.getByRole("button", { name })).toBeDisabled();
+    }
+    expect(screen.getByText("No standup packet for this week yet.")).toBeInTheDocument();
   });
 });

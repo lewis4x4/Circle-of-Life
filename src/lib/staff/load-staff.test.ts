@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDedupedStaffPickerOptions,
+  countDistinctStaffPeople,
   countUniqueActiveStaffDirectoryRecords,
   dedupeStaffDirectoryRecords,
   isSameStaffDirectoryPerson,
@@ -269,5 +270,22 @@ describe("buildDedupedStaffPickerOptions", () => {
 
     expect(options).toHaveLength(2);
     expect(options[0]?.label).toBe("Sample Picker");
+  });
+});
+
+describe("countDistinctStaffPeople (COL-662)", () => {
+  it("counts a person with records at three buildings once, via the linked login", () => {
+    expect(
+      countDistinctStaffPeople([
+        { id: "rec-hw", userId: "user-1" },
+        { id: "rec-gc", userId: "user-1" },
+        { id: "rec-oak", userId: "user-1" },
+        { id: "rec-2", userId: "user-2" },
+      ]),
+    ).toBe(2);
+  });
+
+  it("never merges unlinked records, even with the same name", () => {
+    expect(countDistinctStaffPeople([{ id: "a", userId: null }, { id: "b", userId: null }])).toBe(2);
   });
 });

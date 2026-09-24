@@ -18,7 +18,7 @@ export default function AboutPage() {
         {/* Luxury Hero Banner */}
         <section className="relative overflow-hidden bg-stone-950 text-white py-20 sm:py-28">
           <Image
-            src="https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=1600&q=80"
+            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80"
             alt="Craftsmanship in North Florida"
             className="absolute inset-0 w-full h-full object-cover opacity-25" unoptimized loading="eager" fill sizes="100vw"
           />
@@ -32,7 +32,7 @@ export default function AboutPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-serif max-w-3xl mx-auto leading-tight">
               Our Story, Our Craft & Our Sacred Promise
             </h1>
-            <p className="text-stone-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+            <p className="text-chrome-foreground/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
               We are not a Wall Street private-equity investment conglomerate. We are local builders
               and dedicated caregivers who believe our elders deserve a life filled with dignity, love, and wonder.
             </p>
@@ -96,7 +96,7 @@ export default function AboutPage() {
                   </div>
 
                   <div className="pt-3 border-t border-stone-200 text-xs flex items-center justify-between">
-                    <span className="text-stone-500">Direct Campus Phone:</span>
+                    <span className="text-muted-foreground">Direct Campus Phone:</span>
                     <a href={`tel:${f.phone}`} className="font-bold text-[#1C2822] hover:text-[#B04F2C]">
                       {f.phone}
                     </a>

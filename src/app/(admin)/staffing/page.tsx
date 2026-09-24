@@ -19,6 +19,7 @@ const EMPTY_DATA: StaffingConsoleData = {
   requisitions: [],
   attendance: [],
   coverageScope: null,
+  ratioCheckOn: false,
 };
 
 export default async function AdminStaffingPage() {
@@ -46,6 +47,7 @@ export default async function AdminStaffingPage() {
       initialRequisitions={data.requisitions}
       initialAttendance={data.attendance}
       initialCoverageScope={data.coverageScope}
+      initialRatioCheckOn={data.ratioCheckOn}
       initialError={initialError}
       initialFacilityId={initialFacilityId}
     />

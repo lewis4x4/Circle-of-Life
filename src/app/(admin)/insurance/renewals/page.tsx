@@ -74,7 +74,7 @@ export default function InsuranceRenewalsPage() {
   });
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
       
       <div className="relative z-10 space-y-6 w-full">
@@ -125,7 +125,7 @@ export default function InsuranceRenewalsPage() {
              ) : rows.length === 0 ? (
                <div className="p-12 text-center text-muted-foreground bg-white/50 rounded-lg border border-dashed border-slate-200 dark:border-white/10 ">
                   <p className="font-semibold text-lg text-slate-900 dark:text-slate-100">No Renewals Found</p>
-                 <p className="text-sm opacity-80 mt-1">There are currently no insurance renewals in the pipeline.</p>
+                 <p className="text-sm text-muted-foreground mt-1">There are currently no insurance renewals in the pipeline.</p>
                </div>
              ) : (
                rows.map((r) => {

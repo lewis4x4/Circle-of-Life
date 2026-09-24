@@ -81,10 +81,12 @@ function parseISODateOnly(value: string): number {
 function formatDisplayDate(iso: string): string {
   const t = parseISODateOnly(iso);
   if (Number.isNaN(t)) return iso;
+  // `t` is UTC midnight of a stored calendar date: format it in UTC so it stays that day.
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(t));
 }
 

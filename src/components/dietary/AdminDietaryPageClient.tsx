@@ -436,7 +436,7 @@ export function AdminDietaryPageClient({
   const dietOrderLoadCapNotice = dietOrdersHubLoadCapNotice(rows.length);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         {canActivateOrder && rows.some((row) => row.status === "draft") && <section className="rounded-lg border border-border p-4 space-y-3" aria-label="Diet orders awaiting clinical review">
           <h2 className="font-semibold">Draft orders awaiting clinical review</h2>
@@ -468,7 +468,7 @@ export function AdminDietaryPageClient({
              </p>
            </div>
            <div className="flex flex-wrap items-center gap-3 justify-end">
-              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="whitespace-nowrap font-bold uppercase tracking-wider">Status</span>
                 <select
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 dark:border-white/15 dark:bg-white/5 dark:text-slate-100"
@@ -588,7 +588,7 @@ export function AdminDietaryPageClient({
               </div>
 
               <div className="w-full lg:max-w-md">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
                   Recent snack passes
                 </p>
                 {loading ? (
@@ -624,14 +624,14 @@ export function AdminDietaryPageClient({
           {/* ACTION QUEUE: Dietary Risk Board */}
           <div className="col-span-1 lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <></> Attention Queue
               </h3>
             </div>
             
             <MotionList className="space-y-4">
               {loading ? (
-                <p className="text-sm font-mono text-slate-500">Loading…</p>
+                <p className="text-sm font-mono text-muted-foreground">Loading…</p>
               ) : error ? (
                 <div className="p-12 text-center text-muted-foreground bg-muted rounded-lg border border-dashed border-border">
                   <p className="font-semibold text-lg text-foreground">Couldn&apos;t load diet orders</p>
@@ -672,7 +672,7 @@ export function AdminDietaryPageClient({
                         >
                           {badge.label}
                         </span>
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                        <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                           Updated: {formatDietaryHubRelativeUpdatedAt(row.updated_at)}
                         </span>
                       </div>
@@ -701,7 +701,7 @@ export function AdminDietaryPageClient({
 
             {!loading && displayRows.length > 0 && rosterRows.length > 0 && (
               <div className="mt-10 p-6 rounded-lg border border-slate-200/60 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.015]">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-500 mb-4 ml-2">Other Active Diet Orders</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-4 ml-2">Other Active Diet Orders</h4>
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
                   <TableRowList label="Other active diet orders" minWidthClassName="min-w-[34rem]">
                   <TableRowHeader>
@@ -894,7 +894,7 @@ export function AdminDietaryPageClient({
               </div>
 
               <div className="space-y-2 border-t border-slate-200/70 dark:border-white/10 pt-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Recent meal entries</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Recent meal entries</p>
                 {mealLogs.length === 0 ? (
                   <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                     No meal entries logged yet for this facility.

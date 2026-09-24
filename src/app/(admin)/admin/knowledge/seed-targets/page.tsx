@@ -154,14 +154,14 @@ export default function SeedTargetsRoute() {
       <div className="mb-6">
         <Link
           href="/admin/knowledge/admin"
-          className="text-xs text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+          className="text-xs text-muted-foreground hover:text-slate-700 dark:hover:text-zinc-200"
         >
           ← Knowledge admin
         </Link>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-zinc-100 mt-2">
           KB Seed Targets
         </h1>
-        <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Topics Haven should be able to answer. Global defaults plus your org-specific additions.
           Mark a target <strong>wip</strong> when you start writing the doc; <strong>covered</strong>{" "}
           once the document is published.
@@ -241,17 +241,17 @@ export default function SeedTargetsRoute() {
             {f}
           </button>
         ))}
-        <span className="ml-auto text-slate-400">
+        <span className="ml-auto text-muted-foreground">
           {filtered.length} of {targets.length}
         </span>
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : error ? (
         <p className="text-sm text-rose-600">{error}</p>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-slate-500">No targets match this filter.</p>
+        <p className="text-sm text-muted-foreground">No targets match this filter.</p>
       ) : (
         <ul className="space-y-3">
           {filtered.map((t) => (
@@ -265,9 +265,9 @@ export default function SeedTargetsRoute() {
                     <span className="font-medium text-slate-900 dark:text-zinc-100">
                       {t.topic_label}
                     </span>
-                    <span className="text-xs text-slate-400 font-mono">{t.topic_slug}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{t.topic_slug}</span>
                     {t.workspace_id == null ? (
-                      <span className="text-xs rounded border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 text-slate-500 dark:text-zinc-400">
+                      <span className="text-xs rounded border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 text-muted-foreground">
                         global
                       </span>
                     ) : (
@@ -289,9 +289,9 @@ export default function SeedTargetsRoute() {
                     >
                       {t.status}
                     </span>
-                    <span className="text-xs text-slate-400">priority {t.priority}</span>
+                    <span className="text-xs text-muted-foreground">priority {t.priority}</span>
                     {t.expected_compliance_category ? (
-                      <span className="text-xs rounded border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 text-slate-500 dark:text-zinc-400">
+                      <span className="text-xs rounded border border-slate-300 dark:border-zinc-700 px-1.5 py-0.5 text-muted-foreground">
                         {t.expected_compliance_category}
                       </span>
                     ) : null}
@@ -300,7 +300,7 @@ export default function SeedTargetsRoute() {
                     <p className="mt-1 text-sm text-slate-600 dark:text-zinc-400">{t.description}</p>
                   ) : null}
                   {t.sample_questions.length > 0 ? (
-                    <ul className="mt-2 list-disc list-inside text-xs text-slate-500 dark:text-zinc-400 space-y-0.5">
+                    <ul className="mt-2 list-disc list-inside text-xs text-muted-foreground space-y-0.5">
                       {t.sample_questions.map((q, i) => (
                         <li key={i}>{q}</li>
                       ))}
@@ -361,7 +361,7 @@ function Stat({
           : "text-slate-700 dark:text-zinc-300";
   return (
     <div className="rounded border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2">
-      <div className="text-xs text-slate-500 dark:text-zinc-400">{label}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
       <div className={`text-xl font-semibold ${colorClass}`}>{value}</div>
     </div>
   );

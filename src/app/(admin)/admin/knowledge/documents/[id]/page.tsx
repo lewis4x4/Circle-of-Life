@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { enumLabel } from "@/lib/display/enum-label";
+import { KnowledgeMarkdown } from "@/components/knowledge/KnowledgeMarkdown";
 
 type ChunkRow = {
   chunk_id: string;
@@ -146,7 +147,7 @@ export default function KnowledgeDocumentRoute() {
                 key={chunk.chunk_id}
                 id={`chunk-${chunk.chunk_id}`}
                 className={[
-                  "rounded border px-4 py-3 text-sm leading-6 whitespace-pre-wrap",
+                  "rounded border px-4 py-3 text-sm leading-6",
                   isAnchor
                     ? "border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/40"
                     : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900",
@@ -164,7 +165,7 @@ export default function KnowledgeDocumentRoute() {
                     </span>
                   ) : null}
                 </div>
-                <div className="text-slate-800 dark:text-zinc-100">{chunk.content}</div>
+                <KnowledgeMarkdown source={chunk.content} className="space-y-2 text-slate-800 dark:text-zinc-100" />
               </li>
             );
           })}

@@ -19,7 +19,7 @@ export function HACCPStrip({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ThermometerSun className="w-4 h-4 text-orange-400" />
-            <h3 className="text-xs font-semibold text-stone-300 uppercase tracking-wider">HACCP</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">HACCP</h3>
           </div>
           {allInRange ? (
             <span className="text-[10px] text-emerald-400 flex items-center gap-1">
@@ -54,7 +54,7 @@ export function HACCPStrip({
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-stone-400">{h.time}</span>
+              <span className="text-[10px] font-mono text-muted-foreground">{h.time}</span>
               {h.in_safe_range ? (
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               ) : (
@@ -66,7 +66,7 @@ export function HACCPStrip({
               <span className={`text-lg font-mono font-semibold ${h.in_safe_range ? "text-white" : "text-rose-300"}`}>
                 {h.temperature_f}°
               </span>
-              <span className="text-[10px] text-stone-500">by {h.logged_by}</span>
+              <span className="text-[10px] text-muted-foreground">by {h.logged_by}</span>
             </div>
           </div>
         ))}

@@ -29,18 +29,20 @@ export function formatGeneratePreviewBillingPeriodRange(
     return GENERATE_PREVIEW_NO_BILLING_PERIOD_COPY;
   }
 
-  const startDate = new Date(`${start}T12:00:00`);
-  const endDate = new Date(`${end}T12:00:00`);
+  // Calendar dates as UTC noon, formatted in UTC, so each stays its stored day.
+  const startDate = new Date(`${start}T12:00:00Z`);
+  const endDate = new Date(`${end}T12:00:00Z`);
   if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
     return GENERATE_PREVIEW_NO_BILLING_PERIOD_COPY;
   }
 
-  const sameYear = startDate.getFullYear() === endDate.getFullYear();
-  const sameMonth = sameYear && startDate.getMonth() === endDate.getMonth();
+  const sameYear = startDate.getUTCFullYear() === endDate.getUTCFullYear();
+  const sameMonth = sameYear && startDate.getUTCMonth() === endDate.getUTCMonth();
 
   const startFmt = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
     ...(sameMonth ? {} : { year: "numeric" }),
   }).format(startDate);
 
@@ -48,6 +50,7 @@ export function formatGeneratePreviewBillingPeriodRange(
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(endDate);
 
   return `${startFmt} – ${endFmt}`;
