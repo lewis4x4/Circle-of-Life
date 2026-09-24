@@ -106,25 +106,33 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
 /** Staff whose home facility or current assignment is in the requested visible facilities. */
 async function loadWorkforceStaff(client: SupabaseClient<Database>, organizationId: string, facilityIds: string[], asOf: string): Promise<EmployeeSummary[]> {
   if (facilityIds.length === 0) return [];
-  const assignments = await allRows<{ staff_id: string }>((from, to) => client.from("staff_facility_assignments" as never)
-    .select("staff_id", { count: "exact" })
+  const assignments = await allRows<{ staff_id: string; start_date: string; end_date: string | null }>((from, to) => client.from("staff_facility_assignments" as never)
+    .select("staff_id, start_date, end_date", { count: "exact" })
     .eq("organization_id", organizationId)
     .in("facility_id", facilityIds)
-    .lte("start_date", asOf)
-    .or(`end_date.is.null,end_date.gte.${asOf}`)
     .is("deleted_at", null)
     .order("staff_id")
     .range(from, to));
-  const assignedIds = [...new Set(assignments.map((assignment) => assignment.staff_id))];
-  const facilityFilter = `facility_id.in.(${facilityIds.join(",")})`;
-  const assignmentFilter = assignedIds.length ? `,id.in.(${assignedIds.join(",")})` : "";
-  return allRows<EmployeeSummary>((from, to) => client.from("staff")
+  const assignedIds = [...new Set(assignments.filter((assignment) => isCurrentAssignment(assignment, asOf)).map((assignment) => assignment.staff_id))];
+  const homeStaff = await allRows<EmployeeSummary>((from, to) => client.from("staff")
     .select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" })
     .eq("organization_id", organizationId)
+    .in("facility_id", facilityIds)
     .is("deleted_at", null)
-    .or(`${facilityFilter}${assignmentFilter}`)
     .order("id")
     .range(from, to));
+  const assignedStaff = assignedIds.length === 0 ? [] : await allRows<EmployeeSummary>((from, to) => client.from("staff")
+    .select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" })
+    .eq("organization_id", organizationId)
+    .in("id", assignedIds)
+    .is("deleted_at", null)
+    .order("id")
+    .range(from, to));
+  return [...new Map([...homeStaff, ...assignedStaff].map((person) => [person.id, person])).values()];
+}
+
+function isCurrentAssignment(assignment: { start_date: string; end_date: string | null }, asOf: string): boolean {
+  return assignment.start_date <= asOf && (assignment.end_date === null || assignment.end_date >= asOf);
 }
 
 /** One row per person for the People page while the shell is scoped to All Facilities. */
@@ -141,18 +149,16 @@ export async function loadAllFacilitiesWorkforce(client: SupabaseClient<Database
     return { facilityId: null, facilityName: "All Facilities", allFacilities: true, generatedAt: now.toISOString(), timeclockEnabled: false, weekStart: addFacilityCalendarDays(thisWeek, -7), weekEnd: addFacilityCalendarDays(thisWeek, -1), nextWeekStart: addFacilityCalendarDays(thisWeek, 7), scheduleStatus: "Facility-specific", people: [], payrollStatus: "Facility-specific", payrollRulesConfigured: false };
   }
   const staff = await loadWorkforceStaff(client, organizationId, facilities.map((facility) => facility.id), today);
-  const assignmentRows = await allRows<{ staff_id: string; facility_id: string }>((from, to) => client.from("staff_facility_assignments" as never)
-    .select("staff_id, facility_id", { count: "exact" })
+  const assignmentRows = await allRows<{ staff_id: string; facility_id: string; start_date: string; end_date: string | null }>((from, to) => client.from("staff_facility_assignments" as never)
+    .select("staff_id, facility_id, start_date, end_date", { count: "exact" })
     .eq("organization_id", organizationId)
     .in("facility_id", facilities.map((facility) => facility.id))
-    .lte("start_date", today)
-    .or(`end_date.is.null,end_date.gte.${today}`)
     .is("deleted_at", null)
     .order("staff_id")
     .range(from, to));
   const facilityNamesById = new Map(facilities.map((facility) => [facility.id, facility.name]));
   const assignedFacilities = new Map<string, Set<string>>();
-  for (const assignment of assignmentRows) {
+  for (const assignment of assignmentRows.filter((row) => isCurrentAssignment(row, today))) {
     const names = assignedFacilities.get(assignment.staff_id) ?? new Set<string>();
     const name = facilityNamesById.get(assignment.facility_id);
     if (name) names.add(name);
