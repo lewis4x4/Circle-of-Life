@@ -16,15 +16,14 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  // Temporary (COL-795, PR #887 holds 513). Each number below is claimed by an
+  // Temporary (COL-795, PR #887 holds 514). Each number below is claimed by an
   // open PR; delete the entry when that PR merges and its file lands on main.
-  506: "claimed by open PR #878 (COL-331 referral contact log, 506_referral_contact_log.sql)",
-  507: "claimed by open PR #879 (COL-763 admission Medicaid screening, 507_benefits_admission_screening.sql)",
   508: "claimed by open PR #881 (COL-764 quarterly Medicaid recheck, 508_benefits_recheck_workflow.sql)",
   509: "claimed by open PR #883 (COL-793 staff duplicate roster cleanup, 509_staff_duplicate_roster_cleanup.sql)",
   510: "claimed by open PR #876 (Workforce people across all facilities, 510_workforce_multi_facility_people.sql)",
   511: "claimed by open PR #886 (COL-765 current-resident Medicaid sweep, 511_benefits_current_resident_sweep.sql)",
   512: "claimed by open PR #884 (COL-797 stand-up reopen, 512_stand_up_post_submit_edit.sql)",
+  513: "claimed by open PR #888 (Workforce shift options, 513_facility_schedule_presets.sql)",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
