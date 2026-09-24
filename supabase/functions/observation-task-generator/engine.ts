@@ -243,6 +243,7 @@ export interface GeneratorSummary {
   order_tasks_generated: number;
   tasks_stood_down: number;
   tasks_assigned_on_clock: number;
+  staffing_gaps_resolved: number;
 }
 
 /** The facilities query failed; the handler answers 500 rather than a summary. */
@@ -297,6 +298,7 @@ export async function runObservationTaskGenerator(options: {
       order_tasks_generated: 0,
       tasks_stood_down: 0,
       tasks_assigned_on_clock: 0,
+      staffing_gaps_resolved: 0,
     };
   }
 
@@ -304,6 +306,7 @@ export async function runObservationTaskGenerator(options: {
   let orderTasksGenerated = 0;
   let tasksStoodDown = 0;
   let tasksAssignedOnClock = 0;
+  let staffingGapsResolved = 0;
   let facilitiesWithCadence = 0;
   let monitoringOrdersTableMissing = false;
   const failedFacilityIds: string[] = [];
@@ -467,6 +470,28 @@ export async function runObservationTaskGenerator(options: {
               error_message: gapErr.message,
             });
           }
+        } else if ([...residentsWithWork].some((residentId) => assignees.get(residentId)?.assignment_source === "on_clock")) {
+          // Staffed from the clock. A tech who clocked in after an earlier tick
+          // raised "Nobody is scheduled" for this shift leaves that alert open
+          // all shift unless something closes it; the SQL decides whether the
+          // shift really is staffed and resolves only then. Like raising, a
+          // failure here is logged and generation continues.
+          const { data: resolved, error: resolveErr } = await admin.rpc("resolve_observation_staffing_gap", {
+            p_facility_id: facility.id,
+            p_shift_key: firstWindow.shift_key,
+            p_service_date: firstWindow.shift_service_date,
+          });
+          if (resolveErr) {
+            t.log({
+              event: "staffing_gap_resolve_failed",
+              outcome: "error",
+              facility_id: facility.id,
+              error_code: resolveErr.code,
+              error_message: resolveErr.message,
+            });
+          } else if (resolved === true) {
+            staffingGapsResolved += 1;
+          }
         }
 
         const { data: inserted, error: writeErr } = await admin.rpc("record_cadence_observation_tasks", {
@@ -519,6 +544,7 @@ export async function runObservationTaskGenerator(options: {
     order_tasks_generated: orderTasksGenerated,
     tasks_stood_down: tasksStoodDown,
     tasks_assigned_on_clock: tasksAssignedOnClock,
+    staffing_gaps_resolved: staffingGapsResolved,
     monitoring_orders_table_missing: monitoringOrdersTableMissing,
   });
 
@@ -537,5 +563,6 @@ export async function runObservationTaskGenerator(options: {
     order_tasks_generated: orderTasksGenerated,
     tasks_stood_down: tasksStoodDown,
     tasks_assigned_on_clock: tasksAssignedOnClock,
+    staffing_gaps_resolved: staffingGapsResolved,
   };
 }

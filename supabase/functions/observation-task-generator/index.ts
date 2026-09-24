@@ -40,6 +40,9 @@
  * (`awaiting_clock_in`, not a gap) and every run hands still-unowned, not yet
  * due checks of the shift in progress to on-clock staff through
  * `assign_unowned_observation_tasks`; the count is `tasks_assigned_on_clock`.
+ * A "Nobody is scheduled" alert an earlier tick raised for a shift that is now
+ * staffed from the clock is closed through `resolve_observation_staffing_gap`;
+ * the count is `staffing_gaps_resolved`.
  * Checks that already have an owner never change hands.
  *
  * The response is a per facility outcome, not a total. A facility that threw, a

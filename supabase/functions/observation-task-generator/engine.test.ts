@@ -65,6 +65,7 @@ function fakeAdmin(options: {
   facilities: string[];
   resolve?: (args: Record<string, unknown>) => Answer;
   assignUnowned?: (args: Record<string, unknown>) => Answer;
+  resolveGap?: (args: Record<string, unknown>) => Answer;
 }) {
   const calls: Rpc[] = [];
   const query = (data: unknown) => {
@@ -100,6 +101,8 @@ function fakeAdmin(options: {
           return Promise.resolve({ data: true, error: null });
         case "record_cadence_observation_tasks":
           return Promise.resolve({ data: (args.p_rows as unknown[]).length, error: null });
+        case "resolve_observation_staffing_gap":
+          return Promise.resolve((options.resolveGap ?? (() => ({ data: false, error: null })))(args));
         case "assign_unowned_observation_tasks":
           return Promise.resolve((options.assignUnowned ?? (() => ({ data: 3, error: null })))(args));
         default:
@@ -212,4 +215,50 @@ Deno.test("the completion log carries the on-clock count and no resident or staf
   assertEquals(complete?.tasks_assigned_on_clock, 3);
   const text = JSON.stringify(log.entries);
   for (const id of [RESIDENT_1, RESIDENT_2, STAFF_ON_CLOCK]) assert(!text.includes(id));
+});
+
+Deno.test("a shift staffed from the clock asks SQL to resolve its open gap alert and counts what was resolved", async () => {
+  const { admin, calls } = fakeAdmin({ facilities: [FACILITY_A], resolveGap: () => ({ data: true, error: null }) });
+  const summary = await runObservationTaskGenerator({ admin, organizationId: ORG, facilityId: FACILITY_A, atIso: AT, log: recordingLog() });
+
+  const resolveCalls = calls.filter((call) => call.name === "resolve_observation_staffing_gap");
+  // Only the day shift resolved on_clock; the evening shift is awaiting clock in.
+  assertEquals(resolveCalls.map((call) => call.args), [
+    { p_facility_id: FACILITY_A, p_shift_key: "day", p_service_date: "2026-09-23" },
+  ]);
+  assertEquals(summary.staffing_gaps_resolved, 1);
+  assertEquals(calls.filter((call) => call.name === "record_observation_staffing_gap").length, 0);
+  assertEquals(summary.ok, true);
+});
+
+Deno.test("nothing to resolve counts nothing, a gap is never resolved, and a failed resolve does not fail the facility", async () => {
+  const quiet = fakeAdmin({ facilities: [FACILITY_A] });
+  const none = await runObservationTaskGenerator({ admin: quiet.admin, organizationId: ORG, facilityId: FACILITY_A, atIso: AT, log: recordingLog() });
+  assertEquals(none.staffing_gaps_resolved, 0);
+
+  const nobody = fakeAdmin({
+    facilities: [FACILITY_A],
+    resolve: (args) => ({
+      data: (args.p_resident_ids as string[]).map((resident_id) => ({
+        resident_id,
+        shift_assignment_id: null,
+        staff_id: null,
+        assignment_source: "none_scheduled",
+      })),
+      error: null,
+    }),
+  });
+  await runObservationTaskGenerator({ admin: nobody.admin, organizationId: ORG, facilityId: FACILITY_A, atIso: AT, log: recordingLog() });
+  assertEquals(nobody.calls.filter((call) => call.name === "resolve_observation_staffing_gap").length, 0);
+
+  const failing = fakeAdmin({
+    facilities: [FACILITY_A],
+    resolveGap: () => ({ data: null, error: { code: "42501", message: "permission denied" } }),
+  });
+  const log = recordingLog();
+  const summary = await runObservationTaskGenerator({ admin: failing.admin, organizationId: ORG, facilityId: FACILITY_A, atIso: AT, log });
+  assertEquals(summary.failed_facility_ids, []);
+  assertEquals(summary.staffing_gaps_resolved, 0);
+  assertEquals(summary.ok, true);
+  assert(log.entries.some((entry) => entry.event === "staffing_gap_resolve_failed"));
 });

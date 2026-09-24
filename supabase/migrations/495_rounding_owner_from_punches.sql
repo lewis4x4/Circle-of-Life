@@ -15,6 +15,15 @@
 --                         as shift_roster (ordered by staff_id, positioned by
 --                         hashtextextended(resident_id)), so a re-run with the
 --                         same people on the clock picks the same owner.
+--                         At a shift handoff the outgoing shift is often still
+--                         on the clock: the ring prefers staff whose opening
+--                         'in' punch falls inside the shift being resolved
+--                         (allowing rounding_clock_in_lead_minutes for early
+--                         arrivals, a facility setting) and falls back to
+--                         everybody on the clock only when nobody clocked in
+--                         for this shift. Without that preference the night
+--                         tech still clocked in at 06:03 would own the day's
+--                         checks all day, because owned checks never move.
 --   4. awaiting_clock_in  nobody is scheduled for the NEXT shift at a facility
 --                         that staffs from punches. Nobody is on the clock for
 --                         a shift that has not started, and the outgoing shift
@@ -42,9 +51,17 @@
 --     org_admin. An owner who cannot work the check is worse than no owner.
 --   * On-clock sources apply only where timeclock_facility_settings has
 --     timeclock_enabled; a facility without the timeclock behaves as before.
---   * Already-owned checks never change owner: the generator's insert is
---     ON CONFLICT DO NOTHING and the unowned pass only touches rows whose
---     assigned_staff_id is null and which have no live assignment row.
+--   * Already-owned checks never change owner. The generator's writer,
+--     record_cadence_observation_tasks (migration 433), inserts new checks and
+--     on conflict adopts an existing check only when it has no owner, no live
+--     assignment row, the same cadence version and an open status; an owned
+--     check is left alone. The unowned pass below has the same rule.
+--   * A "Nobody is scheduled" alert raised on an earlier tick is resolved by
+--     resolve_observation_staffing_gap once eligible staff are on the clock for
+--     that shift in progress (resolved_at, status resolved, a note in
+--     current_value_json). De-duplication is unchanged: while an alert with the
+--     same title is open no second one is raised, and after it is resolved a
+--     genuine new gap raises a new alert.
 --
 -- Nothing here reads or writes objects from migration 476.
 BEGIN;
@@ -57,28 +74,51 @@ ALTER TABLE public.timeclock_facility_settings
     CONSTRAINT timeclock_facility_settings_rounding_owner_roles_check CHECK (
       cardinality(rounding_owner_roles) >= 1
       AND array_position(rounding_owner_roles, NULL) IS NULL
-      AND rounding_owner_roles <@ ARRAY['owner', 'org_admin', 'facility_admin', 'med_tech']::text[]);
+      AND rounding_owner_roles <@ ARRAY['owner', 'org_admin', 'facility_admin', 'med_tech']::text[]),
+  ADD COLUMN rounding_clock_in_lead_minutes integer NOT NULL DEFAULT 30
+    CONSTRAINT timeclock_facility_settings_rounding_lead_minutes_check CHECK (rounding_clock_in_lead_minutes BETWEEN 0 AND 240);
 
 COMMENT ON COLUMN public.timeclock_facility_settings.rounding_owner_roles IS
   'COL-693: login roles whose on-clock staff own Smart Rounding checks at this facility when nobody is scheduled. Non-empty subset of the roles that can complete any check (owner, org_admin, facility_admin, med_tech). Default med_tech only; a missing settings row means the same default.';
+
+COMMENT ON COLUMN public.timeclock_facility_settings.rounding_clock_in_lead_minutes IS
+  'COL-693: how many minutes before a shift starts a clock-in still counts as clocking in for that shift when choosing on-clock owners (0 to 240, default 30). Staff whose opening in punch is earlier (the outgoing shift at a handoff) own the shift''s checks only when nobody clocked in for it.';
 
 -- ---------------------------------------------------------------------------
 -- 1. Who is on the clock at a facility and may own a check there.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION haven.observation_on_clock_staff (p_facility_id uuid, p_at timestamptz)
   RETURNS TABLE (
-    staff_id uuid)
+    staff_id uuid,
+    clocked_in_at timestamptz)
   LANGUAGE sql
   STABLE
   SET search_path = public, pg_catalog
   AS $func$
   SELECT
-    s.id
+    s.id,
+    opening.punched_at
   FROM
     public.staff s
     JOIN public.user_profiles p ON p.id = s.user_id
       AND p.organization_id = s.organization_id
     JOIN auth.users au ON au.id = p.id
+    -- The in punch that opened the current stint, and where it was made.
+    CROSS JOIN LATERAL (
+      SELECT
+        COALESCE(tp.facility_id, tc.facility_id) AS facility_id,
+        e.punched_at
+      FROM
+        haven.timeclock_effective_punches(s.id, p_at - interval '16 hours', p_at + interval '1 second') e
+      LEFT JOIN public.time_punches tp ON e.source = 'punch'
+        AND tp.id = e.punch_id
+      LEFT JOIN public.time_punch_corrections tc ON e.source = 'correction'
+        AND tc.id = e.punch_id
+    WHERE
+      e.punch_type = 'in'
+    ORDER BY
+      e.punched_at DESC
+    LIMIT 1) opening
   WHERE
     s.facility_id = p_facility_id
     AND s.deleted_at IS NULL
@@ -115,26 +155,72 @@ CREATE OR REPLACE FUNCTION haven.observation_on_clock_staff (p_facility_id uuid,
         AND t.facility_id = p_facility_id
         AND t.timeclock_enabled)
     AND haven.timeclock_state(s.id, p_at) IN ('in', 'meal')
-    AND p_facility_id = (
-      SELECT
-        COALESCE(tp.facility_id, tc.facility_id)
-      FROM
-        haven.timeclock_effective_punches(s.id, p_at - interval '16 hours', p_at + interval '1 second') e
-      LEFT JOIN public.time_punches tp ON e.source = 'punch'
-        AND tp.id = e.punch_id
-      LEFT JOIN public.time_punch_corrections tc ON e.source = 'correction'
-        AND tc.id = e.punch_id
-    WHERE
-      e.punch_type = 'in'
-    ORDER BY
-      e.punched_at DESC
-    LIMIT 1);
+    AND opening.facility_id = p_facility_id;
 $func$;
 
 COMMENT ON FUNCTION haven.observation_on_clock_staff (uuid, timestamptz) IS
-  'COL-693: staff on the clock (in or on a meal break) at a facility whose timeclock is enabled, whose opening in punch was at that facility, whose role is in the facility''s rounding_owner_roles (default med_tech), and who could complete any check there: active profile and auth user, active staff row at the facility, facility grant unless owner or org_admin. Private helper for the rounding owner chain.';
+  'COL-693: staff on the clock (in or on a meal break) at a facility whose timeclock is enabled, whose opening in punch was at that facility, whose role is in the facility''s rounding_owner_roles (default med_tech), and who could complete any check there: active profile and auth user, active staff row at the facility, facility grant unless owner or org_admin. Returns when the opening in punch was made. Private helper for the rounding owner chain.';
 
 REVOKE ALL ON FUNCTION haven.observation_on_clock_staff (uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- 1b. Who owns the checks of a shift in progress: the on-clock staff who
+--     clocked in for this shift (opening in punch no earlier than the shift
+--     start less the facility's lead minutes), else everybody on the clock.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION haven.observation_shift_owner_staff (p_facility_id uuid, p_at timestamptz, p_shift_starts_at timestamptz)
+  RETURNS TABLE (
+    staff_id uuid)
+  LANGUAGE sql
+  STABLE
+  SET search_path = public, pg_catalog
+  AS $func$
+  WITH on_clock AS (
+    SELECT
+      c.staff_id,
+      c.clocked_in_at
+    FROM
+      haven.observation_on_clock_staff (p_facility_id, p_at) c
+),
+lead AS (
+  SELECT
+    make_interval(mins => COALESCE((
+        SELECT
+          t.rounding_clock_in_lead_minutes
+        FROM public.timeclock_facility_settings t
+        WHERE
+          t.facility_id = p_facility_id), 30)) AS lead_time
+),
+this_shift AS (
+  SELECT
+    c.staff_id
+  FROM
+    on_clock c,
+    lead l
+  WHERE
+    c.clocked_in_at >= p_shift_starts_at - l.lead_time
+)
+SELECT
+  t.staff_id
+FROM
+  this_shift t
+UNION ALL
+SELECT
+  c.staff_id
+FROM
+  on_clock c
+WHERE
+  NOT EXISTS (
+    SELECT
+      1
+    FROM
+      this_shift);
+$func$;
+
+COMMENT ON FUNCTION haven.observation_shift_owner_staff (uuid, timestamptz, timestamptz) IS
+  'COL-693: the eligible on-clock staff who clocked in for the shift that starts at p_shift_starts_at (opening in punch no earlier than the start less timeclock_facility_settings.rounding_clock_in_lead_minutes, default 30), falling back to every eligible person on the clock only when nobody did. Keeps the outgoing shift, still clocked in at a handoff, from owning the incoming shift''s checks. Private helper.';
+
+REVOKE ALL ON FUNCTION haven.observation_shift_owner_staff (uuid, timestamptz, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- 2. The owner chain at an instant. The public resolver keeps its signature and
@@ -199,14 +285,14 @@ ring AS (
 -- the one after it, or neither (a past shift, or a date the caller chose).
 phase AS (
   SELECT
-    EXISTS (
+    (
       SELECT
-        1
+        cur.starts_at_utc
       FROM
         public.facility_shift_window_at (p_facility_id, p_at) cur
       WHERE
         cur.shift_service_date = p_shift_service_date
-        AND cur.roster_shift_type::text = p_roster_shift_type) AS is_current,
+        AND cur.roster_shift_type::text = p_roster_shift_type) AS current_starts_at,
     EXISTS (
       SELECT
         1
@@ -230,18 +316,15 @@ clock_ring AS (
     row_number() OVER (ORDER BY c.staff_id) - 1 AS ring_position,
     count(*) OVER () AS ring_size
   FROM
-    haven.observation_on_clock_staff (p_facility_id, p_at) c
+    phase ph
+    CROSS JOIN LATERAL haven.observation_shift_owner_staff (p_facility_id, p_at, ph.current_starts_at) c
   WHERE
-    NOT EXISTS (
+    ph.current_starts_at IS NOT NULL
+    AND NOT EXISTS (
       SELECT
         1
       FROM
         scheduled)
-    AND (
-      SELECT
-        is_current
-      FROM
-        phase)
 )
 SELECT
   r.resident_id,
@@ -286,7 +369,7 @@ ORDER BY
 $func$;
 
 COMMENT ON FUNCTION haven.resolve_observation_task_assignees_at (uuid, date, text, uuid[], timestamptz) IS
-  'COL-693: the rounding owner chain at an instant -- resident_split, shift_roster, on_clock (shift in progress, nobody scheduled, eligible staff on the clock, stable hash ring), awaiting_clock_in (next shift, nobody scheduled, facility staffs from punches), else none_scheduled. Private; called by public.resolve_observation_task_assignees and public.assign_unowned_observation_tasks.';
+  'COL-693: the rounding owner chain at an instant -- resident_split, shift_roster, on_clock (shift in progress, nobody scheduled, eligible staff on the clock -- preferring those who clocked in for this shift -- stable hash ring), awaiting_clock_in (next shift, nobody scheduled, facility staffs from punches), else none_scheduled. Private; called by public.resolve_observation_task_assignees and public.assign_unowned_observation_tasks.';
 
 REVOKE ALL ON FUNCTION haven.resolve_observation_task_assignees_at (uuid, date, text, uuid[], timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
@@ -311,7 +394,7 @@ CREATE OR REPLACE FUNCTION public.resolve_observation_task_assignees (p_facility
 $func$;
 
 COMMENT ON FUNCTION public.resolve_observation_task_assignees (uuid, date, text, uuid[]) IS
-  'Who should own each resident''s observation tasks for one shift at one facility: the staff member the resident split already names, else a staff member scheduled for that shift chosen by a stable hash so the choice survives a re-run, else (COL-693, shift in progress, timeclock on) a staff member on the clock at the facility who can complete checks, chosen by the same stable hash; for the next shift at a facility that staffs from punches the answer is awaiting_clock_in with no owner; else nobody and assignment_source none_scheduled. The shift is matched on shift_assignments.shift_type, which is a fixed enum, rather than on the renameable shift_key. COL-37 ruling: definer required -- the on-clock step reads haven.timeclock_state and the punch ledgers, which are private to the timeclock and hold no service_role grant; execute stays with service_role only (the task generator), and the body writes nothing.';
+  'Who should own each resident''s observation tasks for one shift at one facility: the staff member the resident split already names, else a staff member scheduled for that shift chosen by a stable hash so the choice survives a re-run, else (COL-693, shift in progress, timeclock on) a staff member on the clock at the facility who can own checks there, preferring those who clocked in for this shift over the outgoing shift, chosen by the same stable hash; for the next shift at a facility that staffs from punches the answer is awaiting_clock_in with no owner; else nobody and assignment_source none_scheduled. The shift is matched on shift_assignments.shift_type, which is a fixed enum, rather than on the renameable shift_key. COL-37 ruling: definer required -- the on-clock step reads haven.timeclock_state and the punch ledgers, which are private to the timeclock and hold no service_role grant; execute stays with service_role only (the task generator), and the body writes nothing.';
 
 REVOKE ALL ON FUNCTION public.resolve_observation_task_assignees (uuid, date, text, uuid[]) FROM PUBLIC, anon, authenticated;
 
@@ -454,6 +537,36 @@ REVOKE ALL ON FUNCTION public.assign_unowned_observation_tasks (uuid, timestampt
 GRANT EXECUTE ON FUNCTION public.assign_unowned_observation_tasks (uuid, timestamptz) TO service_role;
 
 -- ---------------------------------------------------------------------------
+-- 3b. One title for the staffing gap alert, so raising and resolving it name
+--     the same row.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION haven.observation_staffing_gap_title (p_facility_id uuid, p_shift_key text, p_service_date date)
+  RETURNS text
+  LANGUAGE sql
+  STABLE
+  SET search_path = public, pg_catalog
+  AS $func$
+  SELECT
+    format('Nobody is scheduled for the %s at %s on %s', COALESCE((
+          SELECT
+            d.label
+          FROM public.facility_shift_definitions d
+          WHERE
+            d.facility_id = p_facility_id
+            AND d.shift_key = p_shift_key
+            AND d.deleted_at IS NULL), 'shift'), f.name, to_char(p_service_date, 'FMMonth FMDD, YYYY'))
+  FROM
+    public.facilities f
+  WHERE
+    f.id = p_facility_id;
+$func$;
+
+COMMENT ON FUNCTION haven.observation_staffing_gap_title (uuid, text, date) IS
+  'COL-693: the exec_alerts title of a rounding staffing gap for one facility, shift and service date. Shared by record_observation_staffing_gap and resolve_observation_staffing_gap so both name the same alert. Private helper.';
+
+REVOKE ALL ON FUNCTION haven.observation_staffing_gap_title (uuid, text, date) FROM PUBLIC, anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
 -- 4. The staffing gap counts on-clock staff as staffed.
 --
 -- Changed from 423: two early returns. The shift in progress is staffed when
@@ -470,7 +583,6 @@ CREATE OR REPLACE FUNCTION public.record_observation_staffing_gap (p_facility_id
   AS $func$
 DECLARE
   v_facility record;
-  v_shift_label text;
   v_title text;
   v_recorded integer := 0;
   v_staffs_from_punches boolean;
@@ -530,16 +642,7 @@ BEGIN
     END IF;
   END IF;
 
-  SELECT
-    d.label INTO v_shift_label
-  FROM
-    public.facility_shift_definitions d
-  WHERE
-    d.facility_id = p_facility_id
-    AND d.shift_key = p_shift_key
-    AND d.deleted_at IS NULL;
-
-  v_title := format('Nobody is scheduled for the %s at %s on %s', COALESCE(v_shift_label, 'shift'), v_facility.name, to_char(p_service_date, 'FMMonth FMDD, YYYY'));
+  v_title := haven.observation_staffing_gap_title (p_facility_id, p_shift_key, p_service_date);
 
   INSERT INTO public.exec_alerts (organization_id, entity_id, facility_id, source_module, severity, title, body)
   SELECT
@@ -552,7 +655,7 @@ BEGIN
     CASE WHEN v_staffs_from_punches THEN
       'Observation checks were generated for this shift and there is no staff member on the schedule or on the clock to own them. Nobody was invented as the assignee, so these checks are completable only by a med tech or an administrator until somebody clocks in at the front door or the schedule is filled in.'
     ELSE
-      'Observation checks were generated for this shift and there is no staff member on the schedule to own them. Nobody was invented as the assignee, so these checks are completable only by a nurse or an administrator until the schedule is filled in. Open the schedule for this facility and this date.'
+      'Observation checks were generated for this shift and there is no staff member on the schedule to own them. Nobody was invented as the assignee, so these checks are completable only by a med tech or an administrator until the schedule is filled in. Open the schedule for this facility and this date.'
     END
   WHERE
     NOT EXISTS (
@@ -578,6 +681,78 @@ COMMENT ON FUNCTION public.record_observation_staffing_gap (uuid, text, date) IS
 REVOKE ALL ON FUNCTION public.record_observation_staffing_gap (uuid, text, date) FROM PUBLIC, anon, authenticated;
 
 GRANT EXECUTE ON FUNCTION public.record_observation_staffing_gap (uuid, text, date) TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- 5. A gap that is no longer a gap. A tech who clocks in after the first tick
+--    of a shift gets its checks on the next tick; the alert raised on the first
+--    tick is resolved on that same tick rather than left open all shift.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.resolve_observation_staffing_gap (p_facility_id uuid, p_shift_key text, p_service_date date)
+  RETURNS boolean
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public, pg_catalog
+  AS $func$
+DECLARE
+  v_resolved integer := 0;
+BEGIN
+  -- Staffed means: the facility staffs from punches, the named shift is the
+  -- one in progress, and somebody eligible is on the clock.
+  IF NOT EXISTS (
+    SELECT
+      1
+    FROM
+      public.timeclock_facility_settings t
+    WHERE
+      t.facility_id = p_facility_id
+      AND t.timeclock_enabled)
+    OR NOT EXISTS (
+      SELECT
+        1
+      FROM
+        public.facility_shift_window_at (p_facility_id, now()) cur
+      WHERE
+        cur.shift_key = p_shift_key
+        AND cur.shift_service_date = p_service_date)
+    OR NOT EXISTS (
+      SELECT
+        1
+      FROM
+        haven.observation_on_clock_staff (p_facility_id, now())) THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE
+    public.exec_alerts e
+  SET
+    resolved_at = now(),
+    status = 'resolved',
+    last_evaluated_at = now(),
+    current_value_json = COALESCE(e.current_value_json, '{}'::jsonb) || jsonb_build_object('resolved_reason', 'on_clock_staff', 'resolution_note', 'Resolved automatically: a staff member who can own observation checks clocked in for this shift, and the unowned checks were assigned on the next run.')
+  WHERE
+    e.facility_id = p_facility_id
+    AND e.organization_id = (
+      SELECT
+        f.organization_id
+      FROM
+        public.facilities f
+      WHERE
+        f.id = p_facility_id)
+    AND e.title = haven.observation_staffing_gap_title (p_facility_id, p_shift_key, p_service_date)
+    AND e.resolved_at IS NULL
+    AND e.deleted_at IS NULL;
+
+  GET DIAGNOSTICS v_resolved = ROW_COUNT;
+  RETURN v_resolved > 0;
+END;
+$func$;
+
+COMMENT ON FUNCTION public.resolve_observation_staffing_gap (uuid, text, date) IS
+  'COL-693: resolves the open "Nobody is scheduled" exec alert for a facility, shift and service date when that shift is in progress at a facility whose timeclock is enabled and an eligible staff member is on the clock. Sets resolved_at, status resolved and a resolution note in current_value_json; returns true when an alert was resolved. Does nothing otherwise, so a genuine gap stays open. De-duplication of record_observation_staffing_gap is unchanged. COL-37 ruling: definer required -- the task generator resolves an executive alert on behalf of nobody and the on-clock check reads the private timeclock ledgers; execute is granted to service_role only.';
+
+REVOKE ALL ON FUNCTION public.resolve_observation_staffing_gap (uuid, text, date) FROM PUBLIC, anon, authenticated;
+
+GRANT EXECUTE ON FUNCTION public.resolve_observation_staffing_gap (uuid, text, date) TO service_role;
 
 NOTIFY pgrst, 'reload schema';
 

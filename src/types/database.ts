@@ -1461,7 +1461,9 @@ export type Database = {
           floor_idle_lock_minutes: number
           floor_roster_roles: string[]
           id: string
+          kiosk_visitor_sign_ins_per_10_minutes: number
           organization_id: string
+          rounding_clock_in_lead_minutes: number
           rounding_owner_roles: string[]
           timeclock_enabled: boolean
           updated_at: string
@@ -1472,7 +1474,9 @@ export type Database = {
           floor_idle_lock_minutes?: number
           floor_roster_roles?: string[]
           id?: string
+          kiosk_visitor_sign_ins_per_10_minutes?: number
           organization_id: string
+          rounding_clock_in_lead_minutes?: number
           rounding_owner_roles?: string[]
           timeclock_enabled?: boolean
           updated_at?: string
@@ -1483,7 +1487,9 @@ export type Database = {
           floor_idle_lock_minutes?: number
           floor_roster_roles?: string[]
           id?: string
+          kiosk_visitor_sign_ins_per_10_minutes?: number
           organization_id?: string
+          rounding_clock_in_lead_minutes?: number
           rounding_owner_roles?: string[]
           timeclock_enabled?: boolean
           updated_at?: string
@@ -21525,6 +21531,14 @@ export type Database = {
       assign_unowned_observation_tasks: {
         Args: { p_at?: string; p_facility_id: string }
         Returns: number
+      }
+      resolve_observation_staffing_gap: {
+        Args: {
+          p_facility_id: string
+          p_service_date: string
+          p_shift_key: string
+        }
+        Returns: boolean
       }
       submit_observation: {
         Args: {
