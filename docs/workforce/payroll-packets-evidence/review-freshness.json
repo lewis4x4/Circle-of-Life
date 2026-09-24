@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-09-24T18:57:05.727473+00:00",
+  "scope": "Saving an unrelated manual edit after source changes",
+  "before_fix": "Changed-hours and changed-policy regressions failed; revision-only preservation passed",
+  "after_fix": "125 focused payroll, display and integrity guard tests passed",
+  "checks": [
+    "Changed hours clear all submitted review marks",
+    "Changed policy clears all submitted review marks",
+    "Unchanged business source preserves review marks despite a revision increment",
+    "Incoming note, bonus and check-date edits are preserved"
+  ],
+  "hosted_payroll_mutations": false
+}

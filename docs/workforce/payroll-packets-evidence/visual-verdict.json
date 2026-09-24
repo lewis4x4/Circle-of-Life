@@ -1,0 +1,13 @@
+{
+  "score": 94,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "A wide payroll list scrolls within its panel on mobile to preserve readable dates."
+  ],
+  "suggestions": [],
+  "reasoning": "Shared scroll affordance exposes hidden columns and keyboard focus without page overflow. Date rows remain legible; mobile axe reports zero violations.",
+  "next_actions": [
+    "Complete current-base CI and release."
+  ]
+}

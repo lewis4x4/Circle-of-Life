@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-09-24T18:08:00Z",
+  "project": "iwcnajanvjvynolltflw",
+  "migration": [
+    {
+      "name": "payroll_packets",
+      "version": "20260924180541",
+      "source_hash": "e012ab447d123a90b32a60d868707de8434a5fae1c447039cebd50d3b663b7f7"
+    }
+  ],
+  "tables": [
+    {
+      "rls": true,
+      "name": "payroll_packet_events",
+      "schema": "public",
+      "anon_select": false,
+      "service_write": false,
+      "authenticated_write": false
+    },
+    {
+      "rls": true,
+      "name": "payroll_packet_policies",
+      "schema": "public",
+      "anon_select": false,
+      "service_write": false,
+      "authenticated_write": false
+    },
+    {
+      "rls": true,
+      "name": "payroll_packet_source_revisions",
+      "schema": "haven",
+      "anon_select": false,
+      "service_write": false,
+      "authenticated_write": false
+    },
+    {
+      "rls": true,
+      "name": "payroll_packets",
+      "schema": "public",
+      "anon_select": false,
+      "service_write": false,
+      "authenticated_write": false
+    }
+  ],
+  "function_count": 13,
+  "trigger_count": 12,
+  "probe": "PASS, rollback-only lifecycle and ACL probe; hosted auth helpers unchanged",
+  "rows_after_probe": {
+    "packet_count": 0,
+    "policy_count": 0,
+    "event_count": 0
+  }
+}
