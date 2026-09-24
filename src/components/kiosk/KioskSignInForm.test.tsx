@@ -98,7 +98,7 @@ describe("KioskSignInForm", () => {
     renderInKiosk(<KioskSignInForm kind="visitor" />, { fetchImpl, pathname: "/kiosk/sign-in/visitor" });
     await screen.findByLabelText("Your name");
     type("Your name", "Carol Parker");
-    type("Phone", "904-555-0100");
+    type("Phone", "904.555.0100");
     type("Who are you visiting?", "Test Resident");
     fireEvent.click(screen.getByRole("button", { name: "No" }));
     signIn();
@@ -111,7 +111,7 @@ describe("KioskSignInForm", () => {
     expect(bodies[0]).toEqual({
       kind: "visitor",
       name: "Carol Parker",
-      phone: "904-555-0100",
+      phone: "904.555.0100",
       company: null,
       visiting_name: "Test Resident",
       purpose: null,

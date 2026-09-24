@@ -46,7 +46,10 @@
 --   5. none_scheduled     unchanged meaning: nobody to own the checks.
 --
 -- Decisions:
---   * On the clock means haven.timeclock_state IN ('in', 'meal'). A person on a
+--   * On the clock, and the opening 'in' punch, come from the timeclock domain
+--     (haven.floor_clocked_in_at from migration 494: timeclock_state IN ('in',
+--     'meal') and the opening punch at this facility); rounding restates none
+--     of the timeclock's window. A person on a
 --     meal break is still on shift; the floor tablet roster (migration 494)
 --     uses the same definition, so the roster and the owner cannot disagree.
 --   * The opening 'in' punch must be at this facility, so somebody whose home
@@ -109,28 +112,19 @@ CREATE OR REPLACE FUNCTION haven.observation_on_clock_staff (p_facility_id uuid,
   AS $func$
   SELECT
     s.id,
-    opening.punched_at
+    opening.clocked_in_at
   FROM
     public.staff s
     JOIN public.user_profiles p ON p.id = s.user_id
       AND p.organization_id = s.organization_id
     JOIN auth.users au ON au.id = p.id
-    -- The in punch that opened the current stint, and where it was made.
+    -- The in punch that opened the current stint, from the timeclock domain:
+    -- null unless the person is in or on a meal break and that punch was made
+    -- at this facility. The timeclock owns the shift window; rounding does not
+    -- restate it.
     CROSS JOIN LATERAL (
       SELECT
-        COALESCE(tp.facility_id, tc.facility_id) AS facility_id,
-        e.punched_at
-      FROM
-        haven.timeclock_effective_punches(s.id, p_at - interval '16 hours', p_at + interval '1 second') e
-      LEFT JOIN public.time_punches tp ON e.source = 'punch'
-        AND tp.id = e.punch_id
-      LEFT JOIN public.time_punch_corrections tc ON e.source = 'correction'
-        AND tc.id = e.punch_id
-    WHERE
-      e.punch_type = 'in'
-    ORDER BY
-      e.punched_at DESC
-    LIMIT 1) opening
+        haven.floor_clocked_in_at (s.id, p_facility_id, p_at) AS clocked_in_at) opening
   WHERE
     s.facility_id = p_facility_id
     AND s.deleted_at IS NULL
@@ -166,12 +160,11 @@ CREATE OR REPLACE FUNCTION haven.observation_on_clock_staff (p_facility_id uuid,
         t.organization_id = s.organization_id
         AND t.facility_id = p_facility_id
         AND t.timeclock_enabled)
-    AND haven.timeclock_state(s.id, p_at) IN ('in', 'meal')
-    AND opening.facility_id = p_facility_id;
+    AND opening.clocked_in_at IS NOT NULL;
 $func$;
 
 COMMENT ON FUNCTION haven.observation_on_clock_staff (uuid, timestamptz) IS
-  'COL-693: staff on the clock (in or on a meal break) at a facility whose timeclock is enabled, whose opening in punch was at that facility, whose role is in the facility''s rounding_owner_roles (default med_tech), and who could complete any check there: active profile and auth user, active staff row at the facility, facility grant unless owner or org_admin. Returns when the opening in punch was made. Private helper for the rounding owner chain.';
+  'COL-693: staff on the clock (in or on a meal break) at a facility whose timeclock is enabled, whose opening in punch was at that facility, whose role is in the facility''s rounding_owner_roles (default med_tech), and who could complete any check there: active profile and auth user, active staff row at the facility, facility grant unless owner or org_admin. Returns when the opening in punch was made. On-clock state, the opening punch and its facility come from haven.floor_clocked_in_at (the timeclock domain), so rounding carries no timeclock window of its own. Private helper for the rounding owner chain.';
 
 REVOKE ALL ON FUNCTION haven.observation_on_clock_staff (uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
