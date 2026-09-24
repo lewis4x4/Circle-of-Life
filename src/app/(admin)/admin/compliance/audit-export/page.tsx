@@ -15,6 +15,7 @@ import {
   AUDIT_EXPORT_NO_JOBS_COPY,
   formatAuditExportJobDateRange,
   formatAuditExportRowCount,
+  formatAuditExportScopeFacilityName,
 } from "@/lib/compliance/audit-export-display-copy";
 import {
   isAuditExportActionBlocked,
@@ -65,7 +66,7 @@ export default function AuditLogExportPage() {
     (s) => s.availableFacilities.find((f) => f.id === selectedFacilityId)?.name,
   );
   const scopeFacilityName = isValidFacilityIdForQuery(selectedFacilityId)
-    ? (selectedFacilityName ?? "the selected facility")
+    ? formatAuditExportScopeFacilityName(selectedFacilityName)
     : null;
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");

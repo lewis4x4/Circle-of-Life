@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 /**
  * The front desk visitor log.
  *
@@ -35,7 +36,7 @@ const LEGACY_VISITOR_TYPE_LABELS: Record<string, string> = {
 export function visitorTypeLabel(id: string): string {
   const current = VISITOR_TYPES.find((type) => type.id === id);
   if (current) return current.label;
-  return LEGACY_VISITOR_TYPE_LABELS[id] ?? id.replace(/_/g, " ");
+  return LEGACY_VISITOR_TYPE_LABELS[id] ?? enumLabel(id);
 }
 
 export const VISITING_TYPES = [
@@ -56,7 +57,7 @@ export type VoidReasonId = (typeof VOID_REASONS)[number]["id"];
 
 export function voidReasonLabel(id: string | null): string {
   if (!id) return "";
-  return VOID_REASONS.find((reason) => reason.id === id)?.label ?? id.replace(/_/g, " ");
+  return VOID_REASONS.find((reason) => reason.id === id)?.label ?? enumLabel(id);
 }
 
 /** The statuses that mean a resident can be visited: they hold a bed here. */

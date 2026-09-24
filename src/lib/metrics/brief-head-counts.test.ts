@@ -50,16 +50,16 @@ describe("loaders whose counts must exist", () => {
   });
 
   it("morning huddle fails instead of reporting census 0", async () => {
-    await expect(fetchMorningHuddleData(missingCount, FACILITY, "2026-09-23")).rejects.toThrow(/count was not returned/);
+    await expect(fetchMorningHuddleData(missingCount, FACILITY, "2026-09-23")).rejects.toThrow(/count unavailable/);
   });
 
   it("executive KPI snapshot fails instead of reporting 0 incidents, deficiencies, outbreaks", async () => {
-    await expect(fetchExecutiveKpiSnapshot(missingCount, ORG, FACILITY)).rejects.toThrow(/count was not returned/);
+    await expect(fetchExecutiveKpiSnapshot(missingCount, ORG, FACILITY)).rejects.toThrow(/count unavailable/);
   });
 
   it("admission rate terms fail instead of reading as none", async () => {
     await expect(
       loadAdmissionRateTermCount(missingCount as never, "00000000-0000-4000-8000-0000000000c1"),
-    ).rejects.toThrow(/count was not returned/);
+    ).rejects.toThrow(/count unavailable/);
   });
 });

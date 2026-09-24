@@ -5,7 +5,7 @@ import {
   admissionsHubCalendarUpperBoundUtc,
   type AdmissionsHubScope,
 } from "@/lib/admin/admissions/hub-scope";
-import { requireHeadCount } from "@/lib/metrics/require-head-count";
+import { requireHeadCount } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";

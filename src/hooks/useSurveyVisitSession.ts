@@ -69,11 +69,12 @@ export function useSurveyVisitSession(
     void refresh();
   }, [refresh]);
 
-  const activateSession = useCallback(async () => {
-    if (!canManage || !userId || !fid) return;
+  /** Resolves true once a session is open, so callers can open the survey pack (COL-707). */
+  const activateSession = useCallback(async (): Promise<boolean> => {
+    if (!canManage || !userId || !fid) return false;
     if (!orgId) {
       setMessage("Organization could not be loaded for this facility. Refresh the page or check access.");
-      return;
+      return false;
     }
     setBusy(true);
     setMessage(null);
@@ -85,9 +86,10 @@ export function useSurveyVisitSession(
       });
       if (error) {
         setMessage(error.message);
-        return;
+        return false;
       }
       await refresh();
+      return true;
     } finally {
       setBusy(false);
     }

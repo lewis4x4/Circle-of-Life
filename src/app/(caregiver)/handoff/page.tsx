@@ -8,13 +8,13 @@ import { CheckCircle2, ClipboardList, Loader2, MessageSquare } from "lucide-reac
 import { ShiftEventsSummary } from "@/components/care-events/timeline/ShiftEventsSummary";
 import { zonedYmd } from "@/lib/caregiver/emar-queue";
 import { loadCaregiverFacilityContext, type CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { currentShiftFor, currentShiftForTimezone, nextShiftFor, type ShiftType } from "@/lib/caregiver/shift";
+import { currentShiftFor, handoffShiftOf, nextShiftFor } from "@/lib/caregiver/shift";
 import {
   HANDOFF_RECORDED_COPY,
   autoSummaryCareEventLines,
   nextShift,
   recordShiftHandoff,
-  type HandoffShift,
+  shiftWindowOf,
 } from "@/lib/caregiver/handoff-summary";
 import { formatLiveDataLoadError } from "@/lib/live-data-fallback";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
@@ -37,14 +37,6 @@ type HandoffRow = {
   incoming_acknowledged: boolean;
   auto_summary: unknown;
 };
-
-/**
- * The roster enum also carries "custom", which a handoff row cannot store; such a
- * shift is filed under the clock-time bucket it falls in.
- */
-function asHandoffShift(shift: ShiftType, timeZone: string, at: Date): HandoffShift {
-  return shift === "custom" ? (currentShiftForTimezone(timeZone, at) as HandoffShift) : shift;
-}
 
 export default function CaregiverHandoffPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -139,7 +131,7 @@ export default function CaregiverHandoffPage() {
       const now = new Date();
       // Outgoing and incoming shifts come from the facility's configured shifts (COL-659).
       const current = currentShiftFor(facilityCtx, now);
-      const shift = asHandoffShift(current.shiftType, facilityCtx.timeZone, now);
+      const shift = handoffShiftOf(current, facilityCtx.timeZone);
       const incoming = nextShiftFor(facilityCtx, now);
       const date = current.serviceDate;
       await recordShiftHandoff(supabase, {
@@ -147,9 +139,10 @@ export default function CaregiverHandoffPage() {
         organizationId: facilityCtx.organizationId,
         timeZone: facilityCtx.timeZone,
         outgoingShift: shift,
-        incomingShift: incoming ? asHandoffShift(incoming.shiftType, facilityCtx.timeZone, incoming.endsAt ?? now) : nextShift(shift),
+        incomingShift: incoming ? handoffShiftOf(incoming, facilityCtx.timeZone) : nextShift(shift),
         handoffDate: zonedYmd(now, facilityCtx.timeZone),
         shiftDate: date,
+        window: shiftWindowOf(current),
         outgoingStaffId: user.id,
         outgoingNotes: null,
         now,
@@ -212,7 +205,7 @@ export default function CaregiverHandoffPage() {
 
       {facilityCtx ? (
         <div className="space-y-3">
-          <ShiftEventsSummary facilityId={facilityCtx.facilityId} timeZone={facilityCtx.timeZone} />
+          <ShiftEventsSummary facilityId={facilityCtx.facilityId} timeZone={facilityCtx.timeZone} shifts={facilityCtx.shifts} />
           <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
             <Button
               type="button"

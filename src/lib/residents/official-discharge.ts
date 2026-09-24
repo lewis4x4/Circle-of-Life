@@ -1,4 +1,5 @@
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * Official discharge — the one write path that ends a residency.
@@ -43,7 +44,7 @@ export const DISCHARGE_REASONS: DischargeReason[] = [
 
 /** Operator wording for a reason; the enum value is never shown raw. */
 export function dischargeReasonLabel(reason: DischargeReason): string {
-  return reason.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+  return enumLabel(reason);
 }
 
 /**

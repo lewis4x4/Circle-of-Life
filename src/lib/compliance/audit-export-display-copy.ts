@@ -9,6 +9,7 @@ export const AUDIT_EXPORT_LOADING_JOBS_COPY = "Loading export jobs…";
 export const AUDIT_EXPORT_NO_JOBS_COPY = "No export jobs yet.";
 export const AUDIT_EXPORT_NO_ROW_COUNT_COPY = "No row count posted";
 export const AUDIT_EXPORT_OPEN_DATE_RANGE_COPY = "All dates";
+export const AUDIT_EXPORT_NO_FACILITY_NAME_COPY = "No facility name posted";
 
 /** Row count — real zero stays `0`; null/undefined uses explicit missing copy. */
 export function formatAuditExportRowCount(value: number | null | undefined): string | number {
@@ -24,3 +25,13 @@ export function formatAuditExportJobDateRange(
   if (!dateFrom && !dateTo) return AUDIT_EXPORT_OPEN_DATE_RANGE_COPY;
   return `${dateFrom ?? "…"} → ${dateTo ?? "…"}`;
 }
+
+/** Scoped export blurb facility name — never says "the selected facility". */
+export function formatAuditExportScopeFacilityName(
+  name: string | null | undefined,
+): string {
+  const trimmed = name?.trim();
+  if (trimmed) return trimmed;
+  return AUDIT_EXPORT_NO_FACILITY_NAME_COPY;
+}
+

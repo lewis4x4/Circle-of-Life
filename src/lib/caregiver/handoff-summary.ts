@@ -11,14 +11,12 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fromZonedTime } from "date-fns-tz";
 
 import { careEventTileWord } from "@/lib/care-events/tiles";
 import { isCareEventKind } from "@/lib/care-events/level-engine";
 import { formatLevelWord, levelNumberFromSeverity } from "@/lib/incidents/incidents-display-copy";
 import type { Database, Json } from "@/types/database";
 
-import { zonedYmd } from "./emar-queue";
 import type { ShiftType } from "./shift";
 
 /** The three floor shifts a handoff can summarize; the enum's `custom` value has no fixed window. */
@@ -83,45 +81,12 @@ export function nextShift(shift: HandoffShift): HandoffShift {
 /** Emergency first: the next shift reads the worst news before the notes. */
 const LEVEL_ORDER: ReadonlyArray<1 | 2 | 3 | 4> = [4, 3, 2, 1];
 
-const SHIFT_HOURS: Record<HandoffShift, { start: number; end: number }> = {
-  day: { start: 7, end: 15 },
-  evening: { start: 15, end: 23 },
-  night: { start: 23, end: 7 },
-};
+/** A shift's span as UTC instants, from the facility's configured shift (`currentShiftFor`). */
+export type ShiftWindow = { startIso: string; endIso: string };
 
-function addDays(ymd: string, days: number): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
-  if (!match) throw new Error(`Invalid date: ${ymd}`);
-  const next = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + days, 12));
-  return next.toISOString().slice(0, 10);
-}
-
-/**
- * The shift's wall-clock window in the facility zone as UTC instants. The
- * night window starts at 23:00 on `date` and ends at 07:00 the next day.
- */
-export function shiftWindow(shift: HandoffShift, date: string, timeZone: string): { startIso: string; endIso: string } {
-  const hours = SHIFT_HOURS[shift];
-  const endDate = shift === "night" ? addDays(date, 1) : date;
-  const pad = (hour: number) => String(hour).padStart(2, "0");
-  return {
-    startIso: fromZonedTime(`${date}T${pad(hours.start)}:00:00`, timeZone).toISOString(),
-    endIso: fromZonedTime(`${endDate}T${pad(hours.end)}:00:00`, timeZone).toISOString(),
-  };
-}
-
-/**
- * Which shift is on the floor now and the calendar date its window started
- * on. Between midnight and 07:00 the night shift belongs to the previous day.
- */
-export function currentShiftWindowFor(timeZone: string, now: Date = new Date()): { shift: HandoffShift; date: string } {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false }).formatToParts(now);
-  const hour = Number.parseInt(parts.find((part) => part.type === "hour")?.value ?? "12", 10);
-  const safeHour = Number.isNaN(hour) ? 12 : hour % 24;
-  const today = zonedYmd(now, timeZone);
-  if (safeHour >= 7 && safeHour < 15) return { shift: "day", date: today };
-  if (safeHour >= 15 && safeHour < 23) return { shift: "evening", date: today };
-  return { shift: "night", date: safeHour >= 23 ? today : addDays(today, -1) };
+/** The window of a resolved shift; the handoff board and its summary read the same span (COL-685). */
+export function shiftWindowOf(shift: { startsAt: Date; endsAt: Date }): ShiftWindow {
+  return { startIso: shift.startsAt.toISOString(), endIso: shift.endsAt.toISOString() };
 }
 
 export function residentInitialLast(resident: HandoffCareEventInput["resident"]): string {
@@ -205,11 +170,8 @@ type ResidentEmbed = { first_name: string | null; last_name: string | null; bed_
 export async function loadOutgoingShiftCareEvents(
   supabase: SupabaseClient<Database>,
   facilityId: string,
-  timeZone: string,
-  shift: HandoffShift,
-  date: string,
+  window: ShiftWindow,
 ): Promise<HandoffCareEventInput[]> {
-  const window = shiftWindow(shift, date, timeZone);
   const events = await supabase
     .from("care_events")
     .select("id, kind, final_level, occurred_at, sentence, resident:residents(first_name, last_name, bed_id)")
@@ -269,6 +231,8 @@ export type RecordShiftHandoffInput = {
    * so one row keys one shift window and consecutive nights never collide.
    */
   shiftDate?: string;
+  /** The outgoing shift's configured span; care events inside it are summarised. */
+  window: ShiftWindow;
   outgoingStaffId: string;
   outgoingNotes?: string | null;
   now?: Date;
@@ -322,13 +286,7 @@ export async function recordShiftHandoff(
   supabase: SupabaseClient<Database>,
   input: RecordShiftHandoffInput,
 ): Promise<{ id: string; summary: HandoffAutoSummary }> {
-  const careEvents = await loadOutgoingShiftCareEvents(
-    supabase,
-    input.facilityId,
-    input.timeZone,
-    input.outgoingShift,
-    input.shiftDate ?? input.handoffDate,
-  );
+  const careEvents = await loadOutgoingShiftCareEvents(supabase, input.facilityId, input.window);
   const row = buildShiftHandoffInsert(input, careEvents);
   const summary = row.auto_summary as unknown as Json;
 

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { loadResidentIntake, readApiRecord } from "./api";
 import { snapshotRevision } from "./types";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const SUPPORTED_MIME = new Set([
@@ -110,7 +111,7 @@ export function ResidentRecordPacketStart({
   const title = useMemo(() => {
     const place = facilityName?.trim();
     const base = place ? `${place} resident packet` : "Resident admission packet";
-    return focusDocumentType ? `${base} · ${focusDocumentType.replaceAll("_", " ")}` : base;
+    return focusDocumentType ? `${base} · ${enumLabel(focusDocumentType, { case: "lower" })}` : base;
   }, [facilityName, focusDocumentType]);
 
   function queue(selected: File[]) {
@@ -294,7 +295,7 @@ export function ResidentRecordPacketStart({
         <h2 id="packet-start-title" className="text-[14px] font-semibold text-foreground">Upload a resident packet</h2>
         <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
           {focusDocumentType
-            ? `Add or replace ${focusDocumentType.replaceAll("_", " ")} here. Haven returns the file to this packet for classification and review.`
+            ? `Add or replace ${enumLabel(focusDocumentType, { case: "lower" })} here. Haven returns the file to this packet for classification and review.`
             : "Add all resident documents here. Haven keeps every original private, then asks an authorized reviewer to classify, match, approve, and apply each item."}
         </p>
       </div>

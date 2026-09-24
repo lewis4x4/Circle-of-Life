@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { formatOverdueAssessmentsResidentLabel } from "@/lib/assessments/overdue-assessments-display-copy";
 import { createClient } from "@/lib/supabase/client";
+import { requireHeadCount, type HeadCountReply } from "@/lib/metrics/head-count";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
 
@@ -215,14 +216,6 @@ export type ClinicalDeskScope = {
   activeCarePlans: number;
 };
 
-type HeadCountResult = { count: number | null; error: QueryError | null };
-
-function requireCount(res: HeadCountResult, what: string): number {
-  if (res.error) throw res.error;
-  if (typeof res.count !== "number") throw new Error(`${what} count unavailable`);
-  return res.count;
-}
-
 /**
  * An empty overdue queue only means "all clear" when there is something to be
  * overdue. With no assessments or no active plans on file the queue is a gap.
@@ -243,10 +236,10 @@ export async function fetchClinicalDeskScope(
       .is("deleted_at", null)
       .eq("status", "active")
       .eq("facility_id", selectedFacilityId),
-  ])) as unknown as [HeadCountResult, HeadCountResult];
+  ])) as unknown as [HeadCountReply, HeadCountReply];
 
   return {
-    assessmentsOnFile: requireCount(assessmentRes, "Assessments"),
-    activeCarePlans: requireCount(planRes, "Care plans"),
+    assessmentsOnFile: requireHeadCount(assessmentRes, "Assessments"),
+    activeCarePlans: requireHeadCount(planRes, "Care plans"),
   };
 }

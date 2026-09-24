@@ -1,4 +1,5 @@
 import type { FamilyDeliveryMethod } from "@/lib/admin/family-messages-data";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export function formatFamilyDeliveryMethod(method: FamilyDeliveryMethod | string): string {
   switch (method) {
@@ -11,7 +12,7 @@ export function formatFamilyDeliveryMethod(method: FamilyDeliveryMethod | string
     case "portal_and_call":
       return "Portal and call";
     default:
-      return method.replace(/_/g, " ");
+      return enumLabel(method);
   }
 }
 

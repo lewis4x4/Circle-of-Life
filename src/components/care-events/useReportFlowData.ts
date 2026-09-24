@@ -68,11 +68,11 @@ export function useReportFlowData() {
         }
         const everyone = await fetchEveryone(supabase, ctx.facilityId);
         const [assignedIds, locationChips, onCallPhone] = await Promise.all([
-          fetchMyResidentIds(supabase, { userId: user.id, facilityId: ctx.facilityId, timeZone: ctx.timeZone }).catch(
+          fetchMyResidentIds(supabase, { userId: user.id, facilityId: ctx.facilityId, timeZone: ctx.timeZone, shifts: ctx.shifts }).catch(
             () => [] as string[],
           ),
           fetchLocationChips(supabase, ctx.facilityId).catch(() => [] as LocationChip[]),
-          fetchOnCallPhone(supabase, { facilityId: ctx.facilityId, timeZone: ctx.timeZone }).catch(() => undefined),
+          fetchOnCallPhone(supabase, { facilityId: ctx.facilityId, timeZone: ctx.timeZone, shifts: ctx.shifts }).catch(() => undefined),
         ]);
         let phone: string | null;
         if (onCallPhone === undefined) {

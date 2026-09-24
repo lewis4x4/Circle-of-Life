@@ -78,7 +78,7 @@ describe("official discharge", () => {
     expect(officialDischargeReceipt("home")).toContain("the bed is released");
     expect(officialDischargeReceipt("home")).toContain("billing stops on this date");
     expect(dischargeReasonLabel("higher_level_of_care")).toBe("Higher level of care");
-    expect(dischargeReasonLabel("another_alf")).toBe("Another alf");
+    expect(dischargeReasonLabel("another_alf")).toBe("Another ALF");
     for (const reason of DISCHARGE_REASONS) expect(dischargeReasonLabel(reason)).not.toContain("_");
   });
 });

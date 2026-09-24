@@ -14,7 +14,7 @@ const PAGE_TITLE_SOURCES = [
   "src/app/(admin)/admin/infection-control/page.tsx",
   "src/app/(admin)/admin/compliance/rules/page.tsx",
   "src/app/(admin)/reputation/page.tsx",
-  "src/app/(admin)/admin/survey-binder/page.tsx",
+  "src/components/compliance/SurveyReadinessBinder.tsx",
   "src/app/(admin)/admin/approvals/page.tsx",
   "src/app/(admin)/admin/calendar/page.tsx",
   "src/app/(admin)/admin/contacts/page.tsx",

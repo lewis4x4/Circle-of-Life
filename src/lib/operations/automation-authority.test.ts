@@ -4,6 +4,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 
 import { SITE_AUTHORITY_CLASSES } from "../../../supabase/functions/_shared/operation-authority";
+import { parseRiskScoreBands, riskAlertThresholdJson, riskLevelFromBands } from "../operating-rules/risk-bands";
 import { judgeDue } from "./schedule-evaluator";
 
 const ts = createRequire(`${process.cwd()}/package.json`)("typescript") as typeof import("typescript");
@@ -23,7 +24,7 @@ const task = (overrides: Row = {}): Row => ({ id: "permitted-task", organization
   status: "pending", priority: "normal", estimated_minutes: 20, assigned_shift_date: DATE, assigned_shift: "day",
   due_at: "2099-01-01T00:00:00Z", license_threatening: false, ...overrides });
 
-function harness(surface: Surface, options: { tables?: Record<string, Row[]>; failTable?: string; truncateTasks?: boolean; automationExcludedIds?: string[] } = {}) {
+function harness(surface: Surface, options: { tables?: Record<string, Row[]>; failTable?: string; truncateTasks?: boolean; automationExcludedIds?: string[]; riskBands?: unknown; riskBandsError?: boolean } = {}) {
   let handler: (request: Request) => Response | Promise<Response>;
   const provider = vi.fn(() => { throw new Error("Unexpected provider request"); });
   const writes: Array<{ table: string; action: string; payload: unknown }> = [];
@@ -79,7 +80,14 @@ function harness(surface: Surface, options: { tables?: Record<string, Row[]>; fa
     };
     return chain;
   });
-  const createClient = vi.fn(() => ({ from }));
+  // COL-710: the scorer resolves its level cut-offs through haven_operating_rule.
+  const rpc = vi.fn(async () => options.riskBandsError
+    ? { data: null, error: { message: "hidden-rule-detail" } }
+    : {
+      data: [{ value: options.riskBands ?? { critical_below: 50, high_below: 70, moderate_below: 85 }, rule_id: "seeded", effective_from: DATE, facility_id: null }],
+      error: null,
+    });
+  const createClient = vi.fn(() => ({ from, rpc }));
   const source = readFileSync(`${process.cwd()}/supabase/functions/${surface}/index.ts`, "utf8");
   const compiled = ts.transpileModule(source.replace(/^import .*;\n/gm, ""), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
   runInNewContext(compiled, {
@@ -88,6 +96,7 @@ function harness(surface: Surface, options: { tables?: Record<string, Row[]>; fa
     withTiming: () => ({ log: vi.fn() }), Response, fetch: provider, URLSearchParams, btoa,
     // COL-137: the surfaces judge due dates through the shared evaluator, not their own arithmetic.
     judgeDue, Intl, Date, SITE_AUTHORITY_CLASSES,
+    parseRiskScoreBands, riskAlertThresholdJson, riskLevelFromBands,
   });
   return {
     from, createClient, provider, writes,
@@ -234,5 +243,26 @@ describe("automation current authority", () => {
     expect(payload.results[0].notify_owners).toBe(false);
     expect(h.writes).toEqual([{ table: "risk_score_snapshots", action: "upsert", payload: expect.objectContaining({ operation_authority_version: 1, score_delta: null, owner_alert_triggered_at: null }) }]);
     expect(h.provider).not.toHaveBeenCalled();
+  });
+
+  it("levels the score by the organization's configured risk bands, not fixed cut-offs (COL-710)", async () => {
+    // One level_2 incident: score 96.
+    const incidents = [{ organization_id: ORG, facility_id: SITE, severity: "level_2", ahca_reportable: false, status: "open", created_at: new Date().toISOString() }];
+    const seeded = harness("risk-nightly-scorer", { tables: { incidents } });
+    await seeded.run({ organization_id: ORG, facility_id: SITE, notify: false });
+    expect(seeded.writes[0]?.payload).toEqual(expect.objectContaining({ risk_score: 96, risk_level: "low" }));
+
+    const stricter = harness("risk-nightly-scorer", { tables: { incidents }, riskBands: { critical_below: 97, high_below: 98, moderate_below: 99 } });
+    await stricter.run({ organization_id: ORG, facility_id: SITE, notify: false });
+    expect(stricter.writes[0]?.payload).toEqual(expect.objectContaining({ risk_score: 96, risk_level: "critical" }));
+  });
+
+  it("does not score a facility when its risk bands cannot be read (COL-710)", async () => {
+    const h = harness("risk-nightly-scorer", { riskBandsError: true });
+    const response = await h.run({ organization_id: ORG, facility_id: SITE, notify: false });
+    const payload = await response.json();
+    expect(JSON.stringify(payload)).toContain("Risk score bands unavailable");
+    expect(JSON.stringify(payload)).not.toContain("hidden-rule-detail");
+    expect(h.writes).toEqual([]);
   });
 });

@@ -201,9 +201,15 @@ describe("<AdminStaffingConsolePageClient />", () => {
         initialCertWarnings={[]}
         initialCoverageScope={{
           shiftsInWindow: 0,
-          certificationsOnFile: 0,
-          expiredCertifications: 0,
-          staffWithoutCertifications: 56,
+          credentials: {
+            requirementsSetUp: false,
+            staffJudged: 0,
+            requiredChecks: 0,
+            expiredRequired: 0,
+            staffMissingRequired: 0,
+            expiredRequiredCertIds: [],
+            expiredOnFile: 0,
+          },
         }}
       />,
     );
@@ -212,8 +218,8 @@ describe("<AdminStaffingConsolePageClient />", () => {
     expect(screen.queryByText("Clear")).not.toBeInTheDocument();
     expect(screen.queryByText("No credential blockers")).not.toBeInTheDocument();
     expect(screen.getByText("No shifts scheduled in the next 48 hours")).toBeInTheDocument();
-    expect(screen.getByText("No certifications on file")).toBeInTheDocument();
-    expect(screen.getByText("No certs on file")).toBeInTheDocument();
+    expect(screen.getByText("Certification requirements not set up")).toBeInTheDocument();
+    expect(screen.getByText("Requirements not set up")).toBeInTheDocument();
   });
 
   it("says coverage could not be checked when the scope read failed (COL-649)", () => {
@@ -230,9 +236,15 @@ describe("<AdminStaffingConsolePageClient />", () => {
         initialShiftGaps={[]}
         initialCoverageScope={{
           shiftsInWindow: 9,
-          certificationsOnFile: 12,
-          expiredCertifications: 1,
-          staffWithoutCertifications: 0,
+          credentials: {
+            requirementsSetUp: true,
+            staffJudged: 12,
+            requiredChecks: 12,
+            expiredRequired: 1,
+            staffMissingRequired: 0,
+            expiredRequiredCertIds: ["c1"],
+            expiredOnFile: 1,
+          },
         }}
       />,
     );

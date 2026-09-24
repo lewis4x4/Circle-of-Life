@@ -26,6 +26,8 @@ import { formatCertificationStaffName } from "@/lib/certifications/certification
 import { csvEscapeCell, triggerCsvDownload } from "@/lib/csv-export";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { certificationTimeline } from "@/lib/staff/certification-aggregate";
+import { certificationPolicyResolver, loadCertificationRules } from "@/lib/staff/certification-policy";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { KineticGrid } from "@/components/ui/kinetic-grid";
@@ -50,6 +52,7 @@ type CertRow = {
 type SupabaseCertRow = {
   id: string;
   staff_id: string;
+  facility_id: string | null;
   certification_type: string;
   certification_name: string;
   issuing_authority: string | null;
@@ -388,6 +391,9 @@ export default function AdminCertificationsPage() {
                  <Link href="/admin/certifications/new" className={cn(buttonVariants({ size: "default" }), "text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
                    + Log Certification
                  </Link>
+                 <Link href="/admin/certifications/requirements" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "whitespace-nowrap")}>
+                   Requirements by job role
+                 </Link>
               </div>
             </V2Card>
           </div>
@@ -541,7 +547,7 @@ async function fetchCertificationsFromSupabase(selectedFacilityId: string | null
   let q = supabase
     .from("staff_certifications" as never)
     .select(
-      "id, staff_id, certification_type, certification_name, issuing_authority, issue_date, expiration_date, status, deleted_at",
+      "id, staff_id, facility_id, certification_type, certification_name, issuing_authority, issue_date, expiration_date, status, deleted_at",
     )
     .is("deleted_at", null)
     .order("expiration_date", { ascending: true })
@@ -551,10 +557,15 @@ async function fetchCertificationsFromSupabase(selectedFacilityId: string | null
     q = q.eq("facility_id", selectedFacilityId);
   }
 
-  const certRes = (await q) as unknown as QueryResult<SupabaseCertRow>;
+  const [certRes, rules] = await Promise.all([
+    q as unknown as Promise<QueryResult<SupabaseCertRow>>,
+    loadCertificationRules(supabase),
+  ]);
   if (certRes.error) throw certRes.error;
   const certs = certRes.data ?? [];
   if (certs.length === 0) return [];
+  // "Expiring soon" follows each building's configured window (COL-710).
+  const policyFor = certificationPolicyResolver(rules);
 
   const staffIds = [...new Set(certs.map((c) => c.staff_id))];
   const staffRes = (await supabase
@@ -581,22 +592,8 @@ async function fetchCertificationsFromSupabase(selectedFacilityId: string | null
     issueDate: c.issue_date,
     expirationDate: c.expiration_date,
     dbStatus: c.status,
-    timeline: deriveTimelineUi(c),
+    timeline: certificationTimeline(c, policyFor(c.facility_id).expiringSoonDays),
   }));
-}
-
-function deriveTimelineUi(c: Pick<SupabaseCertRow, "status" | "expiration_date">): TimelineUi {
-  if (c.status === "expired" || c.status === "revoked") return "expired";
-  if (c.expiration_date) {
-    const exp = new Date(`${c.expiration_date}T23:59:59`);
-    const now = new Date();
-    if (exp < now) return "expired";
-    const soon = new Date();
-    soon.setDate(soon.getDate() + 60);
-    if (exp <= soon) return "expiring_soon";
-  }
-  if (c.status === "pending_renewal") return "expiring_soon";
-  return "current";
 }
 
 function formatIsoDate(isoDate: string): string {

@@ -12,6 +12,7 @@ import { HistoryReceiptSummary } from "./history-receipt-summary";
 import { CONTROL } from "../work/_components/work-inputs";
 import { ActivityHistoryExport } from "./activity-history-export";
 import { useHeaderBoundFacility } from "../_components/use-header-bound-facility";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export default function CorporateActivityHistoryPage() {
   const auth = useHavenAuth();
@@ -262,8 +263,8 @@ function HistoryScope({
                     ({body.facility_timezone})
                   </p>
                   <p>
-                    Status: {row.status.replaceAll("_", " ")} · Completion:{" "}
-                    {row.execution_state?.replaceAll("_", " ") ?? "Unavailable"}
+                    Status: {enumLabel(row.status, { case: "lower" })} · Completion:{" "}
+                    {(row.execution_state ? enumLabel(row.execution_state) : "Unavailable")}
                   </p>
                   {row.receipt ? (
                     <HistoryReceiptSummary

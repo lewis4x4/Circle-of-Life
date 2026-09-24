@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type VisitorType = "family" | "vendor" | "contractor" | "medical" | "official" | "other";
 export type PackageType = "package" | "mail" | "perishable" | "medication" | "other";
 export type CallDirection = "inbound" | "outbound";
@@ -62,11 +63,11 @@ export type QueryError = { message: string };
 export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function visitorTypeLabel(id: string): string {
-  return VISITOR_TYPES.find((v) => v.id === id)?.label ?? id.replace(/_/g, " ");
+  return VISITOR_TYPES.find((v) => v.id === id)?.label ?? enumLabel(id);
 }
 
 export function packageTypeLabel(id: string): string {
-  return PACKAGE_TYPES.find((p) => p.id === id)?.label ?? id.replace(/_/g, " ");
+  return PACKAGE_TYPES.find((p) => p.id === id)?.label ?? enumLabel(id);
 }
 
 export function residentName(id: string | null, residents: ResidentMini[]): string | null {

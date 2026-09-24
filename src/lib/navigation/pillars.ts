@@ -255,7 +255,7 @@ export const ANCHOR_ONLY_ROUTES: AuxiliaryRoute[] = [
   { key: "nurse-dashboard", href: "/admin/nurse-dashboard", label: "Nurse dashboard", icon: Stethoscope, pillar: "clinical" },
   { key: "handoff", href: "/admin/handoff", label: "Shift handoff", icon: ArrowLeftRight, pillar: "clinical" },
   { key: "activities", href: "/admin/activities", label: "Activities", icon: CalendarDays, pillar: "clinical" },
-  { key: "survey-binder", href: "/admin/survey-binder", label: "Survey binder", icon: ClipboardCheck, pillar: "quality" },
+  { key: "survey-pack", href: "/admin/compliance/survey-pack", label: "Survey pack", icon: ClipboardCheck, pillar: "quality" },
   { key: "operations", href: "/admin/operations", label: "Facility operations", icon: ClipboardList, pillar: "command" },
   { key: "reputation", href: "/admin/reputation", label: "Reputation", icon: Megaphone, pillar: "pipeline" },
   { key: "approvals", href: "/admin/approvals", label: "Approvals", icon: ClipboardCheck, pillar: "command" },

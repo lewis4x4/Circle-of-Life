@@ -23,6 +23,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type DailyRow = Pick<
   Database["public"]["Tables"]["daily_logs"]["Row"],
@@ -278,7 +279,7 @@ export default function CaregiverResidentLogPage() {
       </Link>
 
       {alertPending && <div role="alert" className="rounded-lg border border-amber-700 p-4 text-amber-100">Vitals saved; alert check unavailable: {alertPending.error} <Button onClick={() => void retryAlertEvaluation()}>Retry alert check</Button></div>}
-      {observations.length > 0 && <Card><CardHeader><CardTitle>Recent measurements</CardTitle></CardHeader><CardContent><ul className="space-y-2">{observations.map((observation) => <li key={observation.id}><time>{new Date(observation.observed_at).toLocaleString("en-US", { timeZone: ctx?.timeZone ?? "America/New_York" })}</time> · {Object.entries(observation.measurements).map(([key, value]) => `${key.replaceAll("_", " ")}: ${value}`).join(" · ")}</li>)}</ul></CardContent></Card>}
+      {observations.length > 0 && <Card><CardHeader><CardTitle>Recent measurements</CardTitle></CardHeader><CardContent><ul className="space-y-2">{observations.map((observation) => <li key={observation.id}><time>{new Date(observation.observed_at).toLocaleString("en-US", { timeZone: ctx?.timeZone ?? "America/New_York" })}</time> · {Object.entries(observation.measurements).map(([key, value]) => `${enumLabel(key, { case: "lower" })}: ${value}`).join(" · ")}</li>)}</ul></CardContent></Card>}
       {loadError ? (
         <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-4 py-2 text-xs text-amber-100">{loadError}</div>
       ) : null}

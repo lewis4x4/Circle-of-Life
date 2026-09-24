@@ -2,6 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import React from "react";
 
 import { VENDOR_CONTRACT_NO_STATUS_COPY } from "@/lib/vendors/contracts-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /** Broad label map across historical + planned `vendor_category` enum values */
 export const VENDOR_CATEGORY_UI_LABELS: Record<string, string> = {
@@ -62,7 +63,7 @@ export function formatVendorCategoryLabel(category: string | null | undefined, v
 
 function prettifyFallback(raw: string): string {
   if (!raw.trim()) return "Other";
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return enumLabel(raw, { case: "title" });
 }
 
 export function VendorCategoryBadge({

@@ -4,6 +4,7 @@ import { financeSourceMap } from "@/lib/operations/finance-source-map";
 import { financeSourcePeriodSchema, financeSourcesReplySchema, type FinanceSourcesReply } from "@/lib/operations/finance-sources";
 import { decimalAmount } from "@/lib/finance-integration/payload";
 import { CONTROL } from "./work-inputs";
+import { enumLabel } from "@/lib/display/enum-label";
 const names = { census: "Daily census snapshots", payments: "Recorded payment context", trust: "Trust source context", finance_handoff: "Local finance handoff" };
 const metricNames: Record<string,string> = { total_licensed_beds:"Licensed beds",occupied_beds:"Occupied beds",available_beds:"Available beds",hold_beds:"Hold beds",maintenance_beds:"Maintenance beds",admissions_today:"Recorded admissions count",discharges_today:"Recorded discharges count",allocated_cents:"Allocated amount",unapplied_cents:"Unapplied amount",invoice_id:"Invoice reference",account_id:"Trust account reference",direction:"Movement direction",canonical_balance_cents:"Canonical balance",legacy_balance_cents:"Legacy balance (separate, not added)",legacy_review_required:"Legacy review required",external_reconciliation:"External reconciliation",dispatch_enabled:"Dispatch enabled",accounting_classification:"Accounting classification",external_acknowledgment:"External acknowledgment" };
 type Props={taskId:string;activityKey:string|null|undefined;facilityId:string;actorId:string;subjectId:string|null};
@@ -20,7 +21,7 @@ function PeriodPanel(props:Props){
   <label className="block">Source period start<input className={CONTROL} type="date" value={start} disabled={locked} onChange={event=>setStart(event.target.value)}/></label>
   <label className="block">Source period end<input className={CONTROL} type="date" value={end} disabled={locked} onChange={event=>setEnd(event.target.value)}/></label>
   <p>Choose 1–366 inclusive facility-calendar days. Economic dates, service periods and recording times remain separate.</p>
-  <details><summary className={`${CONTROL} cursor-pointer`}>All 22 source items and 27 components</summary><ul>{financeSourceMap.map(row=><li key={row.key}>{row.sourceId} · {row.label} · {row.kind.replaceAll("_"," ")}. {row.gap}</li>)}</ul></details>
+  <details><summary className={`${CONTROL} cursor-pointer`}>All 22 source items and 27 components</summary><ul>{financeSourceMap.map(row=><li key={row.key}>{row.sourceId} · {row.label} · {enumLabel(row.kind, { case: "lower" })}. {row.gap}</li>)}</ul></details>
   {valid?<Sources key={`${start}:${end}`} {...props} start={start} end={end} onLock={setLocked}/>:<p>Select a valid explicit period to read source context.</p>}
  </div>:null}</details>;
 }
@@ -52,9 +53,9 @@ function Sources({taskId,activityKey,facilityId,start,end,onLock}:Props&{start:s
  {family.family==="finance_handoff"?<p>Prepared or locally approved is not submitted or externally acknowledged.</p>:null}
  <p>{family.missing_dates.length?`Missing source dates: ${family.missing_dates.join(", ")}`:"No missing dates reported for this source family; this is not overall checklist coverage."}</p>
  {family.records.length===0?<p>No eligible source records returned for this explicit period.</p>:<ul className="space-y-3">{family.records.map(record=><li key={`${record.id}:${record.version}`}>
- <p>Native state: {record.state.replaceAll("_"," ")} · Version {record.version.slice(0,12)}</p>{record.native_version?<p>Native source version: {record.native_version}</p>:null}<p>Economic / source date: {record.economic_date??"Unknown"}</p><p>Service period: {record.service_period_start??"Unknown"} to {record.service_period_end??"Unknown"}</p><p>Recorded at: {record.recorded_at??"Unknown"}</p>
+ <p>Native state: {enumLabel(record.state, { case: "lower" })} · Version {record.version.slice(0,12)}</p>{record.native_version?<p>Native source version: {record.native_version}</p>:null}<p>Economic / source date: {record.economic_date??"Unknown"}</p><p>Service period: {record.service_period_start??"Unknown"} to {record.service_period_end??"Unknown"}</p><p>Recorded at: {record.recorded_at??"Unknown"}</p>
  {record.amount_cents!==null?<p>Native amount: ${decimalAmount(record.amount_cents)}</p>:null}
- <ul>{Object.entries(record.metrics).map(([key,value])=><li key={key}>{metricNames[key]}: {value===null?"Unknown":key.endsWith("_cents")&&typeof value==="string"?`$${decimalAmount(value)}`:String(value).replaceAll("_"," ")}</li>)}</ul>
+ <ul>{Object.entries(record.metrics).map(([key,value])=><li key={key}>{metricNames[key]}: {value===null?"Unknown":key.endsWith("_cents")&&typeof value==="string"?`$${decimalAmount(value)}`:enumLabel(String(value), { case: "lower" })}</li>)}</ul>
  </li>)}</ul>}
  </>}</details>)}
  <details><summary className={`${CONTROL} cursor-pointer`}>Finance source change history</summary><p>{data.history_complete?"Complete available source history.":"Latest 100 source changes only; earlier history is not included."}</p><ul>{data.history.map(row=><li key={row.id}>{row.observed_at} · Version {row.source_version.slice(0,12)}</li>)}</ul></details>

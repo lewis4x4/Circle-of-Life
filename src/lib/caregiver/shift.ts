@@ -19,34 +19,62 @@ export type CurrentShift = {
   label: string;
   /** Facility date the shift started on; an overnight shift keeps the evening it began. */
   serviceDate: string;
-  /** When the shift ends; null on the legacy fallback. */
-  endsAt: Date | null;
+  /** When the shift started. */
+  startsAt: Date;
+  /** When the shift ends. */
+  endsAt: Date;
   /** False when the facility has no shift definitions covering this instant. */
   configured: boolean;
 };
 
 const SHIFT_LABELS: Record<string, string> = { day: "Day", evening: "Evening", night: "Night" };
 
+const LEGACY_BUCKETS: ReadonlyArray<{ shiftType: ShiftType; startHour: number; endHour: number }> = [
+  { shiftType: "day", startHour: 7, endHour: 15 },
+  { shiftType: "evening", startHour: 15, endHour: 23 },
+  { shiftType: "night", startHour: 23, endHour: 7 },
+];
+
 /**
  * Legacy fixed 8-hour buckets (7a / 3p / 11p). Used only when a facility has no
  * `facility_shift_definitions` covering the instant; every Circle of Life
  * building has definitions today, so this path should not render in production.
+ * Expressed as shift definitions so the fallback resolves spans (start, end,
+ * service date) exactly like a configured facility.
  */
+const LEGACY_SHIFT_DEFINITIONS: FacilityShiftDefinition[] = LEGACY_BUCKETS.map((bucket, index) => ({
+  shiftKey: `legacy_${bucket.shiftType}`,
+  label: SHIFT_LABELS[bucket.shiftType] ?? bucket.shiftType,
+  startsAtLocal: `${String(bucket.startHour).padStart(2, "0")}:00:00`,
+  endsAtLocal: `${String(bucket.endHour).padStart(2, "0")}:00:00`,
+  sortOrder: index,
+  rosterShiftType: bucket.shiftType,
+}));
+
+function spanShift(
+  shifts: readonly FacilityShiftDefinition[],
+  now: Date,
+  timeZone: string,
+  configured: boolean,
+): CurrentShift | null {
+  const span = shiftSpanAt(shifts, now, timeZone);
+  const definition = span ? shifts.find((shift) => shift.shiftKey === span.shiftKey) : undefined;
+  if (!span || !definition) return null;
+  return {
+    shiftType: definition.rosterShiftType,
+    label: span.label,
+    serviceDate: span.serviceDate,
+    startsAt: span.startsAt,
+    endsAt: span.endsAt,
+    configured,
+  };
+}
+
 function legacyShiftAt(timeZone: string, now: Date): CurrentShift {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour: "numeric",
-    hour12: false,
-  }).formatToParts(now);
-  const hour = Number.parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-  const safeHour = Number.isNaN(hour) ? 12 : hour % 24;
-  const today = facilityDateOf(now, timeZone);
-  const shiftType: ShiftType = safeHour >= 7 && safeHour < 15 ? "day" : safeHour >= 15 && safeHour < 23 ? "evening" : "night";
-  const serviceDate =
-    shiftType === "night" && safeHour < 7
-      ? facilityDateOf(new Date(now.getTime() - 12 * 60 * 60 * 1000), timeZone)
-      : today;
-  return { shiftType, label: SHIFT_LABELS[shiftType] ?? shiftType, serviceDate, endsAt: null, configured: false };
+  const resolved = spanShift(LEGACY_SHIFT_DEFINITIONS, now, timeZone, false);
+  if (resolved) return resolved;
+  // Unreachable: the three buckets cover every hour of the day.
+  return { shiftType: "night", label: "Night", serviceDate: facilityDateOf(now, timeZone), startsAt: now, endsAt: now, configured: false };
 }
 
 /**
@@ -61,20 +89,7 @@ export function currentShiftFor(
   now: Date = new Date(),
 ): CurrentShift {
   const shifts = facility.shifts ?? [];
-  if (shifts.length > 0) {
-    const span = shiftSpanAt(shifts, now, facility.timeZone);
-    const definition = span ? shifts.find((shift) => shift.shiftKey === span.shiftKey) : undefined;
-    if (span && definition) {
-      return {
-        shiftType: definition.rosterShiftType,
-        label: span.label,
-        serviceDate: span.serviceDate,
-        endsAt: span.endsAt,
-        configured: true,
-      };
-    }
-  }
-  return legacyShiftAt(facility.timeZone, now);
+  return (shifts.length > 0 ? spanShift(shifts, now, facility.timeZone, true) : null) ?? legacyShiftAt(facility.timeZone, now);
 }
 
 /** The configured shift that follows the one in force, or null when shifts are not configured. */
@@ -85,23 +100,20 @@ export function nextShiftFor(
   const shifts = facility.shifts ?? [];
   if (shifts.length === 0) return null;
   const span = nextShiftSpan(shifts, now, facility.timeZone);
-  const definition = span ? shifts.find((shift) => shift.shiftKey === span.shiftKey) : undefined;
-  if (!span || !definition) return null;
-  return {
-    shiftType: definition.rosterShiftType,
-    label: span.label,
-    serviceDate: span.serviceDate,
-    endsAt: span.endsAt,
-    configured: true,
-  };
+  return span ? spanShift(shifts, span.startsAt, facility.timeZone, true) : null;
 }
 
+/** The shift enum a handoff row can store: day, evening or night. */
+export type HandoffShiftType = Exclude<ShiftType, "custom">;
+
 /**
- * @deprecated Ignores the facility's configured shifts. Use {@link currentShiftFor}
- * with the caregiver facility context (which carries `shifts`).
+ * A roster shift for a `shift_handoffs` row, which cannot store "custom". A
+ * custom definition is filed under the fixed bucket its start falls in; every
+ * Circle of Life building maps its shifts onto day and night today.
  */
-export function currentShiftForTimezone(timeZone: string, now: Date = new Date()): ShiftType {
-  return legacyShiftAt(timeZone, now).shiftType;
+export function handoffShiftOf(shift: CurrentShift, timeZone: string): HandoffShiftType {
+  if (shift.shiftType !== "custom") return shift.shiftType;
+  return legacyShiftAt(timeZone, shift.startsAt).shiftType as HandoffShiftType;
 }
 
 type ShiftDefinitionRow = {

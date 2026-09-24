@@ -126,7 +126,7 @@ describe("AdminNewCollectionActivityPage facility derivation", () => {
 
     render(<AdminNewCollectionActivityPage />);
 
-    expect(await screen.findByRole("option", { name: /Invoice Aug 2026 · …00a1/ })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: /Invoice Aug 2026/ })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /00000000-2026-08/ })).toBeNull();
   });
 

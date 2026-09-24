@@ -7,6 +7,7 @@ import { dietaryServiceComponent, dietaryServiceSourceMap, type DietaryServiceCo
 import { MEAL_PERIODS } from "@/lib/operations/source-records";
 import { CONTROL, DateTimeInput } from "./work-inputs";
 import { LATE_ENTRY_LABEL, ObservationForm, assetLabel, describeAssetTypes, localTimeRefusal, resolveLocalInstant, useSiteAssets, useSourceCommand, type CommandReply } from "./source-command";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * COL-244: the staff entry surface for the COL-159 source commands — dietary
@@ -65,7 +66,7 @@ function Entry({ component, facilityId, actorId, actorName, timezone, disabled, 
             <ul>
               {dietaryServiceSourceMap.map((row) => (
                 <li key={row.key}>
-                  {row.sourceId} · {row.label} · {row.kind.replaceAll("_", " ")} · {row.subjectKind ?? "Subject unknown"}: {row.command ? `${row.command.mode.replaceAll("-", " ")} source record.` : "No source command here."} {row.fallback}
+                  {row.sourceId} · {row.label} · {enumLabel(row.kind, { case: "lower" })} · {row.subjectKind ?? "Subject unknown"}: {row.command ? `${row.command.mode.replaceAll("-", " ")} source record.` : "No source command here."} {row.fallback}
                 </li>
               ))}
             </ul>
@@ -175,7 +176,7 @@ function ServiceForm({ serviceKind, assetTypes, facilityId, timezone, disabled, 
       ) : (
         <form onSubmit={(event) => { event.preventDefault(); submit(); }}>
           <fieldset disabled={busy || pending !== null || disabled} className="space-y-3">
-            <legend>Service source command · {serviceKind.replaceAll("_", " ")}</legend>
+            <legend>Service source command · {enumLabel(serviceKind, { case: "lower" })}</legend>
             {needsAsset ? (
               <label className="block">
                 Asset serviced
@@ -301,7 +302,7 @@ function DietaryForm({ recordKind, facilityId, timezone, disabled, onLockChange,
       {pending ? <button type="button" className={CONTROL} disabled={busy || disabled} onClick={() => retry(verify, () => {})}>Retry same dietary record</button> : null}
       <form onSubmit={(event) => { event.preventDefault(); submit(); }}>
         <fieldset disabled={busy || pending !== null || disabled} className="space-y-3">
-          <legend>Dietary source command · {recordKind.replaceAll("_", " ")}</legend>
+          <legend>Dietary source command · {enumLabel(recordKind, { case: "lower" })}</legend>
           <DateTimeInput id={`dietary-${recordKind}`} label="When it was done" value={performedAt} onChange={setPerformedAt} required timezone={timezone} />
           {recordKind === "meal_substitution" ? (
             <>

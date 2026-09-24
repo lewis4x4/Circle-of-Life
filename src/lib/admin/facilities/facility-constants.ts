@@ -6,6 +6,7 @@
 
 import { SURVEY_RESULT_NO_RESULT_COPY } from "@/lib/admin/facilities/survey-result-display-copy";
 import { SURVEY_TYPE_NO_TYPE_COPY } from "@/lib/admin/facilities/survey-type-display-copy";
+import { enumLabel } from "@/lib/display/enum-label";
 
 // ─── Contact Categories ──────────────────────────────────────────────────────
 
@@ -166,9 +167,7 @@ export function surveyResultDisplayLabel(raw: string | null | undefined): string
     };
     return mapByEnum[key as SurveyResult];
   }
-  return key
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return enumLabel(key, { case: "title" });
 }
 
 export function surveyTypeDisplayLabel(raw: string | null | undefined): string {
@@ -186,9 +185,7 @@ export function surveyTypeDisplayLabel(raw: string | null | undefined): string {
     other: "Other survey visit",
   };
   if (map[lower]) return map[lower]!;
-  return s
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return enumLabel(s, { case: "title" });
 }
 
 export const TIMELINE_EVENT_TYPES = [

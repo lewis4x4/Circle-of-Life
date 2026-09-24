@@ -6,6 +6,8 @@ import type { ResidentItem } from "./ResidentRail";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { incidentSeverityOptions } from "@/lib/incidents/incidents-display-copy";
+import { currentShiftFor } from "@/lib/caregiver/shift";
+import type { MedTechShiftContext } from "@/hooks/med-tech/useShiftCurrent";
 
 const CATEGORIES = [
   { value: "fall_without_injury", label: "Fall without injury" },
@@ -26,11 +28,13 @@ interface IncidentModalProps {
   userId: string;
   shiftId: string;
   shiftType: "day" | "evening" | "night" | "custom";
+  /** When present, the shift is re-read from the facility's configured shifts at save time (COL-685). */
+  shiftContext?: MedTechShiftContext | null;
   residents: ResidentItem[];
   onClose: () => void;
 }
 
-export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }: IncidentModalProps) {
+export function IncidentModal({ userId, shiftId, shiftType, shiftContext, residents, onClose }: IncidentModalProps) {
   const supabase = createClient();
   const [step, setStep]             = useState(0); // 0 details, 1 narrative, 2 done
   const [residentId, setResidentId] = useState("");
@@ -80,6 +84,7 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
         throw new Error(payload.error ?? "Could not save incident.");
       }
 
+      const occurredAt = new Date();
       const incidentInsert = await supabase
         .from("incidents")
         .insert({
@@ -90,8 +95,8 @@ export function IncidentModal({ userId, shiftId, shiftType, residents, onClose }
           category: category as Database["public"]["Enums"]["incident_category"],
           severity: severity as Database["public"]["Enums"]["incident_severity"],
           status: "open",
-          occurred_at: new Date().toISOString(),
-          shift: shiftType,
+          occurred_at: occurredAt.toISOString(),
+          shift: shiftContext ? currentShiftFor(shiftContext, occurredAt).shiftType : shiftType,
           location_description: locationDescription.trim(),
           location_type: null,
           description: narrative.trim(),
