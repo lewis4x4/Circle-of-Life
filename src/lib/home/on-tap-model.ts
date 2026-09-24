@@ -360,7 +360,7 @@ export function buildFyiRows(queues: AdminDashboardSnapshot["workflowQueues"]): 
     rows.push({
       id: "fyi:family-triage",
       title: `${plural(queues.familyTriagePending, "family message")} waiting on triage`,
-      href: "/admin/family-messages?filter=triage",
+      href: "/admin/family-portal?tab=notes&filter=triage",
       ctaLabel: "Review messages",
       meta: ["Pipeline → Family notes"],
     });

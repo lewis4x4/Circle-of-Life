@@ -40,6 +40,8 @@ const PRIMARY = [
 ] as const;
 
 const SECONDARY = [
+  // What a building's administrator sees, read-only (COL-707).
+  { href: "/admin/executive/preview-facility-home", label: "Preview as facility admin" },
   { href: "/admin/executive/ceo", label: "CEO" },
   { href: "/admin/executive/cfo", label: "CFO" },
   { href: "/admin/executive/coo", label: "COO" },

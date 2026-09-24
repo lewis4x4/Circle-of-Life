@@ -15,7 +15,7 @@ const migrationPath = path.join(
 );
 const familyDataPath = path.join(repoRoot, "src/lib/family/family-messages-data.ts");
 const familyPagePath = path.join(repoRoot, "src/app/(family)/family/messages/page.tsx");
-const staffPagePath = path.join(repoRoot, "src/app/(admin)/admin/family-messages/page.tsx");
+const staffPagePath = path.join(repoRoot, "src/components/family-portal/FamilyNotesPanel.tsx");
 const staffBulletinSectionPath = path.join(
   repoRoot,
   "src/components/family-portal/StaffFamilyBulletinSection.tsx",

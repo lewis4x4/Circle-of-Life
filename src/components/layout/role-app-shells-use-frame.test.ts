@@ -15,7 +15,6 @@ const ROLE_APP_SHELLS = [
 ] as const;
 
 const PENDING: readonly string[] = [
-  "src/components/layout/DietaryShell.tsx",
   "src/components/layout/FamilyShell.tsx",
 ];
 
