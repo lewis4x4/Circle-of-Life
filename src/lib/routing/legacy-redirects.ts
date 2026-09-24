@@ -120,6 +120,10 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   // tab (COL-707, Brian 2026-09-23). /caregiver/policies/[id] stays: it is where a
   // policy is read and acknowledged.
   { source: "/caregiver/policies", destination: "/caregiver/acknowledgments?tab=policies", permanent: true },
+  // The survey pack is the one survey page (COL-707, Brian 2026-09-23); the readiness
+  // binder and the evidence bundle are its views.
+  { source: "/admin/survey-binder", destination: "/admin/compliance/survey-pack?tab=binder", permanent: true },
+  { source: "/admin/risk/survey-bundle", destination: "/admin/compliance/survey-pack?tab=evidence", permanent: true },
   // "Close" was a second tab rendering Period close (COL-654).
   { source: "/admin/finance/close", destination: "/admin/finance/period-close", permanent: true },
   // The medication reconciliation hub lives at /admin/discharge; the pipeline URL

@@ -102,8 +102,8 @@ export default function RiskCommandPageClient({
             <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/executive/alerts">
               Executive alerts
             </Link>
-            <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/risk/survey-bundle">
-              Survey bundle
+            <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/compliance/survey-pack?tab=evidence">
+              Survey evidence bundle
             </Link>
             <Link className={buttonVariants({ variant: "outline", size: "sm" })} href="/admin/operations/overdue">
               Operations overdue

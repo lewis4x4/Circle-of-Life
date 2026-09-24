@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { ClipboardList, Loader2, Power, PowerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SurveyVisitSessionApi } from "@/hooks/useSurveyVisitSession";
@@ -8,9 +9,11 @@ import {
   SURVEY_VISIT_CONTEXT_ARIA_LABEL,
   SURVEY_VISIT_FACILITY_HEADER_LABEL,
 } from "@/lib/compliance/survey-visit-header-copy";
+import { SURVEY_PACK_HREF } from "@/lib/compliance/survey-pack-views";
 
 /** Compact survey session controls for facility detail header (global banner hidden on this route). */
 export function FacilitySurveyVisitHeaderActions({ survey }: { survey: SurveyVisitSessionApi }) {
+  const router = useRouter();
   const { facilityId, loading, busy, active, canManage, canLog, activateSession, deactivateSession } = survey;
 
   if (!facilityId) return null;
@@ -29,7 +32,7 @@ export function FacilitySurveyVisitHeaderActions({ survey }: { survey: SurveyVis
       {!loading &&
         canManage &&
         (!active ? (
-          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void activateSession()}>
+          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void activateSession().then((opened) => { if (opened) router.push(SURVEY_PACK_HREF); })}>
             <Power className="mr-1.5 h-4 w-4" />
             Activate
           </Button>
