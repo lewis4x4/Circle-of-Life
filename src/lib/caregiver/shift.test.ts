@@ -42,7 +42,12 @@ describe("currentShiftFor", () => {
 
   it("names the legacy fallback as unconfigured", () => {
     const current = currentShiftFor({ timeZone: TZ, shifts: [] }, new Date("2026-09-22T17:14:00-04:00"));
-    expect(current).toMatchObject({ shiftType: "evening", configured: false, endsAt: null });
+    expect(current).toMatchObject({
+      shiftType: "evening",
+      configured: false,
+      startsAt: new Date("2026-09-22T15:00:00-04:00"),
+      endsAt: new Date("2026-09-22T23:00:00-04:00"),
+    });
     expect(currentShiftFor({ timeZone: TZ }, new Date("2026-09-23T03:00:00-04:00"))).toMatchObject({
       shiftType: "night",
       serviceDate: "2026-09-22",
