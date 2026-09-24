@@ -103,6 +103,11 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   { source: "/admin/family-messages", destination: "/admin/family-portal?tab=notes", permanent: true },
   { source: "/admin/family-messages/:path*", destination: "/admin/family-portal?tab=notes", permanent: true },
   { source: "/family-messages", destination: "/admin/family-portal?tab=notes", permanent: true },
+  // Executive Reports was a second reporting surface under a "Reporting has moved" banner;
+  // /admin/reports is canonical (COL-707, Brian 2026-09-23). /executive/reports already
+  // 308s into /admin/executive/reports, and from there here.
+  { source: "/admin/executive/reports", destination: "/admin/reports", permanent: true },
+  { source: "/admin/executive/reports/:path*", destination: "/admin/reports", permanent: true },
   // Cash and Trust were two pages over one resident-money ledger; Trust is canonical and
   // now carries the petty cash and trust posting workbench (COL-707, Brian 2026-09-23).
   { source: "/admin/cash", destination: "/admin/finance/trust", permanent: true },
@@ -115,6 +120,10 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   // Create flows not built yet; nothing links here. Temporary so they can ship later.
   { source: "/admin/family-portal/consents/new", destination: "/admin/family-portal", permanent: false },
   { source: "/admin/family-portal/conferences/new", destination: "/admin/family-portal", permanent: false },
+  // The floor app has one Required reading page; the pending-policy list is its second
+  // tab (COL-707, Brian 2026-09-23). /caregiver/policies/[id] stays: it is where a
+  // policy is read and acknowledged.
+  { source: "/caregiver/policies", destination: "/caregiver/acknowledgments?tab=policies", permanent: true },
   // "Close" was a second tab rendering Period close (COL-654).
   { source: "/admin/finance/close", destination: "/admin/finance/period-close", permanent: true },
   // The medication reconciliation hub lives at /admin/discharge; the pipeline URL
