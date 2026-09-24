@@ -10,7 +10,7 @@ import {
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
   admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
-  completeRecheckSchema, startSweepSchema,
+  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -254,6 +254,37 @@ export async function startBenefitsSweep(request: Request) {
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ sweep_id: uuid, facility_id: uuid, started_at: z.string(), already_started: z.boolean() }).safeParse(result.data);
   return reply.success && reply.data.facility_id === parsed.data.facility_id ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
+}
+const promptsSchema = z.object({
+  as_of: z.string(),
+  late_signal: z.array(z.object({ facility_id: uuid, facility_name: z.string(), live: z.boolean() })),
+  runway: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), runway_date: z.string(), days_left: z.number().int(), last_result: screeningResultSchema, can_write: z.boolean() })),
+  late_payments: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), oldest_due: z.string(), owed_cents: z.number().int(), can_write: z.boolean() })),
+});
+export async function getMedicaidPrompts(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const query = z.object({ facility_id: uuid.optional() }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
+  if (!query.success) return benefitsFailure(400, "Invalid facility.");
+  const result = await rpc(auth.actor, "benefits_prompts", { p_facility_id: query.data.facility_id ?? null });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = promptsSchema.safeParse(result.data);
+  return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+export async function startPromptCase(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = startPromptCaseSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "Choose the resident.");
+  const result = await rpc(auth.actor, "benefits_prompt_start_case", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ case_id: uuid, already_open: z.boolean() }).safeParse(result.data);
+  return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
+}
+export async function dismissPrompt(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = dismissPromptSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "Give the number of days and the reason.");
+  const result = await rpc(auth.actor, "benefits_prompt_dismiss", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_days: parsed.data.days, p_reason: parsed.data.reason, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ dismissal_id: uuid, until_on: z.string() }).safeParse(result.data);
+  return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
 }
 /** Reading private financial evidence is recorded in the case history before any bytes leave the server. */
 export async function recordBenefitsDocumentAccess(actor: CurrentApiActor, caseId: string, documentId: string, kind: "download" | "packet"): Promise<NextResponse | null> {

@@ -21,6 +21,7 @@ const RULE_LABELS: Record<BenefitsRuleKey, { title: string; help: string }> = {
   "renewal.warning_days": { title: "Renewal warning (days)", help: "The queue flags a case this many days before its recorded renewal date." },
   "screening.admission_gate": { title: "Admission Medicaid questions: what stops a case", help: "Circle of Life screening policy for the admission questions, never an eligibility decision. A yes to a checked question means the resident does not qualify now and is rechecked. Enter dollars." },
   "screening.recheck_days": { title: "Recheck interval for residents who do not qualify now (days)", help: "The facility administrator is asked to re-ask the admission questions this many days after the last answers." },
+  "runway.lead_days": { title: "Start Medicaid before private pay runs out (days)", help: "Jessica is prompted this many days before a resident's recorded private-pay months run out." },
 };
 const QUESTION_SHORT: Record<ScreeningQuestion, string> = {
   q_property_non_primary: "Property other than home",
@@ -174,7 +175,7 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
               <div className="space-y-2 sm:col-span-2"><FormLabel htmlFor={`${id}-gate-source`}>Source</FormLabel><input id={`${id}-gate-source`} className={fieldClass} value={source} onChange={(event) => setSource(event.target.value)} /></div>
             </>
           )}
-          {(entry.rule_key === "family_collection.max_days" || entry.rule_key === "renewal.warning_days" || entry.rule_key === "screening.recheck_days") && (
+          {(entry.rule_key === "family_collection.max_days" || entry.rule_key === "renewal.warning_days" || entry.rule_key === "screening.recheck_days" || entry.rule_key === "runway.lead_days") && (
             <div className="space-y-2"><FormLabel htmlFor={`${id}-days`} required>Days</FormLabel><input id={`${id}-days`} className={fieldClass} inputMode="numeric" value={days} onChange={(event) => setDays(event.target.value)} /></div>
           )}
           <div className="space-y-2"><FormLabel htmlFor={`${id}-from`} required>Takes effect on</FormLabel><input id={`${id}-from`} type="date" className={fieldClass} value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} /></div>

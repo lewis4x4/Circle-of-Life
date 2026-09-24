@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BenefitsQueue } from "@/components/benefits/BenefitsQueue";
 import { MedicaidRechecksPanel } from "@/components/benefits/MedicaidRechecks";
 import { MedicaidSweepPanel } from "@/components/benefits/MedicaidSweep";
+import { MedicaidPromptsPanel } from "@/components/benefits/MedicaidPrompts";
 import { cn } from "@/lib/utils";
 
 const VIEWS = [
@@ -35,7 +36,7 @@ export default async function BenefitsPage({
       </nav>
       {view === "rechecks" ? <MedicaidRechecksPanel facilityId={facilityId} />
         : view === "sweep" ? <MedicaidSweepPanel facilityId={facilityId} />
-        : <BenefitsQueue residentId={params.resident_id} admissionId={params.admission_case_id} />}
+        : <>{!params.resident_id && <MedicaidPromptsPanel />}<BenefitsQueue residentId={params.resident_id} admissionId={params.admission_case_id} /></>}
     </div>
   );
 }
