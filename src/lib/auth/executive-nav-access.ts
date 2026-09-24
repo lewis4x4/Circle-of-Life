@@ -1,4 +1,4 @@
-import { isFacilityOperatorRole, isOrgAdminAppRole } from "@/lib/auth/app-role";
+import { isFacilityOperatorRole, isOrgAdminAppRole, isRecruiterRole } from "@/lib/auth/app-role";
 
 export type ExecutiveCommandNav = {
   href: "/admin/executive" | "/admin/executive/standup";
@@ -12,6 +12,14 @@ export function canOpenExecutiveOverview(role: string): boolean {
 /** Weekly Stand Up: owners, org admins, and every facility operator title (COL-571). */
 export function canOpenExecutiveStandup(role: string): boolean {
   return isFacilityOperatorRole(role) || isOrgAdminAppRole(role);
+}
+
+/**
+ * The Stand Up page itself (/admin/stand-up): everyone who opens the weekly
+ * Stand Up, plus recruiters, who attend and read the Thursday meeting (COL-752).
+ */
+export function canOpenStandUpPage(role: string): boolean {
+  return canOpenExecutiveStandup(role) || isRecruiterRole(role);
 }
 
 /**
@@ -34,7 +42,7 @@ export function applyExecutiveCommandNavToItems<
   T extends { key: string; href: string; label: string },
 >(items: readonly T[], role: string | null, authLoading: boolean): T[] {
   return items.flatMap((item) => {
-    if (item.key === "stand-up") return !authLoading && role && canOpenExecutiveStandup(role) ? [item] : [];
+    if (item.key === "stand-up") return !authLoading && role && canOpenStandUpPage(role) ? [item] : [];
     if (item.key !== "executive") return [item];
     if (authLoading || !role) return [];
     const resolved = resolveExecutiveCommandNav(role);

@@ -85,3 +85,11 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 # Exact historical fingerprints only; the generic-api-key detector remains active.
 3220f1cbea4feb0e498911360e592c369ebdcf27:src/lib/referrals/public-referral.test.ts:generic-api-key:4
 3220f1cbea4feb0e498911360e592c369ebdcf27:src/app/api/public/referrals/route.test.ts:generic-api-key:9
+
+# 57175eb6 / 2c77cf51 (open PR #888, Workforce shift options) - report executor
+# summaries name each metric in camel case, which the
+# entropy heuristic reads as a key. The branch is fetched by every CI clone, so
+# these block every pull request until they are listed. Exact fingerprints only.
+57175eb67350fce1abceb26f411184b896ee6dc4:src/lib/reports/executors/index.ts:generic-api-key:255
+57175eb67350fce1abceb26f411184b896ee6dc4:src/lib/reports/executors/staffing-work-blocks.test.ts:generic-api-key:21
+2c77cf51130f43918ef415694d0611d9291bda42:scripts/run-gitleaks.mjs:generic-api-key:139

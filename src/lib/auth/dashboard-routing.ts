@@ -156,8 +156,9 @@ const DASHBOARD_CONFIGS: Record<string, DashboardConfig> = {
     firstScreenPriority: ["referrals", "pipeline", "reputation"],
     suppressedSections: ["clinical_follow_through", "resident_records", "finance", "staffing", "settings"],
     mobileTabletExpectation: "desktop-first",
-    visibleGroups: ["Pipeline"],
-    visibleItemKeys: ["referrals"],
+    // COL-752: the Stand Up item opens the Thursday meeting, which recruiters attend.
+    visibleGroups: ["Pipeline", "Command"],
+    visibleItemKeys: ["referrals", "stand-up"],
     sections: {},
   },
   maintenance_role: {

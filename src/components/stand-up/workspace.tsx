@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useHavenAuth } from '@/contexts/haven-auth-context';
 import { canOpenExecutiveStandup } from '@/lib/auth/executive-nav-access';
 import { selectionBelongsToPeriod, useFacilityStore } from '@/hooks/useFacilityStore';
@@ -8,7 +8,9 @@ import { useRouteTransitionPending } from '@/components/layout/navigation-pendin
 import { Button } from '@/components/ui/button';
 import { dateLabel, entryOpensStamp, entryWindowLine, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
 import { rosterSourceSuffix } from '@/lib/stand-up/roster-census';
+import { MEETING_DAYS, MEETING_LABELS, type MeetingDay } from '@/lib/stand-up/meetings';
 import { StandUpEditor } from './editor';
+import { MeetingStandUp } from './meeting';
 import { StandUpViewsNav } from './StandUpViewsNav';
 import { EntryWindowSettings } from './entry-window-settings';
 import { HistoricalImports } from './imports';
@@ -17,12 +19,25 @@ import type { StandUpWorkspaceData } from './types';
 
 export function StandUpWorkspace() {
   const auth = useHavenAuth();
+  const [meeting, setMeeting] = useState<MeetingDay>('monday');
   if (auth.loading) return <p role="status" className="p-6">Checking your Haven access…</p>;
   if (!auth.user || !auth.organizationId) return <p role="alert" className="p-6">Sign in to your Haven organization to open Stand Up.</p>;
-  return <StandUpSession key={`${auth.organizationId}:${auth.user.id}:${auth.appRole}`} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} />;
+  const session = `${auth.organizationId}:${auth.user.id}:${auth.appRole}`;
+  // COL-752: recruiters attend Thursday and read it; Monday's weekly report is not theirs.
+  if (auth.appRole === 'recruiter') return <MeetingStandUp key={session} day="thursday" />;
+  // Switching meeting asks the open report first, so unsaved figures are never dropped.
+  const picker = (guard: () => boolean) => <MeetingPicker value={meeting} onChange={next => { if (guard()) setMeeting(next); }} />;
+  if (meeting !== 'monday') return <MeetingStandUp key={`${session}:${meeting}`} day={meeting} picker={picker} />;
+  return <StandUpSession key={session} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} picker={picker} />;
 }
 
-function StandUpSession({ userId, canOpenRollUp }: { userId: string; canOpenRollUp: boolean }) {
+function MeetingPicker({ value, onChange }: { value: MeetingDay; onChange: (next: MeetingDay) => void }) {
+  return <label className="block text-xs font-medium">Meeting<select aria-label="Meeting" className="mt-1 block min-h-10 rounded border border-border bg-background px-3 text-sm" value={value} onChange={e => onChange(e.target.value as MeetingDay)}>
+    {MEETING_DAYS.map(day => <option key={day} value={day}>{MEETING_LABELS[day]}</option>)}
+  </select></label>;
+}
+
+function StandUpSession({ userId, canOpenRollUp, picker }: { userId: string; canOpenRollUp: boolean; picker?: (guard: () => boolean) => ReactNode }) {
   const routePending = useRouteTransitionPending();
   const selectedId = useFacilityStore(state => state.selectedFacilityId);
   const setSelectedFacility = useFacilityStore(state => state.setSelectedFacility);
@@ -112,7 +127,10 @@ function StandUpSession({ userId, canOpenRollUp }: { userId: string; canOpenRoll
       {/* Tier 1: when this report opens, when it is due, when the call is. The
           open is the chosen facility's own, so a widened ALF reads its own. */}
       <div><h1 className="text-2xl font-semibold">Weekly Stand Up</h1><p className="mt-1 text-base font-medium">{entryWindowLine(selected?.entry_open_lead_minutes)}</p></div>
-      {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard.current()) void reload(false); }}>Refresh reports</Button>}
+      <div className="flex flex-wrap items-end gap-3">
+        {picker?.(() => guard.current())}
+        {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard.current()) void reload(false); }}>Refresh reports</Button>}
+      </div>
     </header>
     {google?.state === 'reconnect_required' && <section role="alert" className="space-y-2 rounded border border-destructive bg-destructive/5 p-4"><h2 className="font-semibold">Google workbook disconnected</h2><p className="text-sm">Drive changes are not reaching Haven. Reconnect the dedicated Stand Up account before relying on workbook figures.</p>{google.last_success_at && <p className="text-xs text-muted-foreground">Last successful workbook synchronization: {easternTime(google.last_success_at)}.</p>}</section>}
     {googleDelayed && <section role="alert" className="space-y-2 rounded border border-warning bg-warning/5 p-4"><h2 className="font-semibold">Google workbook synchronization is delayed</h2><p className="text-sm">The connector has not completed within five minutes. Drive may be newer than Haven; check the connection before using these figures.</p>{google?.last_checked_at && <p className="text-xs text-muted-foreground">Last connector check: {easternTime(google.last_checked_at)}.</p>}</section>}
