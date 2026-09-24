@@ -107,6 +107,7 @@ export const secretMapping = {
   'care-event-dispatcher':['care_event_dispatcher_cron_secret','CARE_EVENT_DISPATCHER_SECRET'],
   'cadence-version-activator':['cadence_version_activator_secret','CADENCE_VERSION_ACTIVATOR_SECRET'],
   'watchlist-signal-engine':['watchlist_signal_secret','WATCHLIST_SIGNAL_SECRET'],
+  'oce-task-scheduler':['oce_task_scheduler_secret','OCE_TASK_SCHEDULER_SECRET'],
 };
 
 export function compareSecrets(jobs, vault, edge, projectRef) {
