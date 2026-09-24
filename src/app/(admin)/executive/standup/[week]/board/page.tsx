@@ -32,7 +32,7 @@ import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 export default function ExecutiveStandupBoardPage() {
   const params = useParams<{ week: string }>();
   const supabase = useMemo(() => createClient(), []);
-  const { user, organizationId, loading: authLoading } = useHavenAuth();
+  const { organizationId, loading: authLoading } = useHavenAuth();
   const [detail, setDetail] = useState<StandupSnapshotDetail | null>(null);
   const [previousDetail, setPreviousDetail] = useState<StandupSnapshotDetail | null>(null);
   const [fetching, setFetching] = useState(true);
