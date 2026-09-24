@@ -16,6 +16,7 @@ import {
 import { RecordDetailHeader, RecordDetailSection } from "@/design-system/components/record-detail";
 import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
 import { enumLabel } from "@/lib/display/enum-label";
+import { markdownToPlainText } from "@/lib/knowledge/markdown-text";
 
 type ReviewDocument = Pick<
   DocumentRow,
@@ -332,7 +333,7 @@ export default function KnowledgeDocumentReviewPage() {
                   <div>
                     <p className="text-xl font-semibold leading-tight text-foreground">{document.title}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {document.summary || "No summary is available yet. Review the content and metadata before promotion."}
+                      {markdownToPlainText(document.summary) || "No summary is available yet. Review the content and metadata before promotion."}
                     </p>
                   </div>
                 </div>

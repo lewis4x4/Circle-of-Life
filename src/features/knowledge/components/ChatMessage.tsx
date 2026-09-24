@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import type { KBSource } from "../lib/types";
 import { createClient } from "@/lib/supabase/client";
+import { markdownToPlainText } from "@/lib/knowledge/markdown-text";
 
 interface ChatMessageProps {
   id?: string;
@@ -96,7 +97,7 @@ export function ChatMessage({ id, role, content, sources, feedback, isStreaming 
                         </div>
                       ) : null}
                       <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                        {s.excerpt}
+                        {markdownToPlainText(s.excerpt)}
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
                         <span>{Math.round(s.confidence * 100)}% match</span>

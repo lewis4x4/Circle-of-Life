@@ -18,7 +18,6 @@ const APP_VISIBLE_NOTICE_SOURCES = [
   "src/lib/v2-dashboards.ts",
   "src/app/(admin)/admin/rounding/page.tsx",
   "src/app/(admin)/admin/rounding/reports/page.tsx",
-  "src/app/(admin)/admin/rounding/live/page.tsx",
 ];
 
 const RETIRED_EMPTY_STATE_MARKERS = [
