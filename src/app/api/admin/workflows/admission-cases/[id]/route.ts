@@ -30,7 +30,6 @@ const admissionPatchSchema = z.object({
   physician_orders_received_at: z.string().datetime({ offset: true }).nullable().optional(),
   physician_orders_summary: z.string().max(20000).nullable().optional(),
   notes: z.string().max(20000).nullable().optional(),
-  medicaid_pipeline_stage: z.enum(["prospect", "app_requested", "pending", "approved", "denied", "waitlist"]).optional(),
   intake_program_type: z.string().max(200).nullable().optional(),
   source: z.enum(Constants.public.Enums.admission_case_source).nullable().optional(),
   source_other: z.string().max(2000).nullable().optional(),

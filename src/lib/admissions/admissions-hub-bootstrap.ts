@@ -30,7 +30,6 @@ export type AdmissionsHubCaseRow = Pick<
   | "bed_id"
   | "resident_id"
   | "referral_lead_id"
-  | "medicaid_pipeline_stage"
 > & {
   residents: { first_name: string; last_name: string } | null;
 };
@@ -164,7 +163,7 @@ export async function loadAdmissionsHubBootstrap(
   let admSel = supabase
     .from("admission_cases")
     .select(
-      "id, referral_lead_id, status, medicaid_pipeline_stage, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)",
+      "id, referral_lead_id, status, updated_at, target_move_in_date, financial_clearance_at, physician_orders_received_at, bed_id, resident_id, residents(first_name, last_name)",
     )
     .eq("facility_id", selectedFacilityId)
     .is("deleted_at", null)

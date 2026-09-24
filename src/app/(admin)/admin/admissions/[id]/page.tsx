@@ -32,6 +32,7 @@ import {
 } from "@/lib/admissions/admission-onboarding-checklist";
 import { headCountOrNull } from "@/lib/metrics/head-count";
 import { AdmissionMedicaidScreening } from "@/components/benefits/AdmissionMedicaidScreening";
+import { loadMedicaidStatuses } from "@/lib/benefits/medicaid-status";
 import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
 import {
   EMPTY_MOVEMENT_WHEN,
@@ -86,17 +87,6 @@ type AdmissionChecklistItem = {
   notes: string | null;
   waived_reason: string | null;
 };
-
-type MedicaidPipelineStage = "prospect" | "app_requested" | "pending" | "approved" | "denied" | "waitlist";
-
-const MEDICAID_PIPELINE_STAGE_OPTIONS: Array<{ value: MedicaidPipelineStage; label: string }> = [
-  { value: "prospect", label: "Prospect" },
-  { value: "app_requested", label: "Application requested" },
-  { value: "pending", label: "Pending review" },
-  { value: "approved", label: "Approved" },
-  { value: "denied", label: "Denied" },
-  { value: "waitlist", label: "Waitlist" },
-];
 
 function formatStatus(s: string) {
   return formatColLabel(s);
@@ -166,6 +156,18 @@ export default function AdminAdmissionCaseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [row, setRow] = useState<CaseDetail | null>(null);
+  // Medicaid status comes from the benefits workflow (COL-772), never a separately typed stage.
+  const [medicaidStatus, setMedicaidStatus] = useState<string | null>(null);
+  const [medicaidRefresh, setMedicaidRefresh] = useState(0);
+  const medicaidResidentId = row?.resident_id ?? null;
+  useEffect(() => {
+    let active = true;
+    if (!medicaidResidentId) { setMedicaidStatus(null); return; }
+    void loadMedicaidStatuses(supabase, [medicaidResidentId]).then((map) => { if (active) setMedicaidStatus(map?.get(medicaidResidentId)?.label ?? null); });
+    return () => { active = false; };
+    // supabase is a stable browser client; reload when the resident (or a saved screening) changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicaidResidentId, medicaidRefresh]);
   const [rateTerms, setRateTerms] = useState<Database["public"]["Tables"]["admission_case_rate_terms"]["Row"][]>([]);
   const [onboardingCounts, setOnboardingCounts] = useState<AdmissionOnboardingCounts>(
     EMPTY_ADMISSION_ONBOARDING_COUNTS,
@@ -182,7 +184,6 @@ export default function AdminAdmissionCaseDetailPage() {
   const [physicianOrdersSummaryDraft, setPhysicianOrdersSummaryDraft] = useState("");
   const [caseNotesDraft, setCaseNotesDraft] = useState("");
   // Drafts start unchosen; a quoted care level, room or 1823 status is picked, never assumed (COL-676).
-  const [medicaidPipelineStageDraft, setMedicaidPipelineStageDraft] = useState<MedicaidPipelineStage | "">("");
   const [rateScheduleDraft, setRateScheduleDraft] = useState("");
   const [rateAccommodationDraft, setRateAccommodationDraft] = useState<Database["public"]["Enums"]["admission_accommodation_quote"] | "">("");
   const [rateCareLevelDraft, setRateCareLevelDraft] = useState<"1" | "2" | "3" | "">("");
@@ -233,7 +234,6 @@ export default function AdminAdmissionCaseDetailPage() {
       setBedDraft(caseRow?.bed_id ?? "");
       setPhysicianOrdersSummaryDraft(caseRow?.physician_orders_summary ?? "");
       setCaseNotesDraft(caseRow?.notes ?? "");
-      setMedicaidPipelineStageDraft((caseRow?.medicaid_pipeline_stage as MedicaidPipelineStage | null) ?? "");
       setEffectiveDateDraft(caseRow?.target_move_in_date ?? "");
       if (caseRow?.facility_id) {
         const [{ data: schedules, error: schedulesError }, { data: bedRows, error: bedsError }] = await Promise.all([
@@ -563,7 +563,7 @@ export default function AdminAdmissionCaseDetailPage() {
               </div>
             )}
 
-            {row.resident_id && <AdmissionMedicaidScreening residentId={row.resident_id} admissionCaseId={row.id} />}
+            {row.resident_id && <AdmissionMedicaidScreening residentId={row.resident_id} admissionCaseId={row.id} onSaved={() => setMedicaidRefresh((n) => n + 1)} />}
 
             <RecordDetailSection
               title="Resident packet reviews"
@@ -584,8 +584,8 @@ export default function AdminAdmissionCaseDetailPage() {
                     <dd className="text-base font-semibold text-foreground capitalize">{formatStatus(row.status)}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
-                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medicaid Stage</dt>
-                    <dd className="text-base font-semibold text-foreground capitalize">{row.medicaid_pipeline_stage ? formatStatus(row.medicaid_pipeline_stage) : "Not set"}</dd>
+                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Medicaid</dt>
+                    <dd className="text-base font-semibold text-foreground">{medicaidStatus ?? "See Medicaid questions below"}</dd>
                   </div>
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Target Move-In</dt>
@@ -608,38 +608,6 @@ export default function AdminAdmissionCaseDetailPage() {
                   <div className="p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Physician Orders</dt>
                     <dd className="text-sm font-mono text-foreground">{formatAdmissionDetailTimestamp(row.physician_orders_received_at)}</dd>
-                  </div>
-                  <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
-                    <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Medicaid Pipeline Tracking</dt>
-                    <dd className="space-y-3">
-                      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                        <select
-                          value={medicaidPipelineStageDraft}
-                          onChange={(event) => setMedicaidPipelineStageDraft(event.target.value as MedicaidPipelineStage)}
-                          className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <option value="" disabled>
-                            Select stage…
-                          </option>
-                          {MEDICAID_PIPELINE_STAGE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={actionLoading === "Medicaid stage saved." || !medicaidPipelineStageDraft || medicaidPipelineStageDraft === (row.medicaid_pipeline_stage ?? "")}
-                          onClick={() => { if (medicaidPipelineStageDraft) void updateCase({ medicaid_pipeline_stage: medicaidPipelineStageDraft }, "Medicaid stage saved."); }}
-                        >
-                          {actionLoading === "Medicaid stage saved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save stage"}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Keep this in sync with the COL Medicaid workflow while the main admission status stays unchanged.
-                      </p>
-                    </dd>
                   </div>
                   <div className="sm:col-span-2 p-4 rounded-[8px] border border-border bg-card">
                     <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Physician Orders Summary</dt>
