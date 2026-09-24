@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { BENEFITS_STAGES, type BenefitsDetail, type BenefitsDocument } from "./contracts";
+import { enumLabel } from "@/lib/display/enum-label";
 
 // Leave room for the cover/checklist/manifest below Netlify's 20 MB streamed response limit.
 export const MAX_PACKET_BYTES = 18 * 1024 * 1024;
@@ -138,7 +139,7 @@ export function buildBenefitsPacket(detail: BenefitsDetail, documentIds: string[
     `Resident: ${detail.case.resident_name}`, `Facility: ${detail.case.facility_name}`, `Program: ${detail.case.program}`,
     `Case: ${detail.case.id} | Revision: ${detail.case.revision}`, `Generated: ${generatedAt}`, "",
     manifest.purpose, "Review the selected files and destination before any external submission.", "A checklist result is not agency acceptance or an eligibility decision.", "No legal notice is automatically generated or issued by this export.", manifest.pdf_text_note, "",
-    "STAGE CHECKLISTS", ...readiness.map((item) => `${item.stage}: ${item.status.replace(/_/g, " ")}`), "",
+    "STAGE CHECKLISTS", ...readiness.map((item) => `${item.stage}: ${enumLabel(item.status, { case: "lower" })}`), "",
     "REQUIREMENTS", ...checklist.flatMap((item) => [`[${item.satisfied_in_export ? "OK" : "OPEN"}] ${item.stage}: ${item.title}`, `  Status: ${item.status}; signature: ${item.signature_status}; selected: ${item.included ? "yes" : "no"}`]), "",
     "SELECTED DOCUMENTS", ...documents.flatMap((document, index) => [`${index + 1}. ${document.filename}`, `   Type: ${document.document_type}; template version: ${document.template_version || "not recorded"}`, `   SHA256: ${document.sha256}`]), "",
     "WORKFLOW SOURCE CONTEXT", manifest.source_context,

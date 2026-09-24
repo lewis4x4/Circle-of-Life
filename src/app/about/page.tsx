@@ -18,7 +18,7 @@ export default function AboutPage() {
         {/* Luxury Hero Banner */}
         <section className="relative overflow-hidden bg-stone-950 text-white py-20 sm:py-28">
           <Image
-            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80"
+            src="https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=1600&q=80"
             alt="Craftsmanship in North Florida"
             className="absolute inset-0 w-full h-full object-cover opacity-25" unoptimized loading="eager" fill sizes="100vw"
           />

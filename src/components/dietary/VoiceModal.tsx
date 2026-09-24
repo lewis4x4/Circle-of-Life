@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /** Manual input shares the durable temperature log; voice is not simulated. */
 export function VoiceModal({ open, onClose, facilityId, onSaved }: { open: boolean; onClose: () => void; facilityId?: string | null; onSaved?: () => void }) {
@@ -30,7 +31,7 @@ export function VoiceModal({ open, onClose, facilityId, onSaved }: { open: boole
     <DialogHeader><DialogTitle>Record temperature</DialogTitle><DialogDescription>Enter the measured reading and the limits from your approved kitchen procedure.</DialogDescription></DialogHeader>
     {saved ? <p role="status">Temperature log saved.</p> : <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <label className="block">Item<input className="block w-full rounded border p-2" required value={item} onChange={(e) => setItem(e.target.value)} /></label>
-      <label className="block">Check type<select className="block w-full rounded border p-2" value={type} onChange={(e) => setType(e.target.value)}>{["hot_hold","cold_hold","cooking","cooling","reheating","receiving","fridge_temp","freezer_temp","dishmachine","sanitizer"].map((v) => <option key={v} value={v}>{v.replaceAll("_", " ")}</option>)}</select></label>
+      <label className="block">Check type<select className="block w-full rounded border p-2" value={type} onChange={(e) => setType(e.target.value)}>{["hot_hold","cold_hold","cooking","cooling","reheating","receiving","fridge_temp","freezer_temp","dishmachine","sanitizer"].map((v) => <option key={v} value={v}>{enumLabel(v, { case: "lower" })}</option>)}</select></label>
       <label className="block">Measured temperature °F<input className="block w-full rounded border p-2" type="number" step="0.1" required value={temperature} onChange={(e) => setTemperature(e.target.value)} /></label>
       <label className="block">Approved minimum °F<input className="block w-full rounded border p-2" type="number" step="0.1" required value={minimum} onChange={(e) => setMinimum(e.target.value)} /></label>
       <label className="block">Approved maximum °F<input className="block w-full rounded border p-2" type="number" step="0.1" required value={maximum} onChange={(e) => setMaximum(e.target.value)} /></label>

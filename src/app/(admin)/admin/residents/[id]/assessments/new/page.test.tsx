@@ -106,7 +106,7 @@ const phq9HeldTemplate = {
   ],
   default_frequency_days: 180,
   required_role: ["owner"],
-  held_reason: "PHQ-9 on hold until safety follow-up is added",
+  held_reason: "PHQ-9 cannot be recorded in Haven yet.",
 };
 
 const harness: Harness = {
@@ -300,7 +300,7 @@ describe("AssessmentEntryPage selected instrument", () => {
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("Provisional result");
     expect(status).toHaveTextContent("2 of 8");
-    expect(status).toHaveTextContent("very high");
+    expect(status).toHaveTextContent("Very high");
     expect(status).toHaveTextContent("Not yet recorded");
     expect(screen.getByRole("button", { name: "Review assessment" })).toBeEnabled();
     expect(harness.inserts).toHaveLength(0);
@@ -409,7 +409,7 @@ describe("AssessmentEntryPage review and record", () => {
     const recorded = screen.getByRole("status");
     expect(recorded).toHaveTextContent("Katz ADL Index");
     expect(recorded).toHaveTextContent("Recorded score 1 of 2");
-    expect(recorded).toHaveTextContent("level 2");
+    expect(recorded).toHaveTextContent("Level 2");
     expect(recorded).toHaveTextContent("Recorded to Sample Resident's assessment history");
     expect(screen.getByRole("link", { name: "View history" })).toHaveAttribute(
       "href",
@@ -458,7 +458,7 @@ describe("AssessmentEntryPage held instrument (COL-430)", () => {
     // Named once, with the hold reason, and not as a control.
     expect(screen.getByText("PHQ-9")).toBeInTheDocument();
     expect(screen.getAllByText("PHQ-9")).toHaveLength(1);
-    expect(screen.getByText("PHQ-9 on hold until safety follow-up is added")).toBeInTheDocument();
+    expect(screen.getByText("PHQ-9 cannot be recorded in Haven yet.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /PHQ-9/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /PHQ-9/ })).toBeNull();
     expect(screen.queryByRole("radio", { name: /PHQ-9/ })).toBeNull();

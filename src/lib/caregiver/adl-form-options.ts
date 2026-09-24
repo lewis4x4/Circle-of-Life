@@ -1,4 +1,5 @@
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export const ADL_OPTIONS: { value: string; label: string }[] = [
   { value: "bathing", label: "Bathing" },
@@ -20,7 +21,7 @@ export const ASSIST_OPTIONS: { value: Database["public"]["Enums"]["assistance_le
 ];
 
 export function adlTypeLabel(value: string): string {
-  return ADL_OPTIONS.find((o) => o.value === value)?.label ?? value.replace(/_/g, " ");
+  return ADL_OPTIONS.find((o) => o.value === value)?.label ?? enumLabel(value);
 }
 
 export function assistanceLabel(value: Database["public"]["Enums"]["assistance_level"]): string {

@@ -70,8 +70,8 @@ describe("formatAssessmentRiskLevelLabel", () => {
   });
 
   it("formats a posted risk level", () => {
-    expect(formatAssessmentRiskLevelLabel("very_high")).toBe("very high");
-    expect(formatAssessmentRiskLevelLabel("level_1")).toBe("level 1");
+    expect(formatAssessmentRiskLevelLabel("very_high")).toBe("Very high");
+    expect(formatAssessmentRiskLevelLabel("level_1")).toBe("Level 1");
   });
 
   it("never returns an em dash for a gap", () => {

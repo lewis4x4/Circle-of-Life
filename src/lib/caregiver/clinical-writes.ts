@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 type VitalKey = "temperature" | "blood_pressure_systolic" | "blood_pressure_diastolic" | "pulse";
 export function parseVitalMeasurements(fields: Partial<Record<VitalKey, string>>): Partial<Record<VitalKey, number>> {
@@ -8,7 +9,7 @@ export function parseVitalMeasurements(fields: Partial<Record<VitalKey, string>>
     if (!raw.trim()) continue;
     const value = Number(raw);
     if (!Number.isFinite(value) || value <= 0 || (key !== "temperature" && !Number.isInteger(value))) {
-      throw new Error(`Enter a valid ${key.replaceAll("_", " ")} measurement.`);
+      throw new Error(`Enter a valid ${enumLabel(key, { case: "lower" })} measurement.`);
     }
     measurements[key as VitalKey] = value;
   }

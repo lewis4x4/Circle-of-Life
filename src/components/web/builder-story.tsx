@@ -14,7 +14,7 @@ export function BuilderStory() {
           <div className="lg:col-span-5 relative">
             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-stone-900">
               <Image
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=80"
+                src="https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?auto=format&fit=crop&w=1000&q=80"
                 alt="Master Craftsmanship in North Florida"
                 className="w-full h-88 sm:h-96 object-cover" unoptimized loading="eager" width={1000} height={384}
               />

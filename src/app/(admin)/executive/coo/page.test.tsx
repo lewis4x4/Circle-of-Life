@@ -74,7 +74,7 @@ describe("CooDashboardPage auth hydration", () => {
 
     render(<CooDashboardPage />);
 
-    expect(screen.getByText(/COO operations board — all facilities in your organization, not the enterprise portfolio roll-up\./)).toBeInTheDocument();
+    expect(screen.getByText(/COO operations board — all facilities in your organization\./)).toBeInTheDocument();
   });
 
   it("names the facility gap when an id is selected but the name map misses", () => {

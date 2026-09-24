@@ -27,6 +27,7 @@ import {
   useGraceVoiceRecorder,
 } from "./voice/useGraceVoiceRecorder";
 import type { GraceChatMessage, GraceKnowledgeSource, GraceTemplate } from "./types";
+import { enumLabel } from "@/lib/display/enum-label";
 
 const FACILITY_NAME_PLACEHOLDER = "the facility selected in the header";
 
@@ -72,7 +73,7 @@ function sourceKey(source: GraceKnowledgeSource): string {
 
 function formatDomainLabel(domain: string | null | undefined): string | null {
   if (!domain) return null;
-  return domain.replace(/_/g, " ");
+  return enumLabel(domain);
 }
 
 const KNOWLEDGE_THINKING_STEPS = [

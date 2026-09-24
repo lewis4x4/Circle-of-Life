@@ -18,6 +18,7 @@
 import levelCases from "./level-cases.json";
 import { CARE_EVENT_TILES, type CareEventQuestion, type CareEventTile } from "./tiles";
 import type { CareEventKind, CareEventLevel } from "./level-engine";
+import { enumLabel } from "@/lib/display/enum-label";
 
 export type LevelCaseFixture = {
   id: string;
@@ -65,7 +66,7 @@ export const LEVEL_WORDS: Record<CareEventLevel, string> = {
 
 /** A category code as a reviewer reads it, never the raw enum. */
 export function categoryLabel(category: string): string {
-  return category.replace(/_/g, " ").replace(/^./, (first) => first.toUpperCase());
+  return enumLabel(category);
 }
 
 /** The answer labels for one fixture, in the tile's own question order. */
@@ -112,7 +113,7 @@ const FLAG_LABELS: Record<string, string> = {
 };
 
 export function flagLabel(flag: string): string {
-  return FLAG_LABELS[flag] ?? flag.replace(/_/g, " ");
+  return FLAG_LABELS[flag] ?? enumLabel(flag);
 }
 
 /**

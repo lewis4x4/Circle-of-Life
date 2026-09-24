@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type AckRequirementRow = {
   id: string;
   /** Selected by the personal list, which spans every facility the reader can see. */
@@ -56,7 +57,7 @@ const LEGACY_ACK_ROLE_LABELS: Record<string, string> = {
 };
 
 export function roleLabel(id: string): string {
-  return ACK_ROLES.find((r) => r.id === id)?.label ?? LEGACY_ACK_ROLE_LABELS[id] ?? id.replace(/_/g, " ");
+  return ACK_ROLES.find((r) => r.id === id)?.label ?? LEGACY_ACK_ROLE_LABELS[id] ?? enumLabel(id);
 }
 
 /** Outstanding = active staff whose role is required and who have not signed. */

@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type HandoffShift = "day" | "evening" | "night";
 export type HandoffCategory = "resident" | "staffing" | "facility" | "follow_up" | "other";
 export type HandoffPriority = "normal" | "high" | "critical";
@@ -35,7 +36,7 @@ export type QueryError = { message: string };
 export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function handoffCategoryLabel(id: string): string {
-  return HANDOFF_CATEGORIES.find((c) => c.id === id)?.label ?? id.replace(/_/g, " ");
+  return HANDOFF_CATEGORIES.find((c) => c.id === id)?.label ?? enumLabel(id);
 }
 
 export function priorityTone(priority: HandoffPriority): "danger" | "warning" | "muted" {

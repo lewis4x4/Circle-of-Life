@@ -116,8 +116,8 @@ describe("formatResidentOverviewGenderLabel", () => {
   });
 
   it("humanizes other posted gender codes without inventing values", () => {
-    expect(formatResidentOverviewGenderLabel("non_binary")).toBe("non binary");
-    expect(formatResidentOverviewGenderLabel("  other_gender  ")).toBe("other gender");
+    expect(formatResidentOverviewGenderLabel("non_binary")).toBe("Non binary");
+    expect(formatResidentOverviewGenderLabel("  other_gender  ")).toBe("Other gender");
   });
 });
 

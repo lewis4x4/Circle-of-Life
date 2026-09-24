@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { enumLabel } from "@/lib/display/enum-label";
 import { formatStaffRoleLabel } from "@/lib/staff/load-staff";
 import { formatPersonName } from "@/lib/format/datetime";
+import { REQUIRED_READING_POLICIES_HREF } from "@/lib/caregiver/required-reading";
 
 type ProfileRow = Pick<Database["public"]["Tables"]["user_profiles"]["Row"], "app_role">;
 type StaffMini = Pick<
@@ -211,7 +212,7 @@ export default function CaregiverMePage() {
              </p>
           </div>
           <Link
-            href="/caregiver/policies"
+            href={REQUIRED_READING_POLICIES_HREF}
             className="shrink-0 inline-flex items-center justify-center h-14 px-8 rounded-full font-mono uppercase tracking-wider text-[11px] w-full md:w-auto shadow-[0_4px_20px_rgba(217,119,6,0.15)] transition-all hover:scale-[1.02] border-0 text-amber-950 font-bold bg-amber-400 hover:bg-amber-300 tap-responsive"
           >
             Review policies

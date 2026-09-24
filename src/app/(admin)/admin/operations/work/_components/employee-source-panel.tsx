@@ -4,6 +4,7 @@ import { z } from "zod";
 import { databaseUuidSchema } from "@/lib/operations/database-uuid";
 import { employeeSourceMap } from "@/lib/operations/employee-source-map";
 import { CONTROL } from "./work-inputs";
+import { enumLabel } from "@/lib/display/enum-label";
 const replySchema = z.object({
   task_id: databaseUuidSchema, employee_id: databaseUuidSchema.nullable(), activity_key: z.string(), as_of: z.string(),
   availability: z.enum(["available", "unavailable"]), reason: z.string().nullable(), can_open_employee_file: z.boolean(), can_medical: z.boolean(), source_version: z.string().nullable(),
@@ -63,7 +64,7 @@ function Panel({ taskId, activityKey }: Props) {
     <summary className={`${CONTROL} cursor-pointer`}>Employee File source context</summary>
     {opened ? <div role="group" aria-label="Employee File source context" className="space-y-3 pt-3">
       <p>Existing Employee File records only. Refresh records source changes; it does not complete this task, grant specialized work access, or take employment action.</p>
-      <details><summary className={`${CONTROL} cursor-pointer`}>All 20 source items and 22 components</summary><ul>{employeeSourceMap.map(row => <li key={row.key}>{row.sourceId} · {row.label} · {row.kind.replaceAll("_", " ")}. {row.gap ?? "Approved native source records only."}</li>)}</ul></details>
+      <details><summary className={`${CONTROL} cursor-pointer`}>All 20 source items and 22 components</summary><ul>{employeeSourceMap.map(row => <li key={row.key}>{row.sourceId} · {row.label} · {enumLabel(row.kind, { case: "lower" })}. {row.gap ?? "Approved native source records only."}</li>)}</ul></details>
       {error ? <p role="alert">{error}</p> : null}
       {busy ? <p role="status">Checking employee sources…</p> : null}
       {pending ? <button type="button" className={CONTROL} disabled={busy} onClick={() => void reconcile(pending)}>Retry same employee source refresh</button> : <>
@@ -77,7 +78,7 @@ function Panel({ taskId, activityKey }: Props) {
           const map = employeeSourceMap.find(row => row.key === field.component_key)!;
           const protectedField = !visible || field.state === "unavailable" || (map.medical && !data.can_medical);
           return <li key={field.component_key}><p className="font-medium">{map.sourceId} · {map.label}</p>{protectedField ? <p>Unavailable under current access. Protected values and dates are not shown.</p> : <>
-            <p>Recorded source state: {field.state.replaceAll("_", " ")}{field.value ? ` · ${field.value}` : ""}</p><p>{field.reason}</p>
+            <p>Recorded source state: {enumLabel(field.state, { case: "lower" })}{field.value ? ` · ${field.value}` : ""}</p><p>{field.reason}</p>
             <ul>{field.records.map(record => <li key={record.record_id}>Requirement version {record.requirement_version} · {record.status} · Completed: {record.completed_on ?? "Unknown"} · Expires: {record.expires_on ?? "Unknown"}</li>)}</ul>
           </>}</li>;
         })}</ul>

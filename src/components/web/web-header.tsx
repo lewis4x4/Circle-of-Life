@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PUBLIC_SITE_HOME_HREF } from "@/lib/routing/public-site";
 import {
   Phone,
   Calendar,
@@ -168,7 +167,7 @@ export function WebHeader({ onOpenTourModal }: WebHeaderProps) {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-22">
           {/* Brand Logo & Seal */}
-          <Link href={PUBLIC_SITE_HOME_HREF} className="flex items-center gap-3.5 group">
+          <Link href="/" className="flex items-center gap-3.5 group">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C85A32] to-[#1C2822] p-0.5 shadow-lg shadow-[#C85A32]/20 group-hover:scale-105 transition-transform duration-300">
               <div className="w-full h-full rounded-[14px] bg-[#FAF7F2] flex items-center justify-center border border-amber-200/60">
                 <Heart className="w-6 h-6 text-[#A94724] fill-[#C85A32]/20" />

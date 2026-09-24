@@ -1,4 +1,5 @@
 import type { StatusPillTone } from "@/components/ui/status-pill";
+import { enumLabel } from "@/lib/display/enum-label";
 
 /**
  * Resident presence — the operator-facing projection of the `resident_status`
@@ -97,7 +98,7 @@ const LIFECYCLE_STATUS_LABELS: Record<string, string> = {
 /** Read-only label for a non-presence lifecycle status (never edited via presence). */
 export function lifecycleStatusLabel(rawStatus: string | null): string {
   if (!rawStatus) return "Status unknown";
-  return LIFECYCLE_STATUS_LABELS[rawStatus] ?? rawStatus.replace(/_/g, " ");
+  return LIFECYCLE_STATUS_LABELS[rawStatus] ?? enumLabel(rawStatus);
 }
 
 /** UI presence value -> persisted `resident_status` enum value (for the write path). */

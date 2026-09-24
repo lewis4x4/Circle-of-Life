@@ -1,3 +1,4 @@
+import { enumLabel } from "@/lib/display/enum-label";
 export type ContactCategory =
   | "pharmacy"
   | "hospice"
@@ -52,7 +53,7 @@ export type QueryError = { message: string };
 export type QueryResult<T> = { data: T[] | null; error: QueryError | null };
 
 export function contactCategoryLabel(id: string): string {
-  return CONTACT_CATEGORIES.find((c) => c.id === id)?.label ?? id.replace(/_/g, " ");
+  return CONTACT_CATEGORIES.find((c) => c.id === id)?.label ?? enumLabel(id);
 }
 
 /** On-call shifts overlapping "now" (inclusive of start, exclusive of end). */
