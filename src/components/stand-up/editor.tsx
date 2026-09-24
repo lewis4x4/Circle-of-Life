@@ -4,12 +4,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { registerRouteLeaveGuard, supportsRouteLeaveProtection, standUpHasDocumentEntry, useRouteTransitionPending, isRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { METRICS, SECTIONS, dateLabel, entryOpensStamp, getStandUpEntryWindow, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { METRICS, SECTIONS, emptyValues, dateLabel, entryOpensStamp, getStandUpEntryWindow, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
 import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
 import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
 import { ROSTER_FIELD_KEYS, expectedSource, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey, type RosterPayload } from '@/lib/stand-up/roster-census';
-import { EntryQuestions, SectionNav, entryValues, fieldsFor, rosterIssueMessage, type EntryFields, type RosterEntry } from './entry-fields';
+import { EntryQuestions, SectionNav, entryValues, fieldsFor, rosterIssueMessage, type EntryFields, type PrefillEntry, type RosterEntry } from './entry-fields';
+import { PREFILL_KEYS, expectedPrefillSource, prefillIssueMessage, prefillIssues, prefillValue, prefilledValues, type MondayPrefill, type PrefillKey, type PrefillOverrideReason, type PrefillPayload } from '@/lib/stand-up/prefill';
 import { PostSubmitHistory, StandUpHistory } from './history';
 import { OutOfHousePanel } from './out-of-house';
 import { RecoveryTools } from './recovery';
@@ -64,6 +65,13 @@ export function StandUpEditor(props: Props) {
   const [rosterError, setRosterError] = useState('');
   const [reasons, setReasons] = useState<Reasons>({});
   const [rosterTick, setRosterTick] = useState(0);
+  // COL-753: Haven's own figures for the open period. Read, never saved on their own.
+  const [prefill, setPrefill] = useState<MondayPrefill | undefined>(undefined);
+  const [prefillLoading, setPrefillLoading] = useState(false);
+  const [prefillError, setPrefillError] = useState('');
+  const [prefillReasons, setPrefillReasons] = useState<Partial<Record<PrefillKey, PrefillOverrideReason>>>({});
+  const prefillRef = useRef(prefill); const prefillReasonsRef = useRef(prefillReasons);
+  const prefillApplied = useRef(false);
   const rosterRef = useRef(roster); const reasonsRef = useRef(reasons);
   const mounted = useRef(true);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
@@ -133,12 +141,33 @@ export function StandUpEditor(props: Props) {
       rosterRef.current = undefined; setRoster(undefined); setRosterError(cause instanceof Error ? cause.message : 'The roster could not be read.');
     } finally { if (mounted.current) setRosterLoading(false); }
   }, [entering, facility.id, onDenied]);
+  const loadPrefill = useCallback(async () => {
+    if (!entering) return;
+    setPrefillLoading(true);
+    try {
+      const data = await standUpRequest<MondayPrefill>('prefill', { facility_id: facility.id });
+      if (!mounted.current) return;
+      if (data.facility_id !== facility.id || data.week_start !== week) throw new Error('Haven’s figures did not match this facility and meeting.');
+      prefillRef.current = data; setPrefill(data); setPrefillError('');
+      // A report nobody has started opens with Haven's figures, for the
+      // administrator to verify. Nothing is saved until they save or submit,
+      // and a figure Haven cannot compute stays blank, never 0.
+      if (!prefillApplied.current && !savedRef.current && !dirtyRef.current && !pending.current && Object.values(draftRef.current).every(value => value.trim() === '')) {
+        prefillApplied.current = true;
+        draftRef.current = fieldsFor(prefilledValues(data, emptyValues())); setDraft(draftRef.current);
+      }
+    } catch (cause) {
+      if (!mounted.current) return;
+      if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) { onDenied(); return; }
+      prefillRef.current = undefined; setPrefill(undefined); setPrefillError(cause instanceof Error ? cause.message : 'Haven’s figures could not be read.');
+    } finally { if (mounted.current) setPrefillLoading(false); }
+  }, [entering, facility.id, week, onDenied]);
   useEffect(() => {
-    void loadRoster();
+    void loadRoster(); void loadPrefill();
     const focus = () => { void loadRoster(); };
     window.addEventListener('focus', focus);
     return () => window.removeEventListener('focus', focus);
-  }, [loadRoster]);
+  }, [loadRoster, loadPrefill]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { if (dirtyRef.current || savingRef.current || pending.current || guardState.current.advancedBusy) { event.preventDefault(); event.returnValue = ''; } };
     const connection = () => setOnline(navigator.onLine);
@@ -169,9 +198,15 @@ export function StandUpEditor(props: Props) {
         if (status === 'ready' && derivedValues(values).completed_fields !== 16) throw new Error('Complete all sixteen figures before submitting. Use zero when there are none.');
         const blocked = Object.values(rosterIssues(values, entering ? rosterRef.current : undefined, reasonsRef.current));
         if (blocked.length) throw new Error(blocked.join(' '));
+        // COL-753: a draft may keep a figure that differs from Haven; submitting it needs the reason.
+        const unexplained = status === 'ready' && entering ? prefillIssues(prefillRef.current, values, prefillReasonsRef.current) : [];
+        if (unexplained.length) throw new Error(unexplained.map(key => prefillIssueMessage(METRICS.find(metric => metric.key === key)!.label, key, prefillValue(prefillRef.current, key)!)).join(' '));
+        const prefillBlock: PrefillPayload | undefined = entering && prefillRef.current ? Object.fromEntries((PREFILL_KEYS as PrefillKey[])
+          .filter(key => expectedPrefillSource(prefillRef.current, key, values[key]) === 'overridden' && prefillReasonsRef.current[key])
+          .map(key => [key, { override_reason: prefillReasonsRef.current[key]! }])) as PrefillPayload : undefined;
         // The roster block carries only the chosen reasons; the server recomputes the suggestion and decides the source.
         const rosterBlock: RosterPayload | undefined = entering && rosterRef.current ? Object.fromEntries(ROSTER_FIELD_KEYS.map(key => [key, expectedSource(rosterRef.current, key, values[key]) === 'overridden' && reasonsRef.current[key] ? { override_reason: reasonsRef.current[key] } : {}])) as RosterPayload : undefined;
-        attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical || (reopened && reason.trim()) ? { reason: reason.trim() } : {}), ...(rosterBlock ? { roster: rosterBlock } : {}), request_id: crypto.randomUUID() } };
+        attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical || (reopened && reason.trim()) ? { reason: reason.trim() } : {}), ...(rosterBlock ? { roster: rosterBlock } : {}), ...(prefillBlock && Object.keys(prefillBlock).length ? { prefill: prefillBlock } : {}), request_id: crypto.randomUUID() } };
       } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check your figures.'); setPhase('failed'); return false; }
       pending.current = attempt;
     }
@@ -189,6 +224,7 @@ export function StandUpEditor(props: Props) {
       if (unchanged) { draftRef.current = fieldsFor(receipt.values); setDraft(draftRef.current); }
       if (attempt.status === 'ready') setReview(false);
       if (rosterRef.current) void loadRoster();
+      if (prefillRef.current) void loadPrefill();
       return unchanged && attempt.status === status;
     } catch (cause) {
       if (!mounted.current) return false;
@@ -197,11 +233,12 @@ export function StandUpEditor(props: Props) {
       if (cause instanceof StandUpRequestError && [400, 413, 422].includes(cause.status)) pending.current = null;
       // The roster moved between the suggestion and the save: read it again so the reason control appears.
       if (cause instanceof StandUpRequestError && cause.status === 400 && /differs from the Haven roster/.test(cause.message)) void loadRoster();
+      if (cause instanceof StandUpRequestError && cause.status === 400 && /differs from Haven \(/.test(cause.message)) void loadPrefill();
       if (cause instanceof StandUpRequestError && cause.status === 409) { setConflict(true); pending.current = null; void onReload(); }
       setError(cause instanceof Error ? cause.message : 'Save failed. Your entries are retained. Retry to check the save result.');
       return false;
     } finally { if (mounted.current) { savingRef.current = false; } }
-  }, [editable, conflict, historical, reopened, entering, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster]);
+  }, [editable, conflict, historical, reopened, entering, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster, loadPrefill]);
   let values: StandUpValues | undefined; let validationMessage = '';
   try { values = entryValues(draft); } catch (cause) { validationMessage = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const rosterBlocked = values && entering ? Object.keys(rosterIssues(values, roster, reasons)).length > 0 : false;
@@ -228,6 +265,17 @@ export function StandUpEditor(props: Props) {
     if (suggested === null) return;
     setRosterReason(key, null); change(key, String(suggested));
   };
+  const setPrefillReason = (key: PrefillKey, value: PrefillOverrideReason | null) => {
+    const next = { ...prefillReasonsRef.current }; if (value) next[key] = value; else delete next[key];
+    prefillReasonsRef.current = next; setPrefillReasons(next);
+    if (phase === 'failed' && !pending.current) { setPhase('idle'); setError(''); }
+  };
+  const usePrefill = (key: PrefillKey) => {
+    const haven = prefillValue(prefillRef.current, key);
+    if (haven === null) return;
+    setPrefillReason(key, null); change(key, String(key === 'monthly_rent_roll_cents' ? haven / 100 : haven));
+  };
+  const prefillEntry: PrefillEntry | undefined = !entering ? undefined : { data: prefill, loading: prefillLoading, error: prefillError, reasons: prefillReasons, onReason: setPrefillReason, onUsePrefill: usePrefill };
   const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: useRoster };
   const discard = () => {
     if (savingRef.current || advancedBusy || pending.current) return;
@@ -268,6 +316,7 @@ export function StandUpEditor(props: Props) {
         <p className="font-medium"><span>{status.state}</span>{status.qualifier && <span> · {status.qualifier}</span>}</p>
         <p className="mt-1 text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)}</p>
         <p className="mt-1 text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
+        {entering && !saved && prefillApplied.current && <p className="mt-1 text-sm">Prefilled from Haven. Check each figure against what you know, change any that are wrong, then submit.</p>}
         {isLate && <p className="mt-1 text-sm">The 8:45 a.m. Haven submission target has passed; you can still finish or correct this report.</p>}
         {/* One line for a report nobody can enter yet, so the aide reading it at
             11:30 p.m. knows exactly when it opens rather than why saving failed. */}
@@ -338,7 +387,7 @@ export function StandUpEditor(props: Props) {
       </details>}
       <SectionNav />
       <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={entering} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError}
-        roster={rosterEntry} recorded={saved?.roster_confirmations} censusExtra={entering ? <OutOfHousePanel facilityId={facility.id} facilityName={facility.name} refreshKey={rosterTick} /> : undefined} />
+        roster={rosterEntry} recorded={saved?.roster_confirmations} prefill={prefillEntry} recordedPrefill={saved?.prefill_confirmations} censusExtra={entering ? <OutOfHousePanel facilityId={facility.id} facilityName={facility.name} refreshKey={rosterTick} /> : undefined} />
       {!historical && reopened && <label htmlFor="change-reason" className="block text-sm font-medium">Reason for the change (optional)<Input id="change-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} className="mt-2" /></label>}
       {historical && historicalOpen && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
