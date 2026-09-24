@@ -10,7 +10,7 @@ function client(tables: Record<string, Record<string, unknown>[]>) {
     from(table: string) {
       let rows = [...(tables[table] ?? [])];
       const q = {
-        select: () => q, is: () => q, in: () => q, eq: () => q,
+        select: () => q, is: () => q, in: () => q, eq: () => q, or: () => q,
         order: (field: string, options: { ascending: boolean }) => {
           rows.sort((a, b) => String(a[field]).localeCompare(String(b[field])) * (options.ascending ? 1 : -1));
           return q;

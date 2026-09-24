@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
+import { SENT_INVOICE_POSTGREST_OR, wasInvoiceSent } from "@/lib/billing/receivables";
 import { formatCents } from "@/lib/finance/format-cents";
 import { enumLabel } from "@/lib/display/enum-label";
 
@@ -197,9 +198,10 @@ export async function fetchFamilyHomeSnapshot(
       .limit(25),
     supabase
       .from("invoices")
-      .select("id, resident_id, invoice_number, status, total, balance_due, invoice_date")
+      .select("id, resident_id, invoice_number, status, total, balance_due, invoice_date, sent_at")
       .in("resident_id", residentIds)
       .is("deleted_at", null)
+      .or(SENT_INVOICE_POSTGREST_OR)
       .order("invoice_date", { ascending: false })
       .limit(20),
     supabase
@@ -307,8 +309,10 @@ export async function fetchFamilyHomeSnapshot(
       total: number;
       balance_due: number;
       invoice_date: string;
+      sent_at: string | null;
     };
     if (!linkByResident.get(inv.resident_id)?.can_view_financial) continue;
+    if (!wasInvoiceSent(inv)) continue;
 
     const statusLabel = enumLabel(inv.status, { case: "lower" });
     const title = `Invoice ${inv.invoice_number}`;
