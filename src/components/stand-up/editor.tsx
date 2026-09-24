@@ -296,7 +296,7 @@ export function StandUpEditor(props: Props) {
       </>}
       {lockedSubmitted && !mayEditSubmitted && <p className="text-sm">This report was submitted. Only the person who submitted it or a facility administrator can change it.</p>}
       {reopened && <p role="status" className="text-sm">Reopened for changes. Every changed figure is recorded in the edit history. Submit again when you are done.</p>}
-      {mayEditSubmitted && <PostSubmitHistory facilityId={facility.id} week={week} version={saved?.version ?? 0} />}
+      {mayEditSubmitted && saved?.version != null && <PostSubmitHistory facilityId={facility.id} week={week} version={saved.version} />}
     </section>}
     {history && <StandUpHistory reports={props.reports} facilityId={facility.id} facilityName={facility.name} />}
     {review && values ? <section aria-label="Review report" className="space-y-4 rounded border border-border p-5">

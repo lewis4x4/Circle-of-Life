@@ -1,4 +1,4 @@
--- Native scratch-only probe for migration 509 (COL-797); fixtures and auth
+-- Native scratch-only probe for migration 512 (COL-797); fixtures and auth
 -- adaptation roll back.
 --
 -- The finding: "Once a facility submits Stand Up for a staffing week, nobody but
@@ -77,7 +77,7 @@ DO $$ BEGIN
  IF EXISTS(SELECT 1 FROM public.stand_up_post_submit_changes c JOIN ps_plan p ON p.facility=c.facility_id) THEN RAISE EXCEPTION 'A first submission was audited as a post-submit change'; END IF;
 END $$;
 
--- 1. The submitter corrects the submitted past week. Before migration 509 this
+-- 1. The submitter corrects the submitted past week. Before migration 512 this
 --    was "Stand Up access denied" for everyone below org_admin.
 SELECT pg_temp.ps_as('submitter');
 SET LOCAL ROLE authenticated;
