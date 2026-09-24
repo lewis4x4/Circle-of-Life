@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin/risk", label: "Command" },
-  { href: "/admin/risk/survey-bundle", label: "Survey bundle" },
 ] as const;
 
 export function RiskHubNav() {
