@@ -141,7 +141,7 @@ type KioskDetailRow = { id: string; visitor_company: string | null; visiting_nam
 
 /**
  * `visitor_log()` and `visitor_log_open()` predate the kiosk columns (migration
- * 481) and stay as they are. A kiosk row has no staff signer, so only rows with
+ * 494) and stay as they are. A kiosk row has no staff signer, so only rows with
  * no signer are looked up, straight from the table under the staff SELECT policy.
  */
 async function withKioskDetails(
@@ -171,7 +171,7 @@ async function withKioskDetails(
   });
 }
 
-/** The desk matches a kiosk entry's typed name to a resident of that building, once (migration 481). */
+/** The desk matches a kiosk entry's typed name to a resident of that building, once (migration 494). */
 export async function matchVisitorResident(supabase: Client, entryId: string, residentId: string): Promise<void> {
   const { error } = await supabase.rpc("visitor_match_resident" as never, { p_entry_id: entryId, p_resident_id: residentId } as never);
   if (error) throw new Error(error.message);

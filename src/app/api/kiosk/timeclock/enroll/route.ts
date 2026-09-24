@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const limiterKey = `timeclock-enroll:${clientAddress(request)}`;
   const limit = checkFailureRateLimit(limiterKey, ENROLL_LIMIT);
   if (!limit.allowed) {
-    return NextResponse.json({ error: "device_throttled" }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
+    return NextResponse.json({ error: "device_throttled" }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds), "Cache-Control": "no-store" } });
   }
 
   let body: unknown;

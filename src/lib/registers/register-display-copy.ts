@@ -103,6 +103,26 @@ export function easternDayStartIso(date: string): string {
 }
 
 /**
+ * The desk log's left-open cutoff, the same rule as
+ * `haven.visitor_left_open_threshold` (migration 412): the most recent 04:00
+ * Eastern at or before `now`. A visitor signed in before it and never signed
+ * out is left open.
+ */
+export function visitorLeftOpenThresholdIso(now: Date = new Date()): string {
+  const at4 = (date: string) => {
+    const guess = new Date(`${date}T04:00:00Z`);
+    const candidate = new Date(guess.getTime() + easternOffsetMs(guess));
+    return new Date(guess.getTime() + easternOffsetMs(candidate));
+  };
+  const today = easternDateInputValue(now);
+  const todayAt4 = at4(today);
+  if (now.getTime() >= todayAt4.getTime()) return todayAt4.toISOString();
+  const yesterday = new Date(`${today}T12:00:00Z`);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  return at4(yesterday.toISOString().slice(0, 10)).toISOString();
+}
+
+/**
  * The register range is half open, matching the SQL: an event at exactly the
  * end instant belongs to the next range. This returns the start of the day
  * after the chosen end date so the chosen end date itself is included.

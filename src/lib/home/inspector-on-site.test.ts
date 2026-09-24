@@ -31,7 +31,7 @@ describe("fetchOpenInspections", () => {
   it("asks only for open, unvoided inspector visits at the facility", async () => {
     const calls: [string, ...unknown[]][] = [];
     const chain: Record<string, unknown> = {};
-    for (const method of ["select", "eq", "is", "order"]) {
+    for (const method of ["select", "eq", "is", "gte", "order"]) {
       chain[method] = (...args: unknown[]) => {
         calls.push([method, ...args]);
         return chain;
@@ -39,7 +39,7 @@ describe("fetchOpenInspections", () => {
     }
     chain.limit = async () => ({ data: [{ id: "v1", checked_in_at: "2026-10-01T14:12:00Z", visitor_company: "AHCA" }], error: null });
     const from = vi.fn(() => chain);
-    const rows = await fetchOpenInspections({ from } as never, "fac-1");
+    const rows = await fetchOpenInspections({ from } as never, "fac-1", new Date("2026-10-01T15:00:00Z"));
     expect(from).toHaveBeenCalledWith("visitor_log_entries");
     expect(calls).toEqual(
       expect.arrayContaining([
@@ -48,8 +48,23 @@ describe("fetchOpenInspections", () => {
         ["is", "checked_out_at", null],
         ["is", "voided_at", null],
         ["is", "deleted_at", null],
+        // 04:00 EDT on October 1: an inspector left open from yesterday no longer raises the banner.
+        ["gte", "checked_in_at", "2026-10-01T08:00:00.000Z"],
       ]),
     );
     expect(rows).toEqual([{ id: "v1", checkedInAt: "2026-10-01T14:12:00Z", agency: "AHCA" }]);
+  });
+});
+
+describe("visitorLeftOpenThresholdIso (spec 38 left-open rule)", () => {
+  it("is today's 04:00 Eastern after 04:00, and yesterday's before it, across DST", async () => {
+    const { visitorLeftOpenThresholdIso } = await import("@/lib/registers/register-display-copy");
+    expect(visitorLeftOpenThresholdIso(new Date("2026-10-01T15:00:00Z"))).toBe("2026-10-01T08:00:00.000Z");
+    expect(visitorLeftOpenThresholdIso(new Date("2026-10-01T07:59:00Z"))).toBe("2026-09-30T08:00:00.000Z");
+    expect(visitorLeftOpenThresholdIso(new Date("2026-01-15T12:00:00Z"))).toBe("2026-01-15T09:00:00.000Z");
+    // Clocks go back 2026-11-01 at 02:00: 04:00 EST that morning is 09:00 UTC.
+    expect(visitorLeftOpenThresholdIso(new Date("2026-11-01T10:00:00Z"))).toBe("2026-11-01T09:00:00.000Z");
+    // Clocks go forward 2026-03-08 at 02:00: 04:00 EDT that morning is 08:00 UTC.
+    expect(visitorLeftOpenThresholdIso(new Date("2026-03-08T08:30:00Z"))).toBe("2026-03-08T08:00:00.000Z");
   });
 });

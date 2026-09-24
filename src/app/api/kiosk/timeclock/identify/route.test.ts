@@ -33,13 +33,17 @@ describe("POST /api/kiosk/timeclock/identify", () => {
   it("treats a short PIN as not recognised without a database call", async () => {
     const response = await POST(request({ identifier: "A-100", pin: "1" }));
     expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({ error: "not_recognized" });
     expect(mock.rpc).not.toHaveBeenCalled();
   });
 
   it("maps lockout to 423 and the facility flag to 403", async () => {
     mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "locked" }, error: null });
-    expect((await POST(request({ identifier: "A-100", pin: "123456" }))).status).toBe(423);
+    const locked = await POST(request({ identifier: "A-100", pin: "123456" }));
+    expect(locked.status).toBe(423);
+    expect(locked.headers.get("Cache-Control")).toBe("no-store");
+    expect(locked.headers.get("Retry-After")).toBe("900");
     mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "facility_off" }, error: null });
     expect((await POST(request({ identifier: "A-100", pin: "123456" }))).status).toBe(403);
   });

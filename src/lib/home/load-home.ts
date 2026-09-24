@@ -156,7 +156,7 @@ export async function loadHome(
     feedPromise.then((feed) => loadRounding(supabase, args.facilityId, feed.localDate)),
     loadFacilityOptions(supabase),
     fetchHomeCensus(supabase, args.facilityId, args.now),
-    fetchOpenInspections(supabase, args.facilityId),
+    fetchOpenInspections(supabase, args.facilityId, args.now),
   ]);
   // The feed is required: its rejection still rejects loadHome.
   const [feed, [snapshot, presence, standUp, rounding, facilityOptions, census, inspections], released, [pastDue, notesOnTap, shiftsToday]] =

@@ -49,6 +49,7 @@ describe("POST /api/kiosk/timeclock/punch", () => {
   it("refuses without a device header before touching the database (401)", async () => {
     const response = await POST(request(GOOD, null));
     expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({ error: "device_unknown" });
     expect(mock.rpc).not.toHaveBeenCalled();
   });

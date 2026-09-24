@@ -62,7 +62,6 @@ const NOT_YET_CONVERTED = new Set<string>([
   "src/components/facility-checks/BoardCheckClient.tsx",
   "src/components/facility-checks/StaffCheckClient.tsx",
   "src/components/finance/FinanceForecastPageClient.tsx",
-  "src/components/registers/VisitorLogClient.tsx",
   "src/components/risk/RiskCommandPageClient.tsx",
   "src/components/risk/RiskSurveyBundlePageClient.tsx",
   "src/components/rounding/CadenceLadderList.tsx",

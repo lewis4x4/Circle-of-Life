@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { visitorLeftOpenThresholdIso } from "@/lib/registers/register-display-copy";
 import type { Database } from "@/types/database";
 
 /** An inspector or official who signed in (kiosk or desk) and has not signed out (COL-692, spec 40 §7). */
@@ -9,10 +10,17 @@ type OpenInspectionRow = { id: string; checked_in_at: string; visitor_company: s
 
 /**
  * Open `surveyor_regulator` visits at this facility: not signed out, not
- * voided. Read under the staff SELECT policy on visitor_log_entries, which
- * the generated types do not list yet (hence `as never`).
+ * voided, and signed in since the desk log's left-open cutoff (the most
+ * recent 04:00 Eastern). An inspector who never tapped Leaving stops raising
+ * the banner at that cutoff; the desk log keeps showing them as left open.
+ * Read under the staff SELECT policy on visitor_log_entries, which the
+ * generated types do not list yet (hence `as never`).
  */
-export async function fetchOpenInspections(supabase: SupabaseClient<Database>, facilityId: string): Promise<HomeOpenInspection[]> {
+export async function fetchOpenInspections(
+  supabase: SupabaseClient<Database>,
+  facilityId: string,
+  now: Date = new Date(),
+): Promise<HomeOpenInspection[]> {
   const { data, error } = await supabase
     .from("visitor_log_entries" as never)
     .select("id, checked_in_at, visitor_company")
@@ -21,6 +29,7 @@ export async function fetchOpenInspections(supabase: SupabaseClient<Database>, f
     .is("checked_out_at", null)
     .is("voided_at", null)
     .is("deleted_at", null)
+    .gte("checked_in_at", visitorLeftOpenThresholdIso(now))
     .order("checked_in_at", { ascending: true })
     .limit(10);
   if (error) throw new Error(error.message);

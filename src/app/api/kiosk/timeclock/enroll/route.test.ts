@@ -34,6 +34,7 @@ describe("POST /api/kiosk/timeclock/enroll", () => {
     mock.rpc.mockResolvedValue({ data: { ok: false, error: "code_invalid" }, error: null });
     const response = await POST(request({ code: "ABCD2345", label: "Front desk" }));
     expect(response.status).toBe(401);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({ error: "code_invalid" });
   });
 
@@ -50,6 +51,7 @@ describe("POST /api/kiosk/timeclock/enroll", () => {
     const throttled = await POST(request({ code: "ABCD2345", label: "x" }, "203.0.113.9"));
     expect(throttled.status).toBe(429);
     expect(throttled.headers.get("Retry-After")).toBeTruthy();
+    expect(throttled.headers.get("Cache-Control")).toBe("no-store");
     expect(mock.rpc).toHaveBeenCalledTimes(10);
   });
 });
