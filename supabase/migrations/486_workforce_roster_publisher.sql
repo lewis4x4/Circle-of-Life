@@ -241,12 +241,26 @@ BEGIN
  USING 'https://manfqmasfqppukpobpld.supabase.co/functions/v1/workforce-publisher',jsonb_build_object('content-type','application/json','x-cron-secret',secret),'{}'::jsonb;
  RETURN request_id;
 END $$;
-DO $$ DECLARE job bigint; BEGIN
+DO $workforce_cron$ DECLARE job bigint; existing record; BEGIN
  IF to_regnamespace('cron') IS NOT NULL THEN
-  EXECUTE 'SELECT cron.schedule($1,$2,$3)' INTO job USING 'workforce-publisher-daily','0 10 * * *','SELECT haven.workforce_publisher_tick()';
-  EXECUTE 'UPDATE cron.job SET active=false WHERE jobid=$1' USING job;
+  PERFORM pg_advisory_xact_lock(hashtextextended('haven.workforce-publisher-daily',0));
+  FOR existing IN EXECUTE 'SELECT * FROM cron.job WHERE jobname=$1' USING 'workforce-publisher-daily' LOOP
+   IF job IS NOT NULL OR existing.schedule IS DISTINCT FROM '0 10 * * *'
+    OR existing.command IS DISTINCT FROM 'SELECT haven.workforce_publisher_tick()'
+    OR existing.username IS DISTINCT FROM current_user OR existing.database IS DISTINCT FROM current_database()
+    OR existing.nodename IS DISTINCT FROM current_setting('cron.host')
+    OR existing.nodeport IS DISTINCT FROM current_setting('port')::integer OR existing.active IS DISTINCT FROM false
+   THEN RAISE EXCEPTION 'workforce_scheduler_name_conflict' USING ERRCODE='55000'; END IF;
+   job:=existing.jobid;
+  END LOOP;
+  IF job IS NULL THEN
+   EXECUTE 'SELECT cron.schedule($1,$2,$3)' INTO job USING 'workforce-publisher-daily','0 10 * * *','SELECT haven.workforce_publisher_tick()';
+   -- Managed postgres cannot UPDATE cron.job. No username override is needed.
+   -- The enclosing migration transaction publishes only the inactive job.
+   EXECUTE 'SELECT cron.alter_job($1,active:=false)' USING job;
+  END IF;
  END IF;
-END $$;
+END $workforce_cron$;
 REVOKE ALL ON FUNCTION haven.workforce_time(timestamptz),haven.workforce_generation_guard(),haven.workforce_lease(uuid,uuid,bigint),
  haven.workforce_pending(haven.workforce_publisher_state),haven.workforce_publisher_tick(),public.workforce_publisher_acquire(uuid,integer),
  public.workforce_publisher_export(uuid,uuid,bigint),public.workforce_publisher_store_pending(uuid,uuid,bigint,text,text),

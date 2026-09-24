@@ -27,6 +27,8 @@ The roster body exists only in the private pending state and authorized network 
 
 Migration defaults: no organization, no key ID, `enabled=false`. No real tenant is guessed or seeded. The daily `workforce-publisher-daily` cron scaffold uses `0 10 * * *` UTC and is created with `active=false` when pg_cron exists. Its function independently checks the disabled state before reading Vault or sending anything.
 
+The scheduler uses `cron.schedule` without a username override, then `cron.alter_job` in the same migration transaction. Managed `postgres` has no direct update privilege on `cron.job`. An existing same-name job is retained only when its command, schedule, owner, database, host, port and inactive state exactly match; a mismatch fails with `workforce_scheduler_name_conflict` without overwriting or disabling that job. Investigate the existing job's ownership before retrying; the migration never takes it over.
+
 Required dedicated configuration:
 
 | Name/location | Purpose |
@@ -49,6 +51,7 @@ Rollback: disable this source's state and daily job, and disable the receiver ke
 - `deno test --no-lock --config supabase/functions/deno.json supabase/functions/workforce-publisher/`
 - `supabase/tests/review_workforce_publisher.sql`: actual native schema fixtures, private-field exclusion, same-name identities, cross-facility facts, executive ambiguity, soft-deletion semantics, role denials, bounds, leases/generation, exact replay, receipt ledger and cross-tenant refusal.
 - `scripts/workforce/verify-source-contract.mjs`: runs that transactional probe, pipes its synthetic export in memory to the frozen v1 signed receiver validator, and prints only counts/byte size/outcome. The migration replay runner calls this once for native and Docker paths. It accepts only a named isolated local verification database or the runner's own container.
+- `WORKFORCE_SCHEDULER_CONTAINER=supabase_db_col721-scheduler-<owned-run> node scripts/workforce/verify-scheduler.mjs`: requires a dedicated local Supabase provider stack with pg_cron installed, verifies its CLI project label and managed non-superuser caller, and executes the exact scheduler block from migration 486. Covers atomic inactive creation, exact replay and command/schedule/database/active/owner/host/port collisions. Administrator access arranges only synthetic local metadata fixtures; scheduler calls use `postgres`, refuse direct table-update privileges, and leave no jobs. Never point this probe at a shared or hosted stack.
 - Required Haven segment/repository/CI/hosted gates remain separate. Migration 486 waits for existing 483–485 allocations; no copied pending work or contiguity bypass is allowed.
 
 The vendored `contract/types.ts` and `contract/protocol.ts` are byte-identical to Front Office's `src/backend/workforce/` contract on 2026-09-23, including native Cornerstone organization `closed` status. SHA-256: types `cb99d7e95ef7ec225d2807044f667c7a46e57cb89471520b33673d0811e8c516`; protocol `3b7ee2b65f703a957194bb3e8892cbb174bfebf89b27557f2363c6c7bf7188c8`. Re-vendor only as a reviewed cross-repository contract change.
