@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
 import { enumLabel } from "@/lib/display/enum-label";
 
-export default function CaregiverPendingPoliciesPage() {
+export function CaregiverPendingPoliciesList() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<PendingPolicySummary[]>([]);
@@ -56,13 +56,7 @@ export default function CaregiverPendingPoliciesPage() {
         description="Review policy tasks here, then return to your profile, schedule, or the active shift once you are caught up."
       />
       <div>
-        <Link
-          href="/caregiver/me"
-          className="inline-flex min-h-[44px] items-center text-sm text-muted-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
-        >
-          ← Me
-        </Link>
-        <h1 className="mt-2 text-xl font-semibold text-foreground">Policies to acknowledge</h1>
+        <h1 className="text-xl font-semibold text-foreground">Policies to acknowledge</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Read and confirm each policy required for your facility.
         </p>
