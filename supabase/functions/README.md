@@ -234,3 +234,7 @@ supabase functions deploy grace-transcribe --project-ref manfqmasfqppukpobpld
 supabase functions deploy grace-tts --project-ref manfqmasfqppukpobpld
 supabase functions deploy grace-redteam-nightly --project-ref manfqmasfqppukpobpld
 ```
+
+## Private workforce publisher
+
+`workforce-publisher` publishes only the reviewed workforce roster contract to Front Office. It uses Edge `WORKFORCE_PUBLISHER_CRON_SECRET` and `WORKFORCE_INGEST_SECRET`, plus the matching dedicated Vault `workforce_publisher_cron_secret`. Configuration and the daily cron scaffold are disabled by default. Source database credentials stay in Haven. See [the source publisher runbook](workforce-publisher/README.md) for native field meanings, replay/fencing, required receipt proof and rollback.

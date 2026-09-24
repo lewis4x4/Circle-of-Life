@@ -29,6 +29,12 @@ export type ResidentRow = {
   careSummary: string;
   /** Raw `residents.updated_at` for operator-facing "last profile save" column. */
   updatedAtIso: string | null;
+  /**
+   * COL-750: when the current status actually began (`residents.status_effective_at`),
+   * which is the time staff entered for a back-dated change. Null when the status
+   * has not changed since that column existed.
+   */
+  statusSinceIso?: string | null;
 };
 
 type SupabaseUnitJoin = {
@@ -59,6 +65,7 @@ type SupabaseResidentJoined = {
   acuity_level: string | null;
   updated_at: string | null;
   deleted_at: string | null;
+  status_effective_at?: string | null;
   /** The bed the resident record points at (`residents.bed_id`). */
   bed_by_id: SupabaseBedJoin | null;
   /** Beds whose `current_resident_id` points back at the resident. */
@@ -80,7 +87,7 @@ export async function fetchResidentsFromSupabase(
   let residentsQuery = supabase
     .from("residents" as never)
     .select(
-      `id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at,
+      `id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at, status_effective_at,
        bed_by_id: beds!residents_bed_id_fkey (
          id, bed_label, room_id,
          rooms ( id, room_number, unit_id, units ( id, name ) )
@@ -135,6 +142,7 @@ export async function fetchResidentsFromSupabase(
       status,
       careSummary: "",
       updatedAtIso: resident.updated_at ?? null,
+      statusSinceIso: resident.status_effective_at ?? null,
     } satisfies ResidentRow;
   });
 }

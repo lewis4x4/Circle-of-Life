@@ -26,6 +26,10 @@ type RegisterDbRow = {
   discharge_destination: string | null;
   recorded_by: string | null;
   recorded_by_name: string | null;
+  /** Migration 503 (COL-750). */
+  recorded_at?: string | null;
+  effective_basis?: string | null;
+  late_entry_reason?: string | null;
 };
 
 type CensusDbRow = {
@@ -76,6 +80,9 @@ export async function fetchRegister(
     dischargeReason: row.discharge_reason,
     dischargeDestination: row.discharge_destination,
     recordedByName: row.recorded_by_name,
+    recordedAt: row.recorded_at ?? null,
+    effectiveBasis: row.effective_basis ?? null,
+    lateEntryReason: row.late_entry_reason ?? null,
   }));
 }
 

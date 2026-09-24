@@ -100,3 +100,34 @@ describe("COL-599: presence says since when and who", () => {
     expect(presenceSinceSummary(rows, "active").sinceLabel).toMatch(/^Since at least /);
   });
 });
+
+describe("COL-750: a row says what its start is", () => {
+  // Hospital out entered for 8:00 PM Eastern on Sep 22 (EDT), which is exactly
+  // midnight UTC; before COL-750 the midnight heuristic read it as a date stamp.
+  const ENTERED: ResidentPresenceHistoryEntry = {
+    id: "h3",
+    status: "hospital_hold",
+    effectiveFrom: "2026-09-23T00:00:00.000Z",
+    effectiveTo: null,
+    recordedByName: "Jane Administrator",
+    reason: null,
+    effectiveBasis: "entered",
+    lateEntryReason: "Entered the next morning",
+  };
+
+  it("shows an entered time as a time, attributed to whoever entered it", () => {
+    const summary = presenceSinceSummary([ENTERED, BEFORE], "hospital_hold", new Date("2026-09-24T14:00:00.000Z"));
+    expect(summary.sinceLabel).toBe("Since Sep 22, 2026, 8:00 PM");
+    expect(summary.recordedByLabel).toBe("Recorded by Jane Administrator");
+    expect(summary.awayDayLabel).toBe("Day 2 of this hospital stay");
+  });
+
+  it("names the late-entry reason on the history line", () => {
+    expect(presenceHistoryLines([ENTERED])[0].reason).toBe("Entered the next morning");
+  });
+
+  it("keeps an admission-date start as a date", () => {
+    const admitted: ResidentPresenceHistoryEntry = { ...BEFORE, effectiveFrom: "2026-09-01T04:00:00.000Z", effectiveBasis: "admission_date", effectiveTo: null };
+    expect(presenceSinceSummary([admitted], "active").sinceLabel).toBe("Since Sep 1, 2026 (time not recorded)");
+  });
+});

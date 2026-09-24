@@ -163,3 +163,27 @@ describe("elapsed", () => {
     expect(formatElapsedSince("2026-06-10T16:00:00Z", now)).toBe("2 hr 30 min");
   });
 });
+
+describe("COL-750: a back-dated register line says when it was entered", () => {
+  it("names the entry time and reason only for a line staff dated back", async () => {
+    const { formatRegisterEnteredNote } = await import("@/lib/registers/register-display-copy");
+    expect(
+      formatRegisterEnteredNote({
+        eventAt: "2026-09-22T19:10:00Z",
+        recordedAt: "2026-09-23T13:05:00Z",
+        effectiveBasis: "entered",
+        lateEntryReason: null,
+      }),
+    ).toBe("Entered Sep 23, 2026, 9:05 AM");
+    expect(
+      formatRegisterEnteredNote({
+        eventAt: "2026-09-12T19:10:00Z",
+        recordedAt: "2026-09-23T13:05:00Z",
+        effectiveBasis: "entered",
+        lateEntryReason: "Paper log",
+      }),
+    ).toBe("Entered Sep 23, 2026, 9:05 AM: Paper log");
+    expect(formatRegisterEnteredNote({ eventAt: "2026-09-23T13:05:00Z", recordedAt: "2026-09-23T13:05:00Z", effectiveBasis: "save_time" })).toBeNull();
+    expect(formatRegisterEnteredNote({ eventAt: "2026-09-23T13:05:00Z" })).toBeNull();
+  });
+});

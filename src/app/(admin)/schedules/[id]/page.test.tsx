@@ -22,7 +22,7 @@ vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({
     query.single = async () => ({ data: { timezone: "America/New_York" }, error: null });
     query.range = async () => {
       const data = table === "staff" ? [{ id: "staff-1", first_name: "Test", last_name: "Person", employment_status: "active", staff_role: "med_tech" }]
-        : table === "facility_shift_definitions" ? [{ id: "definition-1", label: "Day", roster_shift_type: "day", starts_at_local: "06:00:00", ends_at_local: "18:00:00" }]
+        : table === "facility_shift_definitions" ? [{ id: "definition-1", label: "Day", roster_shift_type: "day", starts_at_local: "06:00:00", ends_at_local: "18:00:00" }, { id: "definition-2", label: "Night", roster_shift_type: "night", starts_at_local: "18:00:00", ends_at_local: "06:00:00" }]
         : state.assignments;
       return { data, count: data.length, error: null };
     };
@@ -106,6 +106,69 @@ describe("weekly schedule editing", () => {
     expect(screen.getByText("1 unsaved cell change.")).toBeInTheDocument();
     expect(screen.getByText("12.0 h")).toBeInTheDocument();
   });
+  it("opens Custom on the third click, cancels without changing Night, and saves overnight times", async () => {
+    render(<SchedulePage />);
+    const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });
+    fireEvent.click(cell);
+    fireEvent.click(cell);
+    expect(cell).toHaveAccessibleName(/Night 6:00p–6:00a/);
+    fireEvent.click(cell);
+    expect(await screen.findByRole("dialog", { name: "Custom shift" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(cell).toHaveAccessibleName(/Night 6:00p–6:00a/);
+    fireEvent.click(cell);
+    fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "22:00" } });
+    fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "22:00" } });
+    expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "04:30" } });
+    expect(screen.getByText(/6.5 scheduled hours. Finishes the next day/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apply times" }));
+    expect(cell).toHaveAccessibleName(/Custom 10:00p–4:30a/);
+    expect(screen.getByText("6.5 h")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save 1 changes" }));
+    await waitFor(() => expect(state.rpc).toHaveBeenCalledWith("schedule_bulk_upsert", {
+      p_schedule_id: "week-1", p_expected_updated_at: "2026-09-23T12:00:00Z",
+      p_cells: [{ staff_id: "staff-1", shift_date: "2026-09-28", shift_definition_id: null, custom_start_time: "22:00", custom_end_time: "04:30" }],
+    }));
+  });
+
+  it("cycles a custom draft cell to Off without leaving a no-op change", async () => {
+    render(<SchedulePage />);
+    const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });
+    fireEvent.click(cell);
+    fireEvent.click(cell);
+    fireEvent.click(cell);
+    fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "09:15" } });
+    fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "16:45" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply times" }));
+    fireEvent.click(cell);
+    expect(cell).toHaveAccessibleName(/Off/);
+    expect(screen.queryByText(/unsaved cell change/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save draft" })).toBeDisabled();
+  });
+
+  it("edits saved custom times and preserves them when cancelled", async () => {
+    state.assignments = [{ id: "assignment-1", staff_id: "staff-1", shift_date: "2026-09-28", shift_type: "custom", shift_definition_id: null, custom_start_time: "09:00:00", custom_end_time: "17:00:00", status: "assigned" }];
+    render(<SchedulePage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
+    expect(await screen.findByLabelText("Start time")).toHaveValue("09:00");
+    expect(screen.getByLabelText("Finish time")).toHaveValue("17:00");
+    fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "18:00" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("8.0 h")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save draft" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply times" }));
+    expect(screen.getByRole("button", { name: "Save draft" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: /Test Person, Mon, Sep 28: Custom/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save 1 changes" }));
+    await waitFor(() => expect(state.rpc).toHaveBeenCalledWith("schedule_bulk_upsert", {
+      p_schedule_id: "week-1", p_expected_updated_at: "2026-09-23T12:00:00Z",
+      p_cells: [{ staff_id: "staff-1", shift_date: "2026-09-28", shift_definition_id: null }],
+    }));
+  });
+
   it("keeps published schedules read only with recorded times", async () => {
     state.schedule.status = "published";
     state.assignments = [{ id: "assignment-1", staff_id: "staff-1", shift_date: "2026-09-28", shift_type: "day", custom_start_time: "06:00:00", custom_end_time: "18:00:00", status: "assigned" }];

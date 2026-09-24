@@ -219,6 +219,10 @@ INSERT INTO admission_document_checklist_items(admission_case_id,organization_id
 INSERT INTO admission_case_rate_terms(admission_case_id,accommodation_type,quoted_base_rate_cents,created_by)
   SELECT admission,'private',10000,(SELECT id FROM bm_actors WHERE role='owner') FROM bm;
 SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WHERE label=''arrival'') WHERE id=(SELECT resident FROM bm)','reserved for admission');
+-- The fixture resident was inserted as discharged just now; a real discharge
+-- predates a readmission, and since COL-750 an arrival dated before the last
+-- recorded change is refused as an overlap.
+UPDATE resident_status_history SET effective_from=now()-interval '30 days' WHERE resident_id=(SELECT inactive FROM bm);
 UPDATE beds SET is_temporarily_blocked=true WHERE id=(SELECT id FROM bm_beds WHERE label='arrival');
 SELECT pg_temp.bm_denied('SELECT confirm_admission_arrival_review(admission,(SELECT id FROM bm_actors WHERE role=''owner''),current_date-1) FROM bm','not available for assignment');
 UPDATE beds SET is_temporarily_blocked=false WHERE id=(SELECT id FROM bm_beds WHERE label='arrival');

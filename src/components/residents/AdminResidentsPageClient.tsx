@@ -56,6 +56,7 @@ import {
   unoccupiedBedsFigure,
 } from "@/lib/residents/resident-roster-summary";
 import { presenceLabel, presenceTone } from "@/lib/residents/presence";
+import { formatRosterStatusSince } from "@/lib/residents/roster-display-copy";
 import {
   averageAcuity,
   formatResidentRosterAcuityCell,
@@ -251,12 +252,19 @@ function SummaryCell({
   );
 }
 
-function ResidentStatusCell({ status }: { status: ResidencyStatus }) {
+function ResidentStatusCell({ status, sinceIso }: { status: ResidencyStatus; sinceIso?: string | null }) {
   // Show every presence state explicitly, including In-house. A Status column
   // full of em-dashes reads as "no data" when in fact everyone is in-house.
   // In-house uses the muted tone so away states (hospital / leave) still draw
   // the eye, but presence is always legible at a glance.
-  return <StatusPill tone={presenceTone(status)}>{presenceLabel(status)}</StatusPill>;
+  // COL-750: an away state says since when it actually began (not when it was saved).
+  const since = status !== "active" && sinceIso ? formatRosterStatusSince(sinceIso) : null;
+  return (
+    <span className="inline-flex flex-col items-start gap-0.5">
+      <StatusPill tone={presenceTone(status)}>{presenceLabel(status)}</StatusPill>
+      {since ? <span className="text-[11px] text-muted-foreground">{since}</span> : null}
+    </span>
+  );
 }
 
 export function AdminResidentsPageClient({
@@ -712,7 +720,7 @@ export function AdminResidentsPageClient({
       </div>
 
       <div role="cell" className="flex-1">
-        <ResidentStatusCell status={resident.status} />
+        <ResidentStatusCell status={resident.status} sinceIso={resident.statusSinceIso} />
       </div>
 
       <div role="cell" className="hidden flex-1 items-center justify-end gap-2 lg:flex">

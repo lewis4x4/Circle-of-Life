@@ -84,6 +84,15 @@ export type ResidentPresenceHistoryEntry = {
   /** Who recorded the change; null when the history row carries no actor. */
   recordedByName: string | null;
   reason: string | null;
+  /**
+   * COL-750: what `effectiveFrom` is — save_time, entered (the time staff said
+   * it happened) or admission_date. Null on rows written before migration 504.
+   */
+  effectiveBasis?: string | null;
+  /** The basis of `effectiveTo`, i.e. of the change that closed this span. */
+  effectiveToBasis?: string | null;
+  /** The reason given when the change was entered late. */
+  lateEntryReason?: string | null;
 };
 
 export type ResidentOverviewDetail = {
@@ -319,6 +328,8 @@ type PresenceHistoryRow = {
   reason: string | null;
   created_by: string | null;
   updated_by: string | null;
+  effective_basis?: string | null;
+  late_entry_reason?: string | null;
 };
 
 type Form1823Row = {
@@ -598,7 +609,7 @@ export async function loadResidentOverviewDetail(
     supabase.from("facilities").select("name").eq("id", facilityId).maybeSingle(),
     supabase
       .from("resident_status_history" as never)
-      .select("id, status, effective_from, effective_to, reason, created_by, updated_by")
+      .select("id, status, effective_from, effective_to, reason, created_by, updated_by, effective_basis, late_entry_reason")
       .eq("resident_id", residentId)
       .is("deleted_at", null)
       .order("effective_from", { ascending: false })
@@ -771,6 +782,7 @@ export async function loadResidentOverviewDetail(
   // The row that opened a span was written by whoever changed the status
   // (`fn_resident_status_history_capture` sets created_by to the actor);
   // updated_by on a closed span is whoever closed it, i.e. the next change.
+  const basisByStart = new Map(presenceRows.map((r) => [r.effective_from, r.effective_basis ?? null]));
   const presenceHistory: ResidentPresenceHistoryEntry[] = presenceRows.map((r) => ({
     id: r.id,
     status: r.status,
@@ -778,6 +790,9 @@ export async function loadResidentOverviewDetail(
     effectiveTo: r.effective_to,
     recordedByName: r.created_by ? (nameById.get(r.created_by) ?? null) : null,
     reason: r.reason?.trim() || null,
+    effectiveBasis: r.effective_basis ?? null,
+    effectiveToBasis: r.effective_to ? (basisByStart.get(r.effective_to) ?? null) : null,
+    lateEntryReason: r.late_entry_reason?.trim() || null,
   }));
 
   const activePlan = carePlanRows[0] ?? null;

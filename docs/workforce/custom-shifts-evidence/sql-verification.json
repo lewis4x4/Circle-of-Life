@@ -1,0 +1,16 @@
+{
+  "migration_count": 506,
+  "migration": "503_workforce_custom_schedule_cells.sql",
+  "baseline": "Custom day and overnight cells were not persisted",
+  "forward": "PASS",
+  "existing_schedule_probe": "PASS",
+  "new_custom_probe": "PASS",
+  "migration_sha256": "0e5093e55b3b8629de33a48f90355e7d4c597932ff0f61a5d59171a4489a37ca",
+  "probe_sha256": "b3d842306fc9374dd7103aa2a6796ae0a202efb3498e075b3b97e14f7b23bc89",
+  "rollback_ddl": "docs/workforce/custom-shifts-rollback.sql",
+  "rollback_sha256": "9ad55632b861d3abbf53777ee296994706e403009508bd44fb365931dbcd01b2",
+  "rollback_apply": "PASS",
+  "rollback_existing_schedule_probe": "PASS",
+  "rollback_restore503": "PASS",
+  "rollback_restored_custom_probe": "PASS"
+}

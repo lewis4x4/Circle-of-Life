@@ -148,3 +148,19 @@ export function formatElapsedSince(iso: string, now: Date = new Date()): string 
   const rest = minutes % 60;
   return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
 }
+
+/**
+ * COL-750: a movement entered after the fact is dated when it happened; the
+ * register also says when it was entered (and why, when it was late), so a
+ * back-dated line is visible as one. Null for a line saved as it happened.
+ */
+export function formatRegisterEnteredNote(row: {
+  eventAt: string;
+  recordedAt?: string | null;
+  effectiveBasis?: string | null;
+  lateEntryReason?: string | null;
+}): string | null {
+  if (row.effectiveBasis !== "entered" || !row.recordedAt) return null;
+  const entered = `Entered ${formatRegisterEventTime(row.recordedAt)}`;
+  return row.lateEntryReason ? `${entered}: ${row.lateEntryReason}` : entered;
+}

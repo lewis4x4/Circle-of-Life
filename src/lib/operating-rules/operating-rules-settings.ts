@@ -3,7 +3,7 @@
  * Pure helpers for the editor, shared by the server loader and its tests.
  */
 import type { OperatingRuleKey } from "./operating-rules";
-import { parseDueWindowDays, parseScoreAlertBelowPct } from "./operating-rules";
+import { parseBackdateWindowDays, parseDueWindowDays, parseScoreAlertBelowPct } from "./operating-rules";
 import { parseRiskScoreBands } from "./risk-bands";
 
 export type OperatingRuleHistoryRow = {
@@ -51,6 +51,11 @@ export const OPERATING_RULE_COPY: Record<OperatingRuleKey, { label: string; desc
     label: "Compliance pass-rate alert",
     description: "Show an alert on the compliance hub when a building's rule pass rate falls below this percentage. Off unless set.",
   },
+  "resident_movement.backdate_window_days": {
+    label: "Resident movement back-dating",
+    description:
+      "How many days back staff may date a discharge, hospital trip, leave or arrival when it is entered late. Older than this needs an owner or org admin and a reason. 0 means only an owner or org admin may back-date.",
+  },
 };
 
 /** Human summary of a rule value, for the current and scheduled lines. */
@@ -71,13 +76,20 @@ export function describeOperatingRuleValue(key: OperatingRuleKey, value: unknown
       if (!rule) return "Not readable";
       return rule.off ? "Off" : `Alert below ${rule.belowPct}%`;
     }
+    case "resident_movement.backdate_window_days": {
+      const days = parseBackdateWindowDays(value);
+      if (days === null) return "Not readable";
+      if (days === 0) return "Owner or org admin only";
+      return days === 1 ? "Up to 1 day back" : `Up to ${days} days back`;
+    }
   }
 }
 
 export type OperatingRuleDraft =
   | { key: "risk.score_bands"; critical: string; high: string; moderate: string }
   | { key: "survey_binder.due_window_days"; days: string }
-  | { key: "compliance.score_alert_below_pct"; off: boolean; belowPct: string };
+  | { key: "compliance.score_alert_below_pct"; off: boolean; belowPct: string }
+  | { key: "resident_movement.backdate_window_days"; days: string };
 
 /**
  * Turns the form into a value the database will accept, or a message saying
@@ -104,6 +116,12 @@ export function operatingRuleValueFromDraft(draft: OperatingRuleDraft): { ok: tr
       return pct !== null && pct >= 1 && pct <= 100
         ? { ok: true, value: pct }
         : { ok: false, error: "Enter a whole percentage from 1 to 100, or switch the alert off." };
+    }
+    case "resident_movement.backdate_window_days": {
+      const days = whole(draft.days);
+      return days !== null && parseBackdateWindowDays(days) !== null
+        ? { ok: true, value: days }
+        : { ok: false, error: "Enter a whole number of days from 0 to 365." };
     }
   }
 }

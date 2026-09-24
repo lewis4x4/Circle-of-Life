@@ -10,6 +10,9 @@ describe("describeOperatingRuleValue", () => {
     expect(describeOperatingRuleValue("survey_binder.due_window_days", 45)).toBe("45 days");
     expect(describeOperatingRuleValue("compliance.score_alert_below_pct", null)).toBe("Off");
     expect(describeOperatingRuleValue("compliance.score_alert_below_pct", 80)).toBe("Alert below 80%");
+    expect(describeOperatingRuleValue("resident_movement.backdate_window_days", 3)).toBe("Up to 3 days back");
+    expect(describeOperatingRuleValue("resident_movement.backdate_window_days", 1)).toBe("Up to 1 day back");
+    expect(describeOperatingRuleValue("resident_movement.backdate_window_days", 0)).toBe("Owner or org admin only");
   });
 
   it("says a value could not be read instead of inventing one", () => {
@@ -44,5 +47,15 @@ describe("operatingRuleValueFromDraft", () => {
       value: 75,
     });
     expect(operatingRuleValueFromDraft({ key: "compliance.score_alert_below_pct", off: false, belowPct: "" }).ok).toBe(false);
+  });
+});
+
+describe("resident movement back-date window (COL-750)", () => {
+  it("allows 0 (owner only) up to 365 whole days", () => {
+    expect(operatingRuleValueFromDraft({ key: "resident_movement.backdate_window_days", days: "0" })).toEqual({ ok: true, value: 0 });
+    expect(operatingRuleValueFromDraft({ key: "resident_movement.backdate_window_days", days: "7" })).toEqual({ ok: true, value: 7 });
+    expect(operatingRuleValueFromDraft({ key: "resident_movement.backdate_window_days", days: "366" }).ok).toBe(false);
+    expect(operatingRuleValueFromDraft({ key: "resident_movement.backdate_window_days", days: "-1" }).ok).toBe(false);
+    expect(operatingRuleValueFromDraft({ key: "resident_movement.backdate_window_days", days: "" }).ok).toBe(false);
   });
 });

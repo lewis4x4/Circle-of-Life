@@ -65,16 +65,20 @@ const easternClockFormatter = new Intl.DateTimeFormat("en-US", {
  * claim the resident arrived at 7 or 8 PM the evening before. A real change is
  * stamped with `now()` and is never on a midnight to the millisecond.
  */
-function dateStampZone(parsed: Date): "UTC" | typeof ZONE | null {
+function dateStampZone(parsed: Date, basis?: string | null): "UTC" | typeof ZONE | null {
+  // COL-750: rows since migration 504 say what they are. A time staff entered
+  // can fall on a midnight (8 PM Eastern is midnight UTC) and is still a time.
+  if (basis === "save_time" || basis === "entered") return null;
+  if (basis === "admission_date") return ZONE;
   if (parsed.getUTCMilliseconds() !== 0) return null;
   if (parsed.getUTCHours() === 0 && parsed.getUTCMinutes() === 0 && parsed.getUTCSeconds() === 0) return "UTC";
   if (easternClockFormatter.format(parsed) === "00:00:00") return ZONE;
   return null;
 }
 
-export function isDateStampedInstant(iso: string): boolean {
+export function isDateStampedInstant(iso: string, basis?: string | null): boolean {
   const parsed = new Date(iso);
-  return !Number.isNaN(parsed.getTime()) && dateStampZone(parsed) != null;
+  return !Number.isNaN(parsed.getTime()) && dateStampZone(parsed, basis) != null;
 }
 
 const easternDayFormatter = new Intl.DateTimeFormat("en-US", {
@@ -84,14 +88,14 @@ const easternDayFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-function stampedDayKey(parsed: Date): string {
-  return dateStampZone(parsed) === "UTC" ? parsed.toISOString().slice(0, 10) : dayKeyFormatter.format(parsed);
+function stampedDayKey(parsed: Date, basis?: string | null): string {
+  return dateStampZone(parsed, basis) === "UTC" ? parsed.toISOString().slice(0, 10) : dayKeyFormatter.format(parsed);
 }
 
-export function formatPresenceInstant(iso: string): string | null {
+export function formatPresenceInstant(iso: string, basis?: string | null): string | null {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return null;
-  const zone = dateStampZone(parsed);
+  const zone = dateStampZone(parsed, basis);
   if (zone === "UTC") return `${utcDayFormatter.format(parsed)} (time not recorded)`;
   if (zone === ZONE) return `${easternDayFormatter.format(parsed)} (time not recorded)`;
   return dateTimeFormatter.format(parsed);
@@ -102,10 +106,10 @@ export function formatPresenceInstant(iso: string): string | null {
  * is day 0. Facility days, not 24-hour periods — a resident sent out at 11 PM
  * is one day into the hold at 1 AM.
  */
-export function facilityDaysSince(iso: string, now: Date = new Date()): number | null {
+export function facilityDaysSince(iso: string, now: Date = new Date(), basis?: string | null): number | null {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return null;
-  const startKey = stampedDayKey(parsed);
+  const startKey = stampedDayKey(parsed, basis);
   const start = Date.parse(`${startKey}T00:00:00Z`);
   const end = Date.parse(`${dayKeyFormatter.format(now)}T00:00:00Z`);
   return Math.max(0, Math.round((end - start) / 86_400_000));
@@ -137,6 +141,7 @@ export function mergePresenceRuns(history: ResidentPresenceHistoryEntry[]): Pres
     const reachesEnd = capped && index === history.length - 1;
     if (last && last.status === entry.status) {
       last.effectiveFrom = entry.effectiveFrom;
+      last.effectiveBasis = entry.effectiveBasis;
       last.recordedByName = entry.recordedByName;
       last.reason = entry.reason ?? last.reason;
       last.startMayBeEarlier = reachesEnd;
@@ -167,7 +172,7 @@ export function currentPresenceSpan(
  * Naming that actor would say they recorded the admission.
  */
 function runAttribution(run: ResidentPresenceHistoryEntry): string {
-  if (isDateStampedInstant(run.effectiveFrom)) return "Opened from the admission date";
+  if (isDateStampedInstant(run.effectiveFrom, run.effectiveBasis)) return "Opened from the admission date";
   return run.recordedByName ? `Recorded by ${run.recordedByName}` : "Recorded by: not attributed";
 }
 
@@ -189,8 +194,8 @@ export function presenceSinceSummary(
   if (!span) {
     return { sinceLabel: "Since not recorded", recordedByLabel: null, awayDayLabel: null };
   }
-  const at = formatPresenceInstant(span.effectiveFrom);
-  const days = facilityDaysSince(span.effectiveFrom, now);
+  const at = formatPresenceInstant(span.effectiveFrom, span.effectiveBasis);
+  const days = facilityDaysSince(span.effectiveFrom, now, span.effectiveBasis);
   let awayDayLabel: string | null = null;
   if (days != null && (span.status === "hospital_hold" || span.status === "loa")) {
     const noun = span.status === "hospital_hold" ? "hospital stay" : "leave";
@@ -215,14 +220,14 @@ export type PresenceHistoryLine = {
 
 export function presenceHistoryLines(history: ResidentPresenceHistoryEntry[]): PresenceHistoryLine[] {
   return mergePresenceRuns(history).map((entry) => {
-    const from = `${entry.startMayBeEarlier ? "at least " : ""}${formatPresenceInstant(entry.effectiveFrom) ?? "Start not recorded"}`;
-    const to = entry.effectiveTo == null ? "now" : (formatPresenceInstant(entry.effectiveTo) ?? "end not recorded");
+    const from = `${entry.startMayBeEarlier ? "at least " : ""}${formatPresenceInstant(entry.effectiveFrom, entry.effectiveBasis) ?? "Start not recorded"}`;
+    const to = entry.effectiveTo == null ? "now" : (formatPresenceInstant(entry.effectiveTo, entry.effectiveToBasis) ?? "end not recorded");
     return {
       id: entry.id,
       statusLabel: presenceStatusLabel(entry.status),
       spanLabel: `${from} → ${to}`,
       recordedByLabel: runAttribution(entry),
-      reason: entry.reason,
+      reason: entry.reason ?? entry.lateEntryReason ?? null,
       current: entry.effectiveTo == null,
     };
   });
