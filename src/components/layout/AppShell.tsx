@@ -90,7 +90,6 @@ import {
 import { isStaffLaunchHiddenKey } from "@/lib/navigation/staff-launch-hidden";
 import { shouldSuppressSurveyVisitChrome } from "@/lib/navigation/survey-visit-chrome-scope";
 import { cn } from "@/lib/utils";
-import { WorkforceContext } from "@/components/workforce/WorkforceContext";
 
 /** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
 const WORKSPACE_WELL =
@@ -140,6 +139,14 @@ const SurveyVisitWorkspaceDock = dynamic(
       default: m.SurveyVisitWorkspaceDock,
     })),
   { ssr: false, loading: () => null },
+);
+
+// Keep Workforce data and workflow chrome out of other pillars' initial bundles.
+// Retain SSR and mount the provider only for the existing Workforce route scope.
+const WorkforceContext = dynamic(() =>
+  import("@/components/workforce/WorkforceContext").then((m) => ({
+    default: m.WorkforceContext,
+  })),
 );
 
 export function AppShell({ children }: { children: React.ReactNode }) {
