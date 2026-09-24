@@ -58,7 +58,8 @@ export default function PoliciesListPage() {
         return;
       }
       setKbError(null);
-      setKbDocs(knowledgeBasePolicyDocuments((data ?? []) as KnowledgeBaseDocumentSummary[]));
+      // doc_type exists on hosted documents but is missing from the generated types.
+      setKbDocs(knowledgeBasePolicyDocuments((data ?? []) as unknown as KnowledgeBaseDocumentSummary[]));
     })();
     return () => {
       cancelled = true;
