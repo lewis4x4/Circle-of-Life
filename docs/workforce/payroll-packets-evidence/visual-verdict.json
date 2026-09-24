@@ -1,0 +1,15 @@
+{
+  "score": 94,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "Payroll uses grouped review cards instead of the reference spreadsheet grid; the print document retains its category columns.",
+    "Mobile stacks controls into a longer vertical review."
+  ],
+  "suggestions": [],
+  "reasoning": "Uses Haven typography, neutral panels and blue actions; distinct hours and dollars, draft status and approval are readable. Desktop and mobile controls fit without clipping; automated accessibility found no violations.",
+  "threshold": 90,
+  "next_actions": [
+    "Complete staging and production release verification."
+  ]
+}

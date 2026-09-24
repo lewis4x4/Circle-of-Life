@@ -1,0 +1,10 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import "../../src/app/globals.css";
+import PacketHub from "../../src/components/payroll-packets/PacketHub";
+import PacketDetail from "../../src/components/payroll-packets/PacketDetail";
+import { useFacilityStore } from "../../src/hooks/useFacilityStore";
+const facilityId = "11111111-1111-4111-8111-111111111111";
+useFacilityStore.setState({ selectedFacilityId: facilityId, availableFacilities: [{ id: facilityId, name: "Synthetic test building" }] });
+const packetId = window.location.pathname.match(/\/packets\/([^/]+)$/)?.[1];
+createRoot(document.getElementById("root")!).render(<div className="min-h-screen bg-background text-foreground"><header className="flex flex-wrap items-center gap-5 border-b px-6 py-4"><strong>Haven</strong><span>Synthetic test building</span><strong>Workforce</strong><span className="ml-auto text-xs text-muted-foreground">Synthetic component verification</span></header><main className="mx-auto max-w-7xl p-5 lg:p-7">{packetId ? <PacketDetail id={packetId}/> : <PacketHub/>}</main></div>);

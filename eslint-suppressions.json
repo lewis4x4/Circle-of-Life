@@ -582,11 +582,6 @@
       "count": 3
     }
   },
-  "src/app/(admin)/payroll/page.tsx": {
-    "haven-ui/no-mono-prose": {
-      "count": 3
-    }
-  },
   "src/app/(admin)/reports/admin/page.tsx": {
     "haven-ui/no-mono-prose": {
       "count": 12
