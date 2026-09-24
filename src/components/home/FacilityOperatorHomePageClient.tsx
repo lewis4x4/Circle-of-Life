@@ -60,6 +60,11 @@ const MedicaidRechecksHomeCard = dynamic(
   { ssr: false },
 );
 
+const MedicaidSweepHomeCard = dynamic(
+  () => import("@/components/benefits/MedicaidSweep").then((module) => module.MedicaidSweepHomeCard),
+  { ssr: false },
+);
+
 // Payment dialog and past-due strip ship dark and only mount when released; keep
 // them out of the /admin first-load so the 450 kB gzip hard cap stays intact.
 const PastDueStrip = dynamic(
@@ -413,6 +418,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           />
           <FacilityRoundingCard facilityId={facilityId} facilityName={feed.facilityName} timeZone={feed.timezone} rounding={data.rounding} />
           {!readOnly ? <MedicaidRechecksHomeCard facilityId={facilityId} /> : null}
+          {!readOnly ? <MedicaidSweepHomeCard facilityId={facilityId} /> : null}
           {notesLive && !readOnly ? <NotesPanel facilityId={facilityId} currentUserId={currentUserId} onTap={data.notesOnTap} onChanged={refresh} /> : null}
         </div>
       </div>

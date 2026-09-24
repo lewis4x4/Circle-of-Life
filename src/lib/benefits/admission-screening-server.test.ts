@@ -84,3 +84,15 @@ describe("recheck API", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("benefits_recheck_complete", { p_recheck_id: screeningId, p_outcome: "no_change", p_note: null, p_request_id: requestId });
   });
 });
+
+describe("sweep API", () => {
+  it("starts a sweep only with a facility and passes the request identity", async () => {
+    const { startBenefitsSweep, getBenefitsSweep } = await import("./server");
+    expect((await startBenefitsSweep(post({ request_id: requestId }))).status).toBe(400);
+    mocks.rpc.mockResolvedValue({ data: { sweep_id: caseId, facility_id: facilityId, started_at: "2026-09-24T18:00:00Z", already_started: false }, error: null });
+    expect((await startBenefitsSweep(post({ request_id: requestId, facility_id: facilityId }))).status).toBe(201);
+    expect(mocks.rpc).toHaveBeenCalledWith("benefits_sweep_start", { p_facility_id: facilityId, p_note: null, p_request_id: requestId });
+    mocks.rpc.mockResolvedValue({ data: { can_start: true, facilities: [{ facility_id: caseId, facility_name: "x", started_at: null, started_by_name: null, can_write: true, total: 1, answered: 0, remaining: [] }] }, error: null });
+    expect((await getBenefitsSweep(new Request(`http://localhost/api/admin/benefits/sweep?facility_id=${facilityId}`))).status).toBe(503);
+  });
+});
