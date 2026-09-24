@@ -168,7 +168,7 @@ describe("FacilityOperatorHomePageClient", () => {
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 
-  it("raises a banner while an inspector is signed in at this facility (COL-692)", () => {
+  it("raises a banner while an inspector is signed in at this facility (COL-692)", async () => {
     const { unmount } = render(
       <FacilityOperatorHomePageClient initial={initial()} initialFacilityId={FACILITY} currentUserId="me" fullName={null} />,
     );
@@ -182,7 +182,7 @@ describe("FacilityOperatorHomePageClient", () => {
         fullName={null}
       />,
     );
-    const banner = screen.getByTestId("inspector-on-site");
+    const banner = await screen.findByTestId("inspector-on-site");
     expect(banner).toHaveTextContent("An inspector from AHCA signed in at the front door at 10:12 AM.");
     expect(within(banner).getByRole("link", { name: "Open the visitor log" })).toHaveAttribute("href", "/admin/front-desk");
   });

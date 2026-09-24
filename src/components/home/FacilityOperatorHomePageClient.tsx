@@ -28,7 +28,6 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 import { GlanceStrip } from "./GlanceStrip";
-import { InspectorOnSiteBanner } from "./InspectorOnSiteBanner";
 import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
@@ -75,6 +74,11 @@ const QuickNoteDialog = dynamic(
 const ContactLogDialog = dynamic(
   () => import("./ContactLogDialog").then((module) => module.ContactLogDialog),
   { ssr: false },
+);
+// Shown only while an inspector is signed in (COL-692); most days it never
+// mounts, so it stays out of the /admin first load (450 kB gzip hard cap).
+const InspectorOnSiteBanner = dynamic(
+  () => import("./InspectorOnSiteBanner").then((module) => module.InspectorOnSiteBanner),
 );
 // W4 (call-out) ships dark too.
 const CallOutDialog = dynamic(
@@ -229,7 +233,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
         ) : null}
       </header>
 
-      <InspectorOnSiteBanner inspections={data.openInspections} timeZone={feed.timezone} />
+      {data.openInspections.length > 0 ? <InspectorOnSiteBanner inspections={data.openInspections} timeZone={feed.timezone} /> : null}
 
       {readOnly ? (
         <p role="note" className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground" data-testid="home-preview-note">
