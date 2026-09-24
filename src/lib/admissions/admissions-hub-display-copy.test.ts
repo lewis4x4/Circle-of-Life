@@ -9,7 +9,6 @@ import {
   admissionsHubScopedEmptyNotice,
   admissionsHubScopeLabel,
   formatAdmissionsHubConferenceScheduledDate,
-  formatAdmissionsHubMedicaidStage,
   formatAdmissionsHubReferralSource,
   formatAdmissionsHubRelativeDate,
   formatAdmissionsHubResidentName,
@@ -68,12 +67,6 @@ describe("formatAdmissionsHubConferenceScheduledDate", () => {
 
   it("formats a valid scheduled start", () => {
     expect(formatAdmissionsHubConferenceScheduledDate("2026-08-24T15:00:00.000Z")).toMatch(/Aug/);
-  });
-});
-
-describe("formatAdmissionsHubMedicaidStage", () => {
-  it("names an unset stage", () => {
-    expect(formatAdmissionsHubMedicaidStage(null)).toBe("Not set");
   });
 });
 
