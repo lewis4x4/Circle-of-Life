@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useHavenAuth } from '@/contexts/haven-auth-context';
+import { canOpenExecutiveStandup } from '@/lib/auth/executive-nav-access';
 import { selectionBelongsToPeriod, useFacilityStore } from '@/hooks/useFacilityStore';
 import { useRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { dateLabel, entryOpensStamp, entryWindowLine, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
 import { rosterSourceSuffix } from '@/lib/stand-up/roster-census';
 import { StandUpEditor } from './editor';
+import { StandUpViewsNav } from './StandUpViewsNav';
 import { EntryWindowSettings } from './entry-window-settings';
 import { HistoricalImports } from './imports';
 import { StandUpRequestError, standUpRequest } from './transport';
@@ -17,10 +19,10 @@ export function StandUpWorkspace() {
   const auth = useHavenAuth();
   if (auth.loading) return <p role="status" className="p-6">Checking your Haven access…</p>;
   if (!auth.user || !auth.organizationId) return <p role="alert" className="p-6">Sign in to your Haven organization to open Stand Up.</p>;
-  return <StandUpSession key={`${auth.organizationId}:${auth.user.id}:${auth.appRole}`} userId={auth.user.id} />;
+  return <StandUpSession key={`${auth.organizationId}:${auth.user.id}:${auth.appRole}`} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} />;
 }
 
-function StandUpSession({ userId }: { userId: string }) {
+function StandUpSession({ userId, canOpenRollUp }: { userId: string; canOpenRollUp: boolean }) {
   const routePending = useRouteTransitionPending();
   const selectedId = useFacilityStore(state => state.selectedFacilityId);
   const setSelectedFacility = useFacilityStore(state => state.setSelectedFacility);
@@ -105,6 +107,7 @@ function StandUpSession({ userId }: { userId: string }) {
   const googleLastChecked = google?.last_checked_at ? Date.parse(google.last_checked_at) : Number.NaN;
   const googleDelayed = google?.state === 'connected' && (!Number.isFinite(googleLastChecked) || now.getTime() - googleLastChecked > 5 * 60_000);
   return <div className="mx-auto max-w-6xl space-y-6 p-4 pb-12 md:p-6">
+    {canOpenRollUp && <StandUpViewsNav current="/admin/stand-up" />}
     <header className="flex flex-wrap items-start justify-between gap-4">
       {/* Tier 1: when this report opens, when it is due, when the call is. The
           open is the chosen facility's own, so a widened ALF reads its own. */}

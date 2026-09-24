@@ -163,10 +163,10 @@ export default function CeoDashboardPageClient({
       href: "/admin/executive/benchmarks",
     },
     {
-      stat: "Board packets",
+      stat: "Reports",
       title: "Reports",
-      description: "Executive KPI exports and board-packet archive.",
-      href: "/admin/executive/reports",
+      description: "Report templates, saved views, schedules and packs.",
+      href: "/admin/reports",
     },
   ];
 

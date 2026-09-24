@@ -69,7 +69,7 @@ export default function AdminFinanceHubPageClient({
           {[
             { title: "Executive alerts", description: "Return to the leadership exception queue after checking the ledger context.", href: "/admin/executive/alerts" },
             { title: "Insurance & risk", description: "Open policies and claims when a finance issue has risk or reserve implications.", href: "/admin/insurance" },
-            { title: "Executive reports", description: `Move into saved executive reporting without leaving the ${roleLabel.toLowerCase()} decision lane.`, href: "/admin/executive/reports" },
+            { title: "Reports", description: "Report templates, saved views, schedules and packs.", href: "/admin/reports" },
           ].map((item) => (
             <Link
               key={item.title}

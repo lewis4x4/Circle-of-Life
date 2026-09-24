@@ -350,14 +350,14 @@ export function PortfolioComparisonTable({
           <Activity className="size-4 text-info" aria-hidden /> Portfolio comparison
         </h2>
         <Link
-          href="/admin/executive/reports"
+          href="/admin/reports"
           className={cn(
             "inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-[12px] font-medium",
             "text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
         >
-          Open executive reports <ArrowRight className="size-3" aria-hidden />
+          Open reports <ArrowRight className="size-3" aria-hidden />
         </Link>
       </div>
 

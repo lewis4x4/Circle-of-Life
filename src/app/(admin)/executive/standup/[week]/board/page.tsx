@@ -16,7 +16,6 @@ import { downloadTextFile } from "@/lib/onboarding/download";
 import {
   buildStandupBoardPrintHtml,
   fetchPreviousPublishedStandupSnapshotDetail,
-  saveStandupBoardReport,
   fetchStandupSnapshotDetail,
   type StandupSnapshotDetail,
 } from "@/lib/executive/standup";
@@ -39,7 +38,6 @@ export default function ExecutiveStandupBoardPage() {
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [savingBoardReport, setSavingBoardReport] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const week = typeof params?.week === "string" ? params.week : "";
@@ -110,30 +108,6 @@ export default function ExecutiveStandupBoardPage() {
     downloadTextFile(`executive-standup-${detail.snapshot.weekOf}.html`, html, "text/html;charset=utf-8");
   }
 
-  async function onSaveBoardReport() {
-    if (!detail || !organizationId || !user?.id) {
-      setActionError("Sign in required.");
-      return;
-    }
-    setSavingBoardReport(true);
-    setActionError(null);
-    try {
-      await saveStandupBoardReport(supabase, {
-        organizationId,
-        userId: user.id,
-        weekOf: detail.snapshot.weekOf,
-        status: detail.snapshot.status,
-        confidenceBand: detail.snapshot.confidenceBand,
-        version: detail.snapshot.publishedVersion,
-        publishedAt: detail.snapshot.publishedAt,
-        completenessPct: detail.snapshot.completenessPct,
-      });
-    } catch (saveError) {
-      setActionError(saveError instanceof Error ? saveError.message : "Could not save board packet report.");
-    } finally {
-      setSavingBoardReport(false);
-    }
-  }
 
   async function onDownloadPdf() {
     if (!detail) return;
@@ -174,9 +148,6 @@ export default function ExecutiveStandupBoardPage() {
                 </Button>
                 <Button type="button" variant="outline" onClick={onExportBoardPacket} disabled={exportDisabled} title={noPacketReason ?? undefined}>
                   Export HTML packet
-                </Button>
-                <Button type="button" variant="outline" onClick={() => void onSaveBoardReport()} disabled={exportDisabled || savingBoardReport} title={noPacketReason ?? undefined}>
-                  {savingBoardReport ? "Saving…" : "Save in executive reports"}
                 </Button>
                 {noPacketReason ? <p className="w-full text-xs text-muted-foreground">{noPacketReason}</p> : null}
               </div>
