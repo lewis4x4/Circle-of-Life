@@ -233,7 +233,7 @@ function OverrideForm({ screening, onSaved }: { screening: AdmissionScreeningRow
 }
 
 /** Admission and resident view: latest result, history, new answers, reviewer override. */
-export function AdmissionMedicaidScreening({ residentId, admissionCaseId }: { residentId: string; admissionCaseId?: string | null }) {
+export function AdmissionMedicaidScreening({ residentId, admissionCaseId, onSaved }: { residentId: string; admissionCaseId?: string | null; onSaved?: () => Promise<void> | void }) {
   const [data, setData] = useState<AdmissionScreeningList | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [draft, setDraft] = useState<MedicaidQuestionsDraft>(emptyMedicaidDraft);
@@ -266,6 +266,7 @@ export function AdmissionMedicaidScreening({ residentId, admissionCaseId }: { re
       setDraft(emptyMedicaidDraft());
       setEditing(false);
       await load();
+      await onSaved?.();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to save the answers. Your answers are still here.");
     } finally { setBusy(false); }
