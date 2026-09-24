@@ -7,6 +7,7 @@ import { loadFacilityTimeclockEnabled, loadOrganizationPayPeriod, loadTimeclockP
 import { assessEmployeeFile, type EmployeeRequirement, type EmployeeFileRecord, type EmployeeSummary } from "@/lib/staff/employee-file";
 import { assignmentSpan, attendanceState, type WorkforceAssignment, type WorkforcePerson, type WorkforceSnapshot } from "./model";
 import type { Database } from "@/types/database";
+import { enumLabel } from "@/lib/display/enum-label";
 
 async function allRows<T>(query: (from: number, to: number) => PromiseLike<{ data: unknown; count: number | null; error: { message: string } | null }>): Promise<T[]> {
   const { data } = await readAllPages<T>(async (from, to) => {
@@ -71,7 +72,7 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
       return date && date <= dueThrough ? [{ title: a.requirement.title, date }] : [];
     });
     return {
-      id: s.id, name: "first_name" in s ? `${s.first_name} ${s.last_name}` : s.name, role: "staff_role" in s ? s.staff_role.replaceAll("_", " ") : "Visiting staff", status: clock.state, since: clock.since?.toISOString() ?? null,
+      id: s.id, name: "first_name" in s ? `${s.first_name} ${s.last_name}` : s.name, role: "staff_role" in s ? enumLabel(s.staff_role) : "Visiting staff", status: clock.state, since: clock.since?.toISOString() ?? null,
       currentShift: current?.span?.label ?? (unknownToday ? "Shift times not configured" : null),
       nextShift: unknownNext && (!next || unknownNext.shift_date <= next.assignment.shift_date) ? `${unknownNext.shift_date} · Shift times not configured` : next ? `${next.assignment.shift_date} · ${next.span!.label}` : null,
       scheduleId: current?.assignment.schedule_id ?? unknownToday?.schedule_id ?? next?.assignment.schedule_id ?? unknownNext?.schedule_id ?? null,
