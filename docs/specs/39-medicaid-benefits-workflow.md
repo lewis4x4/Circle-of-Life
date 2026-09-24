@@ -99,7 +99,7 @@ The shipped case workspace is a sound evidence file, but it is not how Circle of
    - D. Do you have a burial contract?
    - E. Do you have any assets (IRAs, CDs, stocks, bonds)?
    - F. Do you have a power of attorney?
-2. **A yes to A or B = does not qualify now.** A yes to C, D or F never disqualifies; each becomes a document to gather. E (assets) is gathered as evidence and feeds the private-pay runway; whether a balance above the asset limit stops the case or starts a spend-down plan is an open owner decision (see *Decisions* below).
+2. **A yes to A or B = does not qualify now.** A yes to C, D or F never disqualifies; each becomes a document to gather. E (assets) with a countable balance above the asset limit ($2,000, stored in the gate rule) also means does not qualify now (Brian, 2026-09-24, COL-759); a balance at or under the limit is gathered as evidence.
 3. **Holding Medicaid is not the same as long-term-care Medicaid.** A resident with a regular Medicaid ("gold card") or MMA-only coverage is still a candidate to apply for. Intake records current coverage separately: none / Medicaid (gold card, MMA only) / SMMC-LTC enrolled (plan) / application already pending.
 4. **Quarterly recheck, only for A/B = yes.** Every 90 days the facility administrator is alerted to re-ask the resident. If nothing changed, one confirmation schedules the next check. If an answer changed, the administrator re-enters the six answers and supplies the updated documents in the same form, and the resident moves to Jessica's queue as a candidate.
 5. **Only a CARES/DOEA score of 5 moves forward.** The agency does not explain scores below 5; Haven records the number only and never interprets it. Below 5: the case waits and Haven prompts Jessica to reapply 30 days later. (Replaces "five or higher" in the 2026-09-22 ruling above — 5 is the maximum, so the effect is the same; wording aligned.)
@@ -145,9 +145,9 @@ The row is not finished at approval. It ends when the billing ledger shows the f
 
 **Document freshness.** Each requirement type carries a *good for* period in operating rules (for example bank statements); an accepted document past its period becomes *expiring* and the gathering task returns to the administrator, or to a linked family member through the existing family collection, before the submission that needs it. Periods are set by Jessica, not assumed.
 
-**Coverage continuity.** Jessica's designated backup is recorded in operating rules; the board, queue and alerts go to both. Launch is not accepted until a backup is named (open question already listed above).
+**Coverage continuity.** Michelle Norris is Jessica's designated backup (Brian, 2026-09-24, COL-760), recorded in operating rules; the board, queue and alerts go to both.
 
-**Over-income prompt (pending decision).** If the owner decides to pursue over-income residents through a Qualified Income Trust, B = yes stays *does not qualify now* but shows Jessica a one-line prompt to consider a trust; a *changed* recheck where A went from yes to no shows a look-back reminder (property transferred). Neither prompt decides anything.
+**Over-income prompt (Brian, 2026-09-24, COL-758: on).** B = yes stays *does not qualify now* and shows Jessica a one-line prompt to consider a Qualified Income Trust; a *changed* recheck where A went from yes to no shows a look-back reminder (property transferred). Neither prompt decides anything.
 
 **Caseworker and contacts.** The case carries the DCF caseworker (name and phone) as a field, chosen from an organization contacts list seeded from the log's Contacts tab (Elder Options, Elder Affairs, DCF caseworkers). No messages are sent from Haven.
 
@@ -195,9 +195,7 @@ A one-time, reviewed import of the Medicaid Log's five current facility tabs (Pl
 
 ### Decisions
 
-- Brian: pursue over-income residents through a Qualified Income Trust, or keep B = yes as a stop?
-- Brian: does an asset balance over the limit (E) stop the case, or start a spend-down plan with a runway date? Reconciles with COL-575's "no disqualifying savings".
-- Brian: Jessica's designated backup.
+- Resolved 2026-09-24 (Brian): trust prompt on (COL-758); assets over the limit stop the case (COL-759); backup Michelle Norris (COL-760).
 - Jessica: the items below, plus document *good for* periods and plan rates.
 
 ### Open (Jessica)
