@@ -57,7 +57,7 @@ describe("navigation anchoring (COL-655)", () => {
   it("anchors Finance, Insurance, Cash and Letters to their own Business items across their trees", () => {
     expect(resolveNavAnchor("/admin/finance/journal-entries/sample-id")?.item.key).toBe("finance");
     expect(resolveNavAnchor("/admin/insurance/coi")?.item.key).toBe("insurance");
-    expect(resolveNavAnchor("/admin/cash")?.item.key).toBe("cash");
+    expect(resolveNavAnchor("/admin/finance/trust")?.item.key).toBe("cash");
     expect(resolveNavAnchor("/admin/letters/generate")?.item.key).toBe("letters");
     for (const key of ["finance", "insurance", "cash", "letters"]) {
       expect(PILLARS.find((pillar) => pillar.id === "finance")?.items.map((item) => item.key)).toContain(key);
