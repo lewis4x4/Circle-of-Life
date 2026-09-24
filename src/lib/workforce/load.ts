@@ -86,5 +86,5 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
   const nextSchedules = schedules.filter((s) => s.week_start_date === nextWeekStart);
-  return { facilityId: facility.id, facilityName: facility.name, generatedAt: now.toISOString(), timeclockEnabled: enabled, weekStart, weekEnd: addFacilityCalendarDays(thisWeek, -1), nextWeekStart, scheduleStatus: nextSchedules.length === 0 ? "Not started" : nextSchedules.every((s) => s.status === "published") ? "Published" : "Draft", people, payrollStatus: "ADP setup pending", payrollRulesConfigured: !!settings?.timeclock_pay_period };
+  return { facilityId: facility.id, facilityName: facility.name, generatedAt: now.toISOString(), timeclockEnabled: enabled, weekStart, weekEnd: addFacilityCalendarDays(thisWeek, -1), nextWeekStart, scheduleStatus: nextSchedules.length === 0 ? "Not started" : nextSchedules.every((s) => s.status === "published") ? "Published" : "Draft", people, payrollStatus: "Prepare payroll packet", payrollRulesConfigured: !!settings?.timeclock_pay_period };
 }

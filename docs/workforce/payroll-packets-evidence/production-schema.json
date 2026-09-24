@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-09-24T18:08:45.012Z",
+  "project": "manfqmasfqppukpobpld",
+  "migration": [
+    {
+      "name": "payroll_packets",
+      "version": "20260924180843",
+      "source_hash": "e012ab447d123a90b32a60d868707de8434a5fae1c447039cebd50d3b663b7f7"
+    }
+  ],
+  "parity": "13 function definitions and ACLs, 12 triggers and 4 RLS tables exactly match staged source",
+  "ledger": "PASS every branch migration applied; unrelated preexisting 506 and home_census_confirmation rows retained",
+  "production_payroll_mutations": false,
+  "row_counts": {
+    "packet_count": 0,
+    "policy_count": 0,
+    "event_count": 0
+  },
+  "rollback": "Disable packet writers while retaining evidence; docs/workforce/payroll-packets-rollback.sql",
+  "app_release": "Pending CI and merge"
+}
