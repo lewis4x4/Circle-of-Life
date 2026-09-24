@@ -16,15 +16,12 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  // Temporary (COL-797, migration 512): 506-511 are held by other pull requests
-  // this branch does not carry. Each entry prints a cleanup notice once its file
-  // is present; delete the entry then.
-  506: "claimed by open PR #878 (referral contact log); temporary until it merges",
-  507: "claimed by open PR #879 (benefits admission screening); temporary until it merges",
-  508: "claimed by open PR #881 (benefits recheck workflow); temporary until it merges",
-  509: "claimed by open PR #883 (staff duplicate roster cleanup); temporary until it merges",
-  510: "claimed by open PR #876 (workforce multi-facility people); temporary until it merges",
-  511: "claimed by open PR #886 (benefits current-resident sweep); temporary until it merges",
+  // Temporary gaps after merging main (COL-795 / PR #887 holds 514).
+  // Delete each entry when its PR merges and the file lands on main.
+  509: "claimed by open PR #883 (COL-793 staff duplicate roster cleanup, 509_staff_duplicate_roster_cleanup.sql)",
+  510: "claimed by open PR #876 (Workforce people across all facilities, 510_workforce_multi_facility_people.sql)",
+  511: "claimed by open PR #886 (COL-765 current-resident Medicaid sweep, 511_benefits_current_resident_sweep.sql)",
+  513: "claimed by open PR #888 (Workforce shift options, 513_facility_schedule_presets.sql)",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;

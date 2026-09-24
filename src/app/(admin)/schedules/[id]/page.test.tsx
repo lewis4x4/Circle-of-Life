@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const state = vi.hoisted(() => ({
   role: "facility_admin",
+  staffRole: "med_tech",
   schedule: { id: "week-1", facility_id: "facility-1", organization_id: "org-1", week_start_date: "2026-09-28", status: "draft", updated_at: "2026-09-23T12:00:00Z", published_at: null, notes: null },
   assignments: [] as Record<string, unknown>[],
   rpc: vi.fn(),
@@ -21,7 +22,7 @@ vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({
     query.maybeSingle = async () => ({ data: state.schedule, error: null });
     query.single = async () => ({ data: { timezone: "America/New_York" }, error: null });
     query.range = async () => {
-      const data = table === "staff" ? [{ id: "staff-1", first_name: "Test", last_name: "Person", employment_status: "active", staff_role: "med_tech" }]
+      const data = table === "staff" ? [{ id: "staff-1", first_name: "Test", last_name: "Person", employment_status: "active", staff_role: state.staffRole }]
         : table === "facility_shift_definitions" ? [{ id: "definition-1", label: "Day", roster_shift_type: "day", starts_at_local: "06:00:00", ends_at_local: "18:00:00" }, { id: "definition-2", label: "Night", roster_shift_type: "night", starts_at_local: "18:00:00", ends_at_local: "06:00:00" }]
         : state.assignments;
       return { data, count: data.length, error: null };
@@ -36,6 +37,7 @@ import { allowRouteLeave } from "@/components/layout/navigation-pending";
 beforeEach(() => {
   state.refresh.mockClear();
   state.role = "facility_admin";
+  state.staffRole = "med_tech";
   state.schedule.status = "draft";
   state.assignments = [];
   state.rpc.mockReset().mockResolvedValue({ data: "week-1", error: null });
@@ -167,6 +169,68 @@ describe("weekly schedule editing", () => {
       p_schedule_id: "week-1", p_expected_updated_at: "2026-09-23T12:00:00Z",
       p_cells: [{ staff_id: "staff-1", shift_date: "2026-09-28", shift_definition_id: null }],
     }));
+  });
+
+  it("schedules a cook's split with one click after the facility shifts", async () => {
+    state.staffRole = "cook";
+    render(<SchedulePage />);
+    expect(await screen.findByText(/Night → Cook split \(cooks, 6:00a–1:00p \+ 4:00p–6:00p\) → Custom → Off/)).toBeInTheDocument();
+    const cell = screen.getByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });
+    fireEvent.click(cell);
+    fireEvent.click(cell);
+    fireEvent.click(cell);
+    expect(cell).toHaveAccessibleName(/Cook split 6:00a–1:00p and 4:00p–6:00p \(Cook color\), unsaved/);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("9.0 h")).toBeInTheDocument();
+    expect(cell).toHaveAttribute("data-schedule-tone", "cook");
+    fireEvent.click(screen.getByRole("button", { name: "Save 1 changes" }));
+    await waitFor(() => expect(state.rpc).toHaveBeenCalledWith("schedule_bulk_upsert", {
+      p_schedule_id: "week-1", p_expected_updated_at: "2026-09-23T12:00:00Z",
+      p_cells: [{ staff_id: "staff-1", shift_date: "2026-09-28", shift_definition_id: null, custom_blocks: [{ start_time: "06:00", end_time: "13:00" }, { start_time: "16:00", end_time: "18:00" }] }],
+    }));
+  });
+
+  it("does not add the cook split step for other staff", async () => {
+    render(<SchedulePage />);
+    expect(await screen.findByText(/Night → Custom → Off/)).toBeInTheDocument();
+  });
+
+  it("reopens a saved cook split as one editable cell and cycles it on to Custom", async () => {
+    state.staffRole = "cook";
+    state.assignments = [
+      { id: "assignment-2", staff_id: "staff-1", shift_date: "2026-09-28", shift_type: "custom", shift_definition_id: null, custom_start_time: "16:00:00", custom_end_time: "18:00:00", status: "assigned" },
+      { id: "assignment-1", staff_id: "staff-1", shift_date: "2026-09-28", shift_type: "custom", shift_definition_id: null, custom_start_time: "06:00:00", custom_end_time: "13:00:00", status: "assigned" },
+    ];
+    render(<SchedulePage />);
+    const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Cook split 6:00a–1:00p and 4:00p–6:00p \(Cook color\)\. Cycle shift\./ });
+    expect(cell).toBeEnabled();
+    expect(screen.getByText("9.0 h")).toBeInTheDocument();
+    fireEvent.click(cell);
+    expect(await screen.findByRole("dialog", { name: "Custom shift" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("button", { name: "Save draft" })).toBeDisabled();
+  });
+
+  it("colors cells by the shared key: pink day, blue night, black administrators", async () => {
+    render(<SchedulePage />);
+    const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });
+    expect(cell).not.toHaveAttribute("data-schedule-tone");
+    fireEvent.click(cell);
+    expect(cell).toHaveAttribute("data-schedule-tone", "day");
+    expect(cell).toHaveStyle({ backgroundColor: "#F9A8D4", color: "#111111" });
+    fireEvent.click(cell);
+    expect(cell).toHaveAttribute("data-schedule-tone", "night");
+    expect(cell).toHaveStyle({ backgroundColor: "#93C5FD" });
+    expect(screen.getByRole("list", { name: "Schedule color key" })).toHaveTextContent("DayNightCookAdministrator / Manager");
+  });
+
+  it("colors administrators black on any shift", async () => {
+    state.staffRole = "administrator";
+    state.assignments = [{ id: "assignment-1", staff_id: "staff-1", shift_date: "2026-09-28", shift_type: "day", custom_start_time: "06:00:00", custom_end_time: "18:00:00", status: "assigned" }];
+    render(<SchedulePage />);
+    const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Day 6:00a–6:00p \(Administrator \/ Manager color\)/ });
+    expect(cell).toHaveAttribute("data-schedule-tone", "admin");
+    expect(cell).toHaveStyle({ backgroundColor: "#000000", color: "#FFFFFF" });
   });
 
   it("keeps published schedules read only with recorded times", async () => {
