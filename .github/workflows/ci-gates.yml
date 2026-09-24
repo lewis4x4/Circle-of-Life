@@ -119,6 +119,13 @@ jobs:
           deno check care-event-prefill/index.ts care-event-prefill/prefill.ts _shared/care-event-prefill-questions.ts
           deno test --allow-env care-event-prefill-handler.test.ts
 
+      - name: Private workforce publisher conformance
+        if: needs.classify.outputs.policy_only != 'true'
+        run: |
+          node --test scripts/workforce/local-target.test.mjs
+          deno check --no-lock --config supabase/functions/deno.json supabase/functions/workforce-publisher/index.ts
+          deno test --no-lock --config supabase/functions/deno.json supabase/functions/workforce-publisher/
+
       - name: Stand Up regression contracts
         if: needs.classify.outputs.policy_only != 'true'
         run: |
