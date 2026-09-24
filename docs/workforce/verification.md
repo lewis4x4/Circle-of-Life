@@ -23,7 +23,7 @@ The current source fixes all eight review findings: assignment ID/care-metadata 
 - Canonical typecheck passed. Five earlier CI failures were repaired, with **88 focused guard tests plus component checks** passing. Earlier focused evidence includes 108 tests across 15 suites and nine shared route-leave tests; these counts are separate proof points, not an additive total.
 - Direct-write concurrency proof passed: a conflicting direct edit receives `55P03` without a partial write, the bulk RPC commits, and a later retry succeeds.
 
-The later full native replay passed **503 migration files, 121 SQL probes, seven acceptance suites and 105 care-event parity cases** after migrations 499–500 were added. The SQL policy scanner failed before migration 500 and passed after it; a behavior probe failed against the old hardcoded cutoff and passed with the configurable setting. Local bundle checks passed at 448.9 kB for `/admin` and 449.4 kB for `/admin/executive` under the unchanged 450 kB cap. Staging has 496–498 and 500, and its migration ledger is complete. Current-base required PR CI, merge and post-merge CI, production migration/application/function deployment, and hosted readback remain **not yet completed**.
+The subsequent native replay **passed 504 migration files, 122 SQL probes, seven acceptance suites and 105 care-event parity cases**, including the already-hosted family migration 499, onboarding migration 500, and Workforce policy migration 501. The SQL policy scanner failed before migration 501 and passed after it; a behavior probe failed against the old hardcoded cutoff and passed with the configurable setting. Local bundle checks passed at 448.9 kB for `/admin` and 449.4 kB for `/admin/executive` under the unchanged 450 kB cap. Staging has 496–498 and 501, and its migration ledger is complete. Production has 494/495 and the independent 499/500 migrations. Current-base required PR CI, merge and post-merge CI, production migration/application/function deployment, and hosted readback remain **not yet completed**.
 
 ## Historical evidence before the review fixes
 
@@ -39,7 +39,7 @@ The following evidence belongs to the earlier source snapshot recorded in `evide
 
 ## Prerequisite integration and remaining release work
 
-The branch incorporates main through migration 493 and now has a verified source sequence through 500. It needs current-base required CI before merge. The pinned import receipt covers 22 files; its sanitized copy is `evidence/prerequisite-provenance.json`.
+The branch incorporates main through migration 493 and now has a verified source sequence through 501. It needs current-base required CI before merge. The pinned import receipt covers 22 files; its sanitized copy is `evidence/prerequisite-provenance.json`.
 
 | Migration(s) | Source and integration boundary |
 |---|---|
@@ -50,7 +50,8 @@ The branch incorporates main through migration 493 and now has a verified source
 | 497 | Workforce in-place delivery |
 | 498 | Forward reconciliation from `c26af4a7`, SHA-256 `b46e8c2dc96a0c0ee1b4f7144fb85361bea84f923d00be85a006834a1165131b` |
 | 499 | Exact already-hosted family invoice RLS migration and probe from PR #863; original PR retains its remaining application scope |
-| 500 | Configurable rounding owner clock evidence age, default 960 minutes; original 495 stays unchanged |
+| 500 | Exact already-hosted onboarding manual sign-off migration and probe from PR #868; remaining application work stays with that PR |
+| 501 | Configurable rounding owner clock evidence age, default 960 minutes; original 495 stays unchanged |
 
 The forward reconciliation passed independent review after an ACL omission was repaired. All nine function definitions and their owner ACL/comment contracts match the canonical source. Six private helpers deny PUBLIC/anon/authenticated/service-role execution; three public RPCs remain service-role-only. Fresh and staging-shaped local replay agree, existing nonzero counters/settings are preserved, and incompatible visitor-column definitions fail closed.
 

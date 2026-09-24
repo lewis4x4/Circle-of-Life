@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-09-24T10:30:55.026180+00:00",
+  "checked_at": "2026-09-24T10:42:58.686455+00:00",
   "source_base": "4a8fef12b39f2cced1cf824c33ac54b1bdbebd39",
-  "source_state": "Integrated current main through493; source through500; staging migrations applied; required PR CI and production release pending",
+  "source_state": "Current main integrated through493; source through501; staging clock policy recorded under timestamp; production Workforce release and refreshed PR CI pending",
   "migration": "497_workforce_in_place.sql",
   "full_release_ready": false,
   "review_fixes": [
@@ -135,20 +135,21 @@
       "component_focused_checks": "passed",
       "evidence_source": "parent integration readback; required PR CI still pending"
     },
-    "native_postgres_latest": {
-      "exit_code": 0,
-      "migration_files": 503,
-      "sql_probes": 121,
-      "acceptance_suites": 7,
-      "care_event_parity_cases": 105,
-      "receipt": "/Users/brianlewis/.hermes/tmp/agent-runs/workforce-release-resume-20260924T022754Z/sql-prerequisites/native-500-full.log"
-    },
     "bundle_budget_latest": {
       "result": "passed",
       "admin_kb_gzip": 448.9,
       "executive_kb_gzip": 449.4,
       "cap_kb_gzip": 450,
       "scope": "local production build on bundle repair tree"
+    },
+    "native_postgres_latest": {
+      "exit_code": 0,
+      "migration_files": 504,
+      "sql_probes": 122,
+      "acceptance_suites": 7,
+      "care_event_parity_cases": 105,
+      "signed_synthetic_contract_bytes": 6687,
+      "artifact": "/Users/brianlewis/.hermes/tmp/agent-runs/workforce-release-resume-20260924T022754Z/native-501-full.log"
     }
   },
   "additional_fix": {
@@ -310,8 +311,13 @@
       "state": "exact migration and probe imported; hosted applied in staging and production; remaining PR scope separate"
     },
     {
+      "migrations": "501",
+      "state": "reviewed configurable clock evidence age; staging applied under timestamp, production pending"
+    },
+    {
       "migrations": "500",
-      "state": "reviewed configurable clock evidence age; staging applied, production pending"
+      "pr": 868,
+      "state": "exact owner committed migration and probe imported; hosted version500 applied in staging and production; remaining application scope separate"
     }
   ],
   "production_changes_by_this_draft": false,
@@ -613,7 +619,7 @@
   "source_integration": {
     "integrated_main_through": 489,
     "latest_origin_main_through": 493,
-    "verified_branch_sequence_through": 500,
+    "verified_branch_sequence_through": 501,
     "latest_main_reconciliation_pending": true,
     "hosted_ddl_applied_by_this_delivery": false
   },
@@ -643,9 +649,10 @@
       "496",
       "497",
       "498",
-      "500"
+      "501"
     ],
     "ledger": "pass",
-    "production_workforce_applied": false
+    "production_workforce_applied": false,
+    "source_501_recorded_as": "20260924102913"
   }
 }
