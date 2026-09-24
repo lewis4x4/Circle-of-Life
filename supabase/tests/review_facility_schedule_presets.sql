@@ -58,7 +58,7 @@ SELECT pg_temp.schedule_actor('manager');
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE f record; split_option jsonb; late_option jsonb; office_option jsonb; ver timestamptz; before_ids uuid[]; after_ids uuid[]; BEGIN
  SELECT * INTO f FROM schedule_fixture;
- split_option:=public.schedule_preset_save(f.facility,NULL,0,'Split work','#ab23cd',1,'[{"start":"06:00","end":"13:00"},{"start":"16:00","end":"18:00"}]',ARRAY['resident_aide','cook']::public.staff_role[],true,false);
+ split_option:=public.schedule_preset_save(f.facility,NULL,0,'Split work','#ab23cd',1,'[{"start":"06:00","end":"13:00"},{"start":"16:00","end":"18:00"}]',ARRAY['resident_aide','cook']::public.staff_role[],true,false,true);
  late_option:=public.schedule_preset_save(f.facility,NULL,0,'Late work','#112233',2,'[{"start":"18:00","end":"06:00"}]',ARRAY['resident_aide']::public.staff_role[],true,false);
  office_option:=public.schedule_preset_save(f.facility,NULL,0,'Office','#000000',3,'[{"start":"09:00","end":"17:00"}]',ARRAY['administrator']::public.staff_role[],true,false);
  INSERT INTO option_values VALUES('split',split_option),('late',late_option),('office',office_option);
@@ -73,6 +73,9 @@ DO $$ DECLARE f record; split_option jsonb; late_option jsonb; office_option jso
  IF (SELECT count(*) FROM public.shift_assignments WHERE schedule_id=f.week AND deleted_at IS NULL)<>4 THEN RAISE EXCEPTION 'Two split groups not saved'; END IF;
  IF (SELECT sum(extract(epoch FROM schedule_ends_at-schedule_starts_at))/3600 FROM public.shift_assignments WHERE schedule_id=f.week AND staff_id=f.colleague AND deleted_at IS NULL)<>9 THEN RAISE EXCEPTION 'Cook split must total nine hours without gap'; END IF;
  SELECT array_agg(id ORDER BY schedule_block_index) INTO before_ids FROM public.shift_assignments WHERE schedule_id=f.week AND staff_id=f.staff AND deleted_at IS NULL;
+ PERFORM pg_temp.schedule_expect_error(format('UPDATE public.shift_assignments SET schedule_time_zone=%L WHERE id=%L','UTC',before_ids[1]),'snapshot fields are derived');
+ PERFORM pg_temp.schedule_expect_error(format('UPDATE public.shift_assignments SET schedule_preset_name=%L WHERE id=%L','Forged',before_ids[1]),'snapshot fields are derived');
+ PERFORM pg_temp.schedule_expect_error(format('UPDATE public.shift_assignments SET schedule_role_snapshot=%L WHERE id=%L','administrator',before_ids[1]),'snapshot fields are derived');
  UPDATE public.shift_assignments SET notes='Second block note' WHERE schedule_id=f.week AND staff_id=f.staff AND schedule_block_index=1;
  SELECT updated_at INTO ver FROM public.schedules WHERE id=f.week;
  PERFORM public.schedule_bulk_upsert(f.week,ver,jsonb_build_array(jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-01','preset_id',split_option->>'id','expected_preset_version',1)));
@@ -84,6 +87,11 @@ DO $$ DECLARE f record; split_option jsonb; late_option jsonb; office_option jso
  PERFORM public.schedule_copy_week(f.next_week,ver);
  IF (SELECT count(*) FROM public.shift_assignments WHERE schedule_id=f.next_week AND deleted_at IS NULL AND schedule_preset_name='Split work')<>4 OR NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.next_week AND staff_id=f.staff AND schedule_block_index=1 AND notes='Second block note' AND custom_start_time='16:00') THEN RAISE EXCEPTION 'Copy must retain saved blocks and per-block metadata after deactivation'; END IF;
  IF EXISTS(SELECT 1 FROM public.shift_assignments a JOIN public.shift_assignments b ON b.schedule_group_id=a.schedule_group_id WHERE a.schedule_id=f.week AND b.schedule_id=f.next_week) THEN RAISE EXCEPTION 'Copy reused original group identity'; END IF;
+ -- Direct row deletion cannot publish an incomplete managed group.
+ UPDATE public.shift_assignments SET deleted_at=now() WHERE schedule_id=f.next_week AND staff_id=f.staff AND schedule_block_index=1;
+ SELECT updated_at INTO ver FROM public.schedules WHERE id=f.next_week;
+ PERFORM pg_temp.schedule_expect_error(format('SELECT public.schedule_publish(%L,%L)',f.next_week,ver),'Review assignments');
+ UPDATE public.shift_assignments SET deleted_at=NULL WHERE schedule_id=f.next_week AND staff_id=f.staff AND schedule_block_index=1;
  -- One-off split groups and empty array rejection.
  SELECT updated_at INTO ver FROM public.schedules WHERE id=f.empty_week;
  PERFORM pg_temp.schedule_expect_error(format('SELECT public.schedule_bulk_upsert(%L,%L,%L)',f.empty_week,ver,jsonb_build_array(jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-15','custom_blocks','[]'::jsonb))),'Custom blocks require');

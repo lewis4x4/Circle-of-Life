@@ -46,6 +46,7 @@ import {
 } from "@/lib/timeclock/display-copy";
 import { PUNCH_TYPES, formatKioskTime, type PunchType } from "@/lib/timeclock/kiosk-contract";
 import { canReviewTimeclock, loadOrganizationPayPeriod, loadStaffTimeclock, type TimeclockStaff } from "@/lib/timeclock/load";
+import { PlannedScheduleContext } from "./PlannedScheduleContext";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
 const FIELD = "mt-1 block h-9 w-full rounded-[8px] border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
@@ -322,6 +323,7 @@ export function StaffTimesheet({ staffId, now: nowProp }: StaffTimesheetProps) {
         <AdminTableLoadingState />
       ) : (
         <>
+          {period && staff && <PlannedScheduleContext facilityIds={[]} staffId={staffId} from={period.start.toISOString()} to={period.end.toISOString()} />}
           <section aria-labelledby="weeks-heading" className="rounded-xl border border-border bg-card p-4">
             <h2 id="weeks-heading" className="text-sm font-semibold">
               Workweeks

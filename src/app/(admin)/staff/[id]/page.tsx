@@ -1,5 +1,7 @@
 "use client";
 
+import { ASSIGNMENT_SNAPSHOT_SELECT, assignmentLabel, type AssignmentSnapshot } from "@/lib/schedules/assignment-context";
+import { formatScheduleTimes } from "@/lib/schedules/week-grid";
 import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -66,7 +68,8 @@ type SupabaseCertRow = {
   status: string;
 };
 
-type SupabaseShiftRow = {
+type SupabaseShiftRow = AssignmentSnapshot & {
+  custom_start_time: string | null; custom_end_time: string | null;
   shift_date: string;
   shift_type: string;
   status: string;
@@ -145,7 +148,8 @@ export default function AdminStaffDetailPage() {
       const today = todayFacilityDateIso();
       let shiftQ = supabase
         .from("shift_assignments" as never)
-        .select("shift_date, shift_type, status")
+        .select(`shift_date, shift_type, status, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}, schedules!inner(status, deleted_at)`)
+        .eq("schedules.status", "published").is("schedules.deleted_at", null)
         .eq("staff_id", staffId)
         .gte("shift_date", today)
         .is("deleted_at", null)
@@ -333,7 +337,7 @@ export default function AdminStaffDetailPage() {
                     className="rounded-[8px] border border-border bg-card px-4 py-2.5 text-sm tabular-nums transition-[transform,box-shadow] duration-[var(--motion-duration)] hover:-translate-y-0.5"
                   >
                     <span className="font-semibold text-foreground">
-                      {formatShiftLabel(s.shift_date, s.shift_type)}
+                      {s.schedule_preset_name ? `${formatShiftLabel(s.shift_date, assignmentLabel(s))} · ${formatScheduleTimes(s.custom_start_time, s.custom_end_time)}` : formatShiftLabel(s.shift_date, s.shift_type)}
                     </span>
                     <span className="ml-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{s.status}</span>
                   </li>

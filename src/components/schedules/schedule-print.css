@@ -1,0 +1,38 @@
+@page workforce-week {
+  size: landscape;
+  margin: 10mm;
+}
+
+@media print {
+  body:has(.schedule-week-print), body:has(.schedule-week-print) *:has(.schedule-week-print) { background: #fff !important; }
+  body:has(.schedule-week-print) *:not(:has(.schedule-week-print)):not(.schedule-week-print):not(.schedule-week-print *) {
+    display: none !important;
+  }
+  .schedule-week-print {
+    page: workforce-week;
+    width: 100% !important;
+    max-width: none !important;
+    color: #111 !important;
+    background: #fff !important;
+    font-size: 9pt;
+  }
+  .schedule-week-print [data-slot="horizontal-scroll"],
+  .schedule-week-print [data-slot="horizontal-scroll-viewport"] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .schedule-week-print [data-slot^="horizontal-scroll-shade"],
+  .schedule-week-print details,
+  .schedule-week-print input,
+  .schedule-week-print .schedule-screen-only {
+    display: none !important;
+  }
+  .schedule-week-print table { width: 100% !important; min-width: 0 !important; table-layout: fixed; font-size: 8pt; }
+  .schedule-week-print thead { display: table-header-group; }
+  .schedule-week-print tr { break-inside: avoid; }
+  .schedule-week-print th, .schedule-week-print td { min-width: 0 !important; position: static !important; padding: 3pt !important; overflow-wrap: anywhere; }
+  .schedule-week-print th:first-child { width: 16%; }
+  .schedule-week-print th:last-child { width: 7%; }
+  .schedule-week-print td > button { min-height: 0 !important; padding: 3pt !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .schedule-week-print a { color: inherit !important; text-decoration: none !important; }
+}

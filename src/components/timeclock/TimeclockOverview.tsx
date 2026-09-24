@@ -43,6 +43,7 @@ import { canChangeTimeclockSettings, canReviewTimeclock, loadOrganizationPayPeri
 import { cn } from "@/lib/utils";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 
+import { PlannedScheduleContext } from "./PlannedScheduleContext";
 import { MedTechShiftRulesPanel } from "./MedTechShiftRulesPanel";
 
 const TH = "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
@@ -218,6 +219,8 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
           ) : null}
         </div>
       </header>
+
+      {facilityId && period && <PlannedScheduleContext facilityIds={[facilityId]} from={period.start.toISOString()} to={period.end.toISOString()} compact />}
 
       {canSetPeriod && settingsLoaded && !payPeriodSet ? (
         <form onSubmit={savePeriod} className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4" aria-labelledby="pay-period-heading">

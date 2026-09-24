@@ -14,7 +14,7 @@ import { hasLinkedStaffRecord, loadAccountLinkContact, type AccountLinkContact }
 import { getAppRoleFromClaims, isMedTechRole } from "@/lib/auth/app-role";
 import { isHousekeeperAllowedPath, isStaffLinkOptionalPath } from "@/lib/auth/caregiver-route-access";
 import { loadCaregiverFacilityContextForUser } from "@/lib/caregiver/facility-context";
-import { currentShiftFor, fetchFacilityShiftDefinitions } from "@/lib/caregiver/shift";
+import { currentAssignmentInterval, nextAssignmentInterval, fetchUserAssignmentIntervals } from "@/lib/schedules/assignment-context";
 import { routeIsWithin } from "@/lib/navigation/route-match";
 import { createClient } from "@/lib/supabase/client";
 import { useRoundingOfflineSync } from "@/hooks/useRoundingOfflineSync";
@@ -117,15 +117,16 @@ export function CaregiverShell({ children }: { children: React.ReactNode }) {
         refreshShift = () => {
           const attempt = ++shiftRequest;
           if (shiftTimer) clearTimeout(shiftTimer);
-          // Same model the caregiver pages use (currentShiftFor), so the header and page agree (COL-659).
-          void fetchFacilityShiftDefinitions(supabase, [resolved.ctx.facilityId]).then((byFacility) => {
+          const now = new Date();
+          void fetchUserAssignmentIntervals(supabase, { userId: user.id, facilityId: resolved.ctx.facilityId, from: now, to: new Date(now.getTime() + 86400000) }).then((rows) => {
             if (cancelled || attempt !== shiftRequest) return;
-            const now = new Date();
-            const current = currentShiftFor({ timeZone: resolved.ctx.timeZone, shifts: byFacility.get(resolved.ctx.facilityId) ?? [] }, now);
-            setShiftLabel(current.configured ? `${current.label} shift` : null);
-            if (current.endsAt) shiftTimer = setTimeout(refreshShift, current.endsAt.getTime() - now.getTime() + 1);
+            const current = currentAssignmentInterval(rows, now);
+            const next = nextAssignmentInterval(rows, now);
+            setShiftLabel(current ? `${current.label} · scheduled` : "No scheduled work block now");
+            const boundary = current?.ends_at || next?.starts_at;
+            shiftTimer = setTimeout(refreshShift, boundary ? Math.max(1000, Math.min(900000, new Date(boundary).getTime() - now.getTime() + 1)) : 900000);
           }).catch(() => {
-            if (!cancelled && attempt === shiftRequest) setShiftLabel(null);
+            if (!cancelled && attempt === shiftRequest) setShiftLabel("Schedule unavailable");
           });
         };
         refreshShift();

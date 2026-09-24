@@ -7,6 +7,7 @@ import { loadFacilityTimeclockEnabled, loadOrganizationPayPeriod, loadTimeclockP
 import { assessEmployeeFile, type EmployeeRequirement, type EmployeeFileRecord, type EmployeeSummary } from "@/lib/staff/employee-file";
 import { assignmentSpan, attendanceState, type WorkforceAssignment, type WorkforcePerson, type WorkforceSnapshot } from "./model";
 import type { Database } from "@/types/database";
+import { ASSIGNMENT_SNAPSHOT_SELECT } from "@/lib/schedules/assignment-context";
 import { enumLabel } from "@/lib/display/enum-label";
 
 async function allRows<T>(query: (from: number, to: number) => PromiseLike<{ data: unknown; count: number | null; error: { message: string } | null }>): Promise<T[]> {
@@ -30,7 +31,7 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
     allRows<EmployeeSummary>((from, to) => client.from("staff").select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).order("id").range(from, to)),
     fetchFacilityShiftDefinitions(client, [facility.id]),
     allRows<{ id: string; week_start_date: string; status: string; published_at: string | null }>((from, to) => client.from("schedules").select("id, week_start_date, status, published_at", { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).gte("week_start_date", addFacilityCalendarDays(weekStart, -7)).lt("week_start_date", horizon).order("id").range(from, to)),
-    allRows<WorkforceAssignment>((from, to) => client.from("shift_assignments").select("id, staff_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time", { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).gte("shift_date", addFacilityCalendarDays(weekStart, -1)).lt("shift_date", horizon).order("id").range(from, to)),
+    allRows<WorkforceAssignment>((from, to) => client.from("shift_assignments").select(`id, staff_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}`, { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).gte("shift_date", addFacilityCalendarDays(weekStart, -1)).lt("shift_date", horizon).order("id").range(from, to)),
     allRows<EmployeeRequirement>((from, to) => client.from("employee_file_requirements" as never).select("*", { count: "exact" }).eq("facility_id", facility.id).neq("category", "medical").is("deleted_at", null).order("id").range(from, to)),
     allRows<EmployeeFileRecord>((from, to) => client.from("employee_file_records" as never).select("id, requirement_id, staff_id, status, completed_on, expires_on, created_at, reviewed_by", { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).order("id").range(from, to)),
   ]);
@@ -41,9 +42,22 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
   const periodScheduleMissing = !schedules.some((s) => s.week_start_date === weekStart && (published.has(s.id) || archivedPublished.has(s.id)));
   const publishedAssignments = assignments.filter((a) => published.has(a.schedule_id) || (a.shift_date < thisWeek && archivedPublished.has(a.schedule_id)));
   const shifts = definitions.get(facility.id) ?? [];
-  const staffById = new Map<string, EmployeeSummary | TimeclockStaff>(staff.map((s) => [s.id, s]));
+  type ScheduledPerson = Pick<EmployeeSummary, "id" | "first_name" | "last_name" | "staff_role" | "employment_status">;
+  const staffById = new Map<string, EmployeeSummary | TimeclockStaff | ScheduledPerson>(staff.map((s) => [s.id, s]));
   // Visiting staff with punches still appear, but their personnel file is never inferred.
   for (const s of ledger.staff) if (!staffById.has(s.id)) staffById.set(s.id, s);
+  // Published visitors may not have clocked in yet. Resolve only their work
+  // identity through the schedule projection, never their home personnel file.
+  const missingAssignments = publishedAssignments.filter((assignment) => !staffById.has(assignment.staff_id));
+  const missingIds = new Set(missingAssignments.map((assignment) => assignment.staff_id));
+  const weekIds = [...new Set(missingAssignments.map((assignment) => assignment.schedule_id))];
+  const scheduledPeople = await Promise.all(weekIds.map((id) => allRows<ScheduledPerson>((from, to) => client
+    .rpc("schedule_people_for_week" as never, { p_schedule_id: id } as never, { count: "exact" })
+    .order("id").range(from, to))));
+  for (const person of scheduledPeople.flat()) if (missingIds.has(person.id) && !staffById.has(person.id)) staffById.set(person.id, {
+    id: person.id, first_name: person.first_name, last_name: person.last_name,
+    staff_role: person.staff_role, employment_status: person.employment_status,
+  });
   const recordedStaffIds = new Set([...publishedAssignments, ...ledger.punches, ...ledger.corrections, ...ledger.rejections].map((row) => row.staff_id).filter((id): id is string => !!id));
   if ([...recordedStaffIds].some((id) => !staffById.has(id))) throw new Error("Recorded staff scope is incomplete. Employee information could not be resolved.");
   const periodStart = facilityDayStart(weekStart);

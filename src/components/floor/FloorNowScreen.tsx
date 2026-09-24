@@ -29,7 +29,7 @@ function simpleState(query: Loadable): "loading" | "error" | "ready" {
 export function FloorNowScreen() {
   const { profile, timeZone } = useFloorSession();
   const now = useFloorNow(30_000);
-  const { windowStart, tasks, census, signals, witness, staffIds, activity } = useFloorNowData(now);
+  const { windowStart, workStart, workEnd, tasks, census, signals, witness, staffIds, activity } = useFloorNowData(now);
 
   // The queue moves all shift: ask again every minute while Now is open.
   const reloadTasks = tasks.reload;
@@ -81,7 +81,7 @@ export function FloorNowScreen() {
       (row) =>
         row.assigned_staff_id &&
         mine.has(row.assigned_staff_id) &&
-        row.due_at >= windowStart.startIso &&
+        row.due_at >= (workStart ?? windowStart.startIso) &&
         new Date(row.due_at).getTime() <= now.getTime(),
     );
     const chartedOfAssigned = assignedSoFar.filter((row) => row.derived_status.startsWith("completed_")).length;
@@ -91,7 +91,7 @@ export function FloorNowScreen() {
       roundsAssigned: assignedSoFar.length > 0 ? { charted: chartedOfAssigned, due: assignedSoFar.length } : null,
       roomByResident,
     });
-  }, [activity.state, staffIds.state, taskRows, now, windowStart, profile.clockedInAt, roomByResident]);
+  }, [activity.state, staffIds.state, taskRows, now, windowStart, workStart, profile.clockedInAt, roomByResident]);
 
   if (!now || !windowStart) return <FloorStatePanel state="loading" title="Loading Now" pageTitle="Now" className="flex-1" />;
 
@@ -127,7 +127,7 @@ export function FloorNowScreen() {
       </div>
       <MyShiftStrip
         items={stripItems}
-        handoffAt={windowStart.endIso}
+        handoffAt={workEnd}
         timeZone={timeZone}
         state={activity.state.status === "error" || staffIds.state.status === "error" ? "error" : simpleState(activity.state)}
         onRetry={() => {

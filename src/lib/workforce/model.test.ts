@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { assignmentSpan, attendanceState, completedWeekTimesheetHref, type WorkforceAssignment } from "./model";
 const row: WorkforceAssignment = { id: "1", staff_id: "1", schedule_id: "1", shift_date: "2026-09-23", shift_type: "night", status: "assigned", custom_start_time: "18:00:00", custom_end_time: "06:00:00" };
 describe("Workforce schedule comparison", () => {
+  it("keeps saved shift name, zone and duration when today's clinical definition differs", () => {
+    const saved = { ...row, schedule_preset_name: "Third care", schedule_time_zone: "America/Chicago", schedule_starts_at: "2026-09-23T20:00:00Z", schedule_ends_at: "2026-09-24T04:00:00Z" };
+    const span = assignmentSpan(saved, [{ shiftKey: "night", label: "Renamed", rosterShiftType: "night", startsAtLocal: "19:00:00", endsAtLocal: "03:00:00", sortOrder: 1 }]);
+    expect(span?.label).toBe("Third care 3:00PM–11:00PM");
+    expect((span!.end.getTime() - span!.start.getTime()) / 3600000).toBe(8);
+  });
   it("keeps an overnight assignment on its service date and ends next morning", () => {
     const span = assignmentSpan(row, []);
     expect(span?.start.toISOString()).toBe("2026-09-23T22:00:00.000Z");

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
+import { assignGeneratedTaskOwners } from "@/lib/rounding/assignment-owners";
 import { logError } from "@/lib/observability/logger";
 import { assertRoundingFacilityAccess, getAccessibleRoundingFacilityIds, getRoundingRequestContext, isRoundingManagerRole, revalidateRoundingRequestContext } from "@/lib/rounding/auth";
 import { generateObservationTasks } from "@/lib/rounding/generate-observation-tasks";
@@ -11,12 +11,6 @@ type Body = {
   windowStart?: string;
   windowEnd?: string;
   shiftDate?: string;
-};
-
-type ShiftAssignmentRecord = {
-  id: string;
-  staff_id: string;
-  shift_type: string;
 };
 
 type PlanRuleRecord = {
@@ -120,22 +114,6 @@ export async function POST(request: Request) {
   const planIds = plans.map((plan) => plan.id);
   const residentIds = [...new Set(plans.map((plan) => plan.resident_id))];
 
-  const shiftDate = body.shiftDate ?? todayFacilityDateIso(windowStart);
-  const { data: assignmentsData, error: assignmentsError } = await context.admin
-    .from("shift_assignments")
-    .select("id, staff_id, shift_type")
-    .eq("organization_id", context.organizationId)
-    .eq("facility_id", facilityId)
-    .eq("shift_date", shiftDate)
-    .is("deleted_at", null)
-    .in("status", ["assigned", "confirmed"]);
-
-  if (assignmentsError) {
-    logError("rounding.generate-tasks", assignmentsError, { action: "load_assignments", facilityId, shiftDate });
-    return NextResponse.json({ error: "Could not load shift assignments" }, { status: 500 });
-  }
-
-  const assignments = (assignmentsData ?? []) as ShiftAssignmentRecord[];
 
   const { data: rulesData, error: rulesError } = await context.admin
     .from("resident_observation_plan_rules")
@@ -192,10 +170,9 @@ export async function POST(request: Request) {
     }
   }
 
-  const generated = plans.flatMap((plan, planIndex) => {
+  const generated = plans.flatMap((plan) => {
     const activeRules = (rulesByPlanId.get(plan.id) ?? []).filter((rule) => !rule.deleted_at && rule.active);
     const activeWatch = activeWatchByResidentId.get(plan.resident_id);
-    const assigned = assignments && assignments.length > 0 ? assignments[planIndex % assignments.length] : null;
 
     return activeRules.flatMap((rule) =>
       generateObservationTasks({
@@ -206,8 +183,6 @@ export async function POST(request: Request) {
         planId: plan.id,
         planRuleId: rule.id,
         watchInstanceId: activeWatch?.id ?? null,
-        shiftAssignmentId: assigned?.id ?? null,
-        assignedStaffId: assigned?.staff_id ?? null,
         windowStart,
         windowEnd,
         rule: {
@@ -229,6 +204,14 @@ export async function POST(request: Request) {
 
   if (generated.length === 0) {
     return NextResponse.json({ generated: 0, inserted: 0, plans: plans.length });
+  }
+
+  // Work intervals determine each task's eligible owner; clinical rules above still determine its due time.
+  try {
+    await assignGeneratedTaskOwners(context.admin, facilityId, generated);
+  } catch (error) {
+    logError("rounding.generate-tasks", error, { action: "resolve_interval_owners", facilityId });
+    return NextResponse.json({ error: "Could not resolve eligible staff for the task times" }, { status: 500 });
   }
 
   const rows = generated.map((task: GeneratedTaskInput) => ({

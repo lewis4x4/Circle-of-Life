@@ -56,13 +56,12 @@ describe("selectLocationChips", () => {
 });
 
 describe("my residents", () => {
-  it("prefers the current shift's assignments and falls back to any of today's", () => {
+  it("combines only the assignments already selected by their work intervals", () => {
     const rows = [
       { shift_type: "day", assigned_resident_ids: ["a", "b"], status: "confirmed" },
       { shift_type: "evening", assigned_resident_ids: ["c"], status: "assigned" },
     ];
-    expect(selectAssignedResidentIds(rows, "evening")).toEqual(["c"]);
-    expect(selectAssignedResidentIds(rows, "night")).toEqual(["a", "b", "c"]);
+    expect(selectAssignedResidentIds(rows)).toEqual(["a", "b", "c"]);
   });
 
   it("ignores called-out and no-show rows and null lists", () => {
@@ -70,7 +69,7 @@ describe("my residents", () => {
       { shift_type: "day", assigned_resident_ids: ["a"], status: "called_out" },
       { shift_type: "day", assigned_resident_ids: null, status: "confirmed" },
     ];
-    expect(selectAssignedResidentIds(rows, "day")).toEqual([]);
+    expect(selectAssignedResidentIds(rows)).toEqual([]);
   });
 
   it("filters the census by assigned ids and keeps census order", () => {
@@ -128,10 +127,17 @@ describe("the three-tap report reads the facility's configured shift (COL-685)",
 
   function recordingClient(tables: Record<string, unknown[]>) {
     const eqs: Array<{ table: string; column: string; value: unknown }> = [];
+    const rpcs: Array<{ name: string; args: Record<string, unknown> }> = [];
     const client = {
+      rpc(name: string, args: Record<string, unknown>) {
+        rpcs.push({ name, args });
+        const q = { order: () => q, range: () => Promise.resolve({ data: [{ assignment_id: "night-block" }], count: 1, error: null }) };
+        return q;
+      },
       from(table: string) {
         const builder = {
           select: () => builder,
+          maybeSingle: () => Promise.resolve({ data: tables[table]?.[0] ?? null, error: null }),
           eq: (column: string, value: unknown) => {
             eqs.push({ table, column, value });
             return builder;
@@ -144,15 +150,14 @@ describe("the three-tap report reads the facility's configured shift (COL-685)",
         return builder;
       },
     };
-    return { client: client as unknown as Parameters<typeof fetchMyResidentIds>[0], eqs };
+    return { client: client as unknown as Parameters<typeof fetchMyResidentIds>[0], eqs, rpcs };
   }
 
   it("at 1 AM reads the night shift's assignments dated the evening before", async () => {
-    const { client, eqs } = recordingClient({
+    const { client, rpcs } = recordingClient({
       staff: [{ id: "staff-1" }],
       shift_assignments: [
         { shift_type: "night", assigned_resident_ids: ["r-night"], status: "assigned" },
-        { shift_type: "day", assigned_resident_ids: ["r-day"], status: "assigned" },
       ],
     });
     const ids = await fetchMyResidentIds(client, {
@@ -163,7 +168,7 @@ describe("the three-tap report reads the facility's configured shift (COL-685)",
       now: new Date("2026-09-15T05:00:00.000Z"),
     });
     expect(ids).toEqual(["r-night"]);
-    expect(eqs).toContainEqual({ table: "shift_assignments", column: "shift_date", value: "2026-09-14" });
+    expect(rpcs).toContainEqual({ name: "schedule_assignment_intervals", args: { p_facility_id: "facility-1", p_staff_id: "staff-1", p_from: "2026-09-15T05:00:00.000Z", p_to: "2026-09-15T05:00:00.001Z" } });
   });
 
   it("at 10 PM prefers the night on-call row over the day one", async () => {

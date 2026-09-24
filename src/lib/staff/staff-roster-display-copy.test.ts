@@ -8,6 +8,9 @@ import {
 const EM_DASH = "—";
 
 describe("formatStaffRosterNextShift", () => {
+  it("shows a named role option's recorded hours rather than the custom enum", () => {
+    expect(formatStaffRosterNextShift({ shift_date: "2026-09-24", shift_type: "custom", schedule_preset_name: "Cook opening", custom_start_time: "06:00", custom_end_time: "13:00" })).toBe("Sep 24 · Cook opening · 6:00a–1:00p");
+  });
   it("names a missing next shift instead of an em dash", () => {
     expect(formatStaffRosterNextShift(null)).toBe(STAFF_ROSTER_NO_SHIFT_COPY);
     expect(formatStaffRosterNextShift(undefined)).toBe(STAFF_ROSTER_NO_SHIFT_COPY);

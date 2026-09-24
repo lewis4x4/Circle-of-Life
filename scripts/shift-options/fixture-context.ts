@@ -1,0 +1,1 @@
+export async function loadCaregiverFacilityContext() { return { ok: true, ctx: { facilityId: "11111111-1111-4111-8111-111111111111", facilityName: "Synthetic east facility", timeZone: "America/New_York" } }; }

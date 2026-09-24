@@ -100,7 +100,8 @@ export async function fetchStaffingCoverageScope(
 
   let shiftsQ = supabase
     .from("shift_assignments" as never)
-    .select("id", { count: "exact", head: true })
+    .select("id, schedules!inner(status, deleted_at)", { count: "exact", head: true })
+    .eq("schedules.status", "published").is("schedules.deleted_at", null)
     .is("deleted_at", null)
     .gte("shift_date", todayIso)
     .lte("shift_date", endDateIso);

@@ -110,11 +110,11 @@ DO $$ DECLARE f record; version timestamptz; original_id uuid; cells jsonb; bad 
  OR NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.next_week AND staff_id=f.staff AND shift_date='2091-01-08' AND custom_start_time='09:15' AND custom_end_time='15:45' AND unit_id=f.unit AND assigned_resident_ids=ARRAY[f.resident] AND shift_classification='agency' AND notes='Custom care plan')
  OR NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.next_week AND staff_id=f.colleague AND custom_start_time='22:00' AND custom_end_time='04:30') THEN RAISE EXCEPTION 'Copy lost custom hours or metadata'; END IF;
  -- Unmatched legacy/configuration shifts must still fail instead of becoming custom.
- UPDATE public.shift_assignments SET shift_type='day' WHERE schedule_id=f.next_week AND staff_id=f.staff;
+ UPDATE public.shift_assignments SET shift_type='day',schedule_copied_from_assignment_id=NULL WHERE schedule_id=f.next_week AND staff_id=f.staff;
  PERFORM pg_temp.schedule_expect_error(format('SELECT public.schedule_copy_week(%L,(SELECT updated_at FROM public.schedules WHERE id=%L))',f.empty_week,f.empty_week),'without a matching active definition');
  IF EXISTS(SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.empty_week AND deleted_at IS NULL) THEN RAISE EXCEPTION 'Invalid legacy copy left a partial week'; END IF;
  UPDATE public.shift_assignments SET shift_type='custom',custom_start_time=NULL WHERE schedule_id=f.next_week AND staff_id=f.staff;
- PERFORM pg_temp.schedule_expect_error(format('SELECT public.schedule_copy_week(%L,(SELECT updated_at FROM public.schedules WHERE id=%L))',f.empty_week,f.empty_week),'without a matching active definition');
+ PERFORM pg_temp.schedule_expect_error(format('SELECT public.schedule_copy_week(%L,(SELECT updated_at FROM public.schedules WHERE id=%L))',f.empty_week,f.empty_week),'incomplete groups or unrecorded times');
  -- Off soft deletes a custom shift while keeping the saved historical plan.
  PERFORM public.schedule_bulk_upsert(f.week,(SELECT updated_at FROM public.schedules WHERE id=f.week),jsonb_build_array(jsonb_build_object('staff_id',f.staff,'shift_date','2091-01-01','shift_definition_id',NULL)));
  IF NOT EXISTS(SELECT 1 FROM public.shift_assignments WHERE id=original_id AND deleted_at IS NOT NULL AND custom_start_time='09:15' AND notes='Custom care plan') THEN RAISE EXCEPTION 'Off lost custom history'; END IF;
