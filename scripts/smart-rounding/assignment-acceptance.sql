@@ -275,6 +275,16 @@ BEGIN
       FROM
         generate_series(1, 3) AS n (idx);
 
+      -- A published work block never grants clinical authority. Give each
+      -- scheduled synthetic employee an active account and facility grant.
+      INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+      SELECT id,id::text||'@assignment.haven.test','{}','{}' FROM public.staff WHERE facility_id=v_facility;
+      INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+      SELECT id,v_org,id::text||'@assignment.haven.test','Synthetic Rounding Employee','med_tech',true FROM public.staff WHERE facility_id=v_facility;
+      INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
+      SELECT id,v_facility,v_org FROM public.staff WHERE facility_id=v_facility;
+      UPDATE public.staff SET user_id=id WHERE facility_id=v_facility;
+
       SELECT
         array_agg(s.id ORDER BY s.id) INTO v_staff
       FROM
@@ -643,21 +653,8 @@ BEGIN
     t.due_at
   LIMIT 1;
 
-  v_user := '5a550000-0000-4000-8000-00000000000a';
-  INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, ROLE, created_at, updated_at, confirmation_token)
-    VALUES (v_user, '00000000-0000-0000-0000-000000000000', 'synthetic-roster-caregiver@haven.test', '', now(), '{}', '{}', 'authenticated', 'authenticated', now(), now(), '');
-  INSERT INTO auth.sessions (id, user_id)
-    VALUES (v_session, v_user);
-  INSERT INTO public.user_profiles (id, organization_id, email, full_name, app_role, is_active)
-    VALUES (v_user, v_org, 'synthetic-roster-caregiver@haven.test', 'Synthetic Roster Caregiver', 'med_tech', TRUE);
-  INSERT INTO public.user_facility_access (user_id, facility_id, organization_id, is_primary)
-    VALUES (v_user, v_roster, v_org, TRUE);
-  UPDATE
-    public.staff
-  SET
-    user_id = v_user
-  WHERE
-    id = v_worked.assigned_staff_id;
+  SELECT user_id INTO v_user FROM public.staff WHERE id=v_worked.assigned_staff_id;
+  INSERT INTO auth.sessions(id,user_id) VALUES(v_session,v_user);
 
   PERFORM
     set_config('request.jwt.claims', jsonb_build_object('role', 'authenticated', 'sub', v_user, 'session_id', v_session, 'auth_claim_version', (

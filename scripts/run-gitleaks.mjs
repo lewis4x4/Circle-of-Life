@@ -136,6 +136,7 @@ const ALLOWLIST_PROBE_SECRET = GENERIC_API_KEY_PROBE.match(/"([^"]+)"/)[1];
 const ALLOWLIST_PROBE_JSON = [
   "{",
   `  "key": "${ALLOWLIST_PROBE_SLUG}",`,
+  '  "metricKey": "shiftAssignmentsScheduled14d",',
   `  "api_key": "${ALLOWLIST_PROBE_SECRET}"`,
   "}",
   "",

@@ -141,6 +141,36 @@ END $$;
 REVOKE ALL ON FUNCTION public.schedule_copy_week(uuid,timestamptz) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.schedule_copy_week(uuid,timestamptz) TO authenticated;
 
+-- Public readers retain caller RLS. Trusted clinical writers need the same
+-- interval facts for all eligible staff after their own authority checks.
+CREATE FUNCTION haven.schedule_assignment_intervals(p_facility_id uuid,p_from timestamptz,p_to timestamptz,p_staff_id uuid DEFAULT NULL)
+RETURNS TABLE(assignment_id uuid,schedule_id uuid,staff_id uuid,facility_id uuid,service_date date,starts_at timestamptz,ends_at timestamptz,time_zone text,preset_id uuid,preset_version integer,label text,color text,staff_role public.staff_role,group_id uuid,block_index integer,block_count integer,legacy_shift_type public.shift_type,status public.shift_assignment_status,is_legacy boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT a.id,a.schedule_id,a.staff_id,a.facility_id,a.shift_date,t.starts_at,t.ends_at,t.tz,a.schedule_preset_id,a.schedule_preset_version,
+ coalesce(a.schedule_preset_name,CASE WHEN a.shift_type='custom' THEN 'Custom' ELSE initcap(a.shift_type::text) END),coalesce(a.schedule_preset_color,'#64748B'),coalesce(a.schedule_role_snapshot,haven.schedule_staff_role_internal(a.staff_id,a.facility_id,a.shift_date,a.shift_date)),a.schedule_group_id,a.schedule_block_index,a.schedule_block_count,a.shift_type,a.status,a.schedule_starts_at IS NULL
+ FROM public.shift_assignments a JOIN public.schedules w ON w.id=a.schedule_id AND w.status='published' AND w.deleted_at IS NULL
+ JOIN public.facilities f ON f.id=a.facility_id AND f.organization_id=a.organization_id AND f.deleted_at IS NULL
+ CROSS JOIN LATERAL(SELECT coalesce(a.schedule_time_zone,f.timezone) tz) z
+ CROSS JOIN LATERAL(SELECT coalesce(a.schedule_starts_at,(a.shift_date+a.custom_start_time) AT TIME ZONE z.tz) starts_at,coalesce(a.schedule_ends_at,(a.shift_date+CASE WHEN a.custom_end_time<a.custom_start_time THEN 1 ELSE 0 END+a.custom_end_time) AT TIME ZONE z.tz) ends_at,z.tz) t
+ WHERE a.facility_id=p_facility_id AND (p_staff_id IS NULL OR a.staff_id=p_staff_id) AND a.deleted_at IS NULL AND a.status IN('assigned','confirmed') AND p_to>p_from AND t.starts_at<p_to AND t.ends_at>p_from AND t.ends_at>t.starts_at AND haven.schedule_staff_role_internal(a.staff_id,a.facility_id,a.shift_date,((t.ends_at-interval '1 microsecond') AT TIME ZONE t.tz)::date) IS NOT NULL
+ ORDER BY t.starts_at,a.staff_id,a.id;
+$$;
+REVOKE ALL ON FUNCTION haven.schedule_assignment_intervals(uuid,timestamptz,timestamptz,uuid) FROM PUBLIC,anon,authenticated,service_role;
+COMMENT ON FUNCTION haven.schedule_assignment_intervals(uuid,timestamptz,timestamptz,uuid) IS 'Private clinical projection after an outer service/device/actor command has established facility authority. Same saved work interval math as the public invoker reader, with internal membership resolution so an ambient employee JWT cannot hide other eligible clinical staff. No request role can execute this function; public schedule interval RLS and own-staff privacy remain unchanged.';
+DO $$ DECLARE src text; BEGIN
+ SELECT pg_get_functiondef('haven.resolve_observation_instant(uuid,timestamptz,uuid[],timestamptz)'::regprocedure) INTO src;
+ IF position('public.schedule_assignment_intervals(' IN src)=0 THEN RAISE EXCEPTION 'Clinical interval reader anchor changed'; END IF;
+ src:=replace(src,'public.schedule_assignment_intervals(','haven.schedule_assignment_intervals(');
+ EXECUTE replace(src,'haven.schedule_staff_role(','haven.schedule_staff_role_internal(');
+ SELECT pg_get_functiondef('haven.observation_on_clock_staff(uuid,timestamptz)'::regprocedure) INTO src;
+ EXECUTE replace(src,'haven.schedule_staff_role(','haven.schedule_staff_role_internal(');
+ SELECT pg_get_functiondef('haven.med_tech_shift_open_from_clock(uuid,uuid,timestamptz,uuid,text,uuid,uuid)'::regprocedure) INTO src;
+ src:=replace(src,'public.schedule_assignment_intervals(','haven.schedule_assignment_intervals(');
+ EXECUTE replace(src,'haven.schedule_staff_role(','haven.schedule_staff_role_internal(');
+ SELECT pg_get_functiondef('public.floor_replay_complete_rounding_task(text,uuid,uuid,timestamptz,uuid,jsonb)'::regprocedure) INTO src;
+ EXECUTE replace(src,'haven.schedule_staff_role(','haven.schedule_staff_role_internal(');
+END $$;
+
 -- Monitoring Orders keep their own frequency/grace. Only owner lookup changes
 -- to the actual task due instant, rather than a single clinical-window owner.
 DO $$ DECLARE src text; needle text; BEGIN
@@ -148,6 +178,11 @@ DO $$ DECLARE src text; needle text; BEGIN
  needle:='public.resolve_observation_task_assignees(v_task.facility_id,v_shift.shift_service_date,v_shift.roster_shift_type::text,ARRAY[v_task.resident_id])';
  IF position(needle IN src)=0 THEN RAISE EXCEPTION 'Monitoring-order ownership anchor changed'; END IF;
  EXECUTE replace(src,needle,'public.resolve_observation_task_assignees_for_instant(v_task.facility_id,v_task.due_at,ARRAY[v_task.resident_id])');
+ SELECT pg_get_functiondef('public.reinstate_standard_observation_windows(uuid,timestamptz)'::regprocedure) INTO src;
+ needle:='LEFT JOIN public.resolve_observation_task_assignees (v_resident.facility_id, v_shift.shift_service_date, v_shift.roster_shift_type::text, ARRAY[p_resident_id])';
+ IF position(needle IN src)=0 THEN RAISE EXCEPTION 'Reinstated cadence ownership anchor changed'; END IF;
+ EXECUTE replace(src,needle,'LEFT JOIN LATERAL public.resolve_observation_task_assignees_for_instant(v_resident.facility_id,rw.due_at_utc,ARRAY[p_resident_id])');
+
 END $$;
 NOTIFY pgrst,'reload schema';
 COMMIT;

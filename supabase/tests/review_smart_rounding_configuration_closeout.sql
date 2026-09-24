@@ -142,15 +142,16 @@ UPDATE public.schedules SET deleted_at=now(),status='archived'
  WHERE facility_id=(SELECT fac FROM closeout_fixture) AND deleted_at IS NULL
  AND week_start_date BETWEEN date_trunc('week',now())::date-7 AND date_trunc('week',now())::date;
 ALTER TABLE public.schedules ENABLE TRIGGER workforce_guard_schedule_row;
-DO $$ DECLARE f record; sw record; sw_next record; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
+DO $$ DECLARE f record; sw record; sw_next record; planned_week record; facility_tz text; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
 BEGIN
  SELECT * INTO f FROM closeout_fixture;
+ SELECT timezone INTO facility_tz FROM public.facilities WHERE id=f.fac;
  SELECT * INTO sw FROM public.facility_shift_window_at(f.fac,now());
  INSERT INTO public.schedules(organization_id,facility_id,week_start_date)
  VALUES(f.org,f.fac,date_trunc('week',sw.shift_service_date)::date) ON CONFLICT DO NOTHING;
  SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',sw.shift_service_date)::date AND deleted_at IS NULL;
- INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
- VALUES(assignment,sch,f.aide_staff,f.fac,f.org,sw.shift_service_date,sw.roster_shift_type,ARRAY[f.resident]);
+ INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids,custom_start_time,custom_end_time,schedule_rounding_coverage)
+ VALUES(assignment,sch,f.aide_staff,f.fac,f.org,sw.shift_service_date,sw.roster_shift_type,ARRAY[f.resident],(sw.starts_at_utc AT TIME ZONE facility_tz)::time,(sw.ends_at_utc AT TIME ZONE facility_tz)::time,true);
  -- The generation horizon below is an hour wide, so for the hour before every
  -- shift change it lands in the next shift. Staffing only the current shift
  -- made this assertion pass by clock luck and fail twice a day; roster the
@@ -159,9 +160,17 @@ BEGIN
  IF (sw_next.shift_service_date,sw_next.roster_shift_type) IS DISTINCT FROM (sw.shift_service_date,sw.roster_shift_type) THEN
   INSERT INTO public.schedules(organization_id,facility_id,week_start_date) VALUES(f.org,f.fac,date_trunc('week',sw_next.shift_service_date)::date) ON CONFLICT DO NOTHING;
   SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',sw_next.shift_service_date)::date AND deleted_at IS NULL;
-  INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
-  VALUES(sch,f.aide_staff,f.fac,f.org,sw_next.shift_service_date,sw_next.roster_shift_type,ARRAY[f.resident]);
+  INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids,custom_start_time,custom_end_time,schedule_rounding_coverage)
+  VALUES(sch,f.aide_staff,f.fac,f.org,sw_next.shift_service_date,sw_next.roster_shift_type,ARRAY[f.resident],(sw_next.starts_at_utc AT TIME ZONE facility_tz)::time,(sw_next.ends_at_utc AT TIME ZONE facility_tz)::time,true);
  END IF;
+ -- Draft plans are not clinical ownership. Publish recorded work through the
+ -- actual owner command, rather than relying on the retired enum-only lookup.
+ PERFORM pg_temp.closeout_assert(NOT EXISTS(SELECT 1 FROM public.resolve_observation_task_assignees_for_instant(f.fac,now(),ARRAY[f.resident]) a WHERE a.shift_assignment_id=assignment),'Draft roster must not own clinical checks');
+ PERFORM pg_temp.closeout_signin('owner');
+ FOR planned_week IN SELECT id,updated_at FROM public.schedules WHERE facility_id=f.fac AND deleted_at IS NULL AND status='draft' AND week_start_date IN(date_trunc('week',sw.shift_service_date)::date,date_trunc('week',sw_next.shift_service_date)::date) LOOP
+  PERFORM public.schedule_publish(planned_week.id,planned_week.updated_at);
+ END LOOP;
+ PERFORM pg_temp.closeout_signin('aide');
  SELECT monitoring_order_interval_presets[1] INTO interval_minutes FROM public.facility_observation_thresholds WHERE facility_id=f.fac;
  INSERT INTO public.resident_monitoring_orders(id,organization_id,facility_id,resident_id,interval_minutes,starts_at,ends_at,review_due_at,ordered_by_type,ordered_by_name,order_received_as,reason_category,reason_note,entered_by,status)
  VALUES(ord,f.org,f.fac,f.resident,interval_minutes,now(),now()+interval '1 hour',now()+interval '1 day','facility_admin','Synthetic order authority','verbal','other','Synthetic ownership probe',f.aide,'active');
