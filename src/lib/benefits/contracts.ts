@@ -146,6 +146,11 @@ export interface BoardRow {
 }
 export interface BoardContact { id: string; name: string; agency: typeof CONTACT_AGENCIES[number]; phone: string | null }
 export interface MedicaidBoard { as_of: string; facility_id: string; facility_name: string; stalled_days: number; can_write: boolean; steps: Array<{ step: BoardStep; label: string }>; rows: BoardRow[]; needs_answers: Array<{ resident_id: string; resident_name: string }>; rechecks_due: number; contacts: BoardContact[] }
+export const confirmMailSchema = z.object({ request_id: uuid, case_id: uuid, agency: z.enum(BENEFITS_AGENCIES), event_type: z.enum(BENEFITS_EVENT_TYPES), outcome: z.string().trim().min(1).max(200), letter_date: date, due_on: date.nullable().optional(), notes: z.string().trim().max(4000).optional() }).strict();
+export const dismissMailSchema = z.object({ request_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict();
+export interface MailAttachment { id: string; filename: string; content_type: string; size_bytes: number; status: "stored" | "skipped_type" | "skipped_size" | "failed" }
+export interface MailItem { id: string; status: "unmatched" | "proposed"; match_basis: "case_address" | "resident_name" | null; proposed_case_id: string | null; proposed_resident_name: string | null; proposed_agency: typeof BENEFITS_AGENCIES[number] | null; proposed_letter_date: string | null; proposed_due_on: string | null; from_address: string | null; subject: string | null; preview: string | null; received_at: string; attachments: MailAttachment[] }
+export interface MailList { can_write: boolean; inboxes: Array<{ email: string; purpose: string }>; items: MailItem[] }
 export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }
 export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
 export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }

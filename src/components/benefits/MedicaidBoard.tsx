@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { dollars } from "@/lib/benefits/admission-screening";
 import type { BoardRow, BoardStep, MedicaidBoard as BoardData } from "@/lib/benefits/contracts";
+import { AgencyMailPanel } from "./AgencyMailPanel";
 import { BenefitsRequestError, benefitsFetch, ErrorNotice, fieldClass, Panel } from "./benefits-ui";
 
 const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -198,6 +199,7 @@ export function MedicaidBoard() {
             <span>{dollars(totals.owed)} not yet collected{totals.unknown ? ` (+${totals.unknown} with no rate set)` : ""}</span>
             {data.rechecks_due > 0 && <Link className="underline" href={`/admin/benefits?view=rechecks&facility_id=${data.facility_id}`}>{data.rechecks_due} recheck{data.rechecks_due === 1 ? "" : "s"} due</Link>}
           </div>
+          <AgencyMailPanel facilityId={data.facility_id} cases={data.rows.map((r) => ({ case_id: r.case_id, resident_name: r.resident_name }))} />
           {data.needs_answers.length > 0 && (
             <p className="text-sm">Needs answers before Medicaid can be decided: {data.needs_answers.map((r) => r.resident_name).join(", ")}.</p>
           )}

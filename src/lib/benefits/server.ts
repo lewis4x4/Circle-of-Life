@@ -10,7 +10,7 @@ import {
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
   admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
-  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, BOARD_STEPS, CONTACT_AGENCIES,
+  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, BOARD_STEPS, CONTACT_AGENCIES, confirmMailSchema, dismissMailSchema, BENEFITS_AGENCIES,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -324,6 +324,58 @@ export async function saveBenefitsContact(request: Request) {
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ id: uuid, name: z.string() }).passthrough().safeParse(result.data);
   return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
+}
+const mailListSchema = z.object({
+  can_write: z.boolean(), inboxes: z.array(z.object({ email: z.string(), purpose: z.string() })),
+  items: z.array(z.object({
+    id: uuid, status: z.enum(["unmatched", "proposed"]), match_basis: z.enum(["case_address", "resident_name"]).nullable(), proposed_case_id: uuid.nullable(), proposed_resident_name: z.string().nullable(),
+    proposed_agency: z.enum(BENEFITS_AGENCIES).nullable(), proposed_letter_date: z.string().nullable(), proposed_due_on: z.string().nullable(),
+    from_address: z.string().nullable(), subject: z.string().nullable(), preview: z.string().nullable(), received_at: z.string(),
+    attachments: z.array(z.object({ id: uuid, filename: z.string(), content_type: z.string(), size_bytes: z.number().int(), status: z.enum(["stored", "skipped_type", "skipped_size", "failed"]) })),
+  })),
+});
+export async function listBenefitsMail(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const query = z.object({ facility_id: uuid }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
+  if (!query.success) return benefitsFailure(400, "Choose a facility.");
+  const result = await rpc(auth.actor, "benefits_mail_list", { p_facility_id: query.data.facility_id });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = mailListSchema.safeParse(result.data);
+  return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+export async function confirmBenefitsMail(request: Request, itemId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = confirmMailSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(itemId).success || !parsed.success) return benefitsFailure(400, "Choose the case, agency, kind of letter, a short outcome and the letter date.");
+  const { request_id, ...payload } = parsed.data;
+  const result = await rpc(auth.actor, "benefits_mail_confirm", { p_item_id: itemId, p_payload: payload, p_request_id: request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ item_id: uuid, case_id: uuid, event_id: uuid }).safeParse(result.data);
+  return reply.success && reply.data.item_id === itemId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+export async function dismissBenefitsMail(request: Request, itemId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = dismissMailSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(itemId).success || !parsed.success) return benefitsFailure(400, "Give the reason.");
+  const result = await rpc(auth.actor, "benefits_mail_dismiss", { p_item_id: itemId, p_reason: parsed.data.reason, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  return NextResponse.json({ ok: true }, { headers: noStore });
+}
+/** Streams a forwarded-mail attachment after a checked facility-scoped lookup; the hash is verified before bytes leave. */
+export async function downloadBenefitsMailAttachment(_request: Request, attachmentId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  if (!uuid.safeParse(attachmentId).success) return benefitsFailure(400, "Invalid attachment.");
+  const target = await rpc(auth.actor, "benefits_mail_attachment_target", { p_attachment_id: attachmentId });
+  if (target.error) return rpcFailure(target.error);
+  const t = z.object({ id: uuid, filename: z.string(), content_type: z.enum(BENEFITS_MIME_TYPES), size_bytes: z.number().int(), sha256: z.string().regex(/^[a-f0-9]{64}$/), storage_path: z.string().min(1), organization_id: uuid }).safeParse(target.data);
+  if (!t.success || t.data.id !== attachmentId || t.data.organization_id !== auth.actor.organizationId) return benefitsFailure();
+  const downloaded = await auth.actor.admin.storage.from("inbound-mail").download(t.data.storage_path);
+  if (downloaded.error || !downloaded.data || downloaded.data.size > BENEFITS_MAX_FILE_BYTES) return benefitsFailure(503, "The attachment is unavailable. Retry.");
+  const bytes = Buffer.from(await downloaded.data.arrayBuffer());
+  const { createHash } = await import("node:crypto");
+  if (createHash("sha256").update(bytes).digest("hex") !== t.data.sha256) return benefitsFailure(409, "The stored attachment does not match what was received.");
+  const filename = encodeURIComponent(t.data.filename).replace(/'/g, "%27");
+  return new Response(new Blob([bytes]).stream(), { headers: { ...noStore, "Content-Type": t.data.content_type, "Content-Length": String(bytes.length), "Content-Disposition": `attachment; filename="agency-letter"; filename*=UTF-8''${filename}` } });
 }
 /** Reading private financial evidence is recorded in the case history before any bytes leave the server. */
 export async function recordBenefitsDocumentAccess(actor: CurrentApiActor, caseId: string, documentId: string, kind: "download" | "packet"): Promise<NextResponse | null> {
