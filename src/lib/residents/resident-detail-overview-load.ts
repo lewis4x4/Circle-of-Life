@@ -86,7 +86,7 @@ export type ResidentPresenceHistoryEntry = {
   reason: string | null;
   /**
    * COL-750: what `effectiveFrom` is — save_time, entered (the time staff said
-   * it happened) or admission_date. Null on rows written before migration 503.
+   * it happened) or admission_date. Null on rows written before migration 504.
    */
   effectiveBasis?: string | null;
   /** The basis of `effectiveTo`, i.e. of the change that closed this span. */

@@ -3,7 +3,7 @@
  *
  * Business thresholds that used to be literals in code — the risk score bands,
  * the survey binder's look-ahead window, the compliance pass-rate alert, the
- * resident-movement back-date window (COL-750, migration 503) — are
+ * resident-movement back-date window (COL-750, migration 504) — are
  * rows in `public.operating_rules`, resolved by `public.haven_operating_rule`
  * (facility override first, then the organization rule, latest effective date
  * on or before the day asked about; no row falls back to the database's

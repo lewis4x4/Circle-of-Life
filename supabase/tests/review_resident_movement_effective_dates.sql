@@ -1,5 +1,5 @@
 -- COL-750: resident movement carries the date it happened, not the date it was
--- saved. Every assertion here fails on the code before migration 503, where the
+-- saved. Every assertion here fails on the code before migration 504, where the
 -- capture trigger stamped now() on every change.
 -- Local disposable replay only: every fixture rolls back. Synthetic residents only.
 BEGIN;

@@ -11,7 +11,7 @@ import {
  *
  * Every flow asks "when did this happen?" with an Eastern date and time. Both
  * blank means "just now" and the database stamps the save time, exactly as
- * before. The database (migration 503, `haven.resident_status_effective_guard`)
+ * before. The database (migration 504, `haven.resident_status_effective_guard`)
  * is the authority on every rule below; this module only says the same thing
  * before the save so staff are not surprised by a refusal:
  *
@@ -118,7 +118,7 @@ export function backdateWindowHint(windowDays: number | null | undefined): strin
 }
 
 /**
- * The refusals the movement guard raises (migration 503). A message that
+ * The refusals the movement guard raises (migration 504). A message that
  * starts with one of these is written for staff and is shown as it is; any
  * other database error keeps the caller's generic wording.
  */

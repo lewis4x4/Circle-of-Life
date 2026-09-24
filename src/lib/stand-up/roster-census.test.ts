@@ -12,7 +12,7 @@ describe('roster census suggestion', () => {
     const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/404_stand_up_roster_census.sql'), 'utf8')
     expect(migration).toContain(`status IN('${STAND_UP_ROSTER_CENSUS_STATUSES.join("','")}')`)
     // COL-750: the as-of roster (effective dates) counts the same set.
-    const asOf = readFileSync(resolve(process.cwd(), 'supabase/migrations/503_resident_movement_effective_dates.sql'), 'utf8')
+    const asOf = readFileSync(resolve(process.cwd(), 'supabase/migrations/504_resident_movement_effective_dates.sql'), 'utf8')
     expect(asOf).toContain(`status IN('${STAND_UP_ROSTER_CENSUS_STATUSES.join("','")}')`)
     const billable = readFileSync(resolve(process.cwd(), 'supabase/migrations/217_col_v2_status_and_medicaid_provider_foundation.sql'), 'utf8')
     expect(billable).toContain(`r.status IN ('${STAND_UP_ROSTER_CENSUS_STATUSES.join("', '")}') THEN true`)

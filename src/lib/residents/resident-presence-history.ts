@@ -66,7 +66,7 @@ const easternClockFormatter = new Intl.DateTimeFormat("en-US", {
  * stamped with `now()` and is never on a midnight to the millisecond.
  */
 function dateStampZone(parsed: Date, basis?: string | null): "UTC" | typeof ZONE | null {
-  // COL-750: rows since migration 503 say what they are. A time staff entered
+  // COL-750: rows since migration 504 say what they are. A time staff entered
   // can fall on a midnight (8 PM Eastern is midnight UTC) and is still a time.
   if (basis === "save_time" || basis === "entered") return null;
   if (basis === "admission_date") return ZONE;

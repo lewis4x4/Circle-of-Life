@@ -99,8 +99,8 @@ describe("movement guard messages", () => {
     expect(movementGuardMessage(null)).toBeNull();
   });
 
-  it("every message the form trusts is one the database raises (migration 503)", () => {
-    const sql = readFileSync(path.join(process.cwd(), "supabase/migrations/503_resident_movement_effective_dates.sql"), "utf8").replace(/''/g, "'");
+  it("every message the form trusts is one the database raises (migration 504)", () => {
+    const sql = readFileSync(path.join(process.cwd(), "supabase/migrations/504_resident_movement_effective_dates.sql"), "utf8").replace(/''/g, "'");
     for (const start of MOVEMENT_GUARD_MESSAGE_STARTS) expect(sql).toContain(start);
   });
 });

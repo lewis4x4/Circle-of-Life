@@ -45,6 +45,11 @@
 --      with no payer (null jsonb key), which has kept production from
 --      recording any day since 2026-09-22.
 --
+-- Numbering: first applied to staging and production as 503 on 2026-09-24,
+-- then renumbered to 504 when PR #874 had already claimed 503; both hosted
+-- ledger rows were moved to 504 (the seeded rule's change_reason there still
+-- says 503).
+--
 -- Seed: every organization gets resident_movement.backdate_window_days = 3 (the
 -- default proposed in the PR: a weekend's movements can still be entered on
 -- Monday without an owner). Owners change it on Settings -> Threshold targets.
@@ -152,7 +157,7 @@ $$;
 INSERT INTO public.operating_rules (organization_id, facility_id, rule_key, value, effective_from, change_reason)
 SELECT o.id, NULL, 'resident_movement.backdate_window_days', '3'::jsonb,
        DATE '2026-09-24',
-       'Seeded by migration 503 (COL-750): proposed default. Staff may date a resident movement up to 3 days back (Eastern calendar days); older needs an owner or org admin and a reason.'
+       'Seeded by migration 504 (COL-750): proposed default. Staff may date a resident movement up to 3 days back (Eastern calendar days); older needs an owner or org admin and a reason.'
 FROM public.organizations o
 WHERE o.deleted_at IS NULL
 ON CONFLICT DO NOTHING;
