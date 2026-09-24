@@ -5,10 +5,10 @@ import type { ResidentOverviewDetail } from "@/lib/residents/resident-detail-ove
 
 const RESIDENT_ID = "11111111-1111-4111-8111-111111111111";
 
-const mocks = vi.hoisted(() => ({ load: vi.fn(), record: vi.fn(), id: "", calls: [] as string[] }));
+const mocks = vi.hoisted(() => ({ load: vi.fn(), record: vi.fn(), id: "", search: "auto=0", calls: [] as string[] }));
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: mocks.id }),
-  useSearchParams: () => new URLSearchParams("auto=0"),
+  useSearchParams: () => new URLSearchParams(mocks.search),
 }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
@@ -97,6 +97,7 @@ function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOvervi
 describe("COL-599 resident face sheet", () => {
   beforeEach(() => {
     mocks.id = RESIDENT_ID;
+    mocks.search = "auto=0";
     mocks.calls = [];
     mocks.load.mockReset();
     mocks.record.mockReset();
@@ -142,6 +143,7 @@ describe("COL-599 resident face sheet", () => {
 describe("COL-627 face-sheet print audit", () => {
   beforeEach(() => {
     mocks.id = RESIDENT_ID;
+    mocks.search = "auto=0";
     mocks.calls = [];
     mocks.load.mockReset();
     mocks.record.mockReset();
@@ -193,5 +195,74 @@ describe("COL-627 face-sheet print audit", () => {
     await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/could not be logged/));
     expect(print).toHaveBeenCalledTimes(1);
     Object.defineProperty(window, "print", { value: original, configurable: true, writable: true });
+  });
+});
+
+describe("COL-794 face sheet prints on paper", () => {
+  beforeEach(() => {
+    mocks.id = RESIDENT_ID;
+    mocks.search = "auto=0";
+    mocks.load.mockReset().mockResolvedValue(detail());
+    mocks.record.mockReset().mockResolvedValue("audit-1");
+  });
+
+  it("paginates for Letter: sections, headings, the photo and the footer stay whole", async () => {
+    const { container } = render(<ResidentFaceSheetPage />);
+    await waitFor(() => expect(screen.getByText("Marsha Wheeler")).toBeTruthy());
+    const css = Array.from(container.querySelectorAll("style")).map((node) => node.textContent ?? "").join("\n");
+
+    expect(css).toContain("@page { size: Letter; margin: 0.5in; }");
+    // The 768px screen column would overflow a 7.5in page and clip or shrink.
+    expect(css).toMatch(/#resident-face-sheet\s*\{[^}]*max-width:\s*none/);
+    expect(css).toMatch(/print-color-adjust:\s*exact/);
+    for (const selector of ["header", "section", "footer", "img"]) {
+      expect(css).toMatch(new RegExp(`#resident-face-sheet ${selector}[^{]*\\{[^}]*break-inside: avoid`));
+    }
+    // A heading must not be stranded at the foot of a page.
+    expect(css).toMatch(/#resident-face-sheet h2,?[^{]*\{[^}]*break-after: avoid/);
+    // Long diagnosis lists and email addresses wrap instead of running off the sheet.
+    expect(css).toMatch(/overflow-wrap:\s*anywhere/);
+  });
+
+  it("holds the print dialog until the resident photo has decoded", async () => {
+    mocks.search = "auto=1";
+    const original = window.print;
+    const print = vi.fn();
+    Object.defineProperty(window, "print", { value: print, configurable: true, writable: true });
+    let decodePhoto = () => {};
+    const decode = vi.fn(() => new Promise<void>((resolve) => { decodePhoto = resolve; }));
+    Object.defineProperty(window.HTMLImageElement.prototype, "decode", { value: decode, configurable: true, writable: true });
+
+    mocks.load.mockResolvedValue(detail({ photoUrl: "https://example.test/demo-resident.jpg" }));
+    try {
+      render(<ResidentFaceSheetPage />);
+      await waitFor(() => expect(decode).toHaveBeenCalled());
+      expect(print).not.toHaveBeenCalled();
+      decodePhoto();
+      await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+    } finally {
+      Object.defineProperty(window, "print", { value: original, configurable: true, writable: true });
+      // @ts-expect-error -- restore the environment's own (absent) decode
+      delete window.HTMLImageElement.prototype.decode;
+    }
+  });
+
+  it("prints anyway when the photo never loads", async () => {
+    mocks.search = "auto=1";
+    const original = window.print;
+    const print = vi.fn();
+    Object.defineProperty(window, "print", { value: print, configurable: true, writable: true });
+    const decode = vi.fn(() => Promise.reject(new Error("404")));
+    Object.defineProperty(window.HTMLImageElement.prototype, "decode", { value: decode, configurable: true, writable: true });
+
+    mocks.load.mockResolvedValue(detail({ photoUrl: "https://example.test/missing.jpg" }));
+    try {
+      render(<ResidentFaceSheetPage />);
+      await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+    } finally {
+      Object.defineProperty(window, "print", { value: original, configurable: true, writable: true });
+      // @ts-expect-error -- restore the environment's own (absent) decode
+      delete window.HTMLImageElement.prototype.decode;
+    }
   });
 });
