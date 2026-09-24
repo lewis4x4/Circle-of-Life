@@ -18,6 +18,8 @@ export type StandUpFacility = {
 export type StandUpWorkspaceData = {
   pending_recoveries?: RecoveryPreview[]; facilities: StandUpFacility[];
   reports: StandUpReport[]; current_week: string; can_import: boolean;
+  /** COL-797: owner, org_admin or facility_admin may change a submitted week. */
+  can_edit_submitted?: boolean;
   server_now?: string; actor_role?: string;
   google_connection?: {
     state: 'unconfigured' | 'connected' | 'reconnect_required';
