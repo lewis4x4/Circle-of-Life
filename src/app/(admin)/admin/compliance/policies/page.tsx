@@ -17,6 +17,11 @@ import {
   compliancePolicyListCountLabel,
   formatCompliancePolicyPublishedDate,
 } from "@/lib/compliance/policies-display-copy";
+import {
+  knowledgeBaseDocumentHref,
+  knowledgeBasePolicyDocuments,
+  type KnowledgeBaseDocumentSummary,
+} from "@/lib/compliance/knowledge-base-policies";
 
 type Row = {
   id: string;
@@ -33,6 +38,32 @@ export default function PoliciesListPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Policy text is canonical in the knowledge base (COL-707); it is organization-wide.
+  const [kbDocs, setKbDocs] = useState<KnowledgeBaseDocumentSummary[] | null>(null);
+  const [kbError, setKbError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("id, title, doc_type, status, word_count")
+        .eq("status", "published")
+        .is("deleted_at", null)
+        .limit(200);
+      if (cancelled) return;
+      if (error) {
+        setKbDocs(null);
+        setKbError(error.message);
+        return;
+      }
+      setKbError(null);
+      setKbDocs(knowledgeBasePolicyDocuments((data ?? []) as KnowledgeBaseDocumentSummary[]));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,7 +113,8 @@ export default function PoliciesListPage() {
               Policy Library
             </h1>
             <p className="mt-2 text-[13px] text-muted-foreground max-w-2xl">
-              Versioned policies and acknowledgment tracking for your facility.
+              Policy text lives in the knowledge base. The policies below it are the versions staff at
+              this building must acknowledge.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -94,10 +126,46 @@ export default function PoliciesListPage() {
           </div>
         </header>
 
+        <section aria-labelledby="kb-policy-text" className="p-6 rounded-lg border border-border bg-card/60">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-border pl-2">
+            <h2 id="kb-policy-text" className="text-[13px] font-semibold text-foreground">
+              Policy text in the knowledge base
+            </h2>
+            {kbDocs ? <span className="text-[12px] text-muted-foreground">{kbDocs.length} documents</span> : null}
+          </div>
+          {kbError ? (
+            <p className="text-[13px] text-destructive pl-2" role="alert">
+              Knowledge base documents could not be loaded. This is not an empty knowledge base.
+            </p>
+          ) : kbDocs === null ? (
+            <p className="text-[13px] text-muted-foreground pl-2">Loading knowledge base documents…</p>
+          ) : kbDocs.length === 0 ? (
+            <p className="text-[13px] text-muted-foreground pl-2">No policy documents are published in the knowledge base yet.</p>
+          ) : (
+            <ul className="space-y-1">
+              {kbDocs.map((d) => (
+                <li key={d.id}>
+                  <Link
+                    href={knowledgeBaseDocumentHref(d.id)}
+                    className="flex items-center justify-between rounded-md px-2 py-2 text-[13px] text-foreground hover:bg-muted"
+                  >
+                    <span className="truncate font-medium">{d.title}</span>
+                    {d.word_count ? (
+                      <span className="shrink-0 pl-4 text-[12px] tabular-nums text-muted-foreground">
+                        {d.word_count.toLocaleString("en-US")} words
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <div className="p-6 rounded-lg border border-border bg-card/60">
            <div className="flex items-center justify-between pb-4 mb-4 border-b border-border pl-2">
              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-foreground">
-               Active Policies
+               Acknowledgment versions at this building
              </h3>
              {countLabel ? <span className="text-[12px] text-muted-foreground">{countLabel}</span> : null}
            </div>
