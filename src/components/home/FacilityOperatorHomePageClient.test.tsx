@@ -14,8 +14,7 @@ const refresh = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, push: vi.fn(), replace: vi.fn() }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc }) }));
 // The Medicaid rechecks card loads its own data (covered in MedicaidRechecks.test.tsx); home tests stay on the home feed.
-vi.mock("@/components/benefits/MedicaidRechecks", () => ({ MedicaidRechecksHomeCard: () => null }));
-vi.mock("@/components/benefits/MedicaidSweep", () => ({ MedicaidSweepHomeCard: () => null }));
+vi.mock("@/components/benefits/MedicaidHomeCards", () => ({ MedicaidHomeCards: () => null }));
 vi.mock("@/lib/executive/facility-rounding-compliance", () => ({
   fetchExecutiveFacilityCompliance: vi.fn().mockResolvedValue({ totals: { withTask: 50, onTime: 47 } }),
 }));

@@ -54,16 +54,12 @@ const FacilityRoundingCard = dynamic(
   { loading: () => <div className={cn(CARD_CLASS, "h-40 animate-pulse")} aria-hidden /> },
 );
 
-// Medicaid rechecks load their own data after mount and stay out of the first load.
-const MedicaidRechecksHomeCard = dynamic(
-  () => import("@/components/benefits/MedicaidRechecks").then((module) => module.MedicaidRechecksHomeCard),
+// Medicaid cards (rechecks, sweep) load their own data after mount and stay out of the first load.
+const MedicaidHomeCards = dynamic(
+  () => import("@/components/benefits/MedicaidHomeCards").then((module) => module.MedicaidHomeCards),
   { ssr: false },
 );
 
-const MedicaidSweepHomeCard = dynamic(
-  () => import("@/components/benefits/MedicaidSweep").then((module) => module.MedicaidSweepHomeCard),
-  { ssr: false },
-);
 
 // Payment dialog and past-due strip ship dark and only mount when released; keep
 // them out of the /admin first-load so the 450 kB gzip hard cap stays intact.
@@ -417,8 +413,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
             facilityName={feed.facilityName}
           />
           <FacilityRoundingCard facilityId={facilityId} facilityName={feed.facilityName} timeZone={feed.timezone} rounding={data.rounding} />
-          {!readOnly ? <MedicaidRechecksHomeCard facilityId={facilityId} /> : null}
-          {!readOnly ? <MedicaidSweepHomeCard facilityId={facilityId} /> : null}
+          {!readOnly ? <MedicaidHomeCards facilityId={facilityId} /> : null}
           {notesLive && !readOnly ? <NotesPanel facilityId={facilityId} currentUserId={currentUserId} onTap={data.notesOnTap} onChanged={refresh} /> : null}
         </div>
       </div>
