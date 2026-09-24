@@ -3,6 +3,7 @@ import { SurveyPackViewsNav } from "@/components/compliance/SurveyPackViewsNav";
 import { SurveyReadinessBinder } from "@/components/compliance/SurveyReadinessBinder";
 import { SurveyPackChooser } from "@/components/registers/SurveyPackChooser";
 import { RiskSurveyBundleSection } from "@/components/risk/RiskSurveyBundleSection";
+import { formatSurveyPackBuildingName } from "@/lib/compliance/survey-pack-display-copy";
 import { surveyPackView } from "@/lib/compliance/survey-pack-views";
 import { getServerSelectedFacilityId } from "@/lib/facilities/selected-facility-cookie.server";
 import { createClient } from "@/lib/supabase/server";
@@ -59,7 +60,7 @@ async function SurveyPrintPack() {
             range. Every print is recorded, so there is a record of what a surveyor was handed.
           </p>
         </div>
-        <SurveyPackChooser facilityName={facilityName ?? "the selected facility"} />
+        <SurveyPackChooser facilityName={formatSurveyPackBuildingName(facilityName)} />
       </FacilityGate>
     </div>
   );
