@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-09-24T18:04:27.423Z",
+  "scope": "Actual UI/calculation/document components with synthetic local persistence; not hosted auth, database, provider or staff acceptance",
+  "checks": [
+    "Unconfirmed settings do not select a financial rule or enable confirmation without explicit attestation.",
+    "Draft date and reviewed hours/dollars save with correct minute/cents units; unknown kiosk hours remain unknown; downloads do not report payroll.",
+    "Approval freezes the document; Phone reporting and mismatch recording remain separate from explicit ADP reconciliation; original PDF bytes stay identical.",
+    "A linked amendment starts with fresh row review and can be reported through RUN while retaining the reconciled original and its exact document.",
+    "A failed source does not turn into an empty or successful payroll state."
+  ],
+  "page_errors": [],
+  "external_requests": [],
+  "axe_violations": [],
+  "production_mutations": false
+}
