@@ -58,13 +58,13 @@ const client = {
     if (schedule.status !== "draft") return { data: null, error: { message: "Synthetic published schedule is read only" } };
     if (args.p_schedule_id !== scheduleId) throw new Error("Unexpected synthetic schedule identity");
     if (name === "schedule_bulk_upsert") {
-      for (const cell of args.p_cells as { staff_id: string; shift_date: string; shift_definition_id: string | null }[]) {
+      for (const cell of args.p_cells as { staff_id: string; shift_date: string; shift_definition_id: string | null; custom_start_time?: string; custom_end_time?: string }[]) {
         assignments = assignments.filter((row) => row.staff_id !== cell.staff_id || row.shift_date !== cell.shift_date);
         const definition = definitions.find((row) => row.id === cell.shift_definition_id);
-        if (definition) assignments.push({ id: `synthetic-edit-${++revision}`, staff_id: cell.staff_id, shift_date: cell.shift_date,
+        if (definition || (cell.custom_start_time && cell.custom_end_time)) assignments.push({ id: `synthetic-edit-${++revision}`, staff_id: cell.staff_id, shift_date: cell.shift_date,
           schedule_id: scheduleId, facility_id: facilityId, deleted_at: null, status: "assigned", shift_classification: "regular",
-          shift_type: definition.roster_shift_type, shift_definition_id: definition.id,
-          custom_start_time: definition.starts_at_local, custom_end_time: definition.ends_at_local, notes: null });
+          shift_type: definition?.roster_shift_type ?? "custom", shift_definition_id: definition?.id ?? null,
+          custom_start_time: definition?.starts_at_local ?? cell.custom_start_time, custom_end_time: definition?.ends_at_local ?? cell.custom_end_time, notes: null });
       }
     } else if (name === "schedule_publish") {
       schedule.status = "published";

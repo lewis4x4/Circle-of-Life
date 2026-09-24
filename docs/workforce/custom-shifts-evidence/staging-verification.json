@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-09-24T15:01:21.668018+00:00",
+  "environment": "Haven HFO staging",
+  "project_ref": "iwcnajanvjvynolltflw",
+  "migration": "503_workforce_custom_schedule_cells.sql",
+  "ledger_version": "20260924145917",
+  "custom_probe": "PASS",
+  "fixture_scope": "Synthetic actors/assignments within BEGIN/ROLLBACK; real hosted auth.uid and existing ACLs, no global overrides",
+  "migration_ledger": "PASS",
+  "production_mutations": false,
+  "function_parity": [
+    {
+      "proname": "schedule_bulk_upsert",
+      "md5": "fe1ff6fdc7924b5d87f16c225e81807d"
+    },
+    {
+      "proname": "schedule_copy_week",
+      "md5": "316b6d584ef5153c9e87ae5f7e483177"
+    }
+  ],
+  "retained_synthetic_actors": 0
+}

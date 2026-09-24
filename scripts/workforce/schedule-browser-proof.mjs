@@ -7,7 +7,8 @@ import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 
 const origin = 'http://127.0.0.1:8948';
-const output = path.resolve('docs/workforce/evidence');
+const output = path.resolve(process.env.WORKFORCE_PROOF_DIR || 'docs/workforce/evidence');
+await fs.mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const errors = [];
 const externalRequests = [];
@@ -33,9 +34,30 @@ try {
   const night = page.getByRole('button', { name: /Synthetic Person A, Wed, Sep 30: Night 6:00p–6:00a \(\+1 day\)/ });
   await night.waitFor();
   await night.click();
+  await page.getByRole('dialog', { name: 'Custom shift' }).waitFor();
+  assert(await page.getByRole('button', { name: 'Apply times', exact: true }).isDisabled());
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await night.waitFor();
+  await night.click();
+  await page.getByLabel('Start time', { exact: true }).fill('22:00');
+  await page.getByLabel('Finish time', { exact: true }).fill('22:00');
+  assert(await page.getByRole('button', { name: 'Apply times', exact: true }).isDisabled());
+  await page.getByLabel('Finish time', { exact: true }).fill('04:30');
+  await page.getByText(/Finishes the next day/).waitFor();
+  await page.screenshot({ path: path.join(output, 'custom-dialog-desktop.png'), fullPage: true, animations: 'disabled' });
+  const dialogAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: path.join(output, 'custom-dialog-phone.png'), fullPage: true, animations: 'disabled' });
+  const phoneDialogAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Apply times', exact: true }).click();
+  const customName = /Synthetic Person A, Wed, Sep 30: Custom 10:00p–4:30a/;
+  await page.getByRole('button', { name: customName }).waitFor();
+  await page.getByRole('button', { name: customName }).click();
   await page.getByRole('button', { name: offName }).waitFor();
   assert.equal(await page.getByText('1 unsaved cell change.', { exact: true }).count(), 0);
-  checks.push('Real grid cycled Off → configured Day → configured Night → Off and removed the no-op change.');
+  checks.push('Real grid cycled Off → Day → Night → Custom → Off; cancel retained Night, equal times were rejected, overnight preview was accurate, and Off removed the no-op change.');
   await page.getByRole('button', { name: offName }).click();
   await page.getByRole('button', { name: 'Save 1 changes', exact: true }).click();
   await page.getByText('Draft saved.', { exact: true }).waitFor();
@@ -47,13 +69,29 @@ try {
   assert.equal(assignment.custom_end_time, '18:00:00');
   assert.equal(await page.getByRole('button', { name: 'Save draft', exact: true }).isDisabled(), true);
   checks.push('Save submitted the configured shift ID to the fixture RPC; reload displayed its saved 06:00–18:00 times.');
+  await page.getByRole('button', { name: dayName }).click();
+  await page.getByRole('button', { name: /Synthetic Person A, Wed, Sep 30: Night/ }).click();
+  await page.getByLabel('Start time', { exact: true }).fill('22:00');
+  await page.getByLabel('Finish time', { exact: true }).fill('04:30');
+  await page.getByRole('button', { name: 'Apply times', exact: true }).click();
+  await page.getByRole('button', { name: 'Save 1 changes', exact: true }).click();
+  await page.getByText('Draft saved.', { exact: true }).waitFor();
+  await page.getByRole('button', { name: customName }).waitFor();
+  const customSaved = await page.evaluate(() => window.__syntheticScheduleProof());
+  const customCall = customSaved.calls.filter((item) => item.name === 'schedule_bulk_upsert').at(-1);
+  assert.deepEqual(customCall.args.p_cells, [{ staff_id: 'sample-a', shift_date: '2026-09-30', shift_definition_id: null, custom_start_time: '22:00', custom_end_time: '04:30' }]);
+  await page.getByRole('button', { name: /Edit custom times for Synthetic Person A, Wed, Sep 30/ }).click();
+  assert.equal(await page.getByLabel('Start time', { exact: true }).inputValue(), '22:00');
+  assert.equal(await page.getByLabel('Finish time', { exact: true }).inputValue(), '04:30');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  checks.push('Custom times survived the save/reload path; editing reopened the stored times and cancel preserved them.');
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: path.join(output, 'schedule-desktop.png'), fullPage: true, animations: 'disabled' });
   const desktopAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   await page.getByRole('button', { name: 'Publish week', exact: true }).click();
   await page.getByText('Published. Assigned staff can now see this week in My schedule.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Publish week', exact: true }).count(), 0);
-  assert.equal(await page.getByRole('button', { name: dayName }).isDisabled(), true);
+  assert.equal(await page.getByRole('button', { name: customName }).isDisabled(), true);
   const posted = await page.evaluate(() => window.__syntheticScheduleProof());
   assert.equal(posted.schedule.status, 'published');
   assert.equal(posted.calls.filter((item) => item.name === 'schedule_publish').length, 1);
@@ -74,14 +112,14 @@ try {
   checks.push('390px phone viewport kept page width contained while the seven-day table remained horizontally scrollable.');
   assert.equal(errors.length, 0, errors.join('\n'));
   assert.equal(externalRequests.length, 0, 'Fixture attempted an external request');
-  const violations = [...desktopAxe.violations, ...phoneAxe.violations].map(({ id, impact, description, nodes }) => ({ id, impact, description, affectedNodes: nodes.length }));
+  const violations = [...desktopAxe.violations, ...phoneAxe.violations, ...dialogAxe.violations, ...phoneDialogAxe.violations].map(({ id, impact, description, nodes }) => ({ id, impact, description, affectedNodes: nodes.length }));
   await fs.writeFile(path.join(output, 'schedule-browser.json'), JSON.stringify({
     checked_at: new Date().toISOString(),
     scope: 'Synthetic local Supabase/route/shell adapters; actual Schedule component, Workforce context, and production CSS. Not hosted authentication, database, notification, or staff acceptance.',
     actual_component: 'src/app/(admin)/schedules/[id]/page.tsx',
-    screenshots: { desktop: { file: 'schedule-desktop.png', viewport: '1440×1000', state: 'Draft after a configured Day shift was saved' }, phone: { file: 'schedule-phone.png', viewport: '390×844', state: 'Published, read only' } },
+    screenshots: { desktop: { file: 'schedule-desktop.png', viewport: '1440×1000', state: 'Draft after a Custom overnight shift was saved' }, phone: { file: 'schedule-phone.png', viewport: '390×844', state: 'Published, read only' } },
     checks, phone_layout: layout, page_errors: errors, external_requests: externalRequests,
-    accessibility: { standard: 'WCAG 2 A/AA + 2.1 AA', desktop_violations: desktopAxe.violations.length, phone_violations: phoneAxe.violations.length, violations },
+    accessibility: { standard: 'WCAG 2 A/AA + 2.1 AA', desktop_violations: desktopAxe.violations.length, phone_violations: phoneAxe.violations.length, dialog_violations: dialogAxe.violations.length, phone_dialog_violations: phoneDialogAxe.violations.length, violations },
     production_mutations: false,
   }, null, 2));
   assert.equal(violations.length, 0, JSON.stringify(violations));
