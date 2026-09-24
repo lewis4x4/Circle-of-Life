@@ -7,7 +7,7 @@
  * this reads it with the service-role client. NOTE: migration 408 grants that
  * table to `authenticated` only, so today the service-role read is refused
  * (42501) and answers `unknown` until the service role is granted SELECT. The
- * database enforces the rule regardless (migration 483's restrictive
+ * database enforces the rule regardless (migration 494's restrictive
  * time_records policies), and /api/caregiver/clock maps that refusal to the
  * front-door answer. Server only: never import from a
  * client component. Callers pass a user id or facility id they resolved from the

@@ -81,7 +81,7 @@ describe("POST /api/caregiver/clock", () => {
   });
 
   it("lets the database decide when the flag cannot be read: its one-clock policy refusal is a 409", async () => {
-    // The service role holds no grant on timeclock_facility_settings; migration 483's
+    // The service role holds no grant on timeclock_facility_settings; migration 494's
     // restrictive time_records policies enforce the rule for the caller's own session.
     mock.flag.mockResolvedValue("unknown");
     mock.insertResult = { data: null, error: { code: "42501", message: "new row violates row-level security policy" } };

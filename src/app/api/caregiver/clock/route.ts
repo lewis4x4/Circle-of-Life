@@ -27,7 +27,7 @@ function frontDoorRefusal() {
 }
 
 /**
- * Migration 483's restrictive time_records policies refuse a staff punch where
+ * migration 494's restrictive time_records policies refuse a staff punch where
  * the kiosk timeclock is on. A refused write is that rule (or plain RLS, which
  * this route never widens), so it answers like the pre-check does.
  */
@@ -44,7 +44,7 @@ function isPolicyRefusal(error: { code?: string | null }): boolean {
  *
  * The flag pre-check is a fast path. When the flag cannot be read (the service
  * role holds no grant on timeclock_facility_settings), the write still goes
- * ahead and the database enforces the rule (migration 483).
+ * ahead and the database enforces the rule (migration 494).
  */
 export async function POST(request: Request) {
   let raw: unknown;

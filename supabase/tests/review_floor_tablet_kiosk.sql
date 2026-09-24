@@ -1,4 +1,4 @@
--- COL-677 / COL-690 floor tablet and front-door kiosk (migration 483).
+-- COL-677 / COL-690 floor tablet and front-door kiosk (migration 494).
 -- Spec 40 section 10 item 2. Native scratch-only probe: fixtures and the auth
 -- adaptation roll back. Synthetic staff and visitors only ("Probe Alpha" ...).
 BEGIN;

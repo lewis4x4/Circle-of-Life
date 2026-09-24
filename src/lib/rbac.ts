@@ -52,7 +52,7 @@ export type AppRole = (typeof ALL_APP_ROLES)[number];
 
 // ── Floor tablet roster roles (COL-690) ───────────────────────────
 // Login roles a floor tablet's roster may list: every staff login role, never
-// family or broker. Mirrors migration 483's haven.floor_roster_roles_valid
+// family or broker. Mirrors migration 494's haven.floor_roster_roles_valid
 // (retired roles are already absent from ALL_APP_ROLES). Which of these a
 // given tablet lists is runtime configuration (device roster_roles, else the
 // facility's floor_roster_roles); this is only the outer bound, used by the

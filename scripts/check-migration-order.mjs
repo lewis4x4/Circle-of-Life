@@ -16,11 +16,22 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  478: "held for PR #788 (policy_self_comparison_tautologies), already applied to production; its file is on main, remove this entry after rebasing onto it.",
-  479: "held for PR #789 (remove_dev_notes_and_acceptance_test_rows), already applied to production; its file is on main, remove this entry after rebasing onto it.",
-  480: "held for med_tech_shift_follows_punch_corrections (COL-668 follow-up), applied to production; its file is on main, remove this entry after rebasing onto it.",
-  481: "held for open PR #808 (medicaid_resident_share_invoice, COL-678), applied to Haven HFO Staging; remove once #808 merges.",
-  482: "held for open PR #811 (rls_helper_initplans_everywhere, COL-696); remove once #811 merges.",
+  478: "PR #788 policy_self_comparison_tautologies, on main; remove after rebasing onto main.",
+  479: "PR #789 remove_dev_notes_and_acceptance_test_rows, on main; remove after rebasing onto main.",
+  480: "med_tech_shift_follows_punch_corrections (COL-668 follow-up), on main; remove after rebasing onto main.",
+  481: "PR #808 medicaid_resident_share_invoice, on main; remove after rebasing onto main.",
+  482: "PR #811 rls_helper_initplans_everywhere, on main; remove after rebasing onto main.",
+  483: "released by COL-677 (moved to 494); expected to be filled by another branch; remove once it is.",
+  484: "released by COL-677 (moved to 495); expected to be filled by another branch; remove once it is.",
+  485: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  486: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  487: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  488: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  489: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  490: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  491: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  492: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
+  493: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
