@@ -13,6 +13,8 @@ import { NEW_STAFF_ROLES } from "@/types/staff";
 import { EmployeeMedicalReviewers } from "./EmployeeMedicalReviewers";
 import { EmployeeTrainingEvidence } from "./EmployeeTrainingEvidence";
 import { useEmployeeResource } from "@/lib/staff/use-employee-resource";
+import { withOnboardingManuals, type OnboardingManualStatus } from "@/lib/staff/onboarding-manuals";
+import { OnboardingManualsPanel } from "./OnboardingManualsPanel";
 
 type SourceTemplate = Pick<EmployeeRequirement, "code" | "title" | "category" | "source_file" | "source_page" | "source_excerpt" | "content" | "required_signers" | "recurrence_status" | "recurrence_months" | "due_days" | "duty">;
 
@@ -31,6 +33,7 @@ export default function EmployeeFileClient({ staffId, selfService = false }: { s
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("file");
+  const [manuals, setManuals] = useState<OnboardingManualStatus[] | null | undefined>(undefined);
   const endpoint = `/api/admin/staff/${staffId}/employee-file`;
   const load = useCallback(async () => {
     setLoading(true); setError(null); setData(null);
@@ -71,6 +74,7 @@ export default function EmployeeFileClient({ staffId, selfService = false }: { s
     </nav>
     {tab === "file" && <>
       <Button variant="outline" disabled={busy} onClick={() => void perform(async () => { await run("record_export", {}); const blob = new Blob([JSON.stringify(employeeAuditExport(data, today), null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `employee-checklist-${data.staff.id}-${today}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); })}>Download personnel checklist</Button>
+      <OnboardingManualsPanel staffId={staffId} selfService={selfService} canManage={data.canManage} isSelf={data.staff.user_id === data.actorId} onLoaded={setManuals} />
       {!activeRequirements.length && <Panel title="Set up the employee checklist"><p>No applicable requirements have been approved for this employee yet.</p>{data.canManage && <Button onClick={() => setTab("requirements")}>Review packet templates</Button>}</Panel>}
       <Panel title="Checklist">
         {!data.canMedical && <p className="text-sm text-muted-foreground">Confidential medical documents are available only to the employee and designated medical-file reviewers.</p>}
@@ -84,7 +88,7 @@ export default function EmployeeFileClient({ staffId, selfService = false }: { s
       </Panel>
     </>}
     {tab === "readiness" && <>
-      <Panel title="Readiness for assigned duties"><p className="text-sm text-muted-foreground">Based on approved requirements and verified evidence. Missing or unresolved requirements do not grant clearance.</p><div className="grid gap-4 md:grid-cols-3">{DUTIES.map((duty) => { const result = assessDutyReadiness(assessments, duty, data.staff.employment_status, data.staff.hire_date, today); return <article key={duty} className="space-y-2 rounded-md border p-4"><h3 className="font-medium">{displayDuty(duty)}</h3><Badge className="text-foreground" variant={result.status === "blocked" ? "destructive" : "outline"}>{displayDuty(result.status)}</Badge><ul className="space-y-1 text-sm">{result.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></article>; })}</div></Panel>
+      <Panel title="Readiness for assigned duties"><p className="text-sm text-muted-foreground">Based on approved requirements and verified evidence. Missing or unresolved requirements do not grant clearance.</p><div className="grid gap-4 md:grid-cols-3">{DUTIES.map((duty) => { const result = withOnboardingManuals(assessDutyReadiness(assessments, duty, data.staff.employment_status, data.staff.hire_date, today), manuals); return <article key={duty} className="space-y-2 rounded-md border p-4"><h3 className="font-medium">{displayDuty(duty)}</h3><Badge className="text-foreground" variant={result.status === "blocked" ? "destructive" : "outline"}>{displayDuty(result.status)}</Badge><ul className="space-y-1 text-sm">{result.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></article>; })}</div></Panel>
       <Panel title="Actual duty history"><p className="text-sm text-muted-foreground">Record what happened, including activity before clearance. Recording an event does not grant permission.</p><ul className="space-y-2">{data.dutyEvents.map((event) => <li key={event.id}>{displayDuty(event.duty)} · {new Date(event.occurred_at).toLocaleString("en-US", { timeZone: "America/New_York" })}{event.readiness_snapshot?.requires_review && <Badge className="ml-2 text-foreground" variant="destructive">Clearance needs review</Badge>}{event.readiness_snapshot && <p className="text-xs text-muted-foreground">Assessed when recorded: {displayDuty(event.readiness_snapshot.status)}. This does not reconstruct historical policy.</p>}</li>)}</ul>
         {data.canManage && <form className="grid gap-3 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget); void perform(async () => { await run("record_duty", { duty: text(f,"duty"), occurred_at: facilityDatetimeLocalToUtcIso(text(f,"occurred_at")), evidence_note: text(f,"note") }); }); }}><Field label="Duty"><select name="duty" className={fieldClass}>{DUTIES.map((d) => <option key={d} value={d}>{displayDuty(d)}</option>)}</select></Field><Field label="Actual date and time (Eastern time)"><Input name="occurred_at" type="datetime-local" required /></Field><Field label="How this activity was confirmed"><Input name="note" required /></Field><Button disabled={busy} type="submit">Record actual activity</Button></form>}
       </Panel>

@@ -53,6 +53,7 @@ beforeEach(() => {
   fetchMock.mockReset().mockImplementation(async (_url: string, init?: RequestInit) => {
     if (_url.endsWith('/catalog')) return { ok: true, json: async () => sourceTemplates };
     if (_url.endsWith('/training')) return { ok: true, json: async () => ({ completions: [], certificates: [], demonstrations: [] }) };
+    if (_url.endsWith('/manuals')) return { ok: true, json: async () => ({ manuals: [] }) };
     if (init?.method === 'POST') return { ok: !mutationError, json: async () => mutationError ? { error: mutationError } : { result: 'saved-id' } };
     return { ok: true, json: async () => currentData };
   });
