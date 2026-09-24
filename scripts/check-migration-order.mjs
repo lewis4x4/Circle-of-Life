@@ -15,13 +15,7 @@ import { fileURLToPath } from "node:url";
  * gap still fails. When a listed number later gains a real file, the check passes
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
-export const ALLOWED_GAPS = {
-  489: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  490: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  491: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  492: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-  493: "applied to production from another branch before its file reached this branch's base; remove after rebasing onto main once its file merges.",
-};
+export const ALLOWED_GAPS = {};
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
 // Supabase CLI's default migration filename format is a 14-digit timestamp
