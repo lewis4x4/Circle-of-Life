@@ -30,13 +30,14 @@ describe("pillars navigation", () => {
       "executive",
       "residents",
       "billing",
-      "family-messages",
+      "family-portal",
       "rounding-live",
       "snack-pass",
     ]);
     expect(quick.find((entry) => entry.key === "billing")?.label).toBe("Billing");
     expect(quick.find((entry) => entry.key === "residents")?.label).toBe("Resident roster / census");
-    expect(all.some((entry) => entry.href === "/admin/family-messages")).toBe(true);
+    expect(all.some((entry) => entry.href === "/admin/family-portal")).toBe(true);
+    expect(all.some((entry) => entry.href.startsWith("/admin/family-messages"))).toBe(false);
     expect(all.some((entry) => entry.href === "/admin/rounding/live")).toBe(true);
     expect(all.some((entry) => entry.href === "/admin/dietary#snack-pass" && entry.key === "snack-pass")).toBe(true);
     expect(all.some((entry) => entry.href === "/admin/knowledge")).toBe(true);

@@ -152,7 +152,7 @@ export function AssistantDashboardPageClient({
           icon={MessageSquare}
           urgency="normal"
           subLabel={bulletinTile.subLabel}
-          href="/admin/family-messages"
+          href="/admin/family-portal?tab=notes"
         />
         <StatCard
           title="Transport · Eastern today"
@@ -167,7 +167,7 @@ export function AssistantDashboardPageClient({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Resident Directory" href="/admin/residents" />
-        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-messages" />
+        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-portal?tab=notes" />
         <ActionTile label="Staff Directory" href="/admin/staff" />
         <ActionTile label="Transportation" href="/admin/transportation" />
       </div>

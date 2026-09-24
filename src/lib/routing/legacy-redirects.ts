@@ -16,7 +16,6 @@ export const ADMIN_ALIAS_SEGMENTS = [
   // Command Deck at (dietary)/dietary/page.tsx, not a redirect to admin.
   // Admin dietary hub remains at /admin/dietary (direct path).
   "executive",
-  "family-messages",
   "finance",
   "incidents",
   "insurance",
@@ -99,6 +98,11 @@ export const LEGACY_REDIRECTS: LegacyRedirect[] = [
   { source: "/clinical/residents", destination: "/admin/residents", permanent: true },
   { source: "/clinical/residents/:path*", destination: "/admin/residents/:path*", permanent: true },
   { source: "/clinical", destination: "/admin/residents", permanent: true },
+  // Family notes is a view of Family Connections now (COL-707, Brian 2026-09-23).
+  // Next passes the incoming query through, so ?filter=triage survives the hop.
+  { source: "/admin/family-messages", destination: "/admin/family-portal?tab=notes", permanent: true },
+  { source: "/admin/family-messages/:path*", destination: "/admin/family-portal?tab=notes", permanent: true },
+  { source: "/family-messages", destination: "/admin/family-portal?tab=notes", permanent: true },
   // "Close" was a second tab rendering Period close (COL-654).
   { source: "/admin/finance/close", destination: "/admin/finance/period-close", permanent: true },
   // The medication reconciliation hub lives at /admin/discharge; the pipeline URL
