@@ -999,15 +999,28 @@ DO $$ DECLARE r jsonb; f record; n integer; i integer; replay uuid := gen_random
   END IF;
   UPDATE public.timeclock_facility_settings SET kiosk_visitor_sign_ins_per_10_minutes = 30 WHERE facility_id = f.facility;
   PERFORM pg_temp.fk_fail(format('UPDATE public.timeclock_facility_settings SET kiosk_visitor_sign_ins_per_10_minutes = 0 WHERE facility_id = %L', f.facility), 'kiosk_visitor_cap_check');
-  -- Twenty sign-out misses throttle the kiosk: sign-in, matches and sign-out all wait.
+  -- Twenty wrong staff PINs throttle punching, never visitors.
+  FOR i IN 1..20 LOOP PERFORM public.timeclock_identify(pg_temp.tok('kiosk'), 'NOBODY', NULL, '000000'); END LOOP;
+  IF public.timeclock_identify(pg_temp.tok('kiosk'), 'FA-1', NULL, '111111')->>'error' <> 'device_throttled' THEN RAISE EXCEPTION 'Fixture: staff PIN throttle not reached'; END IF;
+  r := public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'vendor_contractor', 'Capprobe Pin', NULL, 'Probe Co', NULL, NULL, false);
+  IF NOT (r->>'ok')::boolean OR public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), 'Capprobe')->>'ok' <> 'true' THEN
+    RAISE EXCEPTION 'Staff PIN misses turned visitors away: %', r;
+  END IF;
+  UPDATE public.timeclock_devices SET throttled_until = NULL, failure_count = 0, failure_window_started_at = NULL WHERE id = kiosk;
+  -- Twenty sign-out misses throttle the visitor calls: sign-in, matches and sign-out all wait.
   FOR i IN 1..10 LOOP PERFORM public.visitor_kiosk_sign_out(pg_temp.tok('kiosk'), gen_random_uuid()); END LOOP;
   FOR i IN 1..10 LOOP PERFORM public.visitor_kiosk_sign_out(pg_temp.tok('kiosk'), (SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'visit')); END LOOP;
   IF public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'vendor_contractor', 'Capprobe Three', NULL, 'Probe Co', NULL, NULL, false)->>'error' <> 'device_throttled'
      OR public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), 'Capprobe')->>'error' <> 'device_throttled'
      OR public.visitor_kiosk_sign_out(pg_temp.tok('kiosk'), gen_random_uuid())->>'error' <> 'device_throttled' THEN
-    RAISE EXCEPTION 'Sign-out misses did not throttle the kiosk';
+    RAISE EXCEPTION 'Sign-out misses did not throttle the visitor calls';
   END IF;
-  UPDATE public.timeclock_devices SET throttled_until = NULL, failure_count = 0, failure_window_started_at = NULL WHERE id = kiosk;
+  -- ...and never a punch: the staff counter is untouched.
+  IF (SELECT failure_count FROM public.timeclock_devices WHERE id = kiosk) <> 0
+     OR NOT (public.timeclock_identify(pg_temp.tok('kiosk'), 'FA-1', NULL, '111111')->>'ok')::boolean THEN
+    RAISE EXCEPTION 'Visitor sign-out misses blocked a staff punch';
+  END IF;
+  UPDATE public.timeclock_devices SET visitor_throttled_until = NULL, visitor_failure_count = 0, visitor_failure_window_started_at = NULL WHERE id = kiosk;
 END $$;
 
 ROLLBACK;
