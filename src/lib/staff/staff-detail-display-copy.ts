@@ -2,6 +2,8 @@
  * Quiet Operator copy for the admin staff detail page (`/admin/staff/[id]`).
  * Missing contact, emergency, and employment fields name real gaps — never fabricate values.
  */
+import { formatDisplayDateTime } from "@/lib/format/datetime";
+
 
 export const STAFF_DETAIL_NO_PHONE_COPY = "No phone posted";
 export const STAFF_DETAIL_NO_ALT_PHONE_COPY = "No alt phone posted";
@@ -33,7 +35,7 @@ export function formatStaffDetailDateOnly(
   if (!iso || !iso.trim()) return emptyCopy;
   const parsed = new Date(`${iso.trim()}T12:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return emptyCopy;
-  return new Intl.DateTimeFormat("en-US", STAFF_DETAIL_DATE_ONLY_FORMAT).format(parsed);
+  return new Intl.DateTimeFormat("en-US", { ...STAFF_DETAIL_DATE_ONLY_FORMAT, timeZone: "UTC" }).format(parsed);
 }
 
 /** Hire date on the employment section when unset or unparseable. */
@@ -113,13 +115,5 @@ export function formatStaffDetailRateCents(cents: number | null | undefined): st
 /** Last-updated timestamp in the record header when unset or unparseable. */
 export function formatStaffDetailUpdatedAt(iso: string | null | undefined): string {
   if (!iso || !iso.trim()) return STAFF_DETAIL_NO_UPDATE_TIMESTAMP_COPY;
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return STAFF_DETAIL_NO_UPDATE_TIMESTAMP_COPY;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
+  return formatDisplayDateTime(iso, { fallback: STAFF_DETAIL_NO_UPDATE_TIMESTAMP_COPY });
 }

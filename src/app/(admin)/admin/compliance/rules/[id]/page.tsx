@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
@@ -209,7 +210,7 @@ export default function ComplianceRuleDetailPage() {
                       {result.passed ? "Rule Passed" : "Rule Failed"}
                     </p>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(result.created_at).toLocaleString()}
+                      {formatDisplayDateTime(result.created_at)}
                     </span>
                   </div>
                   {!result.passed && result.non_compliant_count > 0 && (

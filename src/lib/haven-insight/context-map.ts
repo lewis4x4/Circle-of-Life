@@ -378,22 +378,6 @@ const ROUTE_CONTEXTS: Array<{ prefix: string; context: ModuleContext }> = [
     },
   },
   {
-    prefix: "/admin/family-messages",
-    context: {
-      module: "Family Bulletin Notes",
-      perspective: "one-way staff bulletin notes families read (no family replies)",
-      suggestedQuestions: [
-        "Which residents have no staff bulletin note in the last 7 days?",
-        "Who posted the most recent update for this resident?",
-        "Are any residents flagged for bulletin triage follow-up?",
-        "How many staff updates were posted this week?",
-      ],
-      kpiDomains: [],
-      systemPromptAddon:
-        "The user is posting one-way bulletin notes for families. Families read staff updates but cannot reply. Do not suggest unread family messages, inbox triage, or two-way chat. Focus on posting cadence, residents needing updates, and delivery acknowledgments.",
-    },
-  },
-  {
     prefix: "/admin/family-portal",
     context: {
       module: "Family Portal Hub",

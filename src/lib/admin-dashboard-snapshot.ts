@@ -360,7 +360,7 @@ function buildWorkflowInbox(input: {
       message: `${parts.join(" · ")}${input.familyTriagePending + input.familyConferencesUpcoming === 1 ? "" : "s"} need follow-through in the family lane.`,
       tone: input.familyTriagePending > 0 ? "warning" : "normal",
       href: input.familyTriagePending > 0
-        ? "/admin/family-messages?filter=triage"
+        ? "/admin/family-portal?tab=notes&filter=triage"
         : "/admin/family-portal?conference=upcoming#care-conferences",
       ctaLabel: input.familyTriagePending > 0 ? "Review messages" : "Work conference queue",
     });

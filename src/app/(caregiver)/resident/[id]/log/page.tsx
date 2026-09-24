@@ -1,5 +1,6 @@
 "use client";
 
+import { formatShortDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -419,12 +420,7 @@ export default function CaregiverResidentLogPage() {
                     <span className="text-muted-foreground">{assistanceLabel(row.assistance_level)}</span>
                     {row.refused ? <span className="text-amber-400"> · refused</span> : null}
                     <p className="mt-0.5 text-[10px] text-muted-foreground">
-                      {new Date(row.log_time).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatShortDateTime(row.log_time)}{" "}
                       · {row.shift}
                     </p>
                     {row.notes?.trim() ? <p className="mt-1 text-muted-foreground">{row.notes}</p> : null}

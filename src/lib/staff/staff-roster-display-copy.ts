@@ -2,6 +2,8 @@
  * Quiet Operator copy for the admin staff roster (`/admin/staff`).
  * Missing next-shift fields name real gaps — never fabricate values.
  */
+import { formatDateTimeWith } from "@/lib/format/datetime";
+
 
 export const STAFF_ROSTER_NO_SHIFT_COPY = "No shift posted";
 
@@ -11,10 +13,7 @@ export type StaffRosterNextShift = {
 };
 
 function formatNextShiftLabel(shiftDate: string, shiftType: string): string {
-  const parsed = new Date(`${shiftDate}T12:00:00`);
-  const datePart = Number.isNaN(parsed.getTime())
-    ? shiftDate
-    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(parsed);
+  const datePart = formatDateTimeWith(shiftDate.slice(0, 10), { month: "short", day: "numeric" }, { fallback: shiftDate });
   const typeLabel =
     shiftType === "day"
       ? "Day"

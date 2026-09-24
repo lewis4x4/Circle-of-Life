@@ -144,13 +144,13 @@ describe("BillingConcessionsPage", () => {
     render(<BillingConcessionsPage />);
 
     expect(
-      await screen.findByText("Rate schedules and agreements as of 2026-08-20 Eastern."),
+      await screen.findByText("Rate schedules and agreements as of Aug 20, 2026."),
     ).toBeInTheDocument();
   });
 
   it("uses todayFacilityDateIso for schedule and agreement windows, not a UTC ISO slice", () => {
     expect(pageSource).toContain("todayFacilityDateIso()");
-    expect(pageSource).toContain("as of {asOfDate} Eastern");
+    expect(pageSource).toContain("as of {formatDisplayDate(asOfDate)}");
     expect(pageSource).not.toMatch(
       /targetDate\s*=\s*new Date\(\)\.toISOString\(\)\.slice\(0,\s*10\)/,
     );

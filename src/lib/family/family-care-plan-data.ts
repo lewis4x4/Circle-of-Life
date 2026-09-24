@@ -1,3 +1,4 @@
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -53,20 +54,12 @@ function formatMediumDate(ymd: string | null | undefined): string {
   if (!ymd?.trim()) return FAMILY_CARE_PLAN_NOT_POSTED;
   const d = new Date(`${ymd}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return FAMILY_CARE_PLAN_NOT_POSTED;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(d);
 }
 
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso?.trim()) return FAMILY_CARE_PLAN_NOT_POSTED;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return FAMILY_CARE_PLAN_NOT_POSTED;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatDisplayDateTime(iso, { fallback: FAMILY_CARE_PLAN_NOT_POSTED });
 }
 
 function statusLabel(s: Database["public"]["Enums"]["care_plan_status"]): string {

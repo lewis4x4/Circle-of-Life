@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -2120,7 +2121,7 @@ function BillingInvoiceLedgerInner({
             <div className="rounded-xl border border-border bg-card p-[14px] shadow-[var(--shadow-card)] ring-1 ring-border/60">
               <h2 className="text-[14px] font-semibold text-foreground">Activity this week</h2>
               <p className="mt-1 text-[12px] text-muted-foreground">
-                Recent cash application, rate effective dates, and upcoming schedule notes · as of {t} Eastern.
+                Recent cash application, rate effective dates, and upcoming schedule notes · as of {formatDisplayDate(t)}.
               </p>
 
               <div className="mt-4 space-y-4">

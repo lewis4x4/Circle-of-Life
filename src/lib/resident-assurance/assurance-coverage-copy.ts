@@ -6,6 +6,7 @@
  * does not record at all rather than implying it was checked.
  */
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import type {
   ResidentAssuranceFacilityRollup,
   ResidentAssuranceFacilityTrendRow,
@@ -38,9 +39,7 @@ export function roundingBandLabel(row: {
 /** Last recorded observation for a facility — or a plain statement that there is none. */
 export function roundingLastObservedLine(lastObservedAt: string | null): string {
   if (!lastObservedAt) return "Nothing recorded yet";
-  const parsed = new Date(lastObservedAt);
-  if (Number.isNaN(parsed.getTime())) return "Nothing recorded yet";
-  return parsed.toLocaleDateString();
+  return formatDisplayDate(lastObservedAt, { fallback: "Nothing recorded yet" });
 }
 
 /** Coverage of a facility's day series: how many of the days carry any record. */

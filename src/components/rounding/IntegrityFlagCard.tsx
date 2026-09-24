@@ -13,6 +13,7 @@
  * PostgREST answers `PGRST201`, which is why this tab used to fail to load.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { CheckCircle2, Eye, Loader2, UserSearch, XCircle } from "lucide-react";
@@ -215,13 +216,13 @@ export function IntegrityCard({
             </p>
             <p className="text-[12px] text-muted-foreground">
               Owner: {personName(row.assigned_staff, row.assigned_to_staff_id ?? "Unassigned")}
-              {row.assigned_at ? ` · assigned ${new Date(row.assigned_at).toLocaleString()}` : ""}
+              {row.assigned_at ? ` · assigned ${formatDisplayDateTime(row.assigned_at)}` : ""}
             </p>
           </div>
 
           <dl className="grid gap-3 text-[13px] text-foreground md:grid-cols-2">
-            <DataPair label="Recorded" value={log ? new Date(log.entered_at).toLocaleString() : new Date(row.detected_at).toLocaleString()} />
-            <DataPair label="Actual occurrence" value={log ? new Date(log.observed_at).toLocaleString() : "Unavailable"} />
+            <DataPair label="Recorded" value={log ? formatDisplayDateTime(log.entered_at) : formatDisplayDateTime(row.detected_at)} />
+            <DataPair label="Actual occurrence" value={log ? formatDisplayDateTime(log.observed_at) : "Unavailable"} />
             <DataPair label="Recorded by" value={personName(row.staff, row.staff_id?.slice(0, 8) ?? "Unassigned")} />
             <div className="min-w-0">
               <dt className="text-[11px] font-medium text-muted-foreground">Lag</dt>
@@ -374,7 +375,7 @@ export function IntegrityCard({
                         ? ` · ${item.changedFields.join(", ")}`
                         : ""}
                       <span className="text-muted-foreground">
-                        {` · ${item.actorName} · ${new Date(item.createdAt).toLocaleString()}`}
+                        {` · ${item.actorName} · ${formatDisplayDateTime(item.createdAt)}`}
                       </span>
                     </li>
                   ))}

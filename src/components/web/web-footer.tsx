@@ -186,7 +186,7 @@ export function WebFooter() {
               <div className="text-chrome-foreground-muted text-[10px]">Lafayette County</div>
             </div>
             <div className="p-2.5 rounded-lg bg-stone-900/60 border border-stone-800/80">
-              <div className="font-bold text-stone-200">Homewood Lodge ALF</div>
+              <div className="font-bold text-stone-200">Homewood Lodge, ALF</div>
               <div>Sorensen, Smith & Bay, LLC</div>
               <div className="text-amber-400/90 font-mono text-[10px]">License # AL12528 • 36 Beds</div>
               <div className="text-chrome-foreground-muted text-[10px]">Lafayette County</div>

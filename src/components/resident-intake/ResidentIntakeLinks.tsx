@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { FileStack, Loader2, RefreshCcw } from "lucide-react";
@@ -35,9 +36,7 @@ export type ResidentIntakeLinksProps = {
 };
 
 function dateLabel(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Update time not posted";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
+  return formatDisplayDate(value, { fallback: "Update time not posted" });
 }
 
 function stateTone(state: string): "muted" | "success" | "warning" | "danger" | "info" {

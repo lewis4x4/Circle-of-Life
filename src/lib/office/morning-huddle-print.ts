@@ -1,3 +1,4 @@
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import type { MorningHuddleData } from "@/lib/office/morning-huddle";
 import {
   formatMorningHuddlePrintAssignedShift,
@@ -29,14 +30,7 @@ function formatTime(iso: string): string {
 }
 
 function formatDateLabel(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatDateTimeWith(iso.slice(0, 10), { weekday: "long", month: "long", day: "numeric", year: "numeric" }, { fallback: iso });
 }
 
 function humanize(value: string): string {

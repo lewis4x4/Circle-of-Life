@@ -3,6 +3,7 @@
  * Unparseable updated-at timestamps name the gap — never fabricate dates.
  */
 
+import { formatDateTimeWith, formatShortDateTime } from "@/lib/format/datetime";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 
 /** Newest invoices loaded for the billing hub / ledger CSV. Older rows are not fetched. */
@@ -18,9 +19,8 @@ const INTERNAL_INVOICE_NUMBER_RE =
 function formatBillingPeriodYm(ym: string): string | null {
   const match = /^(\d{4})-(\d{2})$/.exec(ym.trim());
   if (!match) return null;
-  const parsed = new Date(`${match[1]}-${match[2]}-01T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(parsed);
+  const label = formatDateTimeWith(`${match[1]}-${match[2]}-01`, { month: "short", year: "numeric" }, { fallback: "" });
+  return label || null;
 }
 
 function formatInvoiceDateMonthYear(invoiceDateIso: string | undefined): string | null {
@@ -96,10 +96,5 @@ export function invoiceHubLoadCapNotice(
 export function formatUpdatedAt(iso: string): string {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return INVOICE_NO_UPDATED_AT_COPY;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsed);
+  return formatShortDateTime(parsed);
 }

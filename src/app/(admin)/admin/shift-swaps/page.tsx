@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ArrowLeftRight, Download, Loader2 } from "lucide-react";
@@ -315,7 +316,7 @@ export default function AdminShiftSwapsPage() {
   }, [denyTargetId, denyReason, supabase, load, user?.id]);
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] w-full space-y-6 pb-12">
+    <div className="relative w-full space-y-6 pb-12">
       <></>
 
       <div className="relative z-10 space-y-6">
@@ -590,15 +591,7 @@ async function fetchShiftSwapsFromSupabase(
 }
 
 function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatDisplayDateTime(iso, { fallback: iso });
 }
 
 /**

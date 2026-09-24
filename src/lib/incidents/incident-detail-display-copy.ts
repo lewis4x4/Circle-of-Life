@@ -3,6 +3,8 @@ import { enumLabel } from "@/lib/display/enum-label";
  * Quiet Operator copy for the admin incident detail page (`/admin/incidents/[id]`).
  * Missing injury and fall fields name real gaps — never fabricate clinical text or resident names.
  */
+import { formatDisplayDateTime } from "@/lib/format/datetime";
+
 
 export const INCIDENT_DETAIL_NO_INJURY_DESCRIPTION_COPY = "No injury description posted";
 export const INCIDENT_DETAIL_NO_BODY_LOCATION_COPY = "No body location posted";
@@ -11,14 +13,6 @@ export const INCIDENT_DETAIL_NO_FALL_WITNESSED_COPY = "No witnessed status poste
 export const INCIDENT_DETAIL_NO_FALL_TYPE_COPY = "No fall type posted";
 export const INCIDENT_DETAIL_NO_FALL_ACTIVITY_COPY = "No activity posted";
 export const INCIDENT_DETAIL_NO_DATE_COPY = "No date posted";
-
-const INCIDENT_DETAIL_TIMESTAMP_FORMAT: Intl.DateTimeFormatOptions = {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-};
 
 function formatSnake(value: string): string {
   return enumLabel(value);
@@ -65,7 +59,5 @@ export function formatIncidentDetailFallActivity(value: string | null | undefine
 /** Timestamp on the detail page — never invents a date/time. */
 export function formatIncidentDetailTimestamp(value: string | null | undefined): string {
   if (!value || !value.trim()) return INCIDENT_DETAIL_NO_DATE_COPY;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return INCIDENT_DETAIL_NO_DATE_COPY;
-  return new Intl.DateTimeFormat("en-US", INCIDENT_DETAIL_TIMESTAMP_FORMAT).format(parsed);
+  return formatDisplayDateTime(value, { fallback: INCIDENT_DETAIL_NO_DATE_COPY });
 }

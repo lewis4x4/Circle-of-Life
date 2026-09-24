@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -29,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatMetric, type MetricState } from "@/lib/metrics/metric-state";
 import {
+  CERT_REQUIREMENTS_HREF,
   describeCredentialPanel,
   describeShiftGapPanel,
   type StaffingCoverageScope,
@@ -837,9 +839,14 @@ export function AdminStaffingConsolePageClient({
                 Expired credentials block assignment until they are cleared.
               </p>
             </div>
-            <Link href="/admin/certifications?timeline=expired" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0")}>
-              Expired certs
-            </Link>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Link href={CERT_REQUIREMENTS_HREF} className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+                Requirements
+              </Link>
+              <Link href="/admin/certifications?timeline=expired" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                Expired certs
+              </Link>
+            </div>
           </div>
           {certWarnings.length === 0 ? (
             <div className="mt-4">
@@ -886,7 +893,7 @@ export function AdminStaffingConsolePageClient({
           {visibleSnapshots.slice(0, 5).map((snap) => (
             <div key={snap.id} className={cn(listRowClass, "grid gap-2 text-sm sm:grid-cols-[1fr_auto] sm:items-center")}>
               <div className="font-medium text-foreground">
-                {new Date(snap.snapshotAt).toLocaleDateString()} / {snap.shift}
+                {formatDisplayDate(snap.snapshotAt)} / {snap.shift}
               </div>
               <div className="text-muted-foreground">
                 Ratio {snap.ratio.toFixed(1)}

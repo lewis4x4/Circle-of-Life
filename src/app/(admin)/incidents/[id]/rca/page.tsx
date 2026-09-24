@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime, formatProfileName } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -250,7 +251,7 @@ export default function AdminIncidentRcaPage() {
             .eq("id", rca.completed_by)
             .maybeSingle()) as unknown as QueryResult<{ full_name: string | null }>;
           if (prof.error) throw prof.error;
-          setCompleterName(prof.data?.full_name?.trim() || "Staff");
+          setCompleterName(formatProfileName(prof.data?.full_name, { fallback: "Staff" }));
         } else {
           setCompleterName(null);
         }
@@ -430,7 +431,7 @@ export default function AdminIncidentRcaPage() {
         .select("full_name")
         .eq("id", user.id)
         .maybeSingle()) as unknown as QueryResult<{ full_name: string | null }>;
-      setCompleterName(prof.data?.full_name?.trim() || "Staff");
+      setCompleterName(formatProfileName(prof.data?.full_name, { fallback: "Staff" }));
 
       if (typeof window !== "undefined") {
         try {
@@ -653,13 +654,7 @@ export default function AdminIncidentRcaPage() {
         <div className="rounded-[8px] border border-success/20 bg-success/10 px-4 py-4 text-sm text-success">
           <p className="font-medium">This investigation is marked complete.</p>
           <p className="mt-1 tabular-nums">
-            {new Intl.DateTimeFormat("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            }).format(new Date(completedAt))}
+            {formatDisplayDateTime(completedAt)}
             {completerName ? ` · ${completerName}` : ""}
           </p>
           <p className="mt-2 text-xs opacity-80">
@@ -705,13 +700,7 @@ export default function AdminIncidentRcaPage() {
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>
             <span className="text-muted-foreground">Occurred:</span>{" "}
-            <span className="tabular-nums text-foreground">{new Intl.DateTimeFormat("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            }).format(new Date(incident.occurred_at))}</span>
+            <span className="tabular-nums text-foreground">{formatDisplayDateTime(incident.occurred_at)}</span>
           </p>
           <p>
             <span className="text-muted-foreground">Category:</span>{" "}

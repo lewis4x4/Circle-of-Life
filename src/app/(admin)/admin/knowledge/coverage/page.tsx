@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -390,7 +391,7 @@ function GapsPanel({
                 <td className="px-3 py-2 text-xs text-muted-foreground">{g.surface}</td>
                 <td className="px-3 py-2 text-right font-mono text-xs">{g.frequency}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
-                  {new Date(g.last_asked_at).toLocaleString()}
+                  {formatDisplayDateTime(g.last_asked_at)}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Clock3, Loader2, Pill, Shield, ShieldAlert, X, RefreshCw } from "lucide-react";
@@ -498,7 +499,7 @@ function MedicationCard({
            </span>
          </div>
 
-         {item.isPrn && <p className="text-sm text-muted-foreground">Last recorded administration: {item.lastAdministrationIso ? new Date(item.lastAdministrationIso).toLocaleString() : "None recorded"}. Check the order restrictions before any repeat dose.</p>}
+         {item.isPrn && <p className="text-sm text-muted-foreground">Last recorded administration: {item.lastAdministrationIso ? formatDisplayDateTime(item.lastAdministrationIso) : "None recorded"}. Check the order restrictions before any repeat dose.</p>}
          <label className="text-sm text-muted-foreground">{item.isPrn ? "Indication and order restrictions checked" : "Refusal reason (required if refused)"}
            <input value={reason} onChange={(e) => setReason(e.target.value)} className="mt-2 w-full rounded-lg border border-white/20 bg-black/30 p-3" />
          </label>

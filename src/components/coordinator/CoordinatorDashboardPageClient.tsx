@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDateTimeWith } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
@@ -173,7 +174,7 @@ export function CoordinatorDashboardPageClient({
           icon={MessageSquare}
           urgency="normal"
           subLabel={bulletinTile.subLabel}
-          href="/admin/family-messages"
+          href="/admin/family-portal?tab=notes"
         />
       </div>
 
@@ -182,7 +183,7 @@ export function CoordinatorDashboardPageClient({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ActionTile label="Care Plans" href="/admin/care-plans/reviews-due" />
         <ActionTile label="Assessments" href="/admin/assessments/overdue" />
-        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-messages" />
+        <ActionTile label={FAMILY_BULLETIN_DASHBOARD_ACTION_LABEL} href="/admin/family-portal?tab=notes" />
         <ActionTile label="Admissions" href="/admin/admissions" />
       </div>
 
@@ -207,7 +208,7 @@ export function CoordinatorDashboardPageClient({
                     <span className="text-[15px] font-semibold text-foreground">{cp.residentName}</span>
                   </div>
                   <span className="text-xs font-medium text-warning">
-                    {new Date(cp.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {formatDateTimeWith(cp.reviewDate, { month: "short", day: "numeric" })}
                   </span>
                 </Link>
               ))}

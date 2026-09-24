@@ -3,6 +3,7 @@
  * Used by run preview, CSV export, and print/PDF popup HTML.
  */
 
+import { formatDisplayDateTime } from "@/lib/format/datetime";
 import { REPORTS_NO_METRIC_VALUE_COPY } from "@/lib/reports/reports-display-copy";
 import { enumLabel } from "@/lib/display/enum-label";
 
@@ -355,10 +356,7 @@ export function buildReportPrintHtml(props: {
   footnotes?: string[];
 }): string {
   const { reportTitle, templateLabel, scopeLabel, summary, footnotes } = props;
-  const generatedAt = new Date().toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const generatedAt = formatDisplayDateTime(new Date());
 
   const byGroup = new Map<string, SummaryRow[]>();
   for (const row of summary) {

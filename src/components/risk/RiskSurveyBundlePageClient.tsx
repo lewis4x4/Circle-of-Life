@@ -35,6 +35,8 @@ type RiskSurveyBundlePageClientProps = {
   initialPacket: SurveyBundlePacket | null;
   initialError: string | null;
   initialFacilityId: string | null;
+  /** Rendered as a view of the survey pack (COL-707): no risk hub strip. */
+  embedded?: boolean;
 };
 
 function downloadText(filename: string, body: string, type: string) {
@@ -58,6 +60,7 @@ export default function RiskSurveyBundlePageClient({
   initialPacket,
   initialError,
   initialFacilityId,
+  embedded = false,
 }: RiskSurveyBundlePageClientProps) {
   const router = useRouter();
   const packet: SurveyBundlePacket | null = initialPacket;
@@ -67,7 +70,7 @@ export default function RiskSurveyBundlePageClient({
 
   return (
     <div className="space-y-6">
-      <RiskHubNav />
+      {embedded ? null : <RiskHubNav />}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
@@ -75,7 +78,9 @@ export default function RiskSurveyBundlePageClient({
             AHCA survey bundle and legal packet
           </p>
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Survey bundle</h1>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+              {embedded ? "Evidence bundle" : "Survey bundle"}
+            </h1>
             <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
               Assemble the current regulatory story for one facility from live deficiencies, plans of correction,
               facility evidence documents, incident posture, insurance packet status, and immutable audit exports.
