@@ -83,6 +83,9 @@ export function isRecruiterRole(role: string): boolean {
  */
 const RECRUITER_ADMIN_PATH_PREFIXES = [
   "/admin/referrals",
+  // COL-752: recruiters attend the Thursday Stand Up and read it. The page shows
+  // them Thursday only, and the server refuses them Monday and every write.
+  "/admin/stand-up",
   // Pipeline aliases for the referral CRM. /pipeline/recent-admissions leads into
   // resident records and stays closed, as does /admin/discharge.
   "/pipeline/referrals",

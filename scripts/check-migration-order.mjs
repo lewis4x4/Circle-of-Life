@@ -22,6 +22,8 @@ export const ALLOWED_GAPS = {
   510: "claimed by open PR #876 (Workforce people across all facilities, 510_workforce_multi_facility_people.sql)",
   511: "claimed by open PR #886 (COL-765 current-resident Medicaid sweep, 511_benefits_current_resident_sweep.sql)",
   513: "claimed by open PR #888 (Workforce shift options, 513_facility_schedule_presets.sql)",
+  515: "claimed by open PR #889 (COL-766 Medicaid prompts, 515_benefits_medicaid_prompts.sql)",
+  516: "unused: referral tour records (PR #890) was applied hosted as 516, then renumbered to 518 before merge; no file will take 516",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
