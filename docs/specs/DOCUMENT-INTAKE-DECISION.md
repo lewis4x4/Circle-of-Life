@@ -116,6 +116,9 @@ The Cortex test: every filed document opens from its record in two clicks, and m
 
 ## Still needed
 
+Live list of everything deferred until the engine exists, from every session in both platforms: Linear **COL-817**, label **`intake-deferred`** (filter by the label). Cornerstone keeps the same decision as `docs/specs/0006-DOCUMENT-INTAKE-DECISION.md`; change both together.
+
+
 - The Obligations Register content: every document type any party must send, with who owes it, what triggers it, where it lands and the consequence.
 - Names of the two Home Office triage owners and their backups.
 - Where `gsmsdevelopers.com` mail is hosted and who controls its DNS.
