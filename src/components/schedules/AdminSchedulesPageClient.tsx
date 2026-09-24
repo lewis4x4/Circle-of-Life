@@ -208,7 +208,7 @@ export function AdminSchedulesPageClient({
         <PageHeader
           title="Schedule"
           subtitle="Plan the week, review each person’s shifts, then publish to My schedule."
-          actions={<Link href="/admin/schedules/new" className={buttonVariants()}>Create week</Link>}
+          actions={<div className="flex flex-wrap gap-2"><Link href="/admin/schedules/options" className={buttonVariants({ variant: "outline" })}>Shift options</Link><Link href="/admin/schedules/new" className={buttonVariants()}>Create week</Link></div>}
         />
         <KPITile
           label="Draft weeks"

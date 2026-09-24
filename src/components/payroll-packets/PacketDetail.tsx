@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PlannedScheduleContext } from "@/components/timeclock/PlannedScheduleContext";
+import { fromZonedTime } from "date-fns-tz";
+import { addFacilityCalendarDays } from "@/lib/facility-wall-clock";
 import { FacilityGate, useFacilityGateScope } from "@/components/common/FacilityGate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatDisplayDateTime } from "@/lib/format/datetime";
@@ -73,6 +76,7 @@ function ScopedDetail({ id, facilityId }: { id: string; facilityId: string }) {
       <p className="mt-3 text-sm text-muted-foreground">{policy?.calculationMode === "reviewed" ? "Enter final payroll-reviewed regular and overtime hours with the allocation reason. Raw kiosk hours remain visible separately." : "Regular and overtime hours come from timecards. Training reclassifies worked hours; holiday and personal leave are additional paid hours."}</p>
     </section>}
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Saved payroll totals">{[["Worked hours", hours(total.workedMinutes)], ["Paid hours", hours(total.paidMinutes)], ["Overtime", hours(total.overtimeMinutes)], ["On call / bonus", `${dollars(total.onCallCents)} / ${dollars(total.bonusCents)}`]].map(([label, value]) => <div key={label} className={panelClass}><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-xl font-semibold">{value}</p></div>)}</section>
+    {policy?.timeZone && <PlannedScheduleContext facilityIds={[facilityId]} from={fromZonedTime(`${packet.period_start}T00:00:00`, policy.timeZone).toISOString()} to={fromZonedTime(`${addFacilityCalendarDays(packet.period_end, 1, policy.timeZone)}T00:00:00`, policy.timeZone).toISOString()} compact payroll />}
     {(["administration", "operations"] as const).map((department) => {
       const members = packet.snapshot.rows.filter((row) => (inputs.find((input) => input.staffId === row.staffId)?.department ?? row.department) === department);
       return <section key={department} className="space-y-3"><h2 className="text-lg font-semibold">{statusLabel(department)}</h2>{members.length === 0 ? <p className="text-sm text-muted-foreground">No employees in this group.</p> : members.map((row) => <EmployeeRow key={row.staffId} row={row} input={inputs.find((item) => item.staffId === row.staffId) ?? row} editable={draft && canEdit && !busy} policy={policy} onChange={(patch) => updateRow(row.staffId, patch)} />)}</section>;

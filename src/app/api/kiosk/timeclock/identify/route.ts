@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { logError } from "@/lib/observability/logger";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { KIOSK_DEVICE_HEADER, kioskStaffDisplay, type KioskIdentifyResponse, type PunchType } from "@/lib/timeclock/kiosk-contract";
+import { loadKioskPlannedContext } from "@/lib/timeclock/planned-context";
 import { badgeLookupHmac, isRecord, kioskErrorResponse } from "@/lib/timeclock/server";
 
 /**
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
     next_actions: Array.isArray(result.next_actions) ? (result.next_actions as PunchType[]) : ["in"],
     today_worked_minutes: Number(result.today_worked_minutes ?? 0),
     ...kioskStaffDisplay(result),
+    planned_context: await loadKioskPlannedContext(admin, result),
   };
   return NextResponse.json(response, { headers: { "Cache-Control": "no-store" } });
 }

@@ -114,9 +114,9 @@ export default function CaregiverHomePage() {
   }, [load]);
 
   const shiftLine = useMemo(() => {
-    // Same model as the header (COL-659); the date is the shift's own service date.
+    // The clinical brief describes this care window; personal work is shown separately in the shell.
     const shift = currentShiftFor({ timeZone, shifts });
-    return `${formatDisplayDate(shift.serviceDate)} · ${shift.label} shift`;
+    return `${formatDisplayDate(shift.serviceDate)} · ${shift.label} care window`;
   }, [timeZone, shifts]);
 
   if (configError) {

@@ -19,28 +19,6 @@ describe("UI-V2 tokens", () => {
             "primary": "#678fab",
             "primaryHover": "#779fbb",
           },
-          "schedule": {
-            "admin": {
-              "fill": "#000000",
-              "label": "Administrator / Manager",
-              "text": "#FFFFFF",
-            },
-            "cook": {
-              "fill": "#86EFAC",
-              "label": "Cook",
-              "text": "#111111",
-            },
-            "day": {
-              "fill": "#F9A8D4",
-              "label": "Day",
-              "text": "#111111",
-            },
-            "night": {
-              "fill": "#93C5FD",
-              "label": "Night",
-              "text": "#111111",
-            },
-          },
           "semantic": {
             "danger": "#C26152",
             "info": "#6A8FA8",

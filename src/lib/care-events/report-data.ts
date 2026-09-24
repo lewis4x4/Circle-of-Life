@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { fetchActiveResidentsWithRooms, type ResidentWithRoom } from "@/lib/caregiver/facility-residents";
 import { currentShiftFor, type FacilityShiftDefinition, type ShiftType } from "@/lib/caregiver/shift";
+import { fetchScheduleAssignmentIntervals } from "@/lib/schedules/assignment-context";
 import type { Database } from "@/types/database";
 
 import type { CareEventContext, CareEventKind, CareEventLevel } from "./level-engine";
@@ -45,17 +46,9 @@ export type ShiftAssignmentLite = {
 
 const CANCELLED_ASSIGNMENT_STATUSES: readonly string[] = ["called_out", "no_show"];
 
-/**
- * Resident ids from the current shift's assignments, falling back to any of
- * today's assignments when the current shift has none.
- */
-export function selectAssignedResidentIds(rows: ShiftAssignmentLite[], currentShift: ShiftType): string[] {
-  const live = rows.filter((row) => !CANCELLED_ASSIGNMENT_STATUSES.includes(row.status));
-  const current = live.filter((row) => row.shift_type === currentShift);
-  const source = current.length > 0 ? current : live;
-  const ids = new Set<string>();
-  for (const row of source) for (const id of row.assigned_resident_ids ?? []) ids.add(id);
-  return [...ids];
+/** Rows have already been scoped to the person's published work interval. */
+export function selectAssignedResidentIds(rows: ShiftAssignmentLite[]): string[] {
+  return [...new Set(rows.filter((row) => !CANCELLED_ASSIGNMENT_STATUSES.includes(row.status)).flatMap((row) => row.assigned_resident_ids ?? []))];
 }
 
 /** Keep census order, restricted to the assigned ids. */
@@ -69,27 +62,21 @@ export async function fetchMyResidentIds(
   supabase: Client,
   input: { userId: string; facilityId: string; timeZone: string; shifts?: readonly FacilityShiftDefinition[] | null; now?: Date },
 ): Promise<string[]> {
-  // The facility's configured shift, and the date it started: at 1 AM the night
-  // shift's assignments are still dated the evening before (COL-685).
-  const shift = currentShiftFor({ timeZone: input.timeZone, shifts: input.shifts }, input.now ?? new Date());
-  const staff = await supabase
-    .from("staff" as never)
-    .select("id")
-    .eq("user_id", input.userId)
-    .is("deleted_at", null);
+  const at = input.now ?? new Date();
+  const staff = await supabase.from("staff").select("id").eq("user_id", input.userId).is("deleted_at", null).maybeSingle();
   if (staff.error) throw staff.error;
-  const staffIds = ((staff.data ?? []) as { id: string }[]).map((row) => row.id);
-  if (staffIds.length === 0) return [];
-
-  const assignments = await supabase
-    .from("shift_assignments" as never)
+  if (!staff.data) return [];
+  const intervals = await fetchScheduleAssignmentIntervals(supabase, {
+    facilityId: input.facilityId, staffId: staff.data.id, from: at, to: new Date(at.getTime() + 1),
+  });
+  if (!intervals.length) return [];
+  // Patient lists stay behind assignment RLS; the shared planned-context RPC does not expose them.
+  const assignments = await supabase.from("shift_assignments")
     .select("shift_type, assigned_resident_ids, status")
-    .in("staff_id", staffIds)
-    .eq("facility_id", input.facilityId)
-    .eq("shift_date", shift.serviceDate)
-    .is("deleted_at", null);
+    .in("id", intervals.map((row) => row.assignment_id))
+    .eq("staff_id", staff.data.id).eq("facility_id", input.facilityId).is("deleted_at", null);
   if (assignments.error) throw assignments.error;
-  return selectAssignedResidentIds((assignments.data ?? []) as ShiftAssignmentLite[], shift.shiftType);
+  return selectAssignedResidentIds(assignments.data ?? []);
 }
 
 // ---------------------------------------------------------------------------

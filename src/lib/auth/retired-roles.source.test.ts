@@ -46,8 +46,6 @@ const BASELINE: Record<string, number> = {
   "src/lib/resident-intake/fact-registry.ts": 19,
   // A route name in a comment ("/dietary" is the Cook app), not a role.
   "src/lib/routing/legacy-redirects.ts": 1,
-  // COL-795: `dietary_aide` is a staff position (a kitchen worker who gets the cook split), not a login role.
-  "src/lib/schedules/week-grid.ts": 1,
   "src/lib/search-tools.ts": 2,
   "src/lib/staff/load-staff.ts": 5,
   "src/lib/stand-up/model.ts": 4,

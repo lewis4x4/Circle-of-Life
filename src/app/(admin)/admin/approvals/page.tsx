@@ -33,13 +33,14 @@ import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
 
-type SwapRow = Database["public"]["Tables"]["shift_swap_requests"]["Row"];
+type SwapRow = Database["public"]["Tables"]["shift_swap_requests"]["Row"] & { swap_scope?: "assignment" | "group" };
 type TimeRecordRow = Database["public"]["Tables"]["time_records"]["Row"];
 type MileageRow = Database["public"]["Tables"]["mileage_logs"]["Row"] & {
   staff: { first_name: string; last_name: string } | null;
 };
 
 type PendingSwap = {
+  swapScope?: "assignment" | "group";
   id: string;
   requestingName: string;
   coveringName: string | null;
@@ -193,6 +194,7 @@ export default function AdminApprovalsInboxPage() {
             ? formatApprovalsStaffName(staffById.get(r.covering_staff_id))
             : null,
           swapType: r.swap_type,
+          swapScope: r.swap_scope,
           reason: r.reason,
           createdAt: r.created_at,
         })),
@@ -242,6 +244,7 @@ export default function AdminApprovalsInboxPage() {
 
   const approveSwap = useCallback(
     async (id: string) => {
+      if (swaps.find((row) => row.id === id)?.swapScope === "group") { setNotice("Open the shift swaps hub to review every block and current participant confirmations before approving this group."); return; }
       if (!globalThis.confirm("I have reviewed both employees’ required credentials, total weekly hours (maximum 60), minimum 8-hour rest and facility coverage. Apply this confirmed coverage change to the working schedule?")) return;
       setActionId(id);
       setNotice(null);
@@ -270,7 +273,7 @@ export default function AdminApprovalsInboxPage() {
         setActionId(null);
       }
     },
-    [supabase, load, user?.id],
+    [supabase, load, user?.id, swaps],
   );
 
   const submitDenySwap = useCallback(async () => {
@@ -495,7 +498,7 @@ export default function AdminApprovalsInboxPage() {
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <Button
+                      {row.swapScope === "group" ? <Link href="/admin/shift-swaps" className="text-sm underline">Review complete shift group</Link> : <Button
                         type="button"
                         size="sm"
                         className="font-medium text-[10px] uppercase tracking-wider"
@@ -506,7 +509,7 @@ export default function AdminApprovalsInboxPage() {
                           <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden />
                         ) : null}
                         Approve
-                      </Button>
+                      </Button>}
                       <Button
                         type="button"
                         size="sm"

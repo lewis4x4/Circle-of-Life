@@ -11,6 +11,8 @@ import {
   AdminLiveDataFallbackNotice,
   AdminTableLoadingState,
 } from "@/components/common/admin-list-patterns";
+import { SwapWorkContext } from "@/components/staffing/SwapWorkContext";
+import { canApproveSwapContext, swapApprovalContext, confirmSwapParticipation, hasCompleteSwapContext, swapPartyConfirmed, type SwapGroupContext } from "@/lib/staffing/shift-swap-groups";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
@@ -30,9 +32,9 @@ import { KineticGrid } from "@/components/ui/kinetic-grid";
 import { V2Card } from "@/components/ui/v2-card";
 import { MonolithicWatermark } from "@/components/ui/monolithic-watermark";
 
-type SwapRowDb = Database["public"]["Tables"]["shift_swap_requests"]["Row"] & { requesting_confirmed_at: string | null; covering_confirmed_at: string | null };
+type SwapRowDb = SwapGroupContext & Database["public"]["Tables"]["shift_swap_requests"]["Row"] & { requesting_confirmed_at: string | null; covering_confirmed_at: string | null };
 
-type SwapUiRow = {
+type SwapUiRow = SwapGroupContext & {
   id: string;
   status: string;
   swapType: string;
@@ -70,6 +72,9 @@ function buildShiftSwapsCsv(rows: SwapExportRow[]): string {
     "covering_staff_id",
     "covering_staff_display_name",
     "covering_assignment_id",
+    "swap_scope",
+    "requesting_work_blocks",
+    "covering_work_blocks",
     "swap_type",
     "reason",
     "status",
@@ -92,6 +97,9 @@ function buildShiftSwapsCsv(rows: SwapExportRow[]): string {
       csvEscapeCell(row.covering_staff_id ?? ""),
       csvEscapeCell(row.covering_staff_display_name),
       csvEscapeCell(row.covering_assignment_id ?? ""),
+      csvEscapeCell(row.swap_scope ?? "assignment"),
+      csvEscapeCell(JSON.stringify(row.requesting_group_snapshot ?? [])),
+      csvEscapeCell(JSON.stringify(row.covering_group_snapshot ?? [])),
       csvEscapeCell(row.swap_type),
       csvEscapeCell(row.reason ?? ""),
       csvEscapeCell(row.status),
@@ -248,7 +256,9 @@ export default function AdminShiftSwapsPage() {
   );
 
   const approveSwap = useCallback(
-    async (id: string) => {
+    async (row: SwapUiRow) => {
+      if (!canApproveSwapContext(row)) { setNotice("Both employees must confirm the current complete request before approval."); return; }
+      const id = row.id;
       if (!globalThis.confirm("I have reviewed both employees’ required credentials, total weekly hours (maximum 60), minimum 8-hour rest and facility coverage. Apply this confirmed coverage change to the working schedule?")) return;
       setActionId(id);
       setNotice(null);
@@ -257,9 +267,10 @@ export default function AdminShiftSwapsPage() {
           setNotice("You must be signed in to approve.");
           return;
         }
-        const res = (await supabase
+        let query = supabase
           .from("shift_swap_requests" as never)
           .update({
+            ...swapApprovalContext(row),
             status: "approved",
             eligibility_reviewed_at: new Date().toISOString(),
             eligibility_reviewed_by: user.id,
@@ -268,7 +279,9 @@ export default function AdminShiftSwapsPage() {
             denied_reason: null,
           } as never)
           .eq("id", id)
-          .is("deleted_at", null)) as { error: QueryError | null };
+          .is("deleted_at", null);
+        if (row.swap_scope === "group") query = query.eq("group_context_hash", row.group_context_hash!);
+        const res = await query.select("id").single();
         if (res.error) throw res.error;
         await load();
       } catch (e) {
@@ -426,6 +439,7 @@ export default function AdminShiftSwapsPage() {
                     <span className="text-xs text-muted-foreground">
                       {formatDateTime(row.createdAt)} · {row.swapType}
                     </span>
+                    <SwapWorkContext row={row} />
                     {row.reason ? (
                       <span className="text-xs text-muted-foreground line-clamp-2">{row.reason}</span>
                     ) : null}
@@ -434,18 +448,18 @@ export default function AdminShiftSwapsPage() {
                     <span className="text-xs text-muted-foreground">Requester: {row.requestingConfirmed ? "confirmed" : "awaiting confirmation"} · Cover: {row.coveringConfirmed ? "confirmed" : "awaiting confirmation"}</span>
                     {["pending", "claimed"].includes(row.status.toLowerCase()) ? (
                       <>
-                        <Button type="button" variant="outline" size="sm" disabled={actionId !== null} onClick={async () => {
+                        <Button type="button" variant="outline" size="sm" disabled={actionId !== null || !hasCompleteSwapContext(row)} onClick={async () => {
                           setActionId(row.id); setNotice(null);
-                          try { const { error } = await supabase.rpc("confirm_shift_swap" as never, { p_id: row.id } as never); if (error) throw new Error(error.message); await load(); }
+                          try { await confirmSwapParticipation(supabase, row); await load(); }
                           catch (error) { setNotice(error instanceof Error ? error.message : "Confirmation failed."); }
                           finally { setActionId(null); }
-                        }}>Confirm my participation</Button>
+                        }}>{row.swap_scope === "group" ? "Confirm every block in this group" : "Confirm my participation"}</Button>
                         <Button
                           type="button"
                           size="sm"
                           className="font-medium text-[10px] uppercase tracking-wider"
-                          disabled={!canManage || actionId !== null || !row.requestingConfirmed || !row.coveringConfirmed}
-                          onClick={() => void approveSwap(row.id)}
+                          disabled={!canManage || actionId !== null || !canApproveSwapContext(row)}
+                          onClick={() => void approveSwap(row)}
                         >
                           {actionId === row.id ? (
                             <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden />
@@ -576,13 +590,14 @@ async function fetchShiftSwapsFromSupabase(
   }
 
   const ui: SwapUiRow[] = list.map((r) => ({
+    ...r,
     id: r.id,
     status: r.status,
     swapType: r.swap_type,
     reason: r.reason,
     createdAt: r.created_at,
-    requestingConfirmed: Boolean(r.requesting_confirmed_at),
-    coveringConfirmed: Boolean(r.covering_confirmed_at),
+    requestingConfirmed: swapPartyConfirmed(r, "requesting"),
+    coveringConfirmed: swapPartyConfirmed(r, "covering"),
     requestingName: formatShiftSwapStaffLabel(byId.get(r.requesting_staff_id)),
     coveringName: r.covering_staff_id ? formatShiftSwapStaffLabel(byId.get(r.covering_staff_id)) : null,
   }));

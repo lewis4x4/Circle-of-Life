@@ -16,12 +16,12 @@ import { useFloorQuery } from "./useFloorQuery";
  * statuses, my witness tasks, and my shift so far.
  */
 export function useFloorNowData(now: Date | null) {
-  const { supabase, facility, profile } = useFloorSession();
+  const { supabase, facility, profile, workAssignment } = useFloorSession();
   const facilityId = facility.facilityId;
   const userId = profile.userId;
   const windowStart = useMemo(() => (now ? floorShiftWindow(facility, now) : null), [facility, now]);
   // The shift start only changes at handoff; keying on it refetches then.
-  const since = windowStart?.startIso ?? null;
+  const since = workAssignment?.starts_at || profile.clockedInAt || windowStart?.startIso || null;
 
   const tasks = useFloorQuery(`tasks:${facilityId}`, () => fetchFloorTasks({ facilityId }), 20_000);
   const census = useFloorQuery(`census:${facilityId}`, () => fetchFloorCensus(supabase, facilityId), 5 * 60_000);
@@ -35,5 +35,5 @@ export function useFloorNowData(now: Date | null) {
     60_000,
   );
 
-  return { windowStart, tasks, census, signals, witness, staffIds, activity };
+  return { windowStart, workStart: since, workEnd: workAssignment?.ends_at ?? null, tasks, census, signals, witness, staffIds, activity };
 }

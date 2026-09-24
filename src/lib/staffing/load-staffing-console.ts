@@ -1,3 +1,4 @@
+import { ASSIGNMENT_SNAPSHOT_SELECT, type AssignmentSnapshot } from "@/lib/schedules/assignment-context";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { fetchFacilityShiftDefinitions } from "@/lib/caregiver/shift";
@@ -119,7 +120,7 @@ type SupabaseStaffWarningMini = {
   staff_role: string;
 };
 
-type SupabaseShiftGapRow = {
+type SupabaseShiftGapRow = AssignmentSnapshot & {
   id: string;
   facility_id: string;
   schedule_id: string;
@@ -259,7 +260,8 @@ export async function fetchShiftAssignmentGaps(
 
   let shiftsQuery = supabase
     .from("shift_assignments" as never)
-    .select("id, staff_id, facility_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time")
+    .select(`id, staff_id, facility_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}, schedules!inner(status, deleted_at)` )
+    .eq("schedules.status", "published").is("schedules.deleted_at", null)
     .is("deleted_at", null)
     .gte("shift_date", todayIso)
     .lte("shift_date", endDateIso)
@@ -293,7 +295,7 @@ export async function fetchShiftAssignmentGaps(
     if (!urgency) continue;
     const role = roleByStaffId.get(row.staff_id) ?? "Staff";
     const shiftLabel = assignmentSpan(row, definitions.get(row.facility_id) ?? [])?.label ?? `${row.shift_type} · times not configured`;
-    const key = `${row.facility_id}:${row.shift_date}:${shiftLabel}:${role}:${urgency}`;
+    const key = `${row.facility_id}:${row.shift_date}:${row.schedule_preset_id ?? row.shift_type}:${row.custom_start_time}:${row.custom_end_time}:${role}:${urgency}`;
     const existing = grouped.get(key);
     if (existing) {
       existing.shortage += 1;

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { loadCaregiverFacilityContext, type CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
-import { currentShiftFor } from "@/lib/caregiver/shift";
+import { usePublishedWorkShift } from "@/hooks/usePublishedWorkShift";
+import type { ScheduleAssignmentInterval } from "@/lib/schedules/assignment-context";
 import type { FloorInactiveReason, FloorLockReason } from "@/lib/floor/contract";
 import { resolveFloorDeviceStore, type FloorDevice } from "@/lib/floor/device-store";
 import { clearBrowserSessionCookies, floorLockHref, forgetFloorPerson, sendFloorLock } from "@/lib/floor/lock-client";
@@ -37,15 +38,14 @@ type ShellState =
   | { status: "ready"; device: FloorDevice; profile: FloorUnlockProfile; facility: CaregiverFacilityContext }
   | { status: "locked"; reason: FloorInactiveReason | null };
 
-/** "Med tech · Day shift · on since 6:58 AM", from the unlock and the facility's shift definitions. */
-export function topBarDetailLine(profile: FloorUnlockProfile, facility: CaregiverFacilityContext, now: Date = new Date()): string {
-  const shift = currentShiftFor(facility, now);
+/** "Med tech · Day shift · on since 6:58 AM", from actual attendance and the person's published assignment. */
+export function topBarDetailLine(profile: FloorUnlockProfile, facility: CaregiverFacilityContext, work?: ScheduleAssignmentInterval | null): string {
   const since = profile.clockedInAt
     ? `on since ${formatDisplayTime(profile.clockedInAt, { timeZone: facility.timeZone })}`
     : profile.onClock
       ? null
       : "not clocked in at the front door";
-  return [profile.roleLabel || null, shift.configured ? `${shift.label} shift` : null, since].filter(Boolean).join(" · ");
+  return [profile.roleLabel || null, work ? `${work.label} · scheduled` : null, since].filter(Boolean).join(" · ");
 }
 
 /** A med tech who signs in on a PC or phone lands on `/floor`; the floor app is for the tablets. */
@@ -72,6 +72,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [state, setState] = useState<ShellState>({ status: "checking" });
+  const { current: workAssignment } = usePublishedWorkShift(state.status === "ready" ? state.facility.facilityId : null, state.status === "ready" ? state.profile.userId : null);
   const locking = useRef(false);
 
   // Waiting to leave for /floor/lock until the network is back (offline lock).
@@ -235,10 +236,11 @@ export function FloorShell({ children }: { children: ReactNode }) {
             profile: ready.profile,
             facility: ready.facility,
             timeZone: ready.facility.timeZone,
+            workAssignment,
             lock: () => lock("switch"),
           }
         : null,
-    [ready, supabase, lock],
+    [ready, supabase, lock, workAssignment],
   );
 
   if (state.status === "not-a-tablet") return <NotATabletNotice />;
@@ -256,7 +258,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
         <FloorTopBar
           initials={ready.profile.initials}
           displayName={ready.profile.displayName}
-          detailLine={topBarDetailLine(ready.profile, ready.facility)}
+          detailLine={topBarDetailLine(ready.profile, ready.facility, workAssignment)}
           facilityName={ready.device.facilityName || ready.facility.facilityName}
           deviceLabel={ready.device.deviceLabel}
           sync={sync}

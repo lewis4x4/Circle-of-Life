@@ -147,7 +147,7 @@ export default function CaregiverHandoffPage() {
         outgoingNotes: null,
         now,
       });
-      setRecordResult({ kind: "success", text: HANDOFF_RECORDED_COPY });
+      setRecordResult({ kind: "success", text: `${HANDOFF_RECORDED_COPY} for this care window.` });
       await load();
     } catch (e) {
       setRecordResult({ kind: "error", text: formatLiveDataLoadError(e, "The handoff could not be recorded. Try again.") });

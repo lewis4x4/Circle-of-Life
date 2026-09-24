@@ -22,6 +22,7 @@ let ledger: TimeclockPeriodData;
 function database(overrides: Record<string, Row[]> = {}) {
   const tables: Record<string, Row[]> = { staff: [staff], schedules: [schedule("last-week", "2026-09-14"), schedule("this-week", "2026-09-21")], ...overrides };
   return {
+    rpc: () => ({ order() { return this; }, range: async () => ({ data: tables.schedule_people_for_week ?? [], count: (tables.schedule_people_for_week ?? []).length, error: null }) }),
     from(table: string) {
       const filters: ((row: Row) => boolean)[] = [];
       const apply = (fn: (row: Row) => boolean) => { filters.push(fn); return query; };
@@ -60,6 +61,15 @@ describe("Workforce source loading", () => {
   it("fails closed when a published assignment has no visible employee identity", async () => {
     const data = database({ shift_assignments: [{ ...assigned("unknown", "2026-09-23", "this-week"), staff_id: "unresolved-worker" }] });
     await expect(loadWorkforce(data, FACILITY, "org", NOW)).rejects.toThrow("Recorded staff scope is incomplete");
+  });
+
+  it("resolves a visiting published worker before their first punch without inventing a personnel file", async () => {
+    const result = await loadWorkforce(database({
+      shift_assignments: [{ ...assigned("visitor-work", "2026-09-23", "this-week"), staff_id: "visitor", custom_start_time: "06:00:00", custom_end_time: "18:00:00", schedule_preset_name: "Early care" }],
+      schedule_people_for_week: [{ id: "visitor", facility_id: "home-elsewhere", first_name: "Visiting", last_name: "Worker", staff_role: "medication_tech", employment_status: "active" }],
+    }), FACILITY, "org", NOW);
+    expect(result.people.find((person) => person.id === "visitor")).toMatchObject({ name: "Visiting Worker", attendance: "missing", fileStatus: "Employee file unavailable here", due: [] });
+    expect(result.people.find((person) => person.id === "visitor")?.currentShift).toContain("Early care");
   });
 
   it("does not report zero expected hours when no schedule was published", async () => {

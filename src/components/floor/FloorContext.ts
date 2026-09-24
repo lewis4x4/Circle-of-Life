@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import type { FloorDevice } from "@/lib/floor/device-store";
 import type { FloorUnlockProfile } from "@/lib/floor/unlock-profile";
+import type { ScheduleAssignmentInterval } from "@/lib/schedules/assignment-context";
 import type { Database } from "@/types/database";
 
 export type FloorSession = {
@@ -14,6 +15,7 @@ export type FloorSession = {
   profile: FloorUnlockProfile;
   facility: CaregiverFacilityContext;
   timeZone: string;
+  workAssignment?: ScheduleAssignmentInterval | null;
   /** The tablet's own lock (Switch). */
   lock: () => void;
 };

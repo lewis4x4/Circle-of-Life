@@ -1,0 +1,46 @@
+{
+  "checked_at": "2026-09-24T21:56:29.897442+00:00",
+  "scope": "Technical local and staging verification; production release pending",
+  "segment_gate": "test-results/agent-gates/2026-09-24T21-43-41-149Z-COL-804-SHIFT-OPTIONS-VERIFIED.json",
+  "reconciled_native_replay": {
+    "migration_files": 521,
+    "sql_probes": 138,
+    "acceptance_suites": 7,
+    "level_parity_cases": 105,
+    "status": "PASS"
+  },
+  "staging": {
+    "project": "iwcnajanvjvynolltflw",
+    "changed_functions": 46,
+    "bodies_and_hosted_posture": "PASS; four pre-existing service grants retained with before/after evidence",
+    "roster_projection": "five fields; exact body and grants verified",
+    "pure_helpers": "PASS; split hours 9; overlap/zero/empty refused; legacy precision and DST behavior verified",
+    "edge": {
+      "project": "iwcnajanvjvynolltflw",
+      "slug": "observation-task-generator",
+      "status": "ACTIVE",
+      "version": 11,
+      "verify_jwt": false,
+      "updated_at": 1790286353457,
+      "checks": [
+        {
+          "method": "GET",
+          "status": 405
+        },
+        {
+          "method": "POST",
+          "status": 401
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "budget_increased": false,
+    "total_js_bytes_before": 24225818,
+    "total_js_bytes_after": 19205605,
+    "admin_gzip_bytes": 439182,
+    "executive_gzip_bytes": 457068
+  },
+  "production_staff_test_writes": false,
+  "staff_or_provider_acceptance": false
+}

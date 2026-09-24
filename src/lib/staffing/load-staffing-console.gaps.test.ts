@@ -6,7 +6,7 @@ import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 const facility = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 function source() {
   const today = todayFacilityDateIso();
-  const base = { facility_id: facility, schedule_id: "schedule", shift_date: today, shift_type: "day", custom_start_time: null, custom_end_time: null, deleted_at: null };
+  const base = { "schedules.status": "published", "schedules.deleted_at": null, facility_id: facility, schedule_id: "schedule", shift_date: today, shift_type: "day", custom_start_time: null, custom_end_time: null, deleted_at: null };
   const rows: Record<string, Record<string, unknown>[]> = {
     shift_assignments: [{ ...base, id: "normal", staff_id: "one", status: "assigned" }, { ...base, id: "gap", staff_id: "two", status: "called_out" }],
     staff: [{ id: "one", staff_role: "resident_aide", deleted_at: null }, { id: "two", staff_role: "resident_aide", deleted_at: null }],

@@ -27,17 +27,6 @@ export const tokens = {
       primaryHover: "#779fbb",
       accent: "#436b87",
     },
-    /**
-     * COL-795: the schedule color key, locked for every building on screen and
-     * in print. Not per-facility configuration. Each fill carries its own text
-     * color at WCAG AA or better; `schedule-colors.test.ts` enforces both.
-     */
-    schedule: {
-      day: { fill: "#F9A8D4", text: "#111111", label: "Day" },
-      night: { fill: "#93C5FD", text: "#111111", label: "Night" },
-      cook: { fill: "#86EFAC", text: "#111111", label: "Cook" },
-      admin: { fill: "#000000", text: "#FFFFFF", label: "Administrator / Manager" },
-    },
   },
   radius: {
     sm: "6px",

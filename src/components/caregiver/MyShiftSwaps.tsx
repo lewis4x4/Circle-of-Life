@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, Loader2 } from "lucide-react";
 
+import { NewShiftSwapRequest } from "./NewShiftSwapRequest";
+import { SwapWorkContext } from "@/components/staffing/SwapWorkContext";
+import { cancelSwapGroup, confirmSwapParticipation, hasCompleteSwapContext, swapPartyConfirmed, SWAP_CONTEXT_SELECT, type SwapGroupContext } from "@/lib/staffing/shift-swap-groups";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -13,7 +16,7 @@ import { canApproveShiftSwaps } from "@/lib/staffing/shift-swap-access";
 import { formatShiftSwapCoveringName } from "@/lib/staffing/shift-swaps-display-copy";
 import { createClient } from "@/lib/supabase/client";
 
-type SwapRow = {
+type SwapRow = SwapGroupContext & {
   id: string;
   status: string;
   swap_type: string;
@@ -40,8 +43,9 @@ const OPEN_STATUSES = new Set(["pending", "claimed"]);
  */
 export function MyShiftSwaps() {
   const supabase = useMemo(() => createClient(), []);
-  const { user, appRole } = useHavenAuth();
+  const { user, appRole, organizationId } = useHavenAuth();
   const [rows, setRows] = useState<MySwap[]>([]);
+  const [ownStaffIds, setOwnStaffIds] = useState<string[]>([]);
   const [linked, setLinked] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +64,7 @@ export function MyShiftSwaps() {
         .is("deleted_at", null)) as unknown as QueryResult<StaffMini>;
       if (own.error) throw own.error;
       const ownIds = (own.data ?? []).map((s) => s.id);
+      setOwnStaffIds(ownIds);
       setLinked(ownIds.length > 0);
       if (ownIds.length === 0) {
         setRows([]);
@@ -70,7 +75,7 @@ export function MyShiftSwaps() {
       const swaps = (await supabase
         .from("shift_swap_requests" as never)
         .select(
-          "id, status, swap_type, reason, created_at, requesting_staff_id, covering_staff_id, requesting_confirmed_at, covering_confirmed_at",
+          `id, status, swap_type, reason, created_at, requesting_staff_id, covering_staff_id, requesting_confirmed_at, covering_confirmed_at, ${SWAP_CONTEXT_SELECT}`,
         )
         .or(`requesting_staff_id.in.(${idList}),covering_staff_id.in.(${idList})`)
         .is("deleted_at", null)
@@ -123,22 +128,29 @@ export function MyShiftSwaps() {
   }, [load]);
 
   const confirm = useCallback(
-    async (id: string) => {
-      setBusyId(id);
+    async (row: MySwap) => {
+      setBusyId(row.id);
       setNotice(null);
       try {
-        const { error: rpcError } = await supabase.rpc("confirm_shift_swap" as never, { p_id: id } as never);
-        if (rpcError) throw rpcError;
+        await confirmSwapParticipation(supabase, row);
         await load();
       } catch (err) {
         console.error("[MyShiftSwaps] confirm failed", err);
-        setNotice("Your confirmation was not saved. Try again, or ask your manager.");
+        setNotice(err instanceof Error ? err.message : "Your confirmation was not saved. Reload the request and review its current details.");
       } finally {
         setBusyId(null);
       }
     },
     [supabase, load],
   );
+
+  async function cancelGroup(row: MySwap) {
+    if (busyId || row.swap_scope !== "group" || !OPEN_STATUSES.has(row.status)) return;
+    setBusyId(row.id); setNotice(null);
+    try { await cancelSwapGroup(supabase, row.id); await load(); }
+    catch (cause) { setNotice(cause instanceof Error ? cause.message : "The request could not be cancelled."); }
+    finally { setBusyId(null); }
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
@@ -161,6 +173,7 @@ export function MyShiftSwaps() {
           ) : null}
         </CardHeader>
         <CardContent className="space-y-3">
+          {!loading && !error && linked && <NewShiftSwapRequest key={user?.id} ownStaffIds={ownStaffIds} organizationId={organizationId || ""} onCreated={load} />}
           {notice ? (
             <p role="alert" className="text-sm text-warning">
               {notice}
@@ -186,7 +199,7 @@ export function MyShiftSwaps() {
           ) : (
             <ul className="space-y-2">
               {rows.map((row) => {
-                const myConfirmed = row.side === "requesting" ? row.requesting_confirmed_at : row.covering_confirmed_at;
+                const myConfirmed = swapPartyConfirmed(row, row.side);
                 const open = OPEN_STATUSES.has(row.status.toLowerCase());
                 return (
                   <li key={row.id} className="space-y-2 rounded-[var(--radius)] border border-border px-3 py-2">
@@ -207,16 +220,18 @@ export function MyShiftSwaps() {
                       · {row.swap_type}
                       {row.reason ? ` · ${row.reason}` : ""}
                     </p>
+                    <SwapWorkContext row={row} />
                     {open ? (
                       myConfirmed ? (
                         <p className="text-xs text-muted-foreground">You confirmed. Waiting on the other person and a manager.</p>
                       ) : (
-                        <Button type="button" size="sm" variant="outline" disabled={busyId !== null} onClick={() => void confirm(row.id)}>
+                        <Button type="button" size="sm" variant="outline" disabled={busyId !== null || !hasCompleteSwapContext(row)} onClick={() => void confirm(row)}>
                           {busyId === row.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden /> : null}
-                          Confirm my participation
+                          {row.swap_scope === "group" ? "Confirm every block in this group" : "Confirm my participation"}
                         </Button>
                       )
                     ) : null}
+                    {open && row.swap_scope === "group" && <Button type="button" size="sm" variant="ghost" disabled={busyId !== null} onClick={() => void cancelGroup(row)}>Cancel group request</Button>}
                   </li>
                 );
               })}
