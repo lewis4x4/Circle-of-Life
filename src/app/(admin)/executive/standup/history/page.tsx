@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { History, Loader2, MessageSquare } from "lucide-react";
 
 import { ExecutiveHubNav } from "../../executive-hub-nav";
+import { StandUpViewsNav } from "@/components/stand-up/StandUpViewsNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,7 @@ export default function ExecutiveStandupHistoryPage() {
     <div className="relative w-full space-y-6 pb-12">
       <div className="relative z-10 space-y-6">
         <ExecutiveHubNav />
+        <StandUpViewsNav current="/admin/executive/standup/history" />
 
         <header className="rounded-lg border border-slate-200/70 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">

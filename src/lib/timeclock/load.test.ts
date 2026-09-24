@@ -7,6 +7,7 @@ import { effectivePunches } from "./compute";
 import { loadStaffTimeclock, loadTimeclockPeriod } from "./load";
 
 type Row = Record<string, unknown>;
+type Query = { table: string; filters: string[]; order: string[]; offset: number };
 const FACILITY = "facility-a";
 const STAFF = "staff-a";
 const period = { periodStart: new Date("2026-11-02T05:00:00Z"), periodEnd: new Date("2026-11-09T05:00:00Z") };
@@ -15,8 +16,8 @@ const punch = (id: string, punched_at = "2026-11-03T12:00:00Z") => ({ id, staff_
 const correction = (id: string, extra: Row = {}) => ({ id, staff_id: STAFF, facility_id: FACILITY, correction_type: "add_punch", target_punch_id: null, target_correction_id: null, punch_type: "out", corrected_punched_at: "2026-11-03T20:00:00Z", exception_key: null, reason: "missed_punch", note: null, corrected_by: "manager", corrected_at: "2026-11-10T12:00:00Z", ...extra });
 
 /** Emulate the hosted 1,000-row cap, filters, ordering and inclusive ranges. */
-function database(tables: Record<string, Row[]>, failOffset?: number) {
-  const queries: { table: string; filters: string[]; order: string[]; offset: number }[] = [];
+function database(tables: Record<string, Row[]>, failOffset?: number, beforeResult?: (query: Query) => Promise<void>) {
+  const queries: Query[] = [];
   const client = {
     from(table: string) {
       const filters: ((row: Row) => boolean)[] = [];
@@ -46,7 +47,10 @@ function database(tables: Record<string, Row[]>, failOffset?: number) {
         limit: (value: number) => { size = value; return builder; },
         range: (start: number, end: number) => { query.offset = start; size = end - start + 1; return builder; },
         maybeSingle: async () => { const response = result(); return { ...response, data: response.data?.[0] ?? null }; },
-        then: (resolve: (value: ReturnType<typeof result>) => unknown) => Promise.resolve(result()).then(resolve),
+        then: (resolve: (value: ReturnType<typeof result>) => unknown, reject?: (reason: unknown) => unknown) => Promise.resolve().then(async () => {
+          await beforeResult?.(query);
+          return result();
+        }).then(resolve, reject),
       };
       return builder;
     },
@@ -81,12 +85,13 @@ describe("timeclock period loading", () => {
         correction("void", { correction_type: "void_punch", target_punch_id: "p1", corrected_punched_at: null }),
         correction("void-added", { correction_type: "void_punch", target_correction_id: "added", corrected_punched_at: null }),
         correction("ack", { correction_type: "acknowledge", exception_key: "clock_skew:p1", corrected_punched_at: null }),
+        correction("long-shift-ack", { correction_type: "acknowledge", exception_key: "long_shift:p1", corrected_punched_at: null }),
         correction("rejection-ack", { correction_type: "acknowledge", exception_key: "rejected_offline_sync:r1", corrected_punched_at: null }),
       ],
       timeclock_sync_rejections: [{ id: "r1", staff_id: STAFF, facility_id: FACILITY, created_at: "2026-11-03T12:00:00Z" }],
     });
     const loaded = await loadTimeclockPeriod(client, { facilityId: FACILITY, ...period });
-    expect(loaded.corrections.map((row) => row.id).sort()).toEqual(["ack", "added", "rejection-ack", "void", "void-added"]);
+    expect(loaded.corrections.map((row) => row.id).sort()).toEqual(["ack", "added", "long-shift-ack", "rejection-ack", "void", "void-added"]);
     expect(effectivePunches(loaded.punches, loaded.corrections)).toEqual([]);
     expect(queries.filter((query) => query.table === "time_punch_corrections").every((query) => query.filters.some((key) => ["corrected_punched_at", "target_punch_id", "target_correction_id", "exception_key", "id"].includes(key)))).toBe(true);
   });
@@ -111,5 +116,29 @@ describe("timeclock period loading", () => {
   it("fails closed if a later page cannot load", async () => {
     const { client } = database({ staff: [person()], time_punches: Array.from({ length: 1005 }, (_, index) => punch(String(index))) }, 500);
     await expect(loadTimeclockPeriod(client, { facilityId: FACILITY, ...period })).rejects.toThrow("later page unavailable");
+  });
+
+  it("loads a large ledger with bounded overlapping correction batches", async () => {
+    let active = 0;
+    let peak = 0;
+    const { client } = database({ staff: [person()], time_punches: Array.from({ length: 2800 }, (_, index) => punch(String(index))) }, undefined, async (query) => {
+      if (query.table !== "time_punch_corrections" || !query.filters.some((filter) => ["target_punch_id", "exception_key"].includes(filter))) return;
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      active -= 1;
+    });
+    const loaded = await loadTimeclockPeriod(client, { facilityId: FACILITY, ...period });
+    expect(loaded.punches).toHaveLength(2800);
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThanOrEqual(8);
+    expect(active).toBe(0);
+  });
+
+  it("fails closed if an independent correction batch fails", async () => {
+    const { client } = database({ staff: [person()], time_punches: Array.from({ length: 205 }, (_, index) => punch(String(index))) }, undefined, async (query) => {
+      if (query.filters.includes("target_punch_id")) throw new Error("correction batch unavailable");
+    });
+    await expect(loadTimeclockPeriod(client, { facilityId: FACILITY, ...period })).rejects.toThrow("correction batch unavailable");
   });
 });

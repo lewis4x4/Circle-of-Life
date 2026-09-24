@@ -9,6 +9,7 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { formatDocumentWordCount } from "@/lib/knowledge/document-word-count-display-copy";
 import { knowledgeReviewDueLabel, knowledgeReviewOwnerLabel } from "@/lib/knowledge/review-queue-display-copy";
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
+import { markdownToPlainText } from "@/lib/knowledge/markdown-text";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -327,7 +328,7 @@ export function DocumentTable({ documents, onRefresh }: DocumentTableProps) {
                       <div>
                         <div className="font-medium text-slate-800 dark:text-zinc-200">{doc.title}</div>
                         {doc.summary && (
-                          <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{doc.summary}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{markdownToPlainText(doc.summary)}</div>
                         )}
                       </div>
                     </div>

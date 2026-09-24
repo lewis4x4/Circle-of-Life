@@ -20,7 +20,8 @@ const scope = process.env.CONSTITUTION_LINT_SCOPE ?? "smart-rounding";
  * The nine-tab strip's routes are gone from it because the routes are
  * gone: Overview and Escalations folded into the Live board, Plans went with
  * the per resident observation plan, Watches became Monitoring Orders, Safety
- * scores became the Watchlist, and Insights folded into Reports.
+ * scores became the Watchlist, and Insights folded into Reports. The old Live
+ * URL is a server redirect to the hub root now (COL-707), so it has no source.
  *
  * The cadence settings surface is listed here as well, even though it lives in
  * facility administration rather than in the rounding strip. It is part of the
@@ -29,7 +30,6 @@ const scope = process.env.CONSTITUTION_LINT_SCOPE ?? "smart-rounding";
  */
 const segmentTargets = [
   "src/app/(admin)/admin/rounding/page.tsx",
-  "src/app/(admin)/admin/rounding/live",
   "src/app/(admin)/admin/rounding/monitoring-orders",
   "src/app/(admin)/admin/rounding/integrity",
   "src/app/(admin)/admin/rounding/reports",

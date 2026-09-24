@@ -9,7 +9,7 @@ const SUPPORT_LINKS: Array<{ key: SupportKey; href: string; label: string }> = [
   { key: "me", href: "/caregiver/me", label: "My profile" },
   { key: "clock", href: "/caregiver/clock", label: "Time clock" },
   { key: "schedules", href: "/caregiver/schedules", label: "My schedule" },
-  { key: "policies", href: "/caregiver/policies", label: "Policies" },
+  { key: "policies", href: "/caregiver/acknowledgments?tab=policies", label: "Required reading" },
 ];
 
 export function CaregiverSupportStrip({
