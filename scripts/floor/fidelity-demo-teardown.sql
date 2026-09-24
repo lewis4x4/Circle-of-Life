@@ -146,6 +146,7 @@ BEGIN
     (44, 'public.incident_followups', 'organization_id', 'org'),
     (50, 'public.care_events', 'organization_id', 'org'),
     (55, 'public.incidents', 'organization_id', 'org'),
+    (58, 'public.shift_handoff_notes', 'organization_id', 'org'),
     (60, 'public.resident_observation_escalations', 'organization_id', 'org'),
     (65, 'public.resident_observation_integrity_flags', 'organization_id', 'org'),
     (68, 'public.rounding_completion_receipts', 'organization_id', 'org'),

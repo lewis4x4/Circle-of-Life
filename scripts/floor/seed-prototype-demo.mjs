@@ -310,20 +310,20 @@ function buildChecks(residents) {
   const add = (key, residentKey, due, status, extra = {}) => checks.push({ key, resident_id: by.get(residentKey).id, due, status, ...extra });
 
   add("evelyn-0530", "evelyn", "05:30", "completed_on_time", { log: { by: "dana", at: "05:30", quick: "asleep", state: "asleep", location: "in_bed" } });
-  // The 7:30 round, 11 residents, assigned to and charted by Ashley. With Ruth's
-  // 8:00 check (charted by Ashley, unassigned) that is the strip's "Rounds: 12 of
-  // 12 charted": 12 logs are hers and 12 of her assigned checks were due by 9:40
-  // (the 11 round checks and Evelyn's 9:30).
-  const roundKeys = ["evelyn", "harold", "ruth", "walter", "mae", "frank", "lorraine", "curtis", "filler-0", "filler-1", "filler-2"];
-  roundKeys.forEach((residentKey, i) =>
+  // The 7:30 round, 12 residents, assigned to and charted by Ashley at 7:30:
+  // the strip's "7:30 Rounds: 12 of ..." chip. Part 4 counts her assigned
+  // checks due so far, which includes the overdue 9:30, so it reads "12 of 13".
+  const roundKeys = ["evelyn", "harold", "ruth", "walter", "mae", "frank", "lorraine", "curtis", "filler-0", "filler-1", "filler-2", "filler-3"];
+  roundKeys.forEach((residentKey) =>
     add(`round-0730-${residentKey}`, residentKey, "07:30", "completed_on_time", {
       assigned: "ashley",
-      log: { by: "ashley", at: `07:${String(30 + i).padStart(2, "0")}`, quick: residentKey === "evelyn" ? "calm" : "awake", state: "awake", location: residentKey === "evelyn" ? "in_chair" : "in_room" },
+      log: { by: "ashley", at: "07:30", quick: residentKey === "evelyn" ? "calm" : "awake", state: "awake", location: residentKey === "evelyn" ? "in_chair" : "in_room" },
     }),
   );
-  // Ruth's 8:00 check: charted, and the open follow-up behind her alert dot.
+  // Ruth's 8:00 check: charted (by Dana, so Ashley's rounds chip keeps 7:30), and
+  // the open follow-up behind her alert dot.
   add("ruth-0800", "ruth", "08:00", "completed_on_time", {
-    log: { by: "ashley", at: "08:05", quick: "awake", state: "awake", location: "dining_room", note: "Ate 25% at breakfast" },
+    log: { by: "dana", at: "08:05", quick: "awake", state: "awake", location: "dining_room", note: "Ate 25% at breakfast" },
     escalation: { at: "08:05" },
   });
   // Open checks are Ashley's, so the floor offers Done rather than "Take this check".
@@ -540,7 +540,8 @@ BEGIN
       AND t.due_at = v_due AND t.status::text = c->>'status'
       AND (t.completed_log_id IS NULL) = (c->'log' IS NULL)
       AND (c->'log' IS NULL OR EXISTS (SELECT 1 FROM public.resident_observation_logs l WHERE l.id = t.completed_log_id
-             AND l.observed_at = (v_date + (c->'log'->>'at')::time) AT TIME ZONE v_tz))
+             AND l.observed_at = (v_date + (c->'log'->>'at')::time) AT TIME ZONE v_tz
+             AND l.staff_id = (d->'staff_ids'->>(c->'log'->>'by'))::uuid))
       AND t.assigned_staff_id IS NOT DISTINCT FROM (d->'staff_ids'->>(c->>'assigned'))::uuid;
     IF FOUND THEN CONTINUE; END IF;
     UPDATE public.resident_observation_tasks t SET deleted_at = v_now
@@ -605,7 +606,28 @@ BEGIN
   -- care-event guard lets the definer path (this flag) touch other fields.
   PERFORM set_config('haven.care_event_definer', '1', true);
   UPDATE public.care_events SET deleted_at = v_now
-  WHERE organization_id = v_org AND facility_id = v_fac AND deleted_at IS NULL;
+  WHERE organization_id = v_org AND facility_id = v_fac AND deleted_at IS NULL
+    AND client_event_id IS DISTINCT FROM (d->'strip'->>'report_client_id')::uuid;
+
+  -- The rest of Ashley's my-shift strip (03): the report she filed at 9:12
+  -- ("Report: Upset or behavior") and the night handoff note she read at 8:40.
+  INSERT INTO public.care_events (organization_id, facility_id, resident_id, client_event_id, kind, answers, derived_level, final_level,
+    category, sentence, occurred_at, discovered_at, shift, reported_by, status, created_at)
+  SELECT v_org, v_fac, (d->'strip'->>'report_resident_id')::uuid, (d->'strip'->>'report_client_id')::uuid, 'behavior', '{}'::jsonb,
+    'level_1', 'level_1', 'behavioral_resident_to_staff', 'Restless and upset after breakfast; settled with a walk.',
+    (v_date + time '09:10') AT TIME ZONE v_tz, (v_date + time '09:10') AT TIME ZONE v_tz, 'day', (d->'user_ids'->>'ashley')::uuid, 'open',
+    (v_date + time '09:12') AT TIME ZONE v_tz
+  WHERE NOT EXISTS (SELECT 1 FROM public.care_events e WHERE e.client_event_id = (d->'strip'->>'report_client_id')::uuid);
+  UPDATE public.care_events SET deleted_at = NULL, created_at = (v_date + time '09:12') AT TIME ZONE v_tz
+  WHERE client_event_id = (d->'strip'->>'report_client_id')::uuid AND organization_id = v_org;
+  UPDATE public.shift_handoff_notes SET deleted_at = v_now
+  WHERE organization_id = v_org AND facility_id = v_fac AND deleted_at IS NULL AND shift_date <> v_date;
+  INSERT INTO public.shift_handoff_notes (id, organization_id, facility_id, shift_date, shift, category, resident_id, note, priority,
+    acknowledged_by, acknowledged_at, created_at, created_by)
+  VALUES ((d->'strip'->>'handoff_id')::uuid, v_org, v_fac, v_date, 'night', 'follow_up', (d->'strip'->>'handoff_resident_id')::uuid,
+    'Ruth ate little overnight; offer fluids and watch breakfast.', 'normal',
+    (d->'user_ids'->>'ashley')::uuid, (v_date + time '08:40') AT TIME ZONE v_tz, (v_date + time '06:40') AT TIME ZONE v_tz, (d->'user_ids'->>'dana')::uuid)
+  ON CONFLICT (id) DO UPDATE SET acknowledged_by = EXCLUDED.acknowledged_by, acknowledged_at = EXCLUDED.acknowledged_at, deleted_at = NULL;
   UPDATE public.incidents SET deleted_at = v_now
   WHERE organization_id = v_org AND facility_id = v_fac AND deleted_at IS NULL
     AND id NOT IN (SELECT (w->>'incident_id')::uuid FROM jsonb_array_elements(d->'witness') w);
@@ -863,6 +885,12 @@ async function main() {
         instance_id: demoUuid(`watch-instance:${w.resident}`),
       })),
       checks: buildChecks(residents),
+      strip: {
+        report_client_id: demoUuid(`report:${args.date}:ashley-0912`),
+        report_resident_id: by.get("frank").id,
+        handoff_id: demoUuid(`handoff:${args.date}`),
+        handoff_resident_id: by.get("ruth").id,
+      },
       witness: [
         { slot: 1, occurred: "08:40", due: "10:30", place: "Hall B", what: "Water on the floor by the Hall B pitchers.", task: "Witness statement: water on the floor, Hall B" },
         { slot: 2, occurred: "09:05", due: "11:00", place: "Hall A shower room", what: "Shower room door found propped open.", task: "Witness statement: shower room door" },

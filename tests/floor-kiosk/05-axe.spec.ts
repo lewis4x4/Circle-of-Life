@@ -53,9 +53,9 @@ for (const orientation of ORIENTATIONS) {
 
       // In-app navigation only: a page load is a hidden screen and locks the tablet.
       const tab = (name: string) => page.getByRole("navigation").getByRole("link", { name, exact: true });
-      await expect(page.getByRole("link", { name: "Chart safety check for Evelyn Carter" })).toBeVisible();
+      await expect(page.getByRole("link", { name: /chart safety check for Evelyn Carter/i })).toBeVisible();
       await expectNoAxeViolations(page, "/floor");
-      await page.getByRole("link", { name: "Chart safety check for Evelyn Carter" }).click();
+      await page.getByRole("link", { name: /chart safety check for Evelyn Carter/i }).click();
       await expect(page).toHaveURL(/\/floor\/check\//);
       await expect(page.getByRole("button", { name: /save check/i })).toBeVisible();
       await expectNoAxeViolations(page, "/floor/check/[taskId]");

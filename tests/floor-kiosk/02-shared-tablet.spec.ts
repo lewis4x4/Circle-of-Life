@@ -23,7 +23,7 @@ for (const orientation of ORIENTATIONS) {
       await expect(page.getByRole("banner").getByText("Ashley W.")).toBeVisible();
 
       // Chart the overdue 9:30 check (late reason required when over).
-      await page.getByRole("link", { name: "Chart safety check for Evelyn Carter" }).or(page.getByRole("button", { name: "Chart safety check for Evelyn Carter" })).first().click();
+      await page.getByRole("link", { name: /chart safety check for Evelyn Carter/i }).or(page.getByRole("button", { name: /chart safety check for Evelyn Carter/i })).first().click();
       await expect(page).toHaveURL(/\/floor\/check\//);
       await page.getByRole("button", { name: /^awake$/i, pressed: false }).click();
       await page.getByRole("group", { name: /where (is she|are they)/i }).getByRole("button").first().click();
@@ -45,6 +45,16 @@ for (const orientation of ORIENTATIONS) {
       await unlockFloor(page, "dana");
       await expect(page.getByRole("banner").getByText("Dana R.")).toBeVisible();
       await expect(page.getByRole("banner").getByText("Ashley W.")).toHaveCount(0);
+      // Only Dana's session: her clock-in (6:52) on the strip, none of Ashley's
+      // activity, none of Ashley's witness statements, nothing of Ashley's unsent.
+      const strip = page.getByRole("region", { name: /my shift/i }).or(page.getByLabel(/my shift/i)).first();
+      await expect(strip).toContainText("6:52");
+      await expect(strip).toContainText("Clocked in at the front door");
+      await expect(strip).not.toContainText("6:58");
+      await expect(strip).not.toContainText("Report:");
+      await expect(page.getByRole("link", { name: /answer the witness statement/i }).or(page.getByRole("button", { name: /answer the witness statement/i }))).toHaveCount(0);
+      await expect(page.getByText("Witness statement", { exact: true })).toHaveCount(0);
+      await expect(page.getByRole("banner").getByRole("status")).toContainText("Synced");
 
       // Evelyn's page on Dana's session (in-app navigation: a page load is a
       // hidden screen, which locks the tablet by design) shows the check

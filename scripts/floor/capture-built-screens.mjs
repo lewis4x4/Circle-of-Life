@@ -277,8 +277,8 @@ const STATES = [
     await page.goto(`${BASE_URL}/floor/lock`);
     await unlock(page, data, "ashley");
     // Loaded, not loading: all six check rows and both task rows are on screen.
-    const rows = page.getByRole("link", { name: /^(Chart safety check for|Answer the witness statement)/ })
-      .or(page.getByRole("button", { name: /^(Chart safety check for|Answer the witness statement)/ }));
+    const rows = page.getByRole("link", { name: /(chart safety check for|answer the witness statement)/i })
+      .or(page.getByRole("button", { name: /(chart safety check for|answer the witness statement)/i }));
     await page.waitForFunction(() => !document.body.innerText.includes("Loading the checks"), null, { timeout: 30_000 });
     for (let i = 0; i < 60 && (await rows.count()) < 8; i += 1) await page.waitForTimeout(500);
     if ((await rows.count()) < 8) throw new Error(`Now shows ${await rows.count()} rows, expected 8`);
@@ -299,7 +299,7 @@ const STATES = [
     await installFloorDevice(page, data, "HL-FLOOR-02");
     await page.goto(`${BASE_URL}/floor/lock`);
     await unlock(page, data, "ashley");
-    await page.getByRole("link", { name: "Chart safety check for Evelyn Carter" }).or(page.getByRole("button", { name: "Chart safety check for Evelyn Carter" })).first().click();
+    await page.getByRole("link", { name: /chart safety check for Evelyn Carter/i }).or(page.getByRole("button", { name: /chart safety check for Evelyn Carter/i })).first().click();
     await page.waitForURL(/\/floor\/check\//);
     // The render's selections: Awake, a location, Offered fluids.
     await page.getByRole("button", { name: /^awake$/i }).click();

@@ -28,15 +28,22 @@ for (const orientation of ORIENTATIONS) {
         await navigator.serviceWorker.ready;
       });
 
-      const chartMae = page.getByRole("link", { name: "Chart safety check for Mae Johnson" }).or(page.getByRole("button", { name: "Chart safety check for Mae Johnson" })).first();
+      const chartMae = page.getByRole("link", { name: /chart safety check for Mae Johnson/i }).or(page.getByRole("button", { name: /chart safety check for Mae Johnson/i })).first();
       await chartMae.click();
       await expect(page).toHaveURL(/\/floor\/check\//);
       // The screen has loaded (places come from the server) before the network drops.
       const places = page.getByRole("group", { name: /where (is she|are they)/i }).getByRole("button");
       await expect(places.first()).toBeVisible();
+      // From here the tablet runs on the real clock. The frozen 9:40 AM only
+      // found Mae's row; a queued item carries its capture time, and the replay
+      // accepts it only inside Ashley's unlock (real server time), exactly as a
+      // real tablet's clock would be.
+      await page.clock.setFixedTime(new Date());
       await context.setOffline(true);
       await page.getByRole("button", { name: /^calm$/i }).click();
       await places.first().click();
+      const lateReason = page.getByLabel(/why late/i);
+      if (await lateReason.isVisible().catch(() => false)) await lateReason.fill("With another resident");
       await page.getByRole("button", { name: /save check/i }).click();
       // The top bar's sync state (useFloorSyncState): the check is queued on this tablet.
       await expect(page.getByRole("banner").getByRole("status")).toContainText("Offline, 1 waiting");
@@ -66,30 +73,53 @@ for (const orientation of ORIENTATIONS) {
       );
       expect(queued).toBe(1);
 
-      // The network returns; Dana unlocks the same tablet; the device replay
-      // writes Ashley's check as Ashley.
+      // Mae's charted checks before anything can replay.
+      const admin = adminClient();
+      const maeLogs = async () => {
+        const logs = await admin
+          .from("resident_observation_logs")
+          .select("id, staff_id, entry_mode, created_at")
+          .eq("facility_id", seed.facilityId)
+          .eq("resident_id", seed.residents.mae.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false });
+        expect(logs.error).toBeNull();
+        return logs.data ?? [];
+      };
+      const before = (await maeLogs()).length;
+
+      // Until Dana's /floor is up, nothing may write Ashley's check: the device
+      // replay and the completion route are held at the network (context routes
+      // cover the service worker's fetches too), and every attempt is counted.
+      let heldAttempts = 0;
+      const held = ["**/api/floor/replay", "**/api/rounding/tasks/*/complete"];
+      for (const pattern of held) {
+        await context.route(pattern, async (route) => {
+          heldAttempts += 1;
+          await route.abort("internetdisconnected");
+        });
+      }
+
+      // The network returns; Dana unlocks the same tablet.
       await context.setOffline(false);
       await expect(page).toHaveURL(/\/floor\/lock/, { timeout: 30_000 });
       const retry = page.getByRole("button", { name: "Try again" });
       if (await retry.isVisible().catch(() => false)) await retry.click();
       await unlockFloor(page, "dana");
+      await expect(page.getByRole("banner").getByText("Dana R.")).toBeVisible();
+      expect((await maeLogs()).length, "nothing wrote Ashley's check before Dana unlocked").toBe(before);
+      expect(heldAttempts, "the tablet tried to replay the queued check").toBeGreaterThan(0);
 
-      const admin = adminClient();
+      // Lift the hold with Dana signed in: the device replay writes Ashley's
+      // check as Ashley, marked as an offline capture.
+      for (const pattern of held) await context.unroute(pattern);
+      await context.setOffline(true);
+      await context.setOffline(false);
       await expect
-        .poll(
-          async () => {
-            const logs = await admin
-              .from("resident_observation_logs")
-              .select("staff_id, entry_mode")
-              .eq("facility_id", seed.facilityId)
-              .eq("resident_id", seed.residents.mae.id)
-              .order("created_at", { ascending: false })
-              .limit(1);
-            return logs.data?.[0]?.staff_id ?? null;
-          },
-          { timeout: 60_000 },
-        )
-        .toBe(seed.people.ashley.staffId);
+        .poll(async () => (await maeLogs()).length, { timeout: 90_000, message: "the queued check replayed after Dana unlocked" })
+        .toBe(before + 1);
+      const [latest] = await maeLogs();
+      expect(latest).toMatchObject({ staff_id: seed.people.ashley.staffId, entry_mode: "offline_synced" });
     });
   });
 }
