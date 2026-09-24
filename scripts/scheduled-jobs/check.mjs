@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { assessJob, compareSecrets, sendSentry } from './monitor.mjs';
+import { assessJob, applyAlertPolicy, compareSecrets, sendSentry, ALERT_POLICY } from './monitor.mjs';
 import { dispatchEmail } from './email-dispatch.mjs';
 import { sendLinear, toJobResults, MONITOR_JOB } from './linear-alert.mjs';
 import { createHash } from 'node:crypto';
@@ -26,6 +26,11 @@ async function api(path,body) {
   return response.json();
 }
 const sql=query=>api('database/query',{query});
+const recheckDelay=process.env.JOB_MONITOR_RECHECK_DELAY_MS ? Number(process.env.JOB_MONITOR_RECHECK_DELAY_MS)
+  : ALERT_POLICY.recheckDelayMs;
+if (!Number.isInteger(recheckDelay) || recheckDelay<0 || recheckDelay>120000) {
+  console.error('JOB_MONITOR_RECHECK_DELAY_MS must be an integer from 0 to 120000');process.exit(1);
+}
 try {
   const jobs=await sql(`select j.jobid,j.jobname,j.schedule,j.active,
     substring(j.command from '(?:/functions/v1/|\\.functions\\.supabase\\.co/)([a-z0-9-]+)') endpoint,
@@ -51,8 +56,9 @@ try {
   if (!args.has('--secrets-only')) {
     const timezone=await sql("select coalesce(current_setting('cron.timezone',true),'GMT') timezone");
     if (!['GMT','UTC','Etc/UTC'].includes(timezone[0]?.timezone)) throw new Error('Monitor requires UTC cron timezone');
-    await sql('select job_monitor.collect()');
-    const records=await sql(`select coalesce(j.jobid,m.jobid) jobid,m.installed_at,
+    const collect=async()=>{
+      await sql('select job_monitor.collect()');
+      const records=await sql(`select coalesce(j.jobid,m.jobid) jobid,m.installed_at,
       coalesce(j.jobname,m.jobname) jobname,j.jobid is null removed,
       substring(m.original_command from '(?:/functions/v1/|\\.functions\\.supabase\\.co/)([a-z0-9-]+)') endpoint,
       j.command=m.instrumented_command command_matches,
@@ -62,8 +68,21 @@ try {
       ,coalesce((select jsonb_agg(r) from (select start_time,end_time,status
         from cron.job_run_details where jobid=coalesce(j.jobid,m.jobid) order by start_time desc limit 100) r),'[]') cron_runs
       from cron.job j full outer join job_monitor.jobs m on m.jobid=j.jobid`);
-    outcomes=records.map(record=>assessJob({...record,...jobs.find(j=>j.jobid===record.jobid)}));
+      const now=new Date();
+      return records.map(record=>applyAlertPolicy(assessJob({...record,...jobs.find(j=>j.jobid===record.jobid)},now),now));
+    };
+    outcomes=await collect();
+    // Retry once: a transient failure still inside its hold is re-collected after a short
+    // delay, so a late pg_net response or a fast job's next run can clear it before paging.
+    for (let attempt=0; attempt<ALERT_POLICY.recheckRetries && outcomes.some(o=>o.held); attempt++) {
+      const held=new Set(outcomes.filter(o=>o.held).map(o=>o.jobid));
+      await new Promise(resolve=>setTimeout(resolve,recheckDelay));
+      outcomes=(await collect()).map(o=>held.has(o.jobid) ? {...o,rechecked:true} : o);
+    }
     report.jobs=outcomes;
+    // Quiet log: held transient failures appear here and in report.jobs, never as alerts.
+    report.held=outcomes.filter(o=>o.held).map(o=>({jobname:o.jobname,state:o.state,http_status:o.http_status,
+      likely_cause:o.likely_cause,consecutive_failures:o.consecutive_failures,hold_until:o.hold_until}));
   }
   const findings=[...parity.filter(p=>p.state!=='match'),...outcomes.filter(o=>o.alert)];
   if (args.has('--send-email')) {

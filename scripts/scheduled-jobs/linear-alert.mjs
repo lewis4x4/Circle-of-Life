@@ -1,8 +1,12 @@
 // Linear delivery for the Haven scheduled-job monitor (check.mjs --send-linear).
 //
-//   failing job, no open issue      -> create one issue (assigned, labeled "Scheduled job", prioritized)
-//   failing job, open issue exists  -> comment only when the failure signature changes
+//   failing job, no open issue      -> reopen the job's issue if it closed inside the dedupe
+//                                      window, otherwise create one (assigned, labeled, prioritized)
+//   failing job, open issue exists  -> same signature: no writes; changed signature: comment,
+//                                      or only refresh the Failure line inside the dedupe window
 //   healthy job, open issue exists  -> comment "recovered" and move the issue to Done
+//
+// Only outcomes that survived monitor.mjs's applyAlertPolicy arrive here as failing.
 //
 // Issues are created by a Linear OAuth app (client credentials), not by a person, so the
 // assignee is notified. New issues trigger the "Scheduled job failure" Linear loop.
@@ -24,7 +28,13 @@ export const TITLE_PREFIX = 'Scheduled job alert: ';
 // Resident safety, medication, escalation, and the monitor itself page as Urgent.
 export const URGENT_JOBS = /resident-safety|escalat|emar|missed-dose|^job-monitor$/i;
 
+// COL-547 dedupe window: a job alerts at most once per window. A signature change inside
+// it updates the issue silently; a job that flaps back to failing reopens the same issue.
+export const DEDUPE_WINDOW_MS = 6 * 60 * 60 * 1000;
+
 const FAILURE_LINE = /^\*\*Failure:\*\* (.*)$/m;
+const LAST_ALERT_LINE = /^\*\*Last alert:\*\* (.*)$/m;
+const FIRST_SEEN_LINE = /^\*\*First seen:\*\* (.*)$/m;
 
 /**
  * @typedef {Object} JobResult
@@ -48,17 +58,32 @@ export function replaceSignature(description, signature) {
     : `**Failure:** ${signature}\n\n${description ?? ''}`;
 }
 
+// When the last notifying write happened; falls back to First seen for older issues.
+export function readLastAlert(description) {
+  const match = (description ?? '').match(LAST_ALERT_LINE) ?? (description ?? '').match(FIRST_SEEN_LINE);
+  const at = match ? Date.parse(match[1].trim()) : NaN;
+  return Number.isFinite(at) ? new Date(at) : null;
+}
+
+export function replaceLastAlert(description, now) {
+  const line = `**Last alert:** ${now.toISOString()}`;
+  if (LAST_ALERT_LINE.test(description ?? '')) return description.replace(LAST_ALERT_LINE, line);
+  if (FIRST_SEEN_LINE.test(description ?? '')) return description.replace(FIRST_SEEN_LINE, m => `${m}\n${line}`);
+  return `${line}\n\n${description ?? ''}`;
+}
+
 export function buildDescription(result, { runUrl, now }) {
   const lines = [
     `**Job:** \`${result.job}\``,
     `**Failure:** ${(result.signature ?? 'Failing').trim()}`,
     `**First seen:** ${now.toISOString()}`,
+    `**Last alert:** ${now.toISOString()}`,
   ];
   if (runUrl) lines.push(`**Monitor run:** ${runUrl}`);
   return `${lines.join('\n')}${result.detail ? `\n\n${result.detail.trim()}` : ''}
 
 ---
-Opened by the Haven scheduled-job monitor. It comments here when the failure changes and closes this issue when the job recovers.`;
+Opened by the Haven scheduled-job monitor after its alert policy confirmed the failure (COL-547). It comments here when the failure changes (at most once per ${DEDUPE_WINDOW_MS / 3600000} hours), closes this issue when the job recovers, and reopens it if the job fails again within ${DEDUPE_WINDOW_MS / 3600000} hours.`;
 }
 
 // Maps check.mjs output (assessJob outcomes + secret parity) to one result per job.
@@ -80,8 +105,11 @@ export function toJobResults(outcomes = [], parity = []) {
     e.details.push(
       [
         `- State: \`${o.state}\``,
+        o.likely_cause ? `- Likely cause: ${o.likely_cause}` : null,
+        o.alert_reason ? `- Alerting because: ${o.alert_reason}` : null,
         o.http_status ? `- HTTP status: ${o.http_status}` : null,
         o.consecutive_failures != null ? `- Consecutive failures: ${o.consecutive_failures}` : null,
+        'last_success_at' in o ? `- Last success: ${o.last_success_at ?? 'none in the last 100 recorded runs'}` : null,
         o.requested_at ? `- Last run: ${o.requested_at}${o.request_id != null ? ` (request ${o.request_id})` : ''}` : null,
         o.expected_at ? `- Expected at: ${o.expected_at}` : null,
         o.endpoint ? `- Endpoint: \`${o.endpoint}\`` : null,
@@ -147,6 +175,27 @@ export const QUERIES = {
         nodes { id identifier url description }
       }
     }`,
+  // Filtered on completedAt client-side; newest update first.
+  findRecentClosed: `
+    query FindRecentClosedJobIssue($teamId: ID!, $title: String!) {
+      issues(
+        first: 5
+        orderBy: updatedAt
+        filter: {
+          team: { id: { eq: $teamId } }
+          title: { eq: $title }
+          state: { type: { eq: "completed" } }
+        }
+      ) {
+        nodes { id identifier url description completedAt }
+      }
+    }`,
+  reopenState: `
+    query ReopenState($teamId: ID!) {
+      workflowStates(first: 10, filter: { team: { id: { eq: $teamId } }, type: { eq: "unstarted" } }) {
+        nodes { id name position }
+      }
+    }`,
   doneState: `
     query DoneState($teamId: ID!) {
       workflowStates(first: 10, filter: { team: { id: { eq: $teamId } }, type: { eq: "completed" } }) {
@@ -177,8 +226,15 @@ export const QUERIES = {
  */
 export async function syncJobIssues(results, config) {
   const now = (config.now ?? (() => new Date()))();
-  const summary = { created: [], commented: [], closed: [], unchanged: [], errors: [] };
+  const window = config.dedupeWindowMs ?? DEDUPE_WINDOW_MS;
+  const summary = { created: [], reopened: [], commented: [], updated: [], closed: [], unchanged: [], errors: [] };
   let doneStateId = null;
+  let reopenStateId = null;
+  const firstState = async (query) => {
+    const data = await gql(config, query, { teamId: config.teamId });
+    const states = [...data.workflowStates.nodes].sort((a, b) => a.position - b.position);
+    return states[0]?.id ?? null;
+  };
 
   for (const result of results) {
     try {
@@ -188,10 +244,8 @@ export async function syncJobIssues(results, config) {
       if (result.status === 'healthy') {
         if (!open) continue;
         if (!doneStateId) {
-          const data = await gql(config, QUERIES.doneState, { teamId: config.teamId });
-          const states = [...data.workflowStates.nodes].sort((a, b) => a.position - b.position);
-          if (!states.length) throw new Error('Linear team has no completed workflow state');
-          doneStateId = states[0].id;
+          doneStateId = await firstState(QUERIES.doneState);
+          if (!doneStateId) throw new Error('Linear team has no completed workflow state');
         }
         const run = config.runUrl ? ` ([monitor run](${config.runUrl}))` : '';
         await gql(config, QUERIES.comment, {
@@ -203,7 +257,26 @@ export async function syncJobIssues(results, config) {
       }
 
       const signature = (result.signature ?? 'Failing').trim();
+      const run = config.runUrl ? `\n\n[Monitor run](${config.runUrl})` : '';
+      const detail = result.detail ? `\n\n${result.detail.trim()}` : '';
       if (!open) {
+        const recent = await gql(config, QUERIES.findRecentClosed, { teamId: config.teamId, title: issueTitle(result.job) });
+        const closed = recent.issues.nodes.find(i => i.completedAt && now - Date.parse(i.completedAt) < window);
+        if (closed) {
+          if (!reopenStateId) {
+            reopenStateId = await firstState(QUERIES.reopenState);
+            if (!reopenStateId) throw new Error('Linear team has no unstarted workflow state');
+          }
+          await gql(config, QUERIES.comment, {
+            input: { issueId: closed.id, body: `Failing again at ${now.toISOString()}, within ${window / 3600000} hours of recovery: **${signature}**. Reopened instead of opening a new issue.${detail}${run}` },
+          });
+          await gql(config, QUERIES.update, {
+            id: closed.id,
+            input: { stateId: reopenStateId, description: replaceLastAlert(replaceSignature(closed.description, signature), now) },
+          });
+          summary.reopened.push(closed.identifier);
+          continue;
+        }
         const data = await gql(config, QUERIES.create, {
           input: {
             teamId: config.teamId,
@@ -224,15 +297,23 @@ export async function syncJobIssues(results, config) {
         summary.unchanged.push(open.identifier);
         continue;
       }
-      const run = config.runUrl ? `\n\n[Monitor run](${config.runUrl})` : '';
-      const detail = result.detail ? `\n\n${result.detail.trim()}` : '';
+      const lastAlert = readLastAlert(open.description);
+      if (lastAlert && now - lastAlert < window) {
+        // Inside the dedupe window: keep the issue current without notifying anyone again.
+        await gql(config, QUERIES.update, { id: open.id, input: { description: replaceSignature(open.description, signature) } });
+        summary.updated.push(open.identifier);
+        continue;
+      }
       await gql(config, QUERIES.comment, {
         input: {
           issueId: open.id,
           body: `Failure changed: **${previous ?? 'unknown'}** → **${signature}** at ${now.toISOString()}.${detail}${run}`,
         },
       });
-      await gql(config, QUERIES.update, { id: open.id, input: { description: replaceSignature(open.description, signature) } });
+      await gql(config, QUERIES.update, {
+        id: open.id,
+        input: { description: replaceLastAlert(replaceSignature(open.description, signature), now) },
+      });
       summary.commented.push(open.identifier);
     } catch (error) {
       summary.errors.push({ job: result.job, message: String(error?.message ?? error) });
