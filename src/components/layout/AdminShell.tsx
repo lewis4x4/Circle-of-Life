@@ -43,7 +43,6 @@ import {
   ListChecks,
   ListTodo,
   Menu,
-  Megaphone,
   MessageSquare,
   Monitor,
   Moon,
