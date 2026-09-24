@@ -354,3 +354,7 @@ If local smoke fails:
 - Real-auth execution: [PHASE1-EXECUTION-LOG.md](./PHASE1-EXECUTION-LOG.md)
 - RLS matrix: [PHASE1-RLS-VALIDATION-RECORD.md](./PHASE1-RLS-VALIDATION-RECORD.md)
 - Edge Function request/secret details: [`supabase/functions/README.md`](../../supabase/functions/README.md)
+
+### Private workforce roster publication
+
+The workforce publisher uses dedicated Edge `WORKFORCE_PUBLISHER_CRON_SECRET` and `WORKFORCE_INGEST_SECRET`, with Vault `workforce_publisher_cron_secret`. It starts unconfigured/disabled and does not change the Stand Up feed. Follow `supabase/functions/workforce-publisher/README.md` for migration/function identity, verified tenant/key scope, controlled source-and-destination receipt readback, daily cron enablement and rollback. Roster names and raw exports must not appear in operational evidence or notifications.

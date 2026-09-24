@@ -30,3 +30,9 @@ Canonical source of truth for environment variables and secrets used by Circle o
 - `REPORT_SCHEDULER_SECRET`: shared secret on the Next.js server and report-scheduler Edge Function.
 - `REPORT_SCHEDULER_RUNNER_URL`: Edge-only HTTPS URL to the deployed Next.js `/api/reports/scheduler` endpoint. This is configuration, not a secret.
 - Missing configuration fails closed; recurrence is not enabled by source changes alone.
+
+### Private workforce publisher (COL-721)
+
+- `WORKFORCE_PUBLISHER_CRON_SECRET`: Haven Edge-only invocation secret; its corresponding dedicated Vault value is `workforce_publisher_cron_secret`. It authorizes only the workforce publisher's empty-body POST.
+- `WORKFORCE_INGEST_SECRET`: Haven Edge-only HMAC secret for Front Office's private workforce roster receiver, bound to the verified Haven organization and `workforce_roster` dataset. It grants no reads or source database access and must not reuse Stand Up, officer catalog or another source's key.
+- Both are absent by default; deployment does not activate the feed. Brian owns secret rotation and activation. Read `supabase/functions/workforce-publisher/README.md` for exact project, receipt and disabled-cron readback; inspect secret names only with `supabase secrets list --project-ref manfqmasfqppukpobpld`.
