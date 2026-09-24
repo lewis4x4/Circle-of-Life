@@ -1,0 +1,216 @@
+{
+  "checked_at": "2026-09-24T03:24:12.755116+00:00",
+  "scope": "Sanitized source provenance only; no credentials, roster records or hosted activation",
+  "imported_file_count": 22,
+  "imports": [
+    {
+      "path": "scripts/pg-verify-migrations.mjs",
+      "imported_sha256": "4674aa75eac95aa3caecda3b50c954b2fa746a81e51fa0ca1375619fe821d26f",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "c0fa36337b3a589d1ab9e96ce62463759c1a70ca",
+      "source_sha256": "4674aa75eac95aa3caecda3b50c954b2fa746a81e51fa0ca1375619fe821d26f",
+      "composition_applied": false
+    },
+    {
+      "path": "scripts/workforce/local-target.mjs",
+      "imported_sha256": "1d7cb410af17fa2cb7c64551c1e383be385d3bd6df401c3040a69ba85f8dbfbe",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "4cd3e4240beafe4bb55a6cc9ab361579710a7947",
+      "source_sha256": "1d7cb410af17fa2cb7c64551c1e383be385d3bd6df401c3040a69ba85f8dbfbe",
+      "composition_applied": false
+    },
+    {
+      "path": "scripts/workforce/validate-source.ts",
+      "imported_sha256": "b55edec66d6638f64038c46f321d0b66a9c2146f610861298f4f975b6e4743a8",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "e99e32e4a4e59d0628350ac03fb14dc0ff4dd6b6",
+      "source_sha256": "b55edec66d6638f64038c46f321d0b66a9c2146f610861298f4f975b6e4743a8",
+      "composition_applied": false
+    },
+    {
+      "path": "scripts/workforce/verify-source-contract.mjs",
+      "imported_sha256": "f92bfba4b580d87f4f4c2e8b15b8a2df06532b903ed889b56d01a2ca698c028a",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "f803ca05144f4f7d7d7d0f823ffe6f462e86bbb2",
+      "source_sha256": "f92bfba4b580d87f4f4c2e8b15b8a2df06532b903ed889b56d01a2ca698c028a",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/functions/workforce-publisher/contract/protocol.ts",
+      "imported_sha256": "3b7ee2b65f703a957194bb3e8892cbb174bfebf89b27557f2363c6c7bf7188c8",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "0c8976c64b3e4f4a4e398cf29a25272deeb0c84d",
+      "source_sha256": "3b7ee2b65f703a957194bb3e8892cbb174bfebf89b27557f2363c6c7bf7188c8",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/functions/workforce-publisher/contract/types.ts",
+      "imported_sha256": "cb99d7e95ef7ec225d2807044f667c7a46e57cb89471520b33673d0811e8c516",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "05a9022404e669db3332fbf37b3d66180e057350",
+      "source_sha256": "cb99d7e95ef7ec225d2807044f667c7a46e57cb89471520b33673d0811e8c516",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/490_phq9_hold_wording.sql",
+      "imported_sha256": "d191eec81604b8ad81a9f1d0f8b71be182d81101ecf21b5932d2b7f60675121e",
+      "source_commit": "6a61bb5a315d2d6af2d07024afc01ae4c35f2bda",
+      "source_blob": "74a932f6674acddc7c8a70616b1742c05d7356b1",
+      "source_sha256": "d191eec81604b8ad81a9f1d0f8b71be182d81101ecf21b5932d2b7f60675121e",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/491_operating_rules.sql",
+      "imported_sha256": "294f736212e87c5481cc4b65f4d12a55d05488c44ba7c0dfc3f35fee9fe1e0b2",
+      "source_commit": "40f150472302fe36d03e8094b12b624e32a768c6",
+      "source_blob": "61415a6e9aef582697cce81bf9abe334c312de5b",
+      "source_sha256": "294f736212e87c5481cc4b65f4d12a55d05488c44ba7c0dfc3f35fee9fe1e0b2",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/492_care_event_shift_from_facility_definitions.sql",
+      "imported_sha256": "08c102c24b899659b6fe60d118005b73eee32c0315a50f794d41f0b89bab53a9",
+      "source_commit": "bf3443f54b88be6b64f661e1925d92baec39bcc2",
+      "source_blob": "59c87b1ea7fb315b7945b86e97579762a864f94e",
+      "source_sha256": "08c102c24b899659b6fe60d118005b73eee32c0315a50f794d41f0b89bab53a9",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/493_kb_seed_target_document_links.sql",
+      "imported_sha256": "bc5dbd465da8125b6028d7abb715df9e59d5c4f342bb276d7ae5a4517e8dd647",
+      "source_commit": "07fe4e913fb96579897c0f8562f2d27f1930ac13",
+      "source_blob": "a02e6301e0e9bd006ead1d93e63abf8f57c2ed8c",
+      "source_sha256": "bc5dbd465da8125b6028d7abb715df9e59d5c4f342bb276d7ae5a4517e8dd647",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/494_floor_tablet_kiosk.sql",
+      "imported_sha256": "254305d9fa531c9204cd0d802bbfed45b309050dc2314869230297a22100c183",
+      "source_commit": "af7193f92e484a748417cbada86f6dd3060e8a8b",
+      "source_blob": "7e4e07c3eca8cf4481783a56125e6c17bfbd54f0",
+      "source_sha256": "254305d9fa531c9204cd0d802bbfed45b309050dc2314869230297a22100c183",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/495_rounding_owner_from_punches.sql",
+      "imported_sha256": "7bc5de50de38690f43c45a5db4e265ea3b29498751e5e4b33db59f329a777b06",
+      "source_commit": "af7193f92e484a748417cbada86f6dd3060e8a8b",
+      "source_blob": "17573bb6c10208bd7c122cb17450626e36052922",
+      "source_sha256": "7bc5de50de38690f43c45a5db4e265ea3b29498751e5e4b33db59f329a777b06",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/migrations/496_workforce_roster_publisher.sql",
+      "imported_sha256": "4c011c2dc22e8bf5b324902fd958d8792c9464fcf56dc94d466798ff5ddc59c0",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "33d0f25e674532469d90b76cd507782df17e49fe",
+      "source_sha256": "4c011c2dc22e8bf5b324902fd958d8792c9464fcf56dc94d466798ff5ddc59c0",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/tests/review_assessment_instrument_hold.sql",
+      "imported_sha256": "4b904e5f4af5c03dbcce44c6bbd5c0cab57254b58a224be14f1da8f779c1016b",
+      "source_commit": "6a61bb5a315d2d6af2d07024afc01ae4c35f2bda",
+      "source_blob": "0dfc0489e8738fc6bf408c359ad3412953eb6732",
+      "source_sha256": "4b904e5f4af5c03dbcce44c6bbd5c0cab57254b58a224be14f1da8f779c1016b",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/tests/review_care_event_witness_attachments.sql",
+      "imported_sha256": "230aa5c238b47a8a8f4a3ab2929165ee3dfa45f6f8f93c5a2b35fc13bec862a3",
+      "source_commit": "bf3443f54b88be6b64f661e1925d92baec39bcc2",
+      "source_blob": "48f16dd59b0240b61c4971a8d202b53b06c6bc51",
+      "source_sha256": "2f1be3e7b55ed821234f268d31890544374d9bed78d6f0b9771bc38138ce153e",
+      "composition_applied": true
+    },
+    {
+      "path": "supabase/tests/review_floor_tablet_kiosk.sql",
+      "imported_sha256": "38cc550363f74696a774aad5bbaf6857e047944c54f36b1d348e542cae5a648d",
+      "source_commit": "c26af4a73e611c616891f9f171765e937b9f00f8",
+      "source_blob": "9a2f97ed77ffca21e745510318b0c8763d2e67c2",
+      "source_sha256": "d7de584ec68784ba58764ab557b056930006deeba322da9c2a3b27d35989dd44",
+      "composition_applied": true
+    },
+    {
+      "path": "supabase/tests/review_kb_seed_target_links.sql",
+      "imported_sha256": "eec629dae4baa604329e382a00c6093da49f62bbd958470d1499fbc202713c80",
+      "source_commit": "07fe4e913fb96579897c0f8562f2d27f1930ac13",
+      "source_blob": "a719db58d249df0178b017f5f82f8dd2aee936b4",
+      "source_sha256": "eec629dae4baa604329e382a00c6093da49f62bbd958470d1499fbc202713c80",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/tests/review_operating_rules.sql",
+      "imported_sha256": "af3504b181e657e3e4e66fec1803e449a38f06905ae319d18bae3eb50b73a10f",
+      "source_commit": "40f150472302fe36d03e8094b12b624e32a768c6",
+      "source_blob": "6487f3242e24d868598ad800a8c0eb242f6c7592",
+      "source_sha256": "af3504b181e657e3e4e66fec1803e449a38f06905ae319d18bae3eb50b73a10f",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/tests/review_rounding_owner_from_punches.sql",
+      "imported_sha256": "2cbc6d8ce0a7bee345859c1f9292b77996d2451f0e39bea3b70611b7372384a5",
+      "source_commit": "c26af4a73e611c616891f9f171765e937b9f00f8",
+      "source_blob": "144a12c145e599a0e6740a00d67967ee844c097f",
+      "source_sha256": "2cbc6d8ce0a7bee345859c1f9292b77996d2451f0e39bea3b70611b7372384a5",
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/tests/review_workforce_prerequisite_reconciliation.sql",
+      "imported_sha256": "5ca4def21f00ec9c8d551def3eca4e98e6b27a847ed112667e5ea92737f212e3",
+      "source_commit": null,
+      "source_blob": null,
+      "source_sha256": null,
+      "composition_applied": false
+    },
+    {
+      "path": "supabase/tests/review_workforce_publisher.sql",
+      "imported_sha256": "719e7fa3831495aab7875a30f05d3518791d6c2176483eb9c83dca82970c684a",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": "9df9b70b989a234911d4e8297200f78d482a8667",
+      "source_sha256": "719e7fa3831495aab7875a30f05d3518791d6c2176483eb9c83dca82970c684a",
+      "composition_applied": false
+    },
+    {
+      "path": "scripts/workforce/local-target.test.mjs",
+      "imported_sha256": "8590f5fd35790921b3a6222377a42cee13d5d5a5989d03b25b190a7ae73f4b02",
+      "source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+      "source_blob": null,
+      "source_sha256": null,
+      "composition_applied": false
+    }
+  ],
+  "original_494_495_source_commit": "af7193f92e484a748417cbada86f6dd3060e8a8b",
+  "original_494_495_bytes_preserved": true,
+  "forward_reconciliation": {
+    "path": "supabase/migrations/498_workforce_prerequisite_reconciliation.sql",
+    "sha256": "b46e8c2dc96a0c0ee1b4f7144fb85361bea84f923d00be85a006834a1165131b",
+    "canonical_source_commit": "c26af4a73e611c616891f9f171765e937b9f00f8",
+    "exact_function_definitions": 9,
+    "private_helpers": 6,
+    "service_only_public_rpcs": 3,
+    "independent_review": "approved after explicit ACL repair"
+  },
+  "publisher_scope": {
+    "included_files": [
+      "supabase/functions/workforce-publisher/contract/protocol.ts",
+      "supabase/functions/workforce-publisher/contract/types.ts"
+    ],
+    "canonical_source_commit": "4ea46b88ae6b7468f172581371c3817086ac5373",
+    "index_included": false,
+    "function_config_included": false,
+    "endpoint_deployed_by_this_delivery": false,
+    "database_default_enabled": false,
+    "cron_default_active": false,
+    "secrets_provisioned": false,
+    "outbound_roster_transfer": false
+  },
+  "observation_generator": {
+    "initial_source_commit": "af7193f92e484a748417cbada86f6dd3060e8a8b",
+    "handoff_source_commit": "c26af4a73e611c616891f9f171765e937b9f00f8",
+    "compatibility_fix": "Resolve staffing alerts only after cadence writes and unowned assignment repair succeed",
+    "focused_tests_passed": 10,
+    "edge_suite_tests_passed": 50
+  },
+  "canonical_gate_artifact": "test-results/agent-gates/2026-09-24T03-11-49-296Z-COL-715-WORKFORCE-INTEGRATED.json"
+}

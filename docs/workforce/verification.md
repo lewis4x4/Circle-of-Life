@@ -9,23 +9,21 @@
 - People reads the employee-file assessment engine, upcoming published shifts, recorded hours and dated requirements. It does not infer medical clearance or fabricate visiting-staff due dates.
 - Legacy time records reject self-approval/pay/scope forgery; Manager staff scope follows Brian's dated COL-571 decision. This is not a claim of complete platform-wide role parity.
 
-## Current review-fix evidence
+## Current integrated evidence
 
-The current source fixes all eight review findings: assignment ID/care-metadata preservation; original-plan copy without call-out replacements; reviewable completed long shifts; bounded correction-read concurrency; exact workweek navigation; recorded historical scheduled hours; outstanding employee-file deadlines; and the unsaved-grid route-leave guard. The additional SQL lock-order repair returns `55P03` for retry and preserves an atomic result.
+The current source fixes all eight review findings: assignment ID/care-metadata preservation; original-plan copy without call-out replacements; reviewable completed long shifts; bounded correction-read concurrency; exact workweek navigation; recorded historical scheduled hours; outstanding employee-file deadlines; and the unsaved-grid route-leave guard. The additional SQL lock-order repair returns `55P03` for retry without a partial mutation. The shared navigation follow-up prevents duplicate confirmation prompts.
 
-The integration lane reports:
+**The full canonical local gate passed:** `test-results/agent-gates/2026-09-24T03-11-49-296Z-COL-715-WORKFORCE-INTEGRATED.json`. Its summary is 13 passed, zero failed and one skipped check; the skipped secondary `apps/web` build is not applicable to this repository layout.
 
-- **108 focused tests across 15 suites passed.**
-- **Nine shared route-leave tests passed.** The regression first reproduced two confirmations where one was expected; the fix preserves a single confirmation.
-- **Canonical typecheck passed again after that follow-up.**
-- **Repository lint passed:** ESLint and the constitution check across 62 files on integrated main.
-- **Targeted Workforce schedule SQL and affected compatibility probes passed.**
-- **Direct-write concurrency proof passed:** the conflicting direct edit receives `55P03` without a partial write, the bulk RPC commits, and a later direct retry succeeds. Script: `scripts/workforce/verify-schedule-concurrency.py`.
+- Native PostgreSQL: **501 migration files, 119 SQL probes, seven acceptance suites and 105 care-event parity cases passed.**
+- Native publisher contract proof: **6,687 synthetic bytes**, exact scoped HMAC accepted, with five units, two people, three assignments, two roles and zero reporting assertions. No roster was transferred.
+- Package-manager/environment hygiene, tracked-secret and Gitleaks scans, dependency audit, repository lint, migration sequence, root build and stress checks passed.
+- Design review passed with **four screenshots**; axe passed for **one route**. These local preview checks do not establish hosted authentication or staff acceptance.
+- Observation-task-generator: **10 focused tests and the full 50-test Edge suite passed.** The before-fix run reproduced three failures; alert resolution now follows successful cadence writes and unowned-assignment repair. The current-owner handoff-grace case also passes.
+- Canonical typecheck passed. Five earlier CI failures were repaired, with **88 focused guard tests plus component checks** passing. Earlier focused evidence includes 108 tests across 15 suites and nine shared route-leave tests; these counts are separate proof points, not an additive total.
+- Direct-write concurrency proof passed: a conflicting direct edit receives `55P03` without a partial write, the bulk RPC commits, and a later retry succeeds.
 
-- **Integrated application compilation passed.** Generated route types were refreshed after main removed obsolete routes; canonical typecheck also passed.
-- **Full native PostgreSQL replay passed:** 488 migration files, 113 SQL probes, seven acceptance suites and 105 care-event parity cases. The initial replay exposed an autovacuum lock-order race in the drill-generator test. Its three-line early audit-table lock matches sibling probes; all assertions and autovacuum remain enabled.
-
-Required CI, merge, migration application, application deployment and hosted verification remain pending. Successful compilation and replay do not override the migration sequence gate.
+These are source/local results. Hosted DDL, current-base required PR CI, merge and post-merge CI, production application/function deployment, and exact-revision hosted readback are **not yet completed** for this delivery.
 
 ## Historical evidence before the review fixes
 
@@ -39,31 +37,31 @@ The following evidence belongs to the earlier source snapshot recorded in `evide
 - Expanded schedule SQL proof passed publication, direct/legacy writes, scope, swap atomicity, and Home compatibility. Two concurrent writers serialized; the second overlap was rejected and one assignment persisted.
 - The earlier native PostgreSQL replay passed: **486 migration files, 113 SQL probes, all seven Smart Rounding acceptance suites, and 105 care-event parity cases**. That command exited 0.
 
-## Required release gate
+## Prerequisite integration and remaining release work
 
-The current integrated gate, `test-results/agent-gates/2026-09-24T00-55-21-746Z-COL-715-WORKFORCE-REVIEW-FIXES.json`, records **FAIL**. Its sequence check expected 485 and found 497; production build and managed UI preview therefore could not run. The same receipt retains the drill-generator test deadlock, which the later full native replay resolved. Package-manager/environment hygiene, secret scans, dependency audit, repository lint and stress checks passed. No failed receipt is rewritten as passed.
+The branch incorporates main through migration 489 and now has a verified source sequence through 498. Latest origin includes 490; the parent integration lane must reconcile that update after committing the current source, then obtain current-base required CI. The pinned import receipt covers 22 files; its sanitized copy is `evidence/prerequisite-provenance.json`.
 
-`test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json` remains an unchanged historical **FAIL**. At that time, the source sequence expected 483 and found this branch's then-numbered 487. An RLS initplan check and outdated acceptance-fixture setup discovered during that run were corrected, and the earlier native replay subsequently passed. The historical receipt is preserved in `docs/workforce/evidence/verification.json`; it is not relabelled as a successful current gate.
+| Migration(s) | Source and integration boundary |
+|---|---|
+| 483–489 | Existing main history integrated, including approved sequence placeholders |
+| 490–493 | Exact reviewed schema and required probe imports; unrelated application work from the original PRs was not copied |
+| 494–495 | Original `af7193f9` migration bytes and identities preserved; matching observation generator included; separate floor application excluded |
+| 496 | Exact `4ea46b88` disabled database/cron scaffold, two canonical contract files and native proof helpers only |
+| 497 | Workforce in-place delivery |
+| 498 | Forward reconciliation from `c26af4a7`, SHA-256 `b46e8c2dc96a0c0ee1b4f7144fb85361bea84f923d00be85a006834a1165131b` |
 
-The Workforce migration is now **497**. The integration lane's current predecessor map is:
+The forward reconciliation passed independent review after an ACL omission was repaired. All nine function definitions and their owner ACL/comment contracts match the canonical source. Six private helpers deny PUBLIC/anon/authenticated/service-role execution; three public RPCs remain service-role-only. Fresh and staging-shaped local replay agree, existing nonzero counters/settings are preserved, and incompatible visitor-column definitions fail closed.
 
-| Migration(s) | PR | Current recorded state |
-|---|---|---|
-| 483–484 | #847 | Merged and integrated |
-| 485 | #822 | Sequence reconciliation in progress |
-| 486–487 | #848 | Sequence reconciliation in progress |
-| 488 | #838 | Sequence reconciliation in progress |
-| 489 | #839 | Sequence reconciliation in progress |
-| 490 | #845 | Sequence reconciliation in progress |
-| 491 | #841 | Sequence reconciliation in progress |
-| 492 | #842 | Sequence reconciliation in progress |
-| 493 | #843 | Sequence reconciliation in progress |
-| 494–495 | #814 | Held COL-677 work; hold unchanged |
-| 496 | #833 | Sequence reconciliation in progress |
+No publisher endpoint is included: `supabase/functions/workforce-publisher/` contains only `contract/protocol.ts` and `contract/types.ts`. The existing deployment selector excludes directories without `index.ts`; full reconciliation and inventory use the same entrypoint boundary. Migration 496 stays disabled and its cron scaffold inactive. No publisher secrets, organization/key configuration, activation or outbound transfer were performed.
 
-This mapping replaces the earlier numbering, not the earlier failed evidence. It does not certify that the full sequence is merged, applied or released. Resolve the sequence on main, retain the held-work boundary, and run the required release-sensitive gates against the final integrated tree. Never bypass migration checks to claim completion.
+COL-736 was canceled as an unnecessary agent-authored approval gate. Earlier agent labels and descriptions did not establish a recorded human hold on this source release. This correction does not imply human acceptance or waive any technical release gate. The remaining work is hosted migration/ledger verification, current-base required PR CI, merge and post-merge CI, changed observation-task-generator deployment/content verification, production application deployment and applicable hosted smoke checks.
 
-Fresh ledger reads confirm that 494/495 are installed in staging but absent from production; 496/497 are absent from both. Reallocating those staging-installed identities to Workforce would conflict with recorded history. PR #814 still carries `do-not-merge` and `no-auto-merge`; its release boundary requires a separate decision.
+## Preserved historical failed receipts
+
+- `test-results/agent-gates/2026-09-24T00-55-21-746Z-COL-715-WORKFORCE-REVIEW-FIXES.json` remains **FAIL** as recorded: it expected migration 485 and found 497, so its production build and managed preview could not run. It also retains the drill-generator fixture deadlock. A later 488-file/113-probe replay passed after the early audit-table lock repair; all assertions and autovacuum remained enabled.
+- `test-results/agent-gates/2026-09-23T22-24-50-306Z-COL-715-WORKFORCE.json` remains **FAIL** as recorded: it expected 483 and found the branch's then-numbered 487. Its subsequent 486-file/113-probe replay is historical evidence only.
+
+Neither failed receipt was rewritten as passed. Dated source snapshots, including the earlier sequence and approval-gate assumptions, remain nested in `evidence/verification.json`. The new integrated PASS is a separate artifact.
 
 ## Separate correction release
 
@@ -75,4 +73,4 @@ Fresh investigation recorded 33 expected responses across curl transports/header
 
 ## Deferred product work
 
-Brian will provide ADP/pay-rule details later. Payroll approval/snapshots, immutable period/export packets, ADP mapping/layout and submission remain pending. Open shifts, staff time-off/pick-up requests, staff notifications, configured staffing/compliance rules and credential evidence consolidation remain subsequent work. Kiosk/floor changes remain owned by COL-677. No vendor retirement, roster sign-off, human acceptance or production release of this draft is claimed.
+Brian will provide ADP/pay-rule details later. Payroll approval/snapshots, immutable period/export packets, ADP mapping/layout and submission remain pending. Open shifts, staff time-off/pick-up requests, staff notifications, configured staffing/compliance rules and credential evidence consolidation remain subsequent work. The separate kiosk/floor application remains owned by COL-677; only reviewed schema foundations and required observation-generator compatibility are included here. No vendor retirement, roster sign-off, human acceptance or production release of this draft is claimed.

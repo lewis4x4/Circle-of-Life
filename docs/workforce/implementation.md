@@ -11,7 +11,7 @@ Mission alignment: pass. Build the existing Workforce into a daily and weekly op
 
 ## Preservation and cleanup plan
 
-Reuse facility shift definitions, existing correction ledger, employee-file requirements and payroll freshness contracts. Keep existing detail URLs and audit history. Reduce top-level navigation to five entries while secondary workflows remain reachable from their parent pages. Do not delete kiosk or uPunch paths during the parallel run. No new dependency. Isolate all edits from COL-677 floor/kiosk work. Disposable evidence is tracked under the current private run directory.
+Reuse facility shift definitions, existing correction ledger, employee-file requirements and payroll freshness contracts. Keep existing detail URLs and audit history. Reduce top-level navigation to five entries while secondary workflows remain reachable from their parent pages. Do not delete kiosk or uPunch paths during the parallel run. No new dependency. Preserve the reviewed COL-677 schema identities and import only the backend compatibility needed by those foundations; the separate floor application remains outside this release. Disposable evidence is tracked under the current private run directory.
 
 ## Explicit external dependencies
 
@@ -38,6 +38,10 @@ The additional direct-write concurrency repair returns PostgreSQL `55P03` when a
 
 ## Current integration and release boundary
 
-The Workforce migration is now `497_workforce_in_place.sql`. Main-sequence reconciliation is still in progress; the current predecessor map is documented in `verification.md`. The held COL-677 PR #814 owns migrations 494–495 and remains a separate approval boundary.
+The integrated source now contains verified prerequisites 490–496, Workforce migration `497_workforce_in_place.sql`, and `498_workforce_prerequisite_reconciliation.sql`. The 22 pinned prerequisite imports are listed in `evidence/prerequisite-provenance.json`. Original migrations 494/495 remain byte-identical to `af7193f9`; migration 498 carries the reviewed `c26af4a7` visitor-throttle and handoff-grace changes forward, with explicit private/service-only permissions. It does not roll staging back or repurpose existing migration identities.
 
-The integration lane reports 108 focused tests across 15 suites, nine shared route-leave tests, canonical typecheck, repository lint, targeted SQL and the direct-write concurrency proof passing. The route-leave regression first reproduced two confirmations where one was expected; the fix now passes. Final full gates and release verification remain pending. These source checks do not establish a production release, staff acceptance or ADP readiness.
+The observation-task-generator includes its matching backend and defers staffing-alert resolution until task writes and unowned-assignment repair succeed. Ten generator tests and the full 50-test Edge suite pass. Migration 496 contributes disabled database configuration and an inactive cron scaffold. Only its two canonical contract files and native proof helpers are included: there is no publisher `index.ts`, config section, endpoint, secret provisioning or outbound roster transfer.
+
+The integrated canonical gate passed at `test-results/agent-gates/2026-09-24T03-11-49-296Z-COL-715-WORKFORCE-INTEGRATED.json`: 501 migration files, 119 SQL probes, seven acceptance suites, 105 care-event parity cases, the 6,687-byte synthetic publisher contract proof, root build, lint, security, stress, four design screenshots and one accessibility route. Canonical typecheck and focused regressions also pass. Five earlier CI failures were repaired and checked with 88 focused guard tests plus component checks.
+
+COL-736 was canceled because it was an unnecessary agent-authored approval gate; no recorded human hold blocks this source release. Hosted DDL, current-base required PR CI, merge/post-merge CI, application and changed-function deployment, and hosted exact-revision proof still have to be completed. The branch incorporates main through 489 and the verified sequence through 498; latest origin includes 490 and must be reconciled after the source commit. Local success is not a production release, staff acceptance or ADP readiness.

@@ -71,7 +71,8 @@ describe("schedule draft metric", () => {
     expect(screen.queryByRole("button", { name: "Download schedule weeks CSV" })).toBeNull();
     expect(screen.queryByText("No schedules in this scope")).toBeNull();
     expect(screen.queryByText("No schedules match the current filters")).toBeNull();
-    expect(screen.getByText(/Schedule read unavailable/)).toBeInTheDocument();
+    expect(screen.getByText("Failed to load data")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("never converts a failed initial read into a zero count", async () => {
@@ -81,7 +82,8 @@ describe("schedule draft metric", () => {
     expect(screen.queryByRole("article", { name: "Draft weeks: 0" })).toBeNull();
     expect(screen.queryByText("No schedules in this scope")).toBeNull();
     expect(screen.queryByRole("button", { name: "Download schedule weeks CSV" })).toBeNull();
-    expect(screen.getByText(/Schedule read unavailable/)).toBeInTheDocument();
+    expect(screen.getByText("Failed to load data")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("does not let a late response replace the active scope's metric", async () => {
