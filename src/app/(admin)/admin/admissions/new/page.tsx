@@ -8,6 +8,14 @@ import { differenceInYears, format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { ChevronDown, ChevronLeft, GripHorizontal, Info, Loader2, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  MedicaidQuestionsFields,
+  emptyMedicaidDraft,
+  medicaidDraftPayload,
+  medicaidDraftStarted,
+  type MedicaidQuestionsDraft,
+} from "@/components/benefits/AdmissionMedicaidScreening";
+import { admissionGateSchema, type AdmissionGate } from "@/lib/benefits/contracts";
 
 import { ResidentRecordPacketStart } from "@/components/resident-intake";
 import { PageHeader } from "@/design-system/components/PageHeader";
@@ -388,6 +396,20 @@ function AdmissionsNewInner() {
   const [intakeProgramType, setIntakeProgramType] = useState<string>("");
   const [anticipatedPayerSource, setAnticipatedPayerSource] = useState<string>("");
   const [anticipatedPayerOther, setAnticipatedPayerOther] = useState("");
+  const [medicaidDraft, setMedicaidDraft] = useState<MedicaidQuestionsDraft>(emptyMedicaidDraft);
+  // The admission Medicaid questions need the organization's gate rule; staff without Medicaid access answer them later on the admission page.
+  const [medicaidGate, setMedicaidGate] = useState<AdmissionGate | null | "unavailable">(null);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/benefits/rules", { cache: "no-store" })
+      .then(async (response) => {
+        const body = (await response.json().catch(() => null)) as { rules?: Array<{ rule_key: string; value: unknown }> } | null;
+        const gate = admissionGateSchema.safeParse(body?.rules?.find((rule) => rule.rule_key === "screening.admission_gate")?.value);
+        if (active) setMedicaidGate(response.ok && gate.success ? gate.data : "unavailable");
+      })
+      .catch(() => { if (active) setMedicaidGate("unavailable"); });
+    return () => { active = false; };
+  }, []);
 
   const [directFirstName, setDirectFirstName] = useState("");
   const [directLastName, setDirectLastName] = useState("");
@@ -1041,6 +1063,14 @@ function AdmissionsNewInner() {
       setError("This intake is already represented by an active admission case.");
       return;
     }
+    const medicaidStarted = medicaidGate !== null && medicaidGate !== "unavailable" && medicaidDraftStarted(medicaidDraft);
+    if (medicaidStarted) {
+      const check = medicaidDraftPayload(medicaidDraft, { residentId: "00000000-0000-0000-0000-000000000000", source: "admission" });
+      if ("problem" in check) {
+        setError(`Medicaid questions: ${check.problem} Or clear them and ask later on the admission page.`);
+        return;
+      }
+    }
 
     if (intent === "submit") {
       if (!targetMoveIn.trim()) {
@@ -1229,6 +1259,17 @@ function AdmissionsNewInner() {
         return;
       }
 
+      if (medicaidStarted) {
+        const built = medicaidDraftPayload(medicaidDraft, { residentId: finalResidentId, admissionCaseId: result.id, source: "admission" });
+        const medicaidKey = `${resumeKey}:medicaid`;
+        const medicaidRequestId = sessionStorage.getItem(medicaidKey) ?? crypto.randomUUID();
+        sessionStorage.setItem(medicaidKey, medicaidRequestId);
+        const saved = "payload" in built
+          ? await fetch("/api/admin/benefits/screenings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ request_id: medicaidRequestId, screening: built.payload }) }).catch(() => null)
+          : null;
+        if (saved?.ok) sessionStorage.removeItem(medicaidKey);
+        else toast.warning("Admission saved, but the Medicaid answers were not. Record them on the admission page.", { duration: 8000 });
+      }
       if (intent === "draft") {
         toast.success("Draft saved.", { duration: 5000 });
       } else {
@@ -2019,6 +2060,23 @@ function AdmissionsNewInner() {
                       className="text-[13px]"
                     />
                   ) : null}
+                </div>
+
+                <div className="space-y-2 rounded-md border border-border p-4">
+                  <p className="text-[13px] font-medium">Medicaid questions <span className="font-normal text-muted-foreground">(optional here)</span></p>
+                  {medicaidGate === null ? (
+                    <p className="text-[12px] text-muted-foreground" role="status">Loading…</p>
+                  ) : medicaidGate === "unavailable" ? (
+                    <p className="text-[12px] text-muted-foreground">Staff with Medicaid access answer these on the admission page after it is saved.</p>
+                  ) : (
+                    <>
+                      <p className="text-[12px] text-muted-foreground">Ask the six New Admits Medicaid Pending Criteria questions now, or on the admission page later.</p>
+                      <MedicaidQuestionsFields draft={medicaidDraft} onChange={setMedicaidDraft} gate={medicaidGate} />
+                      {medicaidDraftStarted(medicaidDraft) && (
+                        <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setMedicaidDraft(emptyMedicaidDraft())}>Clear Medicaid answers</Button>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div className="relative space-y-2">
