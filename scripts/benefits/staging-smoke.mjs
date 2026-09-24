@@ -395,6 +395,8 @@ try {
     for (const actor of [owner, nurse, family, bystander]) {
       await admin.from("user_facility_access").delete().eq("user_id", actor.id);
       await admin.from("family_resident_links").delete().eq("user_id", actor.id);
+      // Retire the synthetic staff row too: one active staff row per facility, name and hire date (COL-793).
+      await admin.from("staff").update({ deleted_at: new Date().toISOString(), notes: `${run} smoke actor retired` }).eq("user_id", actor.id).is("deleted_at", null);
       const banned = await admin.auth.admin.updateUserById(actor.id, { ban_duration: "876000h" });
       await admin.from("user_profiles").update({ is_active: false, deleted_at: new Date().toISOString() }).eq("id", actor.id);
       cleanup.push({ actor: actor.email, banned: !banned.error });
