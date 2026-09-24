@@ -41,6 +41,17 @@ const CONSUMERS: Array<{ file: string; forbidden: RegExp[]; mustUse: string }> =
     forbidden: [/<\s*75\b/, /score\s*<\s*\d/],
     mustUse: "loadComplianceScoreAlert",
   },
+  {
+    // COL-750: the resident-movement back-date window.
+    file: "src/lib/residents/movement-effective-at.ts",
+    forbidden: [/windowDays\s*(?:=|\?\?)\s*\d/, /addFacilityCalendarDays\([^)]*-\s*\d/],
+    mustUse: "windowDays",
+  },
+  {
+    file: "src/components/residents/MovementWhenFields.tsx",
+    forbidden: [/windowDays\s*(?:=|\?\?)\s*\d/],
+    mustUse: "loadMovementBackdateWindowDays",
+  },
 ];
 
 describe("thresholds are operating rules, not literals (COL-710)", () => {

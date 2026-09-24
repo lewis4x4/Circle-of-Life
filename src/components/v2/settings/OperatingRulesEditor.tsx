@@ -12,7 +12,7 @@ import {
   type OperatingRulesSettingsLoad,
 } from "@/lib/operating-rules/operating-rules-settings";
 import { parseRiskScoreBands } from "@/lib/operating-rules/risk-bands";
-import { parseDueWindowDays, parseScoreAlertBelowPct } from "@/lib/operating-rules/operating-rules";
+import { parseBackdateWindowDays, parseDueWindowDays, parseScoreAlertBelowPct } from "@/lib/operating-rules/operating-rules";
 import { createClient } from "@/lib/supabase/client";
 
 const INPUT = "h-8 rounded-sm border border-border bg-surface px-2 text-sm text-text-primary tabular-nums";
@@ -35,6 +35,10 @@ function draftFromCurrent(rule: OperatingRuleSetting): OperatingRuleDraft {
     case "compliance.score_alert_below_pct": {
       const alert = parseScoreAlertBelowPct(rule.current);
       return { key: rule.key, off: !alert || alert.off, belowPct: alert && !alert.off ? String(alert.belowPct) : "" };
+    }
+    case "resident_movement.backdate_window_days": {
+      const days = parseBackdateWindowDays(rule.current);
+      return { key: rule.key, days: days === null ? "" : String(days) };
     }
   }
 }
@@ -71,6 +75,24 @@ function RuleValueFields({
         {field("high", "High below")}
         {field("moderate", "Moderate below")}
       </div>
+    );
+  }
+  if (draft.key === "resident_movement.backdate_window_days") {
+    return (
+      <label className="flex flex-col gap-1 text-xs text-text-muted" htmlFor={`${idPrefix}-days`}>
+        Days back
+        <input
+          id={`${idPrefix}-days`}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={365}
+          step={1}
+          value={draft.days}
+          onChange={(e) => onChange({ ...draft, days: e.target.value })}
+          className={`${INPUT} w-24 text-right`}
+        />
+      </label>
     );
   }
   if (draft.key === "survey_binder.due_window_days") {

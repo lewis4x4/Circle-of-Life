@@ -23,6 +23,7 @@ import {
   easternDayEndIso,
   easternDayStartIso,
   formatCensusMonth,
+  formatRegisterEnteredNote,
   formatRegisterEventTime,
   formatSurveyPackFooter,
 } from "@/lib/registers/register-display-copy";
@@ -225,7 +226,10 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
                       <td>{registerRoomLabel(row)}</td>
                       <td>{residentStatusLabel(row.fromStatus)}</td>
                       <td>{residentStatusLabel(row.toStatus)}</td>
-                      <td>{row.recordedByName ?? ""}</td>
+                      <td>
+                        {row.recordedByName ?? ""}
+                        {formatRegisterEnteredNote(row) ? <div>{formatRegisterEnteredNote(row)}</div> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

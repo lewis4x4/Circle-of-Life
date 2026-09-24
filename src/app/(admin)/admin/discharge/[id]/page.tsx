@@ -26,6 +26,13 @@ import {
   type DischargeReason,
 } from "@/lib/residents/official-discharge";
 import { enumLabel } from "@/lib/display/enum-label";
+import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
+import {
+  EMPTY_MOVEMENT_WHEN,
+  movementGuardMessage,
+  resolveMovementWhen,
+  type MovementWhenDraft,
+} from "@/lib/residents/movement-effective-at";
 
 type RowT = Database["public"]["Tables"]["discharge_med_reconciliation"]["Row"] & {
   residents: {
@@ -67,10 +74,15 @@ export default function AdminDischargeDetailPage() {
   const [pharmacistNpiDraft, setPharmacistNpiDraft] = useState("");
   const [dischargeTargetDraft, setDischargeTargetDraft] = useState("");
   const [hospiceStatusDraft, setHospiceStatusDraft] = useState<Database["public"]["Enums"]["hospice_status"]>("none");
-  const [officialDischargeDate, setOfficialDischargeDate] = useState("");
+  const [officialWhen, setOfficialWhen] = useState<MovementWhenDraft>(EMPTY_MOVEMENT_WHEN);
+  const officialDischargeDate = officialWhen.date;
   const [officialDischargeReason, setOfficialDischargeReason] =
     useState<Database["public"]["Enums"]["discharge_reason"]>("resident_voluntary");
   const [officialDischargeDestination, setOfficialDischargeDestination] = useState("");
+  const dischargeWindowDays = useMovementBackdateWindow({
+    residentId: row?.resident_id ?? null,
+    enabled: !!row?.resident_id,
+  });
 
   const load = useCallback(async () => {
     if (!id) {
@@ -103,12 +115,14 @@ export default function AdminDischargeDetailPage() {
       setDischargeTargetDraft(loadedRow?.residents?.discharge_target_date ?? "");
       setHospiceStatusDraft((loadedRow?.residents?.hospice_status as Database["public"]["Enums"]["hospice_status"] | undefined) ?? "none");
       const todayIso = todayFacilityDateIso();
-      setOfficialDischargeDate(
-        loadedRow?.residents?.discharge_date ??
+      setOfficialWhen({
+        ...EMPTY_MOVEMENT_WHEN,
+        date:
+          loadedRow?.residents?.discharge_date ??
           loadedRow?.residents?.discharge_target_date ??
           loadedRow?.expected_discharge_date ??
           todayIso,
-      );
+      });
     }
     setLoading(false);
   }, [supabase, id]);
@@ -186,6 +200,11 @@ export default function AdminDischargeDetailPage() {
       setActionError("Choose the official discharge date (belongings removed).");
       return;
     }
+    const resolved = resolveMovementWhen(officialWhen, { windowDays: dischargeWindowDays ?? null, dateRequired: true });
+    if (!resolved.ok) {
+      setActionError(resolved.error);
+      return;
+    }
     const successMessage = officialDischargeReceipt(officialDischargeReason);
     setActionLoading(successMessage);
     setActionError(null);
@@ -199,6 +218,7 @@ export default function AdminDischargeDetailPage() {
             date: officialDischargeDate,
             destination: officialDischargeDestination,
             actorId: user?.id ?? null,
+            when: resolved.value,
           }) as never,
         )
         .eq("id", row.resident_id);
@@ -209,7 +229,7 @@ export default function AdminDischargeDetailPage() {
       logSupabasePostgrestError("discharge-detail.official-discharge", err, {
         reconciliationId: row?.id,
       });
-      setActionError("Couldn't complete official discharge. Retry or refresh.");
+      setActionError(movementGuardMessage(err) ?? "Couldn't complete official discharge. Retry or refresh.");
     } finally {
       setActionLoading(null);
     }
@@ -474,18 +494,16 @@ export default function AdminDischargeDetailPage() {
                     discharge if belongings are out; finish med rec when able.
                   </p>
                 ) : null}
+                <MovementWhenFields
+                  value={officialWhen}
+                  onChange={setOfficialWhen}
+                  windowDays={dischargeWindowDays}
+                  idPrefix="official-discharge"
+                  dateLabel="Official discharge date (ET)"
+                  dateRequired
+                  disabled={!!actionLoading}
+                />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Official discharge date (ET)
-                    </span>
-                    <input
-                      type="date"
-                      value={officialDischargeDate}
-                      onChange={(event) => setOfficialDischargeDate(event.target.value)}
-                      className="w-full rounded-[8px] border border-input bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </label>
                   <label className="space-y-1.5">
                     <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Discharge reason

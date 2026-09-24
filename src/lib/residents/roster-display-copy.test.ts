@@ -182,3 +182,11 @@ describe("formatResidentRosterUpdatedAt", () => {
     expect(RESIDENT_ROSTER_NO_DATE_COPY).toBe("No date posted");
   });
 });
+
+describe("formatRosterStatusSince (COL-750)", () => {
+  it("names when an away status began, in Eastern", async () => {
+    const { formatRosterStatusSince } = await import("./roster-display-copy");
+    expect(formatRosterStatusSince("2026-09-22T19:10:00Z")).toBe("since Sep 22, 3:10 PM");
+    expect(formatRosterStatusSince("not a date")).toBeNull();
+  });
+});
