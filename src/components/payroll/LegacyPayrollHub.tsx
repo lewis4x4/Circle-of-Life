@@ -213,8 +213,8 @@ export default function AdminPayrollHubPage() {
               <div className="relative z-10 flex h-full w-full flex-col justify-center gap-4 text-left lg:items-end lg:text-right">
                  <p className="hidden max-w-md text-xs leading-relaxed text-muted-foreground lg:block">Batches for external payroll systems. Each batch exports once.</p>
                  <div className="flex w-full gap-2 justify-start lg:justify-end">
-                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-medium uppercase tracking-wider text-[10px] tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
-                     + New Batch
+                   <Link href="/admin/payroll/new" className={cn(buttonVariants({ size: "default" }), "font-medium text-sm tap-responsive bg-primary hover:bg-primary/90 text-primary-foreground border-none whitespace-nowrap")} >
+                     + New batch
                    </Link>
                  </div>
               </div>
@@ -243,7 +243,7 @@ export default function AdminPayrollHubPage() {
                 type="button"
                 variant="outline"
                 disabled={!facilityReady || exportingCsv}
-                className="h-11 shrink-0 gap-2 rounded-[var(--radius)] font-medium text-[10px] font-bold uppercase tracking-wider"
+                className="h-11 shrink-0 gap-2 rounded-[var(--radius)] text-sm font-medium"
                 title={
                   (statusFilter === "all"
                     ? "Export up to 500 batches (all statuses), most recent period first."
