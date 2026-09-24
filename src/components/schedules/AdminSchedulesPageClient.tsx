@@ -27,6 +27,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import { MotionList, MotionItem } from "@/components/ui/motion-list";
 import { PageHeader } from "@/design-system/components/PageHeader";
+import { KPITile } from "@/design-system/components/KPITile";
+import { metricFromCount } from "@/lib/metrics/metric-state";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
 type QueryError = { message: string };
 type QueryResult<T> = { data: T[] | null; error: QueryError | null };
@@ -85,11 +87,15 @@ export function AdminSchedulesPageClient({
   const supabase = createClient();
   const { selectedFacilityId } = useFacilityStore();
   const [rows, setRows] = useState<ScheduleRow[]>(initialRows);
+  const [loadedFacilityId, setLoadedFacilityId] = useState(initialFacilityId);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [search, setSearch] = useState(DEFAULT_FILTERS.search);
   const [status, setStatus] = useState(DEFAULT_FILTERS.status);
+  const scopeMatches = loadedFacilityId === selectedFacilityId;
+  const listPending = isLoading || (!error && !scopeMatches);
+  const listReady = scopeMatches && !isLoading && !error;
 
   // Skip the first client-side fetch when the server already supplied data
   // for the current facility. Any later facility scope change falls through.
@@ -110,6 +116,7 @@ export function AdminSchedulesPageClient({
       const live = await fetchSchedulesFromSupabase(selectedFacilityId);
       if (!isCurrent()) return;
       setRows(live);
+      setLoadedFacilityId(selectedFacilityId);
     } catch (err) {
       if (!isCurrent()) return;
       setError(formatLiveDataLoadError(err, "Failed to load data"));
@@ -135,6 +142,7 @@ export function AdminSchedulesPageClient({
   }, [rows, search, status]);
 
   const exportSchedulesCsv = useCallback(async () => {
+    if (!listReady) return;
     setExportingCsv(true);
     setError(null);
     try {
@@ -165,7 +173,7 @@ export function AdminSchedulesPageClient({
     } finally {
       setExportingCsv(false);
     }
-  }, [supabase, filteredRows, search, status]);
+  }, [supabase, filteredRows, search, status, listReady]);
 
   const listEmptyCopy = useMemo(
     () =>
@@ -186,6 +194,11 @@ export function AdminSchedulesPageClient({
   );
 
   const draftCount = rows.filter((r) => r.status === "draft").length;
+  const draftCountState = metricFromCount({
+    count: scopeMatches ? draftCount : null,
+    loading: listPending,
+    error,
+  });
 
   return (
     <div className="relative w-full space-y-6 pb-12">
@@ -197,7 +210,12 @@ export function AdminSchedulesPageClient({
           subtitle="Plan the week, review each person’s shifts, then publish to My schedule."
           actions={<Link href="/admin/schedules/new" className={buttonVariants()}>Create week</Link>}
         />
-        {!error && !isLoading && <p className="text-xs text-muted-foreground">{draftCount} draft {draftCount === 1 ? "week" : "weeks"}</p>}
+        <KPITile
+          label="Draft weeks"
+          state={draftCountState}
+          info="Draft weeks among the most recent 120 schedule weeks loaded for this facility scope. Search and status filters do not change this count."
+          className="max-w-xs"
+        />
 
       <AdminFilterBar
         searchValue={search}
@@ -222,14 +240,14 @@ export function AdminSchedulesPageClient({
         }}
       />
 
-      {isLoading ? <AdminTableLoadingState /> : null}
-      {!isLoading && error ? (
+      {listPending ? <AdminTableLoadingState /> : null}
+      {!listPending && error ? (
         <AdminLiveDataFallbackNotice message={error} onRetry={() => void load()} />
       ) : null}
-      {!isLoading && filteredRows.length === 0 ? (
+      {listReady && filteredRows.length === 0 ? (
         <AdminEmptyState title={listEmptyCopy.title} description={listEmptyCopy.description} />
       ) : null}
-      {!isLoading && filteredRows.length > 0 ? (
+      {listReady && filteredRows.length > 0 ? (
         <div className="relative overflow-visible z-10 w-full mt-4">
           <div className="relative z-10 p-4 sm:p-6 mb-4 rounded-lg border border-white/20 dark:border-white/5 bg-card shadow-2xl flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>

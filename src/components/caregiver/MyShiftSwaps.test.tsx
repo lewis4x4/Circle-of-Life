@@ -72,10 +72,18 @@ describe("floor app shift swaps (COL-661 A2)", () => {
     expect(screen.queryByRole("link", { name: /approval queue/i })).toBeNull();
   });
 
-  it("links roles allowed to approve to the oversight queue instead of embedding it", async () => {
-    mocks.appRole = "med_tech";
+  it.each(["owner", "org_admin", "facility_admin", "manager"])("links scheduling role %s to the oversight queue instead of embedding it", async (role) => {
+    mocks.appRole = role;
     render(<MyShiftSwaps />);
     expect(await screen.findByRole("link", { name: /Open the approval queue/ })).toHaveAttribute("href", "/admin/shift-swaps");
+  });
+
+  it("keeps med-tech staff on their personal confirmation workflow", async () => {
+    mocks.appRole = "med_tech";
+    render(<MyShiftSwaps />);
+    expect(await screen.findByRole("button", { name: /Confirm my participation/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Open the approval queue/ })).toBeNull();
+    expect(mocks.orFilters).toEqual(["requesting_staff_id.in.(staff-me),covering_staff_id.in.(staff-me)"]);
   });
 
   it("tells an account with no staff record that it is not linked, without querying swaps", async () => {

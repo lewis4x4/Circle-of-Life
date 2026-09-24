@@ -9,6 +9,7 @@ import { AdminEmptyState, AdminLiveDataFallbackNotice, AdminTableLoadingState } 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
 import { registerRouteLeaveGuard } from "@/components/layout/navigation-pending";
@@ -191,7 +192,7 @@ export default function AdminScheduleWeekDetailPage() {
       </div>
       {definitions.length === 0 && <p className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">No active shift definitions are configured for this facility. Configure shift times in facility settings before adding shifts.</p>}
       {pendingCount > 0 && <div className="flex items-center gap-3 text-sm" role="status"><span>{pendingCount} unsaved cell {pendingCount === 1 ? "change" : "changes"}.</span><Button size="sm" variant="ghost" disabled={busy} onClick={() => setChanges({})}>Discard changes</Button></div>}
-      {visiblePeople.length === 0 ? <AdminEmptyState title={search ? "No matching people" : "No active staff in this facility"} description={search ? "Try another name or clear the search." : "Add staff to People before planning their shifts."} /> : <div className="overflow-x-auto rounded-xl border border-border bg-card">
+      {visiblePeople.length === 0 ? <AdminEmptyState title={search ? "No matching people" : "No active staff in this facility"} description={search ? "Try another name or clear the search." : "Add staff to People before planning their shifts."} /> : <HorizontalScroll label="Seven-day employee schedule" className="overflow-hidden rounded-xl border border-border bg-card" viewportClassName="rounded-xl">
         <table className="w-full min-w-[1040px] border-collapse text-sm"><caption className="sr-only">Seven-day employee schedule. Hours use the facility time zone and do not deduct unrecorded meals.</caption>
           <thead><tr className="border-b border-border text-left"><th scope="col" className="sticky left-0 z-10 min-w-48 bg-card p-4 font-medium">Person</th>{days.map((date) => <th scope="col" key={date} className="min-w-28 p-3 text-center font-medium">{formatDate(date)}</th>)}<th scope="col" className="p-4 text-right font-medium">Hours</th></tr></thead>
           <tbody>{visiblePeople.map((person) => <tr key={person.id} className="border-b border-border/60 last:border-b-0">
@@ -203,7 +204,7 @@ export default function AdminScheduleWeekDetailPage() {
           </tr>)}</tbody>
           <tfoot><tr className="border-t border-border"><th scope="row" className="sticky left-0 bg-card p-4 text-left font-medium">Assigned shifts</th>{days.map((date) => <td key={date} className="p-3 text-center tabular-nums">{gridPeople.reduce((sum, person) => sum + effectiveCell(person.id, date).length, 0)}</td>)}<td /></tr></tfoot>
         </table>
-      </div>}
+      </HorizontalScroll>}
       <p className="text-xs text-muted-foreground">Hours are scheduled elapsed time, before meal deductions. Assignment counts are not a staffing minimum or credential check. {schedule.status === "draft" ? "This draft is hidden from staff until you publish it." : "Published assignments are available in My schedule."}</p>
       <div className="flex flex-wrap items-center gap-4 text-sm"><Link href="/admin/shift-swaps" className="underline">Review shift swap requests</Link><Button variant="ghost" size="sm" disabled={!assignments.length || pendingCount > 0} onClick={exportAssignments}><Download className="mr-2 h-4 w-4" />Download assignments</Button></div>
       {assignments.length > 0 && <details className="rounded-lg border border-border p-4"><summary className="cursor-pointer text-sm font-medium">Assignment details ({assignments.length})</summary><div className="mt-3 space-y-2">{assignments.map((assignment) => <div key={assignment.id} className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 text-sm"><div><span className="font-medium">{formatScheduleAssignmentStaffLabel(people.find((person) => person.id === assignment.staff_id))}</span> · {formatDate(assignment.shift_date)} · {formatScheduleTimes(assignment.custom_start_time, assignment.custom_end_time)}<span className="ml-2 text-xs text-muted-foreground">{enumLabel(assignment.status)}</span></div>{editable && <Button size="sm" variant="outline" disabled={busy || pendingCount > 0} onClick={() => void mutate("remove", assignment.id)}>Remove shift</Button>}</div>)}</div></details>}

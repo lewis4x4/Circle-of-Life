@@ -1,5 +1,5 @@
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const state = vi.hoisted(() => ({
@@ -40,8 +40,21 @@ beforeEach(() => {
   state.assignments = [];
   state.rpc.mockReset().mockResolvedValue({ data: "week-1", error: null });
 });
+afterEach(() => vi.restoreAllMocks());
 
 describe("weekly schedule editing", () => {
+  it("exposes the wide grid as a named keyboard-scrollable region on narrow screens", async () => {
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(1040);
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
+    const ui = render(<SchedulePage />);
+    const region = await screen.findByRole("region", { name: "Seven-day employee schedule" });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region).toContainElement(screen.getByRole("table"));
+    expect(ui.container.querySelector('[data-slot="horizontal-scroll-shade-end"]')).toHaveClass("opacity-100");
+    fireEvent.click(screen.getByRole("button", { name: /Test Person, Mon, Sep 28: Off/ }));
+    expect(screen.getByText("12.0 h")).toBeInTheDocument();
+  });
+
   it("keeps unsaved cells when an operator cancels in-app navigation", async () => {
     const confirm = vi.fn().mockReturnValue(false);
     vi.stubGlobal("confirm", confirm);

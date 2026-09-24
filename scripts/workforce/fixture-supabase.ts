@@ -13,7 +13,7 @@ const definitions = [
   { id: "synthetic-night", facility_id: facilityId, label: "Night", roster_shift_type: "night", starts_at_local: "18:00:00", ends_at_local: "06:00:00", active: true, sort_order: 2, deleted_at: null },
 ];
 const staff = ["A", "B", "C", "D", "E", "F"].map((letter, index) => ({
-  id: `sample-${letter.toLowerCase()}`, first_name: "Sample Person", last_name: letter,
+  id: `sample-${letter.toLowerCase()}`, first_name: "Synthetic Person", last_name: letter,
   facility_id: facilityId, staff_role: index === 0 ? "facility_admin" : "med_tech", employment_status: "active", deleted_at: null,
 }));
 const patterns = [[0, 1, 3], [0, 2, 4], [1, 3, 5], [2, 4, 6], [0, 3, 5], [1, 4, 6]];

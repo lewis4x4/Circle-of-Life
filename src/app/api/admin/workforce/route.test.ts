@@ -13,6 +13,12 @@ beforeEach(() => {
   mocks.load.mockResolvedValue({ facilityId: id, people: [] });
 });
 describe("Workforce API", () => {
+  it.each(["", "all", "------------------------------------"])("rejects invalid facility scope %s before querying", async (facilityId) => {
+    const response = await GET(new Request(`https://example.test/api?facility_id=${facilityId}`));
+    expect(response.status).toBe(400);
+    expect(mocks.facility).not.toHaveBeenCalled();
+    expect(mocks.load).not.toHaveBeenCalled();
+  });
   it("retains current-actor denial before reading any records", async () => {
     mocks.actor.mockResolvedValue({ response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) });
     expect((await GET(new Request(`https://example.test/api?facility_id=${id}`))).status).toBe(403);

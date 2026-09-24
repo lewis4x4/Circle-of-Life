@@ -23,14 +23,14 @@ try {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`${origin}/?view=schedule`);
   await page.getByRole('heading', { name: 'Schedule', exact: true }).waitFor();
-  const offName = /Sample Person A, Wed, Sep 30: Off/;
-  const dayName = /Sample Person A, Wed, Sep 30: Day 6:00a–6:00p/;
+  const offName = /Synthetic Person A, Wed, Sep 30: Off/;
+  const dayName = /Synthetic Person A, Wed, Sep 30: Day 6:00a–6:00p/;
   await page.getByRole('button', { name: offName }).waitFor();
   await page.getByRole('button', { name: offName }).click();
   await page.getByRole('button', { name: dayName }).waitFor();
   assert(await page.getByRole('button', { name: 'Publish week', exact: true }).isDisabled());
   await page.getByRole('button', { name: dayName }).click();
-  const night = page.getByRole('button', { name: /Sample Person A, Wed, Sep 30: Night 6:00p–6:00a \(\+1 day\)/ });
+  const night = page.getByRole('button', { name: /Synthetic Person A, Wed, Sep 30: Night 6:00p–6:00a \(\+1 day\)/ });
   await night.waitFor();
   await night.click();
   await page.getByRole('button', { name: offName }).waitFor();
@@ -59,7 +59,7 @@ try {
   assert.equal(posted.calls.filter((item) => item.name === 'schedule_publish').length, 1);
   checks.push('Publishing the synthetic week refreshed the actual component into read-only mode with edit/publish controls removed.');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: /Sample Person A, Mon, Sep 28: Day/ }).waitFor();
+  await page.getByRole('button', { name: /Synthetic Person A, Mon, Sep 28: Day/ }).waitFor();
   await page.evaluate(() => document.fonts.ready);
   const layout = await page.locator('table').evaluate((table) => ({
     pageWidth: document.documentElement.clientWidth,
