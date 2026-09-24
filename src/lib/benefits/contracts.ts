@@ -108,6 +108,13 @@ export interface AdmissionScreeningOverride { id: string; screening_id: string; 
 export interface AdmissionScreeningRow extends Omit<AdmissionScreeningInput, "resident_id"> { id: string; answered_at: string; runway_date: string | null; result: ScreeningResult; reasons: string[]; created_at: string; recorded_by_name: string | null; override: AdmissionScreeningOverride | null }
 export interface AdmissionRecheck { id: string; due_on: string; status: "open" | "done" | "closed"; screening_id: string }
 export interface AdmissionScreeningList { resident_id: string; facility_id: string; permissions: { can_write: boolean; can_review: boolean }; gate: AdmissionGate; active_case_id: string | null; open_recheck: AdmissionRecheck | null; screenings: AdmissionScreeningRow[] }
+export const completeRecheckSchema = z.object({ request_id: uuid, outcome: z.enum(["no_change", "resident_left"]), note: z.string().trim().max(2000).nullable().optional() }).strict();
+export interface RecheckRow {
+  id: string; facility_id: string; facility_name: string; resident_id: string; resident_name: string; due_on: string; overdue: boolean; can_write: boolean;
+  last_answered_at: string; last_result: ScreeningResult; last_reasons: string[];
+  q_property_non_primary: "yes" | "no" | "unknown"; q_income_over_limit: "yes" | "no" | "unknown"; q_assets: "yes" | "no" | "unknown";
+}
+export interface RecheckList { as_of: string; rechecks: RecheckRow[] }
 export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }
 export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
 export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }

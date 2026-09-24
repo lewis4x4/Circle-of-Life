@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>DEMO face sheet — COL-794</title>
+<style>
+  body { margin: 0; font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #000; }
+  .demo-banner { background: #fde68a; border: 2px dashed #b45309; padding: 6px 10px; margin-bottom: 10px;
+    font-weight: 700; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #resident-face-sheet { max-width: 768px; margin: 0 auto; padding: 32px; background: #fff; box-sizing: border-box; }
+  header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 2px solid #000; padding-bottom: 12px; }
+  .eyebrow { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin: 0; }
+  h1 { font-size: 24px; margin: 0; } p { margin: 0; }
+  .photo { width: 80px; height: 96px; border: 1px dashed #737373; display: flex; align-items: center;
+    justify-content: center; text-align: center; font-size: 10px; color: #525252; }
+  section { margin-top: 14px; } .boxed { border: 2px solid #000; padding: 12px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 8px; }
+  dl { display: grid; gap: 8px 16px; margin: 0; } .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); } .g2 { grid-template-columns: repeat(2, 1fr); }
+  .wide { grid-column: span 2; } dt { font-size: 10px; font-weight: 600; text-transform: uppercase; color: #404040; }
+  dd { margin: 0; } .strong { font-weight: 700; } .big { font-size: 15px; font-weight: 700; } .sub { display: block; font-size: 11px; }
+  footer { margin-top: 24px; display: flex; justify-content: space-between; border-top: 1px solid #d4d4d4; padding-top: 8px; font-size: 10px; color: #404040; }
+  @media print { #resident-face-sheet { padding: 0; } }
+</style>
+<style>
+@page { size: Letter; margin: 0.5in; }
+
+@media print {
+  html, body { background: #fff; }
+
+  #resident-face-sheet {
+    max-width: none;
+    width: 100%;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #resident-face-sheet header,
+  #resident-face-sheet section,
+  #resident-face-sheet footer,
+  #resident-face-sheet dl,
+  #resident-face-sheet dt,
+  #resident-face-sheet dd {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #resident-face-sheet header,
+  #resident-face-sheet h1,
+  #resident-face-sheet h2 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  #resident-face-sheet p,
+  #resident-face-sheet dd { orphans: 2; widows: 2; }
+
+  #resident-face-sheet dd,
+  #resident-face-sheet dt,
+  #resident-face-sheet p,
+  #resident-face-sheet span { overflow-wrap: anywhere; }
+
+  #resident-face-sheet img {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    max-width: 100%;
+  }
+}
+</style>
+</head><body>
+<article id="resident-face-sheet">
+  <div class="demo-banner">DEMO ONLY — fictional resident, facility and contacts. Not PHI. COL-794 print preview evidence.</div>
+  <header>
+    <div>
+      <p class="eyebrow">Resident face sheet</p>
+      <h1>Demo Resident</h1>
+      <p>Preferred name: Demo</p>
+      <p>Homewood Demo (fictional facility)</p>
+    </div>
+    <p class="photo">No photo on file</p>
+  </header>
+  <section aria-label="Identity"><dl class="g4">
+    <div class="field"><dt>Date of birth</dt><dd>Jan 1, 1900 (demo)</dd></div>
+    <div class="field"><dt>Age</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>Gender</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>Admitted</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>Room</dt><dd>Demo 000</dd></div>
+    <div class="field"><dt>Unit</dt><dd>Demo Wing</dd></div>
+    <div class="field wide"><dt>Presence</dt><dd>In facility · since demo seed</dd></div>
+  </dl></section>
+  <section aria-label="Code status and directives" class="boxed"><dl class="g3">
+    <div class="field"><dt>Code status</dt><dd><span class="big">Full code (demo)</span><span class="sub">Verified: not recorded</span></dd></div>
+    <div class="field"><dt>POLST / MOLST</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>Hospice</dt><dd>Not elected</dd></div>
+    <div class="field"><dt>DNH (Do Not Hospitalize)</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>Feeding tube</dt><dd>No</dd></div>
+    <div class="field"><dt>Advance directive</dt><dd>Type not recorded · not on file</dd></div>
+  </dl></section>
+  <section aria-label="Allergies" class="boxed"><dl>
+    <div class="field"><dt>Allergies</dt><dd><span class="strong">Demo allergen A; Demo allergen B</span><span class="sub">Reviewed: not recorded</span></dd></div>
+  </dl></section>
+  <section aria-label="Clinical"><h2>Clinical</h2><dl class="g2">
+    <div class="field wide"><dt>Diagnoses</dt><dd><span class="sub" style="font-size:13px">Primary: Demo condition one</span><span class="sub" style="font-size:13px">Also: Demo condition two; Demo condition three; DemoConditionWithAVeryLongUnbrokenNameThatMustWrapInsteadOfRunningOffTheLetterPage</span></dd></div>
+    <div class="field"><dt>Diet order</dt><dd>Regular (demo)</dd></div>
+    <div class="field"><dt>Fall risk</dt><dd>Not assessed</dd></div>
+  </dl></section>
+  <section aria-label="Contacts"><h2>Contacts and physician</h2><dl class="g2">
+    <div class="field"><dt>Primary contact</dt><dd>Demo Contact One · (000) 000-0000 · demo.contact.one.with.a.long.address@example.invalid</dd></div>
+    <div class="field"><dt>Secondary contact</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>POA / healthcare proxy</dt><dd>Not recorded</dd></div>
+    <div class="field"><dt>Primary care physician</dt><dd>Dr. Demo Physician · phone not recorded</dd></div>
+  </dl></section>
+  <section aria-label="Coverage"><h2>Coverage</h2><dl class="g2">
+    <div class="field"><dt>Primary payer</dt><dd>Demo payer (fictional)</dd></div>
+  </dl></section>
+  <footer><span>Printed (demo render) by Demo User</span><span>Haven · DEMO fixture — contains no protected health information</span></footer>
+</article>
+</body></html>

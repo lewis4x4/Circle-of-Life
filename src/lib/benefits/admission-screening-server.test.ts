@@ -67,3 +67,20 @@ describe("admission screening API", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("benefits_screening_override", { p_screening_id: screeningId, p_result: "candidate", p_reason: "Income is in a trust", p_request_id: requestId });
   });
 });
+
+describe("recheck API", () => {
+  it("bounds the window and passes the facility filter", async () => {
+    const { listBenefitsRechecks } = await import("./server");
+    expect((await listBenefitsRechecks(new Request("http://localhost/api/admin/benefits/rechecks?within_days=9999"))).status).toBe(400);
+    mocks.rpc.mockResolvedValue({ data: { as_of: "2026-09-24", rechecks: [] }, error: null });
+    expect((await listBenefitsRechecks(new Request(`http://localhost/api/admin/benefits/rechecks?facility_id=${facilityId}`))).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("benefits_recheck_list", { p_facility_id: facilityId, p_due_within_days: 14 });
+  });
+  it("only accepts no change or resident left, and passes the request identity", async () => {
+    const { completeBenefitsRecheck } = await import("./server");
+    expect((await completeBenefitsRecheck(post({ request_id: requestId, outcome: "changed" }), screeningId)).status).toBe(400);
+    mocks.rpc.mockResolvedValue({ data: { recheck_id: screeningId, outcome: "no_change", next_recheck_id: caseId, next_due_on: "2026-12-23" }, error: null });
+    expect((await completeBenefitsRecheck(post({ request_id: requestId, outcome: "no_change" }), screeningId)).status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("benefits_recheck_complete", { p_recheck_id: screeningId, p_outcome: "no_change", p_note: null, p_request_id: requestId });
+  });
+});

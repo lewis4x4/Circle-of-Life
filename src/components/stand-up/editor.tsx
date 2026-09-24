@@ -10,7 +10,7 @@ import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/st
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
 import { ROSTER_FIELD_KEYS, expectedSource, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey, type RosterPayload } from '@/lib/stand-up/roster-census';
 import { EntryQuestions, SectionNav, entryValues, fieldsFor, rosterIssueMessage, type EntryFields, type RosterEntry } from './entry-fields';
-import { StandUpHistory } from './history';
+import { PostSubmitHistory, StandUpHistory } from './history';
 import { OutOfHousePanel } from './out-of-house';
 import { RecoveryTools } from './recovery';
 import { StandUpRequestError, standUpRequest } from './transport';
@@ -22,6 +22,8 @@ type Props = {
   leadMinutes?: number | null;
   report?: StandUpReport; reports: StandUpReport[]; recoveries: RecoveryPreview[];
   canManage: boolean; userId: string; now: Date;
+  /** COL-797: owner, org_admin or facility_admin may change a week after it was submitted. */
+  canEditSubmitted?: boolean;
   onSaved: (report: StandUpReport) => void; onDenied: () => void; onReload: () => Promise<void>;
   bindGuard: (guard: (silent?: boolean) => boolean) => () => void;
 };
@@ -48,6 +50,8 @@ export function StandUpEditor(props: Props) {
   const [error, setError] = useState('');
   const [review, setReview] = useState(false);
   const [correction, setCorrection] = useState(false);
+  // COL-797: a submitted report stays read-only until someone allowed to change it reopens it.
+  const [editingSubmitted, setEditingSubmitted] = useState(false);
   const [reason, setReason] = useState('');
   const [conflict, setConflict] = useState(false);
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
@@ -86,10 +90,18 @@ export function StandUpEditor(props: Props) {
     if (documentEntry === true) setBrowserProtected(true);
     else if (documentEntry === false) window.location.replace(window.location.href);
   }, []);
-  const editable = browserProtected && !notOpen && (!historical || (canManage && correction));
+  // COL-797: the submitter and facility administrators may reopen a submitted
+  // week, including a past one. The server makes the same decision.
+  const wasSubmitted = !!saved?.last_submitted_at || saved?.status === 'ready';
+  const mayEditSubmitted = wasSubmitted && (!!props.canEditSubmitted || (!!saved?.last_submitted_by && saved.last_submitted_by === props.userId));
+  const reopened = mayEditSubmitted && editingSubmitted;
+  const lockedSubmitted = saved?.status === 'ready' && !reopened && !(historical && canManage && correction);
+  const historicalOpen = (canManage && correction) || reopened;
+  const editable = browserProtected && !notOpen && !lockedSubmitted && (!historical || historicalOpen);
   // Figures stay readable but reject typing: before the window opens for anyone,
-  // and on a past meeting until a reasoned correction is opened.
-  const readOnly = notOpen || (historical && !(canManage && correction));
+  // on a past meeting until a reasoned correction is opened, and on a submitted
+  // report until it is reopened.
+  const readOnly = notOpen || lockedSubmitted || (historical && !historicalOpen);
   const guardState = useRef({ dirty, advancedBusy });
   useLayoutEffect(() => { guardState.current = { dirty, advancedBusy }; }, [dirty, advancedBusy]);
   useLayoutEffect(() => {
@@ -159,7 +171,7 @@ export function StandUpEditor(props: Props) {
         if (blocked.length) throw new Error(blocked.join(' '));
         // The roster block carries only the chosen reasons; the server recomputes the suggestion and decides the source.
         const rosterBlock: RosterPayload | undefined = entering && rosterRef.current ? Object.fromEntries(ROSTER_FIELD_KEYS.map(key => [key, expectedSource(rosterRef.current, key, values[key]) === 'overridden' && reasonsRef.current[key] ? { override_reason: reasonsRef.current[key] } : {}])) as RosterPayload : undefined;
-        attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical ? { reason: reason.trim() } : {}), ...(rosterBlock ? { roster: rosterBlock } : {}), request_id: crypto.randomUUID() } };
+        attempt = { generation: generation.current, status, payload: { facility_id: facility.id, week_start: week, expected_version: savedRef.current?.version ?? 0, values, status, ...(historical || (reopened && reason.trim()) ? { reason: reason.trim() } : {}), ...(rosterBlock ? { roster: rosterBlock } : {}), request_id: crypto.randomUUID() } };
       } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check your figures.'); setPhase('failed'); return false; }
       pending.current = attempt;
     }
@@ -189,7 +201,7 @@ export function StandUpEditor(props: Props) {
       setError(cause instanceof Error ? cause.message : 'Save failed. Your entries are retained. Retry to check the save result.');
       return false;
     } finally { if (mounted.current) { savingRef.current = false; } }
-  }, [editable, conflict, historical, entering, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster]);
+  }, [editable, conflict, historical, reopened, entering, reason, facility.id, week, onSaved, onDenied, onReload, loadRoster]);
   let values: StandUpValues | undefined; let validationMessage = '';
   try { values = entryValues(draft); } catch (cause) { validationMessage = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const rosterBlocked = values && entering ? Object.keys(rosterIssues(values, roster, reasons)).length > 0 : false;
@@ -276,7 +288,16 @@ export function StandUpEditor(props: Props) {
     {saved?.entry_origin === 'imported' && !saved.last_submitted_at && <p className="border-l-2 border-border pl-3 text-sm">These figures came from a historical import, not from entry in Haven. Check every section before submitting; filled fields do not mean administrator review is complete.</p>}
     {overtimeError && <p role="alert" className="rounded border border-destructive p-3">{overtimeError.message}</p>}
     {!online && <p role="status" className="rounded border border-border p-3 text-sm">Haven is offline. Keep this page open to retain unsaved entries. The shared Google workbook is your outage fallback while Drive is available.</p>}
-    {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.{readOnly ? ' Figures are read-only.' : ''}</p>{canManage && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}
+    {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.{readOnly ? ' Figures are read-only.' : ''}</p>{canManage && !mayEditSubmitted && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}
+    {wasSubmitted && <section aria-label="Submitted report" className="space-y-2 rounded border border-border p-4">
+      {mayEditSubmitted && !reopened && (lockedSubmitted || historical) && <>
+        <p className="text-sm">This report was submitted. To change a figure, reopen it: the figures you keep stay as they are, your changes save as a draft until you submit again, and every changed figure is recorded with your name, the time, and its old and new value.</p>
+        <Button variant="outline" disabled={routePending || phase === 'saving' || !!pending.current || advancedBusy} onClick={() => setEditingSubmitted(true)}>Edit submitted figures</Button>
+      </>}
+      {lockedSubmitted && !mayEditSubmitted && <p className="text-sm">This report was submitted. Only the person who submitted it or a facility administrator can change it.</p>}
+      {reopened && <p role="status" className="text-sm">Reopened for changes. Every changed figure is recorded in the edit history. Submit again when you are done.</p>}
+      {mayEditSubmitted && saved?.version != null && <PostSubmitHistory facilityId={facility.id} week={week} version={saved.version} />}
+    </section>}
     {history && <StandUpHistory reports={props.reports} facilityId={facility.id} facilityName={facility.name} />}
     {review && values ? <section aria-label="Review report" className="space-y-4 rounded border border-border p-5">
       <h3 ref={reviewHeading} tabIndex={-1} className="text-lg font-semibold outline-none">Review {facility.name} · {dateLabel(week)}</h3><p className="text-sm text-muted-foreground">Check the destination, period and all sixteen figures. Submission confirms your review; payroll verification is separate.</p>
@@ -318,7 +339,8 @@ export function StandUpEditor(props: Props) {
       <SectionNav />
       <EntryQuestions fields={draft} onChange={change} disabled={!browserProtected || advancedBusy || conflict || routePending} readOnly={readOnly} week={week} open={entering} prior={prior} asOf={asOf} derived={complete} overtimeError={overtimeError}
         roster={rosterEntry} recorded={saved?.roster_confirmations} censusExtra={entering ? <OutOfHousePanel facilityId={facility.id} facilityName={facility.name} refreshKey={rosterTick} /> : undefined} />
-      {historical && correction && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
+      {!historical && reopened && <label htmlFor="change-reason" className="block text-sm font-medium">Reason for the change (optional)<Input id="change-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} className="mt-2" /></label>}
+      {historical && historicalOpen && <label htmlFor="correction-reason" className="block text-sm font-medium">Correction reason<Input id="correction-reason" value={reason} disabled={routePending || phase === 'saving'} onChange={event => setReason(event.target.value)} required className="mt-2" /></label>}
     </form>}
     <section aria-label="Save and submit report" className="sticky bottom-0 z-10 space-y-2 border-y border-border bg-background px-1 py-2 shadow-sm sm:space-y-3 sm:py-4">
       {error && <div role="alert" className="rounded border border-destructive p-3 text-sm">{error}</div>}

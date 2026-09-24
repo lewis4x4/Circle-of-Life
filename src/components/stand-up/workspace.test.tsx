@@ -758,3 +758,71 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     expect(rows[1]).toHaveTextContent('12'); expect(rows[1]).not.toHaveTextContent('override');
   });
 });
+describe('Stand Up changes after submission (COL-797)', () => {
+  const full = (census = 30) => ({ ...Object.fromEntries(Object.keys(emptyValues()).map(key => [key, 1])), current_total_census: census } as StandUpReport['values']);
+  const submitted = (patch: Partial<StandUpReport> = {}) => report({ values: full(), status: 'ready', entry_origin: 'manual', last_submitted_at: '2026-09-14T12:40:00Z', last_submitted_by: 'u', ...patch });
+  it('lets the submitter reopen a submitted open-week report and edit it without wiping the other figures', async () => {
+    mocks.auth.appRole = 'facility_admin';
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_edit_submitted: true, reports: [submitted()] });
+    await start(); await choose();
+    expect(screen.getByLabelText('Current census')).toHaveAttribute('readonly');
+    expect(screen.getByRole('button', { name: 'Review and submit' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit submitted figures' }));
+    expect(screen.getByText(/Reopened for changes/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Current census')).not.toHaveAttribute('readonly');
+    changeCensus('31');
+    fireEvent.change(screen.getByLabelText('Reason for the change (optional)'), { target: { value: 'Discharge after the call' } });
+    mocks.request.mockResolvedValueOnce(submitted({ version: 2, status: 'draft', values: full(31) })); save();
+    await waitFor(() => expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(true));
+    const payload = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1];
+    expect(payload).toMatchObject({ facility_id: 'a', week_start: '2026-09-14', expected_version: 1, status: 'draft', reason: 'Discharge after the call' });
+    expect(payload.values).toEqual(full(31));
+  });
+  it('lets a facility administrator correct a submitted past week with a recorded reason', async () => {
+    mocks.auth.appRole = 'facility_admin';
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_import: false, can_edit_submitted: true, reports: [submitted({ id: 'old', week_start: '2026-09-07', last_submitted_by: 'someone-else' })] });
+    await start(); await choose();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    expect(screen.getByLabelText('Current census')).toHaveAttribute('readonly');
+    expect(screen.queryByLabelText('Make a correction with a recorded reason')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit submitted figures' }));
+    changeCensus('29'); save();
+    await screen.findByText('Enter a reason for this historical correction.');
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+    fireEvent.change(screen.getByLabelText('Correction reason'), { target: { value: 'Census miscounted' } });
+    mocks.request.mockResolvedValueOnce(submitted({ id: 'old', week_start: '2026-09-07', version: 2, status: 'draft', values: full(29) })); save();
+    await waitFor(() => expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(true));
+    expect(mocks.request.mock.calls.find(call => call[0] === 'save')?.[1]).toMatchObject({ week_start: '2026-09-07', status: 'draft', reason: 'Census miscounted' });
+  });
+  it('offers no reopen to a user who neither submitted the report nor administers the facility, and honors a server refusal', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_edit_submitted: false, reports: [submitted({ last_submitted_by: 'someone-else' })] });
+    await start(); await choose();
+    expect(screen.queryByRole('button', { name: 'Edit submitted figures' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit history' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Only the person who submitted it or a facility administrator can change it/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '99' } });
+    expect(screen.getByLabelText('Current census')).toHaveValue(30);
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
+  });
+  it('removes the editable surface when the server refuses a post-submit edit', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_edit_submitted: true, reports: [submitted()] });
+    await start(); await choose();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit submitted figures' })); changeCensus('32');
+    mocks.request.mockRejectedValueOnce(new StandUpRequestError('Stand Up access denied', 403)); save();
+    await screen.findByText(/Your access changed/); expect(screen.queryByLabelText('Current census')).not.toBeInTheDocument();
+  });
+  it('shows administrators the field-level edit history with actor, time, before and after', async () => {
+    mocks.request.mockResolvedValueOnce({ ...workspace, can_edit_submitted: true, reports: [submitted({ version: 3 })] });
+    await start(); await choose();
+    mocks.request.mockResolvedValueOnce({ facility_id: 'a', week_start: '2026-09-14', changes: [
+      { id: 'c1', version: 2, revision_id: 'rev2', field_key: 'current_total_census', before_value: 30, after_value: 31, actor_id: 'u', actor_name: 'Demo Administrator', actor_role: 'facility_admin', reason: 'Discharge after the call', created_at: '2026-09-14T14:05:00Z' },
+      { id: 'c2', version: 2, revision_id: 'rev2', field_key: 'status', before_value: 'ready', after_value: 'draft', actor_id: 'u', actor_name: 'Demo Administrator', actor_role: 'facility_admin', reason: 'Discharge after the call', created_at: '2026-09-14T14:05:00Z' },
+    ] });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit history' }));
+    const panel = await screen.findByLabelText('Changes after submission');
+    expect(mocks.request.mock.calls.at(-1)).toEqual(['post_submit_changes', { facility_id: 'a', week_start: '2026-09-14' }]);
+    await within(panel).findByText(/Current census: 30 to 31 · Discharge after the call/);
+    expect(within(panel).getByText(/Status: Submitted to Draft/)).toBeInTheDocument();
+    expect(within(panel).getAllByText(/Sep 14, 10:05 AM Eastern · Demo Administrator/)).toHaveLength(2);
+  });
+});
