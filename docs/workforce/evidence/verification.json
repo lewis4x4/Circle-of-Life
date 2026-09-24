@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-09-24T03:24:12.755116+00:00",
+  "checked_at": "2026-09-24T10:30:55.026180+00:00",
   "source_base": "4a8fef12b39f2cced1cf824c33ac54b1bdbebd39",
-  "source_state": "Integrated working tree: source migration sequence and full canonical local gate pass; latest main reconciliation and technical production release still pending",
+  "source_state": "Integrated current main through493; source through500; staging migrations applied; required PR CI and production release pending",
   "migration": "497_workforce_in_place.sql",
   "full_release_ready": false,
   "review_fixes": [
@@ -134,6 +134,21 @@
       "focused_guard_tests_passed": 88,
       "component_focused_checks": "passed",
       "evidence_source": "parent integration readback; required PR CI still pending"
+    },
+    "native_postgres_latest": {
+      "exit_code": 0,
+      "migration_files": 503,
+      "sql_probes": 121,
+      "acceptance_suites": 7,
+      "care_event_parity_cases": 105,
+      "receipt": "/Users/brianlewis/.hermes/tmp/agent-runs/workforce-release-resume-20260924T022754Z/sql-prerequisites/native-500-full.log"
+    },
+    "bundle_budget_latest": {
+      "result": "passed",
+      "admin_kb_gzip": 448.9,
+      "executive_kb_gzip": 449.4,
+      "cap_kb_gzip": 450,
+      "scope": "local production build on bundle repair tree"
     }
   },
   "additional_fix": {
@@ -253,7 +268,7 @@
     {
       "migrations": "490",
       "pr": 845,
-      "state": "pinned source imported; latest origin includes490; parent reconciliation pending"
+      "state": "merged to main and integrated"
     },
     {
       "migrations": "491",
@@ -288,6 +303,15 @@
       "migrations": "498",
       "source_commit": "c26af4a73e611c616891f9f171765e937b9f00f8",
       "state": "approved forward canonicalization; canonical local gate passed"
+    },
+    {
+      "migrations": "499",
+      "pr": 863,
+      "state": "exact migration and probe imported; hosted applied in staging and production; remaining PR scope separate"
+    },
+    {
+      "migrations": "500",
+      "state": "reviewed configurable clock evidence age; staging applied, production pending"
     }
   ],
   "production_changes_by_this_draft": false,
@@ -588,8 +612,8 @@
   "prerequisite_provenance": "docs/workforce/evidence/prerequisite-provenance.json",
   "source_integration": {
     "integrated_main_through": 489,
-    "latest_origin_main_through": 490,
-    "verified_branch_sequence_through": 498,
+    "latest_origin_main_through": 493,
+    "verified_branch_sequence_through": 500,
     "latest_main_reconciliation_pending": true,
     "hosted_ddl_applied_by_this_delivery": false
   },
@@ -613,5 +637,15 @@
     "cron_default_active": false,
     "secrets_provisioned": false,
     "outbound_roster_transfer": false
+  },
+  "staging_release": {
+    "migrations_applied": [
+      "496",
+      "497",
+      "498",
+      "500"
+    ],
+    "ledger": "pass",
+    "production_workforce_applied": false
   }
 }
