@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { assessJob, compareSecrets, sendSentry } from './monitor.mjs';
 import { dispatchEmail } from './email-dispatch.mjs';
+import { sendLinear, toJobResults, MONITOR_JOB } from './linear-alert.mjs';
 import { createHash } from 'node:crypto';
 
 const project=process.env.SUPABASE_PROJECT_REF;
@@ -10,10 +11,10 @@ if (!/^[a-z]{20}$/.test(project ?? '') || !token) {
   process.exit(1);
 }
 const args=new Set(process.argv.slice(2));
-if ([...args].some(a=>!['--secrets-only','--send-sentry','--send-email'].includes(a))) {
-  console.error('Usage: check.mjs [--secrets-only] [--send-sentry] [--send-email]');process.exit(1);
+if ([...args].some(a=>!['--secrets-only','--send-sentry','--send-email','--send-linear'].includes(a))) {
+  console.error('Usage: check.mjs [--secrets-only] [--send-sentry] [--send-email] [--send-linear]');process.exit(1);
 }
-if(args.has('--secrets-only') && (args.has('--send-sentry') || args.has('--send-email'))) {
+if(args.has('--secrets-only') && (args.has('--send-sentry') || args.has('--send-email') || args.has('--send-linear'))) {
   console.error('A partial secrets-only check cannot update the full monitor alert state');process.exit(1);
 }
 async function api(path,body) {
@@ -86,13 +87,19 @@ try {
         do update set fingerprint=excluded.fingerprint,event_id=excluded.event_id,delivered_at=now()`);
     }
   }
+  if (args.has('--send-linear')) {
+    // One Linear issue per job: opened on failure, commented on change, closed on recovery.
+    // A completed collection also closes any open issue about the monitor itself.
+    report.linear=await sendLinear([...toJobResults(outcomes,parity),{job:MONITOR_JOB,status:'healthy'}]);
+    if(report.linear.errors.length) process.exitCode=1;
+  }
   console.log(JSON.stringify(report,null,2));
   if (findings.length && !process.exitCode) process.exitCode=2;
 } catch (error) {
   // All error text originates in this script; never emit raw fetch/SQL exceptions.
   const message=String(error?.message ?? '');
   console.error(JSON.stringify({project_ref:project,monitor:'failed',
-    reason:/^(Supabase |Sentry delivery failed:|Monitor requires |SENTRY_DSN_JOB_MONITOR |Invalid Sentry DSN)/.test(message)
+    reason:/^(Supabase |Sentry delivery failed:|Monitor requires |SENTRY_DSN_JOB_MONITOR |Invalid Sentry DSN|Linear |LINEAR_MONITOR_)/.test(message)
       ? message:'Monitor request failed; inspect provider status without logging secrets'}));
   if(args.has('--send-email')) {
     try { await dispatchEmail(sql,[{state:'monitor_failed'}],[],'monitor'); }
@@ -103,6 +110,12 @@ try {
       console.error(JSON.stringify({monitor_failure_signal:await sendSentry(process.env.SENTRY_DSN_JOB_MONITOR,
         project,[{state:'monitor_failed',reason:'Outcome or parity collection failed'}])}));
     } catch { console.error('Monitor failure signal could not reach Sentry; workflow failure routing is required'); }
+  }
+  if(args.has('--send-linear')) {
+    try {
+      console.error(JSON.stringify({monitor_failure_linear:await sendLinear([{job:MONITOR_JOB,status:'failing',
+        signature:'Monitor run failed',detail:'Outcome or parity collection failed; open the monitor run for the sanitized reason.'}])}));
+    } catch { console.error('Monitor failure could not reach Linear; workflow failure routing is required'); }
   }
   process.exitCode=1;
 }
