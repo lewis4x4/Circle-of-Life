@@ -91,8 +91,9 @@ describe("owner ruling 2026-09-22: recruiter is referrals, pipeline and reputati
     expect(getShellForRole("recruiter")).toBe("admin");
     const config = getRoleDashboardConfig("recruiter");
     expect(config.roleLabel).toBe("Recruiter");
-    expect(config.visibleGroups).toEqual(["Pipeline"]);
-    expect(config.visibleItemKeys).toEqual(["referrals"]);
+    // COL-752: plus the Stand Up item, which opens the Thursday meeting they attend.
+    expect(config.visibleGroups).toEqual(["Pipeline", "Command"]);
+    expect(config.visibleItemKeys).toEqual(["referrals", "stand-up"]);
     expect(redirectPath(adminShellAccessRedirect(new NextRequest("https://haven.test/admin"), asUser("recruiter")))).toBe(
       "/admin/referrals",
     );
@@ -107,6 +108,7 @@ describe("owner ruling 2026-09-22: recruiter is referrals, pipeline and reputati
       "/pipeline/referrals-crm",
       "/reputation",
       "/admin/reputation/replies",
+      "/admin/stand-up",
     ]) {
       expect(isRecruiterAllowedAdminPath(path)).toBe(true);
       expect(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("recruiter"))).toBeNull();
@@ -129,6 +131,9 @@ describe("owner ruling 2026-09-22: recruiter is referrals, pipeline and reputati
       "/pipeline/recent-admissions",
       "/print/resident/abc",
       "/admin/executive",
+      // The Monday roll-up is not the Thursday meeting.
+      "/admin/executive/standup",
+      "/admin/stand-upx",
     ]) {
       expect(redirectPath(adminShellAccessRedirect(new NextRequest(`https://haven.test${path}`), asUser("recruiter")))).toBe(
         "/admin/referrals",
