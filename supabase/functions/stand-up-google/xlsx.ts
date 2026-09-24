@@ -835,7 +835,12 @@ export async function parseWorkbook(
             }
             if (key in mapped) {
               if (values[key] !== parsedValue) {
-                localIssues.push({ code: "duplicate_label", message: label });
+                localIssues.push({
+                  code: "duplicate_label",
+                  cell: cellAddress,
+                  first_cell: mapped[key],
+                  message: `${label}: ${mapped[key]} and ${cellAddress} differ`,
+                });
               } else {
                 duplicateCells[key] = [
                   ...(duplicateCells[key] ?? []),
