@@ -21,7 +21,7 @@ GRANT USAGE ON SCHEMA auth TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 
 CREATE TEMP TABLE wf AS
-SELECT f.id facility, f.organization_id org, f.entity_id entity,
+SELECT gen_random_uuid() facility, f.organization_id org, f.entity_id entity,
        gen_random_uuid() facility_b,
        gen_random_uuid() admin_u,  gen_random_uuid() admin_s,
        gen_random_uuid() cg_a,     gen_random_uuid() cg_a_s,
@@ -34,7 +34,8 @@ SELECT f.id facility, f.organization_id org, f.entity_id entity,
 FROM public.facilities f WHERE f.deleted_at IS NULL ORDER BY f.name LIMIT 1;
 
 INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
-  SELECT facility_b, entity, org, 'COL354 witness scope probe', 'Test', 'Test', '00000', 1 FROM wf;
+  SELECT facility_b, entity, org, 'COL354 witness scope probe', 'Test', 'Test', '00000', 1 FROM wf
+  UNION ALL SELECT facility, entity, org, 'COL354 witness primary probe', 'Test', 'Test', '00000', 1 FROM wf;
 
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
   SELECT admin_u, admin_u||'@review.invalid', jsonb_build_object('organization_id',org,'app_role','facility_admin'), '{"full_name":"Probe Administrator"}'::jsonb FROM wf
@@ -95,7 +96,9 @@ CREATE TEMP TABLE wshift AS
 SELECT v.fac,
        COALESCE(w.roster_shift_type, 'evening'::public.shift_type) AS shift_type,
        COALESCE(w.shift_service_date, c.shift_date) AS service_date,
-       w.roster_shift_type IS NOT NULL AS configured
+       w.roster_shift_type IS NOT NULL AS configured,
+       COALESCE((w.starts_at_utc AT TIME ZONE 'America/New_York')::time, time '15:00') AS starts_at,
+       COALESCE((w.ends_at_utc AT TIME ZONE 'America/New_York')::time, time '23:00') AS ends_at
 FROM wf
 CROSS JOIN wclock c
 CROSS JOIN LATERAL (VALUES (wf.facility), (wf.facility_b)) AS v(fac)
@@ -105,17 +108,17 @@ GRANT SELECT ON wshift TO authenticated, service_role;
 -- Three aides on that shift at the facility, one at the other building.
 CREATE TEMP TABLE wsched AS SELECT gen_random_uuid() sched_a, gen_random_uuid() sched_b;
 INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date,status)
-  SELECT sched_a, facility, org, week_start, 'published'::public.schedule_status FROM wf, wsched, wclock
+  SELECT sched_a, facility, org, week_start, 'draft'::public.schedule_status FROM wf, wsched, wclock
   WHERE NOT EXISTS (SELECT 1 FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=(SELECT week_start FROM wclock))
-  UNION ALL SELECT sched_b, facility_b, org, week_start, 'published'::public.schedule_status FROM wf, wsched, wclock;
+  UNION ALL SELECT sched_b, facility_b, org, week_start, 'draft'::public.schedule_status FROM wf, wsched, wclock;
 UPDATE wsched SET sched_a = COALESCE(
   (SELECT s.id FROM public.schedules s WHERE s.facility_id=(SELECT facility FROM wf) AND s.week_start_date=(SELECT week_start FROM wclock) LIMIT 1), sched_a);
 
-INSERT INTO public.shift_assignments(schedule_id,organization_id,facility_id,staff_id,shift_date,shift_type,status)
-  SELECT sched_a, org, facility, staff_a, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
-  UNION ALL SELECT sched_a, org, facility, staff_b, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
-  UNION ALL SELECT sched_a, org, facility, staff_c, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
-  UNION ALL SELECT sched_b, org, facility_b, staff_far, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status FROM wf JOIN wshift ws ON ws.fac = wf.facility_b, wsched;
+INSERT INTO public.shift_assignments(schedule_id,organization_id,facility_id,staff_id,shift_date,shift_type,status,custom_start_time,custom_end_time)
+  SELECT sched_a, org, facility, staff_a, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_a, org, facility, staff_b, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_a, org, facility, staff_c, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_b, org, facility_b, staff_far, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility_b, wsched;
 
 -- The seed in 403 targets organization 00000000-...-001. Mirror it when the
 -- probe's facility belongs to another organization.
@@ -148,6 +151,8 @@ CREATE FUNCTION pg_temp.must_fail(sql text, expected text) RETURNS void LANGUAGE
 END $$;
 
 GRANT SELECT ON wf TO authenticated, service_role;
+SELECT pg_temp.actor(admin_u,admin_s) FROM wf;
+UPDATE public.schedules SET status='published' WHERE id IN (SELECT sched_a FROM wsched UNION ALL SELECT sched_b FROM wsched);
 
 -- ===========================================================================
 -- Witness statements

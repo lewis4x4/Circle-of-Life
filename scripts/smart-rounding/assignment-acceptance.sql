@@ -198,6 +198,11 @@ UPDATE public.facility_observation_shift_history SET effective_from='-infinity':
 WHERE created_at=transaction_timestamp() AND effective_to IS NULL;
 
 
+-- Match Supabase's default table grants for the authenticated publication fixture.
+GRANT USAGE ON SCHEMA auth, haven TO authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT UPDATE ON public.schedules TO authenticated;
+
 -- ---------------------------------------------------------------------------
 -- 2. The roster. Three staff scheduled at the split building and at the roster
 --    only building, nobody at the third.
@@ -211,7 +216,10 @@ DECLARE
   v_org CONSTANT uuid := '5a550000-0000-4000-8000-000000000001';
   v_split CONSTANT uuid := '5a550000-0000-4000-8000-000000000003';
   v_roster CONSTANT uuid := '5a550000-0000-4000-8000-000000000004';
+  v_publisher CONSTANT uuid := '5a550000-0000-4000-8000-00000000000b';
   v_shift_date date;
+  v_shift_start time;
+  v_shift_end time;
   v_roster_shift public.shift_type;
   v_staff uuid[];
   v_residents uuid[];
@@ -220,12 +228,24 @@ DECLARE
   v_slot text;
   i integer;
 BEGIN
+  INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+    VALUES(v_publisher,'synthetic-schedule-owner@haven.test','{}','{}');
+  INSERT INTO auth.sessions(id,user_id) VALUES(v_publisher,v_publisher);
+  INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+    VALUES(v_publisher,v_org,'synthetic-schedule-owner@haven.test','Synthetic Schedule Owner','owner',true);
+  INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
+    VALUES(v_publisher,v_split,v_org),(v_publisher,v_roster,v_org);
+  PERFORM set_config('request.jwt.claims',jsonb_build_object('role','authenticated','sub',v_publisher,'session_id',v_publisher,
+    'auth_claim_version',(SELECT auth_claim_version FROM public.user_profiles WHERE id=v_publisher))::text,true);
+
   -- The shift the generator would be writing for, resolved from configuration
   -- rather than named here.
   SELECT
     nxt.shift_service_date,
-    nxt.roster_shift_type::public.shift_type INTO v_shift_date,
-    v_roster_shift
+    nxt.roster_shift_type::public.shift_type,
+    (nxt.starts_at_utc AT TIME ZONE 'America/New_York')::time,
+    (nxt.ends_at_utc AT TIME ZONE 'America/New_York')::time INTO v_shift_date,
+    v_roster_shift, v_shift_start, v_shift_end
   FROM
     public.facility_next_shift_window (v_split, now()) nxt;
   PERFORM
@@ -238,7 +258,7 @@ BEGIN
     VALUES (v_split, '1'),
       (v_roster, '2')) AS f (id, slot) LOOP
       INSERT INTO public.schedules (id, facility_id, organization_id, week_start_date, status)
-        VALUES (('5a550000-0000-4000-8000-0bb' || v_slot || lpad('1', 8, '0'))::uuid, v_facility, v_org, date_trunc('week', v_shift_date)::date, 'published')
+        VALUES (('5a550000-0000-4000-8000-0bb' || v_slot || lpad('1', 8, '0'))::uuid, v_facility, v_org, date_trunc('week', v_shift_date)::date, 'draft')
       RETURNING
         id INTO v_schedule;
 
@@ -270,8 +290,8 @@ BEGIN
         r.facility_id = v_facility;
 
       FOR i IN 1..3 LOOP
-        INSERT INTO public.shift_assignments (schedule_id, staff_id, facility_id, organization_id, shift_date, shift_type, status, assigned_resident_ids)
-          VALUES (v_schedule, v_staff[i], v_facility, v_org, v_shift_date, v_roster_shift, 'confirmed',
+        INSERT INTO public.shift_assignments (schedule_id, staff_id, facility_id, organization_id, shift_date, shift_type, status, custom_start_time, custom_end_time, assigned_resident_ids)
+          VALUES (v_schedule, v_staff[i], v_facility, v_org, v_shift_date, v_roster_shift, 'confirmed', v_shift_start, v_shift_end,
             -- The split building hands each staff member two residents. The
             -- roster only building hands out nothing, which is the gap.
             CASE WHEN v_facility = v_split THEN
@@ -280,7 +300,12 @@ BEGIN
               NULL
             END);
       END LOOP;
+      SET LOCAL ROLE authenticated;
+      PERFORM public.schedule_publish(v_schedule,(SELECT updated_at FROM public.schedules WHERE id=v_schedule));
+      RESET ROLE;
+      PERFORM pg_temp.as_assert(EXISTS(SELECT 1 FROM public.schedules WHERE id=v_schedule AND status='published' AND published_by=v_publisher AND published_at IS NOT NULL),'fixture schedule was not published by its authenticated owner');
     END LOOP;
+  PERFORM set_config('request.jwt.claims','{}',true);
 
   INSERT INTO as_result (check_name, detail)
     VALUES ('roster', format('3 staff scheduled at two buildings for %s, none at the third', v_shift_date));

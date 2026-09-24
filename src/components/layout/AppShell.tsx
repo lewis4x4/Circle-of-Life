@@ -141,6 +141,14 @@ const SurveyVisitWorkspaceDock = dynamic(
   { ssr: false, loading: () => null },
 );
 
+// Keep Workforce data and workflow chrome out of other pillars' initial bundles.
+// Retain SSR and mount the provider only for the existing Workforce route scope.
+const WorkforceContext = dynamic(() =>
+  import("@/components/workforce/WorkforceContext").then((m) => ({
+    default: m.WorkforceContext,
+  })),
+);
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <NavigationPendingProvider>
@@ -1011,7 +1019,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               content (settings forms, etc.) apply max-w on an inner block,
               not on this wrapper. */}
           <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8 [--haven-page-chrome-y:40px] lg:[--haven-page-chrome-y:48px] 2xl:[--haven-page-chrome-y:64px]">
-            {children}
+            {activePillar?.id === "workforce" ? <WorkforceContext>{children}</WorkforceContext> : children}
           </div>
         </main>
       </div>

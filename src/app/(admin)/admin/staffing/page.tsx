@@ -1,1 +1,2 @@
-export { default } from "../../staffing/page";
+import { WorkforcePage } from "@/components/workforce/WorkforcePage";
+export default function Page() { return <WorkforcePage view="today" />; }

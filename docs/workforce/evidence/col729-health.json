@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-09-24T00:44:14.377862+00:00",
+  "status": "unreproduced_historical_incident_request_trace_blocked_by_dashboard_auth",
+  "published_revision": "baf0bcd0b8a84212d2097c423a4c2fdfd5a1b9ca",
+  "published_deploy": "6ab465299556a30008a59b10",
+  "expected_fresh_responses": {
+    "curl": 24,
+    "node_fetch": 9,
+    "unexpected": 0
+  },
+  "historical_window": {
+    "from": "2026-09-23T22:50:00Z",
+    "to": "2026-09-23T23:03:00Z",
+    "function_entries": 9,
+    "error_warning_entries": 0,
+    "edge_entries": 0
+  },
+  "established": [
+    "Fresh direct curl HTTP/1.1 and HTTP/2, GET and HEAD, browser-like headers, cache bypass, current immutable URL, and Node fetch return expected status.",
+    "Both prior immutable deployments also return expected Node fetch results.",
+    "The original successful export request maps to an INFO function completion; recorded 500 request IDs do not occur in the same-window function logs.",
+    "Current Next.js function runtime is nodejs22.x, 1024 MB; published adapter is @netlify/plugin-nextjs@5.16.0."
+  ],
+  "not_established": [
+    "No fresh 500 was reproduced.",
+    "The retained original receipts do not contain enough response/body/transport detail to reconstruct the failing transport.",
+    "No origin exception, edge error, intermediary defect, or source/configuration root cause has been established.",
+    "Absence from function logs alone does not prove an intermediary failure."
+  ],
+  "blocker": "Netlify Observability per-request traces are only available in its dashboard; available Chrome session is at the matching account email login without a signed-in dashboard session. CLI auth works for deployment and historical function/edge logs.",
+  "changes": {
+    "application": false,
+    "configuration": false,
+    "deploy": false,
+    "user_data": false,
+    "external_messages": false
+  }
+}

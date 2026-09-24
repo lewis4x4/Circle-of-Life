@@ -169,15 +169,11 @@ export const PILLARS: Pillar[] = [
     label: "Workforce",
     icon: UserCog,
     items: [
-      { key: "staff", href: "/admin/staff", label: "Staff roster", icon: UserCog },
-      { key: "schedules", href: "/admin/schedules", label: "Schedules", icon: CalendarDays },
-      { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift swaps", icon: ArrowLeftRight },
-      { key: "staffing", href: "/admin/staffing", label: "Staffing alerts", icon: Activity },
-      { key: "certifications", href: "/admin/certifications", label: "Certifications", icon: Award },
-      { key: "training", href: "/admin/training", label: "Training", icon: GraduationCap },
-      { key: "time-records", href: "/admin/time-records", label: "Time records", icon: Clock },
+      { key: "staffing", href: "/admin/staffing", label: "Today", icon: Activity },
+      { key: "schedules", href: "/admin/schedules", label: "Schedule", icon: CalendarDays, owns: ["/admin/shift-swaps"] },
+      { key: "timecards", href: "/admin/timecards", label: "Timecards", icon: Clock, owns: ["/admin/timeclock", "/admin/time-records"] },
       { key: "payroll", href: "/admin/payroll", label: "Payroll", icon: Banknote },
-      { key: "timeclock", href: "/admin/timeclock", label: "Timeclock", icon: Timer },
+      { key: "staff", href: "/admin/staff", label: "People", icon: UserCog, owns: ["/admin/certifications", "/admin/training"] },
     ],
   },
   {
@@ -222,6 +218,11 @@ export const PILLARS: Pillar[] = [
  * inside a pillar item's tree nor listed here.
  */
 export const AUXILIARY_ROUTES: AuxiliaryRoute[] = [
+  { key: "certifications", href: "/admin/certifications", label: "Certifications", icon: Award, pillar: "workforce" },
+  { key: "training", href: "/admin/training", label: "Training", icon: GraduationCap, pillar: "workforce" },
+  { key: "timeclock", href: "/admin/timeclock", label: "Kiosk ledger", icon: Timer, pillar: "workforce" },
+  { key: "time-records", href: "/admin/time-records", label: "Legacy time records", icon: Clock, pillar: "workforce" },
+  { key: "shift-swaps", href: "/admin/shift-swaps", label: "Shift requests", icon: ArrowLeftRight, pillar: "workforce" },
   { key: "rounding-live", href: "/admin/rounding/live", label: "Live rounding", icon: Eye, pillar: "clinical" },
   { key: "snack-pass", href: "/admin/dietary#snack-pass", label: "Snack pass", icon: Cookie, pillar: "clinical" },
   { key: "policies", href: "/admin/compliance/policies", label: "Policies", icon: BookOpen, pillar: "quality" },

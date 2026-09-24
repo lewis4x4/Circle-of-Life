@@ -20,6 +20,9 @@
 -- drills, an unauthorised finalizer, the other site and every direct-DML path
 -- behave as the contract says. Rolls back.
 BEGIN;
+-- Take the later fault-trigger DDL lock before fixture writes: concurrent
+-- ANALYZE otherwise holds the table while waiting for this transaction.
+LOCK TABLE public.audit_log IN SHARE ROW EXCLUSIVE MODE;
 ALTER ROLE service_role BYPASSRLS;
 GRANT USAGE ON SCHEMA auth TO authenticated,service_role;
 GRANT SELECT ON public.audit_log TO authenticated;

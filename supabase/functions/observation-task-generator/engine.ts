@@ -374,6 +374,7 @@ export async function runObservationTaskGenerator(options: {
       // Assignment is shift-specific: a repaired current shift must never inherit
       // the staff roster of the following shift.
       const shiftWindows = new Map<string, CadenceWindowRow[]>();
+      const staffedShiftsToResolve: CadenceWindowRow[] = [];
       for (const window of projectedWindows) {
         const key = `${window.shift_key}:${window.shift_service_date}`;
         shiftWindows.set(key, [...(shiftWindows.get(key) ?? []), window]);
@@ -472,27 +473,9 @@ export async function runObservationTaskGenerator(options: {
             });
           }
         } else if ([...residentsWithWork].some((residentId) => assignees.get(residentId)?.assignment_source === "on_clock")) {
-          // Staffed from the clock. A tech who clocked in after an earlier tick
-          // raised "Nobody is scheduled" for this shift leaves that alert open
-          // all shift unless something closes it; the SQL decides whether the
-          // shift really is staffed and resolves only then. Like raising, a
-          // failure here is logged and generation continues.
-          const { data: resolved, error: resolveErr } = await admin.rpc("resolve_observation_staffing_gap", {
-            p_facility_id: facility.id,
-            p_shift_key: firstWindow.shift_key,
-            p_service_date: firstWindow.shift_service_date,
-          });
-          if (resolveErr) {
-            t.log({
-              event: "staffing_gap_resolve_failed",
-              outcome: "error",
-              facility_id: facility.id,
-              error_code: resolveErr.code,
-              error_message: resolveErr.message,
-            });
-          } else if (resolved === true) {
-            staffingGapsResolved += 1;
-          }
+          // Closing the alert records that ownership repair succeeded. Defer it
+          // until every cadence write and the unowned assignment pass finish.
+          staffedShiftsToResolve.push(firstWindow);
         }
 
         const { data: inserted, error: writeErr } = await admin.rpc("record_cadence_observation_tasks", {
@@ -509,6 +492,28 @@ export async function runObservationTaskGenerator(options: {
       // no residents returned above; it has no shift in force or no checks, so
       // there is nothing for this pass to own.
       tasksAssignedOnClock += await assignUnownedTasks(admin, facility.id, atIso);
+
+      // Only a facility whose writes and ownership repair succeeded may resolve
+      // its staffing alerts. SQL rechecks whether each shift is still staffed.
+      // A failed alert resolution is logged without undoing completed generation.
+      for (const shift of staffedShiftsToResolve) {
+        const { data: resolved, error: resolveErr } = await admin.rpc("resolve_observation_staffing_gap", {
+          p_facility_id: facility.id,
+          p_shift_key: shift.shift_key,
+          p_service_date: shift.shift_service_date,
+        });
+        if (resolveErr) {
+          t.log({
+            event: "staffing_gap_resolve_failed",
+            outcome: "error",
+            facility_id: facility.id,
+            error_code: resolveErr.code,
+            error_message: resolveErr.message,
+          });
+        } else if (resolved === true) {
+          staffingGapsResolved += 1;
+        }
+      }
     } catch (caught) {
       const error = caught as PostgrestError;
       failedFacilityIds.push(facility.id);

@@ -711,8 +711,10 @@ DO $$ DECLARE rec uuid := (SELECT (value #>> '{}')::uuid FROM fk_results WHERE n
   IF n <> 1 THEN RAISE EXCEPTION 'Staff could not close an open time record (% rows)', n; END IF;
   BEGIN
     UPDATE public.time_records SET clock_out = NULL WHERE id = rec;
-    RAISE EXCEPTION 'Staff reopened a time record where the kiosk timeclock is on';
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n <> 0 THEN RAISE EXCEPTION 'Staff reopened a time record where the kiosk timeclock is on'; END IF;
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  IF NOT EXISTS (SELECT 1 FROM public.time_records WHERE id=rec AND clock_out IS NOT NULL) THEN RAISE EXCEPTION 'Denied reopen did not preserve the closed record'; END IF;
 END $$;
 RESET ROLE;
 -- Manager path unchanged: the owner adds a record for a staff member with the flag on.

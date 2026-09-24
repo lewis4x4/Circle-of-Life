@@ -89,6 +89,11 @@ BEGIN
 END
 $$;
 
+-- Match Supabase's default table grants for the authenticated publication fixture.
+GRANT USAGE ON SCHEMA auth, haven TO authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT UPDATE ON public.schedules TO authenticated;
+
 -- ---------------------------------------------------------------------------
 -- 1. Fixture. One synthetic building, five residents, one administrator who can
 --    both enter and stand down an order, and staff on the roster for the
@@ -100,7 +105,8 @@ DECLARE
   v_entity CONSTANT uuid := '50990000-0000-4000-8000-000000000002';
   v_facility CONSTANT uuid := '50990000-0000-4000-8000-000000000003';
   v_admin CONSTANT uuid := '50990000-0000-4000-8000-000000000004';
-  v_schedule CONSTANT uuid := '50990000-0000-4000-8000-000000000005';
+  v_publisher CONSTANT uuid := '50990000-0000-4000-8000-000000000008';
+  v_schedule uuid;
   v_staff CONSTANT uuid := '50990000-0000-4000-8000-000000000006';
   v_source_cadence uuid;
   v_donor uuid;
@@ -187,30 +193,36 @@ BEGIN
   WHERE
     w.cadence_version_id = v_source_cadence;
 
-  -- One staff member on the roster for every shift date and shift type this
-  -- script can touch, so assignment never becomes the reason something fails.
-  INSERT INTO public.schedules (id, facility_id, organization_id, week_start_date, status)
-    VALUES (v_schedule, v_facility, v_org, date_trunc('week', current_date)::date, 'published');
+  -- Keep each fixture date in its own Monday-start week, including a
+  -- Sunday/Monday boundary. Shift times come from the copied configuration.
+  INSERT INTO public.schedules (facility_id, organization_id, week_start_date, status)
+  SELECT DISTINCT v_facility,v_org,date_trunc('week',d.day)::date,'draft'::public.schedule_status
+  FROM generate_series(current_date-2,current_date+2,interval '1 day') AS d(day);
   INSERT INTO public.staff (id, facility_id, organization_id, first_name, last_name, staff_role, hire_date, employment_status)
     VALUES (v_staff, v_facility, v_org, 'Staff', 'Synthetic', 'resident_aide', current_date - 100, 'active');
-  INSERT INTO public.shift_assignments (schedule_id, staff_id, facility_id, organization_id, shift_date, shift_type, status)
-  SELECT
-    v_schedule,
-    v_staff,
-    v_facility,
-    v_org,
-    d.day,
-    t.shift_type,
-    'confirmed'
-  FROM
-    generate_series(current_date - 2, current_date + 2, interval '1 day') AS d (day)
-    CROSS JOIN (
-      SELECT DISTINCT
-        roster_shift_type AS shift_type
-      FROM
-        public.facility_shift_definitions
-      WHERE
-        facility_id = v_facility) t;
+  INSERT INTO public.shift_assignments (schedule_id, staff_id, facility_id, organization_id, shift_date, shift_type, status, custom_start_time, custom_end_time, shift_definition_id)
+  SELECT w.id,v_staff,v_facility,v_org,d.day::date,t.roster_shift_type,'confirmed',t.starts_at_local,t.ends_at_local,t.id
+  FROM generate_series(current_date-2,current_date+2,interval '1 day') AS d(day)
+  JOIN public.schedules w ON w.facility_id=v_facility AND w.week_start_date=date_trunc('week',d.day)::date
+  CROSS JOIN public.facility_shift_definitions t
+  WHERE t.facility_id=v_facility AND t.active AND t.deleted_at IS NULL;
+
+  -- An owner publishes the roster; the tested administrator keeps their
+  -- original facility_admin authority for every order-boundary assertion.
+  INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+    VALUES(v_publisher,'synthetic-boundary-schedule-owner@haven.test','{}','{}');
+  INSERT INTO auth.sessions(id,user_id) VALUES(v_publisher,v_publisher);
+  INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+    VALUES(v_publisher,v_org,'synthetic-boundary-schedule-owner@haven.test','Synthetic Schedule Owner','owner',true);
+  INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) VALUES(v_publisher,v_facility,v_org);
+  PERFORM pg_temp.su_sign_in(v_publisher,v_publisher);
+  FOR v_schedule IN SELECT id FROM public.schedules WHERE facility_id=v_facility ORDER BY week_start_date LOOP
+    SET LOCAL ROLE authenticated;
+    PERFORM public.schedule_publish(v_schedule,(SELECT updated_at FROM public.schedules WHERE id=v_schedule));
+    RESET ROLE;
+    PERFORM pg_temp.su_assert(EXISTS(SELECT 1 FROM public.schedules WHERE id=v_schedule AND status='published' AND published_by=v_publisher AND published_at IS NOT NULL),'fixture schedule was not published by its authenticated owner');
+  END LOOP;
+  PERFORM set_config('request.jwt.claims','{}',true);
 
   INSERT INTO su_result (check_name, detail)
   SELECT

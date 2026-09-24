@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
 import { enumLabel } from "@/lib/display/enum-label";
+import { formatScheduleTimes } from "@/lib/schedules/week-grid";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 
 type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
 
@@ -83,16 +85,20 @@ export default function CaregiverSchedulesPage() {
       const { start, end } = getCaregiverScheduleWindow();
       setScheduleWindow({ start, end });
 
-      const q = await supabase
+      const q = await readAllPages((from, to) => supabase
         .from("shift_assignments")
-        .select("*")
+        .select("*, schedules!inner(status, deleted_at)", { count: "exact" })
+        .eq("schedules.status", "published")
+        .is("schedules.deleted_at", null)
         .eq("staff_id", staffId)
         .eq("facility_id", ctxRes.ctx.facilityId)
         .gte("shift_date", start)
         .lte("shift_date", end)
         .is("deleted_at", null)
         .order("shift_date", { ascending: true })
-        .order("shift_type", { ascending: true });
+        .order("shift_type", { ascending: true })
+        .order("id")
+        .range(from, to));
 
       if (q.error) throw q.error;
       setRows((q.data ?? []) as AssignmentRow[]);
@@ -163,7 +169,7 @@ export default function CaregiverSchedulesPage() {
                 <div>
                   <p className="text-sm font-semibold text-foreground">{formatShiftDate(r.shift_date)}</p>
                   <p className="text-xs capitalize text-muted-foreground">
-                    {enumLabel(String(r.shift_type))}
+                    {enumLabel(String(r.shift_type))} · {formatScheduleTimes(r.custom_start_time, r.custom_end_time)} Eastern
                   </p>
                 </div>
                 <Badge variant="outline" className="border-border capitalize text-foreground">

@@ -1,0 +1,16 @@
+{
+  "score": 91,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "Production wording replaces unverified sample compliance and payroll claims",
+    "Existing shell is retained; synthetic screenshots use a labelled shell fixture"
+  ],
+  "suggestions": [],
+  "reasoning": "Quiet neutral cards, five Workforce destinations, weekly loop and Today side-panel hierarchy match the reference. Phone workflow uses a compact grid and the records scroll without compressing columns.",
+  "threshold": 90,
+  "next_actions": [
+    "Complete application and database verification"
+  ],
+  "evidence_scope": "Synthetic source with production Workforce components and CSS; no hosted or staff acceptance"
+}

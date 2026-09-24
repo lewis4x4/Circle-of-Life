@@ -37,10 +37,10 @@ INSERT INTO public.staff(id,facility_id,organization_id,first_name,last_name,sta
   UNION ALL SELECT aide_b, facility, org, 'Ben', 'Probe', (SELECT enum_range(NULL::public.staff_role))[1], current_date - 300 FROM co
   UNION ALL SELECT aide_c, facility, org, 'Cy', 'Probe', (SELECT enum_range(NULL::public.staff_role))[1], current_date - 300 FROM co;
 INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date,status)
-  SELECT schedule, facility, org, date_trunc('week', today)::date, 'published'::public.schedule_status FROM co;
-INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,status)
-  SELECT shift_a, schedule, aide_a, facility, org, today, 'day'::public.shift_type, 'assigned'::public.shift_assignment_status FROM co
-  UNION ALL SELECT shift_b, schedule, aide_b, facility, org, today, 'day'::public.shift_type, 'confirmed'::public.shift_assignment_status FROM co;
+  SELECT schedule, facility, org, date_trunc('week', today)::date, 'draft'::public.schedule_status FROM co;
+INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,status,custom_start_time,custom_end_time)
+  SELECT shift_a, schedule, aide_a, facility, org, today, 'day'::public.shift_type, 'assigned'::public.shift_assignment_status, time '06:00', time '18:00' FROM co
+  UNION ALL SELECT shift_b, schedule, aide_b, facility, org, today, 'day'::public.shift_type, 'confirmed'::public.shift_assignment_status, time '06:00', time '18:00' FROM co;
 
 CREATE FUNCTION pg_temp.co_as(p_user uuid, p_session uuid) RETURNS void LANGUAGE sql SECURITY DEFINER AS $$
   SELECT set_config('request.jwt.claims', jsonb_build_object('sub',p_user,'session_id',p_session,'role','authenticated',
@@ -53,6 +53,8 @@ CREATE FUNCTION pg_temp.co_fail(sql text, expected text) RETURNS void LANGUAGE p
   RAISE EXCEPTION 'COL-596 expected failure: %', expected;
 END $$;
 
+SELECT pg_temp.co_as(owner_actor, owner_session) FROM co;
+UPDATE public.schedules SET status='published' WHERE id=(SELECT schedule FROM co);
 SET LOCAL ROLE authenticated;
 
 -- 1. Dark until released.

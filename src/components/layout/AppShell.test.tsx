@@ -6,6 +6,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "./AppShell";
+import { registerRouteLeaveGuard } from "./navigation-pending";
 
 const pathMock = vi.hoisted(() => ({ pathname: "/admin/executive" }));
 const pushMock = vi.fn();
@@ -133,6 +134,34 @@ describe("AppShell all-sections jump list", () => {
     authMock.loading = false;
     authMock.appRole = "owner";
     authMock.user = { id: "user-1" };
+  });
+
+  it("mounts Workforce lazily for its routes without losing children or navigation guards", async () => {
+    const user = userEvent.setup();
+    const content = () => <TooltipProvider><AppShell><div>Route content</div></AppShell></TooltipProvider>;
+    pathMock.pathname = "/admin";
+    const ui = render(content());
+    expect(screen.getByText("Route content")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Workforce weekly workflow" })).toBeNull();
+
+    pathMock.pathname = "/admin/schedules/week-1";
+    ui.rerender(content());
+    expect(await screen.findByRole("navigation", { name: "Workforce weekly workflow" })).toBeInTheDocument();
+    expect(screen.getByText("Route content")).toBeInTheDocument();
+    const guard = vi.fn(() => false);
+    const unregister = registerRouteLeaveGuard(guard);
+    try {
+      await user.click(screen.getAllByRole("link", { name: "Command", exact: true })[0]!);
+      expect(guard).toHaveBeenCalledOnce();
+      expect(pushMock).not.toHaveBeenCalled();
+    } finally {
+      unregister();
+    }
+
+    pathMock.pathname = "/admin/executive";
+    ui.rerender(content());
+    expect(screen.queryByRole("navigation", { name: "Workforce weekly workflow" })).toBeNull();
+    expect(screen.getByText("Route content")).toBeInTheDocument();
   });
 
   it("defers route-dependent survey chrome until hydration while preserving the notification control", async () => {

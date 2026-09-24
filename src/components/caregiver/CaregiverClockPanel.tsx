@@ -175,7 +175,7 @@ export function CaregiverClockPanel() {
         <div className="w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 mb-6 shadow-inner">
           <Clock3 className="h-8 w-8 text-primary" />
         </div>
-        
+
             <h3 className="text-3xl font-semibold text-white tracking-wide mb-2">Time clock</h3>
             <p className="text-sm font-mono text-primary/60 max-w-xs mb-8">
           {facilityName ? `Punch in and out for ${facilityName}.` : "Mobile punch tied to your staff profile."}

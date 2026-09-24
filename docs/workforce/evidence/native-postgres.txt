@@ -1,0 +1,6 @@
+
+> circle-of-life@0.1.0 migrations:verify:pg
+> node scripts/pg-verify-migrations.mjs
+
+[care-events:parity] PASS (105 cases, psql)
+[migrations:verify:pg] PASS (486 migration files, 113 SQL probes, 7 acceptance suites, level parity; native PostgreSQL with Supabase stubs)

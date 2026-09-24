@@ -39,6 +39,7 @@ function verificationFiles() {
   const testsDir = path.join(root, "supabase", "tests");
   const probes = fs.readdirSync(testsDir)
     .filter((name) => /^review_.*\.sql$/.test(name) || ["rpc_grant_posture.sql", "family_portal_messages_one_way.sql", "team_space_rls_no_recursion.sql"].includes(name))
+    .filter((name) => name !== "review_workforce_publisher.sql") // The mandatory wire-contract hook runs this probe once.
     .sort().map((name) => path.join(testsDir, name));
   const acceptance = ["assignment", "compliance-honesty", "config-invariants", "escalation-ladder", "monitoring-order", "order-boundary", "watchlist"]
     .map((name) => path.join(root, "scripts", "smart-rounding", `${name}-acceptance.sql`));
@@ -70,6 +71,15 @@ function runLevelParity(env) {
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.status === 0) return null;
   return result.stderr || result.stdout || result.error?.message || `exited ${result.status}`;
+}
+
+/** Workforce SQL extraction must also satisfy the exact private receiver wire contract. */
+function runWorkforceSourceContract(env) {
+  const result = spawnSync(process.execPath, [path.join(root, "scripts", "workforce", "verify-source-contract.mjs")], {
+    cwd: root, encoding: "utf8", maxBuffer: 1024 * 1024, env: { ...process.env, ...env },
+  });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.status !== 0) throw new Error(result.stderr || "Workforce source contract failed");
 }
 
 /**
@@ -134,6 +144,10 @@ function nativeVerification(socket) {
       CARE_EVENT_PARITY_PSQL: path.join(bin, "psql"),
     });
     if (parityFailure) throw new Error(`care-events level parity: ${parityFailure}`);
+    runWorkforceSourceContract({
+      WORKFORCE_PARITY_DB_URL: `postgresql://postgres@localhost/${database}?host=${encodeURIComponent(resolved)}&port=${process.env.PG_VERIFY_NATIVE_PORT || "55439"}`,
+      WORKFORCE_PARITY_PSQL: path.join(bin, "psql"),
+    });
     for (const file of [...tests.probes, ...tests.acceptance]) applyFile(file);
     console.log(`[migrations:verify:pg] PASS (${files.length} migration files, ${tests.probes.length} SQL probes, ${tests.acceptance.length} acceptance suites, level parity; native PostgreSQL with Supabase stubs)`);
   } finally {
@@ -269,6 +283,7 @@ async function main() {
       process.exit(1);
     }
 
+    runWorkforceSourceContract({ WORKFORCE_PARITY_DOCKER_CONTAINER: name, WORKFORCE_PARITY_DOCKER_DB: database });
     const tests = verificationFiles();
     for (const file of [...tests.probes, ...tests.acceptance]) runFile(path.basename(file), file);
 

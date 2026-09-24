@@ -64,6 +64,7 @@ function onClockResolver(args: Record<string, unknown>): Answer {
 function fakeAdmin(options: {
   facilities: string[];
   resolve?: (args: Record<string, unknown>) => Answer;
+  writeCadence?: (args: Record<string, unknown>) => Answer;
   assignUnowned?: (args: Record<string, unknown>) => Answer;
   resolveGap?: (args: Record<string, unknown>) => Answer;
 }) {
@@ -100,7 +101,7 @@ function fakeAdmin(options: {
         case "record_observation_staffing_gap":
           return Promise.resolve({ data: true, error: null });
         case "record_cadence_observation_tasks":
-          return Promise.resolve({ data: (args.p_rows as unknown[]).length, error: null });
+          return Promise.resolve(options.writeCadence?.(args) ?? { data: (args.p_rows as unknown[]).length, error: null });
         case "resolve_observation_staffing_gap":
           return Promise.resolve((options.resolveGap ?? (() => ({ data: false, error: null })))(args));
         case "assign_unowned_observation_tasks":
@@ -227,6 +228,10 @@ Deno.test("a shift staffed from the clock asks SQL to resolve its open gap alert
     { p_facility_id: FACILITY_A, p_shift_key: "day", p_service_date: "2026-09-23" },
   ]);
   assertEquals(summary.staffing_gaps_resolved, 1);
+  const resolvedAt = calls.findIndex((call) => call.name === "resolve_observation_staffing_gap");
+  const lastWriteAt = calls.findLastIndex((call) => call.name === "record_cadence_observation_tasks");
+  const assignedAt = calls.findIndex((call) => call.name === "assign_unowned_observation_tasks");
+  assert(resolvedAt > lastWriteAt && resolvedAt > assignedAt, "resolve the alert only after all cadence writes and the unowned assignment pass succeed");
   assertEquals(calls.filter((call) => call.name === "record_observation_staffing_gap").length, 0);
   assertEquals(summary.ok, true);
 });
@@ -261,6 +266,45 @@ Deno.test("nothing to resolve counts nothing, a gap is never resolved, and a fai
   assertEquals(summary.staffing_gaps_resolved, 0);
   assertEquals(summary.ok, true);
   assert(log.entries.some((entry) => entry.event === "staffing_gap_resolve_failed"));
+});
+
+Deno.test("a later cadence write failure leaves that facility's staffed gap unresolved while another facility completes", async () => {
+  const { admin, calls } = fakeAdmin({
+    facilities: [FACILITY_A, FACILITY_B],
+    writeCadence: (args) => {
+      const rows = args.p_rows as { facility_id: string; window_key: string }[];
+      return rows[0].facility_id === FACILITY_A && rows[0].window_key === "evening_1900"
+        ? { data: null, error: { code: "23514", message: "cadence write rejected" } }
+        : { data: rows.length, error: null };
+    },
+    resolveGap: () => ({ data: true, error: null }),
+  });
+  const summary = await runObservationTaskGenerator({ admin, organizationId: ORG, facilityId: null, atIso: AT, log: recordingLog() });
+
+  assertEquals(calls.filter((call) => call.name === "resolve_observation_staffing_gap").map((call) => call.args.p_facility_id), [FACILITY_B]);
+  assertEquals(calls.filter((call) => call.name === "assign_unowned_observation_tasks").map((call) => call.args.p_facility_id), [FACILITY_B]);
+  assertEquals(summary.failed_facility_ids, [FACILITY_A]);
+  assertEquals(summary.facilities_succeeded, 1);
+  assertEquals(summary.staffing_gaps_resolved, 1);
+  assertEquals(summary.ok, false);
+});
+
+Deno.test("a failed unowned assignment pass never resolves that facility's staffed gap", async () => {
+  const { admin, calls } = fakeAdmin({
+    facilities: [FACILITY_A, FACILITY_B],
+    assignUnowned: (args) => args.p_facility_id === FACILITY_A
+      ? { data: null, error: { code: "42501", message: "assignment denied" } }
+      : { data: 2, error: null },
+    resolveGap: () => ({ data: true, error: null }),
+  });
+  const summary = await runObservationTaskGenerator({ admin, organizationId: ORG, facilityId: null, atIso: AT, log: recordingLog() });
+
+  assertEquals(calls.filter((call) => call.name === "resolve_observation_staffing_gap").map((call) => call.args.p_facility_id), [FACILITY_B]);
+  assertEquals(summary.failed_facility_ids, [FACILITY_A]);
+  assertEquals(summary.facilities_succeeded, 1);
+  assertEquals(summary.tasks_assigned_on_clock, 2);
+  assertEquals(summary.staffing_gaps_resolved, 1);
+  assertEquals(summary.ok, false);
 });
 
 Deno.test("the shift in progress inside its handoff grace waits for the relief: no owner, no gap, no resolve", async () => {

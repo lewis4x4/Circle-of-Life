@@ -18,7 +18,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT INSERT, UPDATE ON public.time_records, public.emar_records, public.med_passes, public.shift_tape_events TO authenticated;
 
 CREATE TEMP TABLE mt AS
-SELECT gen_random_uuid() tech, gen_random_uuid() tech_session, gen_random_uuid() tech_staff,
+SELECT gen_random_uuid() scheduler, gen_random_uuid() scheduler_session, gen_random_uuid() tech, gen_random_uuid() tech_session, gen_random_uuid() tech_staff,
        gen_random_uuid() keeper, gen_random_uuid() keeper_session, gen_random_uuid() keeper_staff,
        gen_random_uuid() entity, gen_random_uuid() facility, o.id org,
        gen_random_uuid() res_a, gen_random_uuid() res_b, gen_random_uuid() res_gone,
@@ -42,13 +42,14 @@ INSERT INTO public.med_tech_shift_rules(organization_id,facility_id,open_trigger
   SELECT org, facility, 'clock_in', 'clock_out', now() - interval '2 days', 'probe' FROM mt;
 
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
-  SELECT u, u||'@review.invalid', '{}'::jsonb, '{}'::jsonb FROM mt, LATERAL unnest(ARRAY[tech, keeper]) u;
+  SELECT u, u||'@review.invalid', '{}'::jsonb, '{}'::jsonb FROM mt, LATERAL unnest(ARRAY[tech, keeper, scheduler]) u;
 INSERT INTO public.user_profiles(id,email,full_name,app_role,organization_id,is_active)
   SELECT tech, tech||'@review.invalid','Tess Probe','med_tech'::public.app_role,org,true FROM mt
-  UNION ALL SELECT keeper, keeper||'@review.invalid','Kip Probe','housekeeper'::public.app_role,org,true FROM mt;
-INSERT INTO auth.sessions(id,user_id) SELECT tech_session, tech FROM mt UNION ALL SELECT keeper_session, keeper FROM mt;
+  UNION ALL SELECT keeper, keeper||'@review.invalid','Kip Probe','housekeeper'::public.app_role,org,true FROM mt
+  UNION ALL SELECT scheduler, scheduler||'@review.invalid','Schedule Probe','facility_admin'::public.app_role,org,true FROM mt;
+INSERT INTO auth.sessions(id,user_id) SELECT tech_session, tech FROM mt UNION ALL SELECT keeper_session, keeper FROM mt UNION ALL SELECT scheduler_session, scheduler FROM mt;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
-  SELECT u, facility, org FROM mt, LATERAL unnest(ARRAY[tech, keeper]) u;
+  SELECT u, facility, org FROM mt, LATERAL unnest(ARRAY[tech, keeper, scheduler]) u;
 INSERT INTO public.staff(id,user_id,facility_id,organization_id,first_name,last_name,staff_role,hire_date)
   SELECT tech_staff, tech, facility, org, 'Tess', 'Probe', 'medication_tech'::public.staff_role, current_date - 300 FROM mt
   UNION ALL SELECT keeper_staff, keeper, facility, org, 'Kip', 'Probe', 'housekeeping'::public.staff_role, current_date - 300 FROM mt;
@@ -230,9 +231,12 @@ END $$;
 INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id)
   SELECT org, facility, tech_staff, 'in', (today + 1 + time '18:58') AT TIME ZONE 'America/New_York', gen_random_uuid() FROM mt;
 INSERT INTO public.schedules(id,facility_id,organization_id,week_start_date,status)
-  SELECT gen_random_uuid(), facility, org, date_trunc('week', today + 2)::date, 'published'::public.schedule_status FROM mt;
-INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,status)
-  SELECT (SELECT id FROM public.schedules WHERE facility_id = mt.facility LIMIT 1), tech_staff, facility, org, today + 2, 'day'::public.shift_type, 'assigned'::public.shift_assignment_status FROM mt;
+  SELECT gen_random_uuid(), facility, org, date_trunc('week', today + 2)::date, 'draft'::public.schedule_status FROM mt;
+INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,status,custom_start_time,custom_end_time)
+  SELECT (SELECT id FROM public.schedules WHERE facility_id = mt.facility LIMIT 1), tech_staff, facility, org, today + 2, 'day'::public.shift_type, 'assigned'::public.shift_assignment_status,time '07:00',time '19:00' FROM mt;
+SELECT pg_temp.mt_as(scheduler,scheduler_session) FROM mt;
+UPDATE public.schedules SET status='published' WHERE facility_id=(SELECT facility FROM mt);
+SELECT pg_temp.mt_as(tech,tech_session) FROM mt;
 INSERT INTO public.time_punches(organization_id,facility_id,staff_id,punch_type,punched_at,client_punch_id)
   SELECT org, facility, tech_staff, 'in', (today + 2 + time '13:05') AT TIME ZONE 'America/New_York', gen_random_uuid() FROM mt;
 DO $$ DECLARE f mt; s record; BEGIN

@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
+import { fetchFacilityShiftDefinitions } from "@/lib/caregiver/shift";
+import { assignmentSpan } from "@/lib/workforce/model";
 
 import {
   facilityDateIsoDaysFromToday,
@@ -119,6 +121,10 @@ type SupabaseStaffWarningMini = {
 
 type SupabaseShiftGapRow = {
   id: string;
+  facility_id: string;
+  schedule_id: string;
+  custom_start_time: string | null;
+  custom_end_time: string | null;
   staff_id: string;
   shift_date: string;
   shift_type: Database["public"]["Enums"]["shift_type"];
@@ -253,7 +259,7 @@ export async function fetchShiftAssignmentGaps(
 
   let shiftsQuery = supabase
     .from("shift_assignments" as never)
-    .select("id, staff_id, shift_date, shift_type, status")
+    .select("id, staff_id, facility_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time")
     .is("deleted_at", null)
     .gte("shift_date", todayIso)
     .lte("shift_date", endDateIso)
@@ -278,6 +284,7 @@ export async function fetchShiftAssignmentGaps(
   const staffRows = staffRes.data ?? [];
   if (staffRes.error) throw staffRes.error;
 
+  const definitions = await fetchFacilityShiftDefinitions(supabase, [...new Set(shiftRows.map((row) => row.facility_id))]);
   const roleByStaffId = new Map(staffRows.map((row) => [row.id, mapDbStaffRoleToLabel(row.staff_role)] as const));
   const grouped = new Map<string, ShiftGap>();
 
@@ -285,7 +292,8 @@ export async function fetchShiftAssignmentGaps(
     const urgency = shiftGapUrgency(row.status);
     if (!urgency) continue;
     const role = roleByStaffId.get(row.staff_id) ?? "Staff";
-    const key = `${row.shift_date}:${row.shift_type}:${role}:${urgency}`;
+    const shiftLabel = assignmentSpan(row, definitions.get(row.facility_id) ?? [])?.label ?? `${row.shift_type} · times not configured`;
+    const key = `${row.facility_id}:${row.shift_date}:${shiftLabel}:${role}:${urgency}`;
     const existing = grouped.get(key);
     if (existing) {
       existing.shortage += 1;
@@ -294,7 +302,7 @@ export async function fetchShiftAssignmentGaps(
     grouped.set(key, {
       id: key,
       date: formatShiftDateLabel(row.shift_date),
-      shift: formatShiftTypeLabel(row.shift_type),
+      shift: shiftLabel,
       role,
       shortage: 1,
       urgency,
@@ -315,12 +323,6 @@ function formatShiftDateLabel(shiftDate: string, now: Date = new Date()): string
   return format(new Date(`${shiftDate}T12:00:00`), "MMM d");
 }
 
-function formatShiftTypeLabel(shiftType: Database["public"]["Enums"]["shift_type"]): string {
-  if (shiftType === "day") return "Day (7a-3p)";
-  if (shiftType === "evening") return "Evening (3p-11p)";
-  if (shiftType === "night") return "Night (11p-7a)";
-  return "Custom";
-}
 
 export async function fetchStaffOptions(
   selectedFacilityId: string | null,
