@@ -650,11 +650,13 @@ END $$;
 -- Front desk matches the typed resident, once; a staff client cannot forge a kiosk row.
 SELECT pg_temp.fk_owner();
 SET LOCAL ROLE authenticated;
-DO $$ DECLARE e public.visitor_log_entries; f record; BEGIN
+DO $$ DECLARE r jsonb; e record; f record; BEGIN
   SELECT * INTO f FROM fk;
-  e := public.visitor_match_resident((SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'visit'), f.resident);
-  IF e.resident_id <> f.resident OR e.visiting_type <> 'resident' OR e.visiting_name_text <> 'Typed resident probe' THEN
-    RAISE EXCEPTION 'Match resident failed';
+  r := public.visitor_match_resident((SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'visit'), f.resident);
+  SELECT * INTO e FROM public.visitor_log_entries WHERE id = (r->>'entry_id')::uuid;
+  IF (r->>'resident_id')::uuid <> f.resident OR e.visiting_type <> 'resident' OR e.visiting_name_text <> 'Typed resident probe'
+     OR (SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(r) k) <> ARRAY['entry_id', 'resident_id'] THEN
+    RAISE EXCEPTION 'Match resident failed or returned more than two ids: %', r;
   END IF;
   BEGIN
     PERFORM public.visitor_match_resident(e.id, f.resident);
@@ -847,5 +849,165 @@ DO $$ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
+
+-- ---------------------------------------------------------------------------
+-- 18. On the clock means on the clock AT THIS FACILITY (spec 40 section 1).
+-- ---------------------------------------------------------------------------
+UPDATE public.timeclock_devices SET failure_count = 0, failure_window_started_at = NULL, throttled_until = NULL;
+UPDATE public.timeclock_credentials SET failed_attempts = 0, locked_until = NULL WHERE organization_id = (SELECT org FROM fk);
+SELECT pg_temp.fk_service();
+DO $$ DECLARE r jsonb; f record; u uuid; BEGIN
+  SELECT * INTO f FROM fk;
+  -- Probe Golf works both buildings (live assignment here from section 16) and
+  -- punched in at the other one (section 3): not on this tablet's roster.
+  IF NOT haven.timeclock_assigned_to_facility(f.g_staff, f.facility) OR haven.timeclock_state(f.g_staff, clock_timestamp()) <> 'in' THEN
+    RAISE EXCEPTION 'Fixture: Probe Golf should be assigned here and on the clock elsewhere';
+  END IF;
+  IF pg_temp.roster_ids(pg_temp.tok('floor')) && ARRAY[f.g_staff] THEN RAISE EXCEPTION 'Roster lists someone on the clock only at another facility'; END IF;
+  IF pg_temp.unlock(pg_temp.tok('floor'), f.g_staff, NULL, '444444')->>'error' <> 'not_recognized' THEN
+    RAISE EXCEPTION 'Roster tap unlocked for someone on the clock only elsewhere';
+  END IF;
+  r := pg_temp.unlock(pg_temp.tok('floor'), NULL, 'FG-4', '444444');
+  IF NOT (r->>'ok')::boolean OR (r->>'on_clock')::boolean OR r->'clocked_in_at' <> 'null'::jsonb
+     OR (SELECT on_clock FROM public.floor_unlocks WHERE id = (r->>'unlock_id')::uuid) THEN
+    RAISE EXCEPTION 'Employee number unlock for someone on the clock elsewhere not recorded off the clock: %', r;
+  END IF;
+  -- Probe Alpha clocks in here, unlocks by roster, then clocks out here and in at the other facility.
+  INSERT INTO public.time_punches(organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
+    VALUES (f.org, f.facility, f.a_staff, 'in', clock_timestamp(), gen_random_uuid());
+  r := pg_temp.unlock(pg_temp.tok('floor'), f.a_staff, NULL, '111111');
+  IF NOT (r->>'ok')::boolean OR NOT (r->>'on_clock')::boolean OR r->>'clocked_in_at' IS NULL THEN RAISE EXCEPTION 'Roster unlock here failed: %', r; END IF;
+  u := (r->>'unlock_id')::uuid;
+  IF NOT (public.floor_heartbeat(pg_temp.tok('floor'), u)->>'active')::boolean THEN RAISE EXCEPTION 'Live roster unlock ended early'; END IF;
+  INSERT INTO public.time_punches(organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
+    VALUES (f.org, f.facility, f.a_staff, 'out', clock_timestamp(), gen_random_uuid());
+  INSERT INTO public.time_punches(organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
+    VALUES (f.org, f.other_facility, f.a_staff, 'in', clock_timestamp() + interval '1 millisecond', gen_random_uuid());
+  IF haven.timeclock_state(f.a_staff, clock_timestamp() + interval '1 second') <> 'in' THEN RAISE EXCEPTION 'Fixture: Probe Alpha should be on the clock elsewhere'; END IF;
+  r := public.floor_heartbeat(pg_temp.tok('floor'), u);
+  IF (r->>'active')::boolean OR r->>'reason' <> 'clocked_out' THEN
+    RAISE EXCEPTION 'Heartbeat kept a roster unlock for someone now on the clock only elsewhere: %', r;
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 19. tries_left after a wrong PIN: roster taps only, never the employee
+--     number path or the kiosk (spec 37 section 12a).
+-- ---------------------------------------------------------------------------
+UPDATE public.timeclock_devices SET failure_count = 0, failure_window_started_at = NULL, throttled_until = NULL;
+UPDATE public.timeclock_credentials SET failed_attempts = 0, locked_until = NULL WHERE organization_id = (SELECT org FROM fk);
+DO $$ DECLARE r jsonb; f record; i integer; BEGIN
+  SELECT * INTO f FROM fk;
+  -- Probe Bravo back on the clock here, for the roster.
+  INSERT INTO public.time_punches(organization_id, facility_id, staff_id, punch_type, punched_at, client_punch_id)
+    VALUES (f.org, f.facility, f.b_staff, 'in', clock_timestamp(), gen_random_uuid());
+  r := pg_temp.unlock(pg_temp.tok('floor'), f.b_staff, NULL, '000000');
+  IF r->>'error' <> 'not_recognized' OR (r->>'tries_left')::int <> 4 THEN RAISE EXCEPTION 'First roster miss: %', r; END IF;
+  r := pg_temp.unlock(pg_temp.tok('floor'), f.b_staff, NULL, '000000');
+  IF (r->>'tries_left')::int <> 3 THEN RAISE EXCEPTION 'Second roster miss: %', r; END IF;
+  -- Employee number path: never.
+  r := pg_temp.unlock(pg_temp.tok('floor'), NULL, 'FB-2', '000000');
+  IF r->>'error' <> 'not_recognized' OR r ? 'tries_left' THEN RAISE EXCEPTION 'Employee number miss revealed tries_left: %', r; END IF;
+  r := pg_temp.unlock(pg_temp.tok('floor'), NULL, 'NOBODY', '000000');
+  IF r ? 'tries_left' THEN RAISE EXCEPTION 'Unknown employee number revealed tries_left: %', r; END IF;
+  -- Kiosk: never, identify or punch.
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FB-2', NULL, '000000');
+  IF r->>'error' <> 'not_recognized' OR r ? 'tries_left' THEN RAISE EXCEPTION 'Kiosk identify revealed tries_left: %', r; END IF;
+  r := pg_temp.kiosk_punch('FB-2', '000000', 'out');
+  IF (r->>'ok')::boolean OR r ? 'tries_left' THEN RAISE EXCEPTION 'Kiosk punch revealed tries_left: %', r; END IF;
+  -- Four misses so far; the fifth (a roster tap) locks and says so.
+  r := pg_temp.unlock(pg_temp.tok('floor'), f.b_staff, NULL, '000000');
+  IF (r->>'tries_left')::int <> 0 THEN RAISE EXCEPTION 'Fifth miss should leave 0 tries: %', r; END IF;
+  IF pg_temp.unlock(pg_temp.tok('floor'), f.b_staff, NULL, '222222')->>'error' <> 'locked' THEN RAISE EXCEPTION 'Not locked after five misses'; END IF;
+  UPDATE public.timeclock_credentials SET failed_attempts = 0, locked_until = NULL WHERE staff_id = f.b_staff;
+  UPDATE public.timeclock_devices SET failure_count = 0, failure_window_started_at = NULL, throttled_until = NULL;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 20. visitor_match_resident: front-desk roles, own facilities, two ids back.
+-- ---------------------------------------------------------------------------
+INSERT INTO auth.users(id, email, raw_app_meta_data, raw_user_meta_data)
+  VALUES ('00000000-0000-4000-8000-0000000fa001', 'family-floor-probe@floor-review.invalid', '{}'::jsonb, '{}'::jsonb);
+INSERT INTO public.user_profiles(id, email, full_name, app_role, organization_id, is_active)
+  SELECT '00000000-0000-4000-8000-0000000fa001', 'family-floor-probe@floor-review.invalid', 'Floor family probe', 'family'::public.app_role, org, true FROM fk;
+INSERT INTO auth.sessions(id, user_id)
+  VALUES ('00000000-0000-4000-8000-0000000fa002', '00000000-0000-4000-8000-0000000fa001');
+INSERT INTO auth.sessions(id, user_id) SELECT '00000000-0000-4000-8000-0000000fa003', h_user FROM fk;
+DO $$ DECLARE f record; BEGIN
+  SELECT * INTO f FROM fk;
+  INSERT INTO fk_results SELECT 'match_here', public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'family_friend', 'Matchprobe Uniform', NULL, NULL, 'Typed match probe', NULL, false);
+  -- A kiosk entry at the other facility (fixture row).
+  INSERT INTO public.visitor_log_entries(id, organization_id, facility_id, visitor_name, visitor_type, visiting_name_text, kiosk_device_id, kiosk_client_entry_id)
+    VALUES ('00000000-0000-4000-8000-0000000fa010', f.org, f.other_facility, 'Matchprobe Victor', 'family_friend', 'Typed elsewhere', (SELECT (value->>'device_id')::uuid FROM fk_results WHERE name = 'kiosk'), gen_random_uuid());
+END $$;
+CREATE FUNCTION pg_temp.try_match(p_entry uuid, p_resident uuid) RETURNS text LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM public.visitor_match_resident(p_entry, p_resident);
+  RETURN 'ok';
+EXCEPTION WHEN insufficient_privilege THEN RETURN 'refused';
+END $$;
+SELECT pg_temp.fk_staff(h_user, '00000000-0000-4000-8000-0000000fa003'::uuid) FROM fk;
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+  IF pg_temp.try_match((SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'match_here'), (SELECT resident FROM fk)) <> 'refused' THEN
+    RAISE EXCEPTION 'Housekeeper matched a visitor to a resident';
+  END IF;
+END $$;
+RESET ROLE;
+SELECT pg_temp.fk_staff('00000000-0000-4000-8000-0000000fa001'::uuid, '00000000-0000-4000-8000-0000000fa002'::uuid);
+SET LOCAL ROLE authenticated;
+DO $$ BEGIN
+  IF pg_temp.try_match((SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'match_here'), (SELECT resident FROM fk)) <> 'refused' THEN
+    RAISE EXCEPTION 'Family matched a visitor to a resident';
+  END IF;
+END $$;
+RESET ROLE;
+SELECT pg_temp.fk_staff(b_user, b_session) FROM fk;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE r jsonb; BEGIN
+  IF pg_temp.try_match('00000000-0000-4000-8000-0000000fa010', (SELECT resident FROM fk)) <> 'refused' THEN
+    RAISE EXCEPTION 'Matched an entry at a facility the caller cannot access';
+  END IF;
+  r := public.visitor_match_resident((SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'match_here'), (SELECT resident FROM fk));
+  IF (SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(r) k) <> ARRAY['entry_id', 'resident_id']
+     OR (r->>'resident_id')::uuid <> (SELECT resident FROM fk) THEN
+    RAISE EXCEPTION 'Med tech match failed: %', r;
+  END IF;
+END $$;
+RESET ROLE;
+
+-- ---------------------------------------------------------------------------
+-- 21. Kiosk visitor rate limits live in the database (spec 40 section 5).
+-- ---------------------------------------------------------------------------
+UPDATE public.timeclock_devices SET failure_count = 0, failure_window_started_at = NULL, throttled_until = NULL;
+SELECT pg_temp.fk_service();
+DO $$ DECLARE r jsonb; f record; n integer; i integer; replay uuid := gen_random_uuid(); kiosk uuid; BEGIN
+  SELECT * INTO f FROM fk;
+  kiosk := (SELECT (value->>'device_id')::uuid FROM fk_results WHERE name = 'kiosk');
+  IF (SELECT kiosk_visitor_sign_ins_per_10_minutes FROM public.timeclock_facility_settings WHERE facility_id = f.facility) <> 30 THEN
+    RAISE EXCEPTION 'Kiosk sign-in cap default is not 30';
+  END IF;
+  SELECT count(*) INTO n FROM public.visitor_log_entries WHERE kiosk_device_id = kiosk AND created_at >= now() - interval '10 minutes';
+  UPDATE public.timeclock_facility_settings SET kiosk_visitor_sign_ins_per_10_minutes = n + 1 WHERE facility_id = f.facility;
+  r := public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), replay, 'vendor_contractor', 'Capprobe One', NULL, 'Probe Co', NULL, NULL, false);
+  IF NOT (r->>'ok')::boolean THEN RAISE EXCEPTION 'Sign in under the cap refused: %', r; END IF;
+  r := public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'vendor_contractor', 'Capprobe Two', NULL, 'Probe Co', NULL, NULL, false);
+  IF r->>'error' <> 'device_throttled' THEN RAISE EXCEPTION 'Sign in over the cap accepted: %', r; END IF;
+  -- A retry of an entry already recorded still answers: it adds nothing.
+  IF NOT (public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), replay, 'vendor_contractor', 'Capprobe One', NULL, 'Probe Co', NULL, NULL, false)->>'replayed')::boolean THEN
+    RAISE EXCEPTION 'Replay refused at the cap';
+  END IF;
+  UPDATE public.timeclock_facility_settings SET kiosk_visitor_sign_ins_per_10_minutes = 30 WHERE facility_id = f.facility;
+  PERFORM pg_temp.fk_fail(format('UPDATE public.timeclock_facility_settings SET kiosk_visitor_sign_ins_per_10_minutes = 0 WHERE facility_id = %L', f.facility), 'kiosk_visitor_cap_check');
+  -- Twenty sign-out misses throttle the kiosk: sign-in, matches and sign-out all wait.
+  FOR i IN 1..10 LOOP PERFORM public.visitor_kiosk_sign_out(pg_temp.tok('kiosk'), gen_random_uuid()); END LOOP;
+  FOR i IN 1..10 LOOP PERFORM public.visitor_kiosk_sign_out(pg_temp.tok('kiosk'), (SELECT (value->>'entry_id')::uuid FROM fk_results WHERE name = 'visit')); END LOOP;
+  IF public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'vendor_contractor', 'Capprobe Three', NULL, 'Probe Co', NULL, NULL, false)->>'error' <> 'device_throttled'
+     OR public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), 'Capprobe')->>'error' <> 'device_throttled'
+     OR public.visitor_kiosk_sign_out(pg_temp.tok('kiosk'), gen_random_uuid())->>'error' <> 'device_throttled' THEN
+    RAISE EXCEPTION 'Sign-out misses did not throttle the kiosk';
+  END IF;
+  UPDATE public.timeclock_devices SET throttled_until = NULL, failure_count = 0, failure_window_started_at = NULL WHERE id = kiosk;
+END $$;
 
 ROLLBACK;

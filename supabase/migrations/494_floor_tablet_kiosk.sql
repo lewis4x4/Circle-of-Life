@@ -200,6 +200,7 @@ DECLARE
   v_cred record;
   v_identifier text := upper(btrim(COALESCE(p_identifier, '')));
   v_locked timestamptz;
+  v_attempts integer;
 BEGIN
   -- FOR UPDATE: the lockout counter is only a limit if concurrent attempts serialize
   -- here. Without it, N parallel wrong PINs all read failed_attempts = 0 and all get a
@@ -241,13 +242,17 @@ BEGIN
     SET failed_attempts = CASE WHEN failed_attempts + 1 >= 5 THEN 0 ELSE failed_attempts + 1 END,
         locked_until = CASE WHEN failed_attempts + 1 >= 5 THEN v_now + interval '15 minutes' ELSE locked_until END
     WHERE organization_id = v_cred.organization_id AND staff_id = v_cred.staff_id
-    RETURNING locked_until INTO v_locked;
+    RETURNING locked_until, failed_attempts INTO v_locked, v_attempts;
     IF v_locked IS NOT NULL AND v_locked > v_now THEN
       PERFORM haven.timeclock_audit('timeclock_credentials', v_cred.staff_id, 'UPDATE', 'credential_locked',
         NULL, p_organization_id, p_facility_id, jsonb_build_object('device_id', p_device_id));
     END IF;
     PERFORM haven.timeclock_note_device_failure(p_device_id);
-    RETURN jsonb_build_object('ok', false, 'error', 'not_recognized', 'staff_id', v_cred.staff_id);
+    -- tries_left is for callers that already named the person (a floor roster
+    -- tap). The kiosk and the employee-number path must not pass it on: it would
+    -- confirm that an employee number exists (spec 37 section 12a).
+    RETURN jsonb_build_object('ok', false, 'error', 'not_recognized', 'staff_id', v_cred.staff_id,
+      'tries_left', CASE WHEN v_locked IS NOT NULL AND v_locked > v_now THEN 0 ELSE greatest(0, 5 - v_attempts) END);
   END IF;
 
   UPDATE public.timeclock_credentials SET failed_attempts = 0
@@ -356,22 +361,28 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION haven.floor_initials(text, text, text) FROM PUBLIC, anon, authenticated, service_role;
 
--- The in punch that opened the current shift, from effective punches; null when off the clock.
-CREATE FUNCTION haven.floor_clocked_in_at(p_staff_id uuid, p_at timestamptz)
+-- On the clock AT THIS FACILITY (spec 40 section 1): in or on meal, and the in
+-- punch that opened the current shift was made at p_facility_id -- the same
+-- predicate 495's haven.observation_on_clock_staff uses for rounding owners.
+-- Returns that opening punch's time, or null when off the clock or on the clock
+-- only at another facility. timeclock_state alone has no facility.
+CREATE FUNCTION haven.floor_clocked_in_at(p_staff_id uuid, p_facility_id uuid, p_at timestamptz)
 RETURNS timestamptz
 LANGUAGE sql
 STABLE
 SET search_path = public
 AS $$
   SELECT CASE WHEN haven.timeclock_state(p_staff_id, p_at) IN ('in', 'meal') THEN (
-    SELECT e.punched_at
+    SELECT CASE WHEN COALESCE(tp.facility_id, tc.facility_id) = p_facility_id THEN e.punched_at END
     FROM haven.timeclock_effective_punches(p_staff_id, p_at - interval '16 hours', p_at + interval '1 second') e
+    LEFT JOIN public.time_punches tp ON e.source = 'punch' AND tp.id = e.punch_id
+    LEFT JOIN public.time_punch_corrections tc ON e.source = 'correction' AND tc.id = e.punch_id
     WHERE e.punch_type = 'in'
     ORDER BY e.punched_at DESC
     LIMIT 1
   ) END
 $$;
-REVOKE ALL ON FUNCTION haven.floor_clocked_in_at(uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION haven.floor_clocked_in_at(uuid, uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
 -- Roster roles in force for a floor device: its own list, else the facility's.
 CREATE FUNCTION haven.floor_effective_roster_roles(p_device_id uuid)
@@ -402,7 +413,7 @@ AS $$
     WHERE d.id = p_device_id AND d.device_kind = 'floor' AND d.revoked_at IS NULL
   ),
   candidates AS (
-    SELECT s.id, s.user_id, p.app_role::text AS app_role, s.first_name, s.preferred_name, s.last_name
+    SELECT s.id, s.user_id, p.app_role::text AS app_role, s.first_name, s.preferred_name, s.last_name, dev.facility_id
     FROM dev
     JOIN public.staff s ON s.organization_id = dev.organization_id
     JOIN public.user_profiles p ON p.id = s.user_id AND p.organization_id = s.organization_id
@@ -414,9 +425,9 @@ AS $$
       AND p.app_role::text = ANY (dev.roles)
       AND haven.timeclock_assigned_to_facility(s.id, dev.facility_id)
   )
-  SELECT c.id, c.user_id, c.app_role, c.first_name, c.preferred_name, c.last_name, haven.floor_clocked_in_at(c.id, p_at)
-  FROM candidates c
-  WHERE haven.timeclock_state(c.id, p_at) IN ('in', 'meal')
+  SELECT x.id, x.user_id, x.app_role, x.first_name, x.preferred_name, x.last_name, x.clocked_in_at
+  FROM (SELECT c.*, haven.floor_clocked_in_at(c.id, c.facility_id, p_at) AS clocked_in_at FROM candidates c) x
+  WHERE x.clocked_in_at IS NOT NULL
 $$;
 REVOKE ALL ON FUNCTION haven.floor_roster_members(uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
 
@@ -1080,6 +1091,7 @@ DECLARE
   v_staff record;
   v_login record;
   v_on_clock boolean;
+  v_clocked_in_at timestamptz;
   v_unlock_id uuid;
   v_idle integer;
 BEGIN
@@ -1109,7 +1121,15 @@ BEGIN
     v_pin := haven.timeclock_verify_credential_pin(v_device_id, v_org, v_facility_id, NULL, p_employee_number, NULL, p_pin);
   END IF;
   IF NOT (v_pin->>'ok')::boolean THEN
-    RETURN jsonb_build_object('ok', false, 'error', CASE WHEN v_pin->>'error' = 'locked' THEN 'locked' ELSE 'not_recognized' END);
+    IF v_pin->>'error' = 'locked' THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'locked');
+    END IF;
+    -- Wrong PIN after a roster tap: the person was already named on screen, so
+    -- how many tries remain reveals nothing. Never on the employee-number path.
+    IF v_method = 'roster' AND v_pin ? 'tries_left' THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'not_recognized', 'tries_left', (v_pin->>'tries_left')::integer);
+    END IF;
+    RETURN jsonb_build_object('ok', false, 'error', 'not_recognized');
   END IF;
 
   -- The PIN was right. Only now say anything about who this is.
@@ -1133,7 +1153,8 @@ BEGIN
     RETURN jsonb_build_object('ok', false, 'error', 'not_allowed');
   END IF;
 
-  v_on_clock := haven.timeclock_state(v_staff.id, v_now) IN ('in', 'meal');
+  v_clocked_in_at := haven.floor_clocked_in_at(v_staff.id, v_facility_id, v_now);
+  v_on_clock := v_clocked_in_at IS NOT NULL;
   IF v_method = 'roster' AND NOT v_on_clock THEN
     RETURN jsonb_build_object('ok', false, 'error', 'not_recognized');
   END IF;
@@ -1157,7 +1178,7 @@ BEGIN
     'idle_lock_minutes', COALESCE(v_idle, 3),
     'display_name', haven.floor_display_name(v_staff.first_name, v_staff.preferred_name, v_staff.last_name),
     'role_label', haven.floor_role_label(v_login.app_role),
-    'clocked_in_at', haven.floor_clocked_in_at(v_staff.id, v_now)
+    'clocked_in_at', v_clocked_in_at
   );
 END;
 $$;
@@ -1185,7 +1206,7 @@ BEGIN
   IF v_dev.revoked_at IS NULL THEN
     UPDATE public.timeclock_devices SET last_seen_at = v_now WHERE id = v_dev.id;
   END IF;
-  SELECT id, staff_id, method, started_at, ended_at, end_reason INTO v_unlock
+  SELECT id, staff_id, facility_id, method, started_at, ended_at, end_reason INTO v_unlock
   FROM public.floor_unlocks
   WHERE id = p_unlock_id AND device_id = v_dev.id
   FOR UPDATE;
@@ -1198,7 +1219,7 @@ BEGIN
   v_reason := CASE
     WHEN v_dev.revoked_at IS NOT NULL THEN 'device_revoked'
     WHEN v_unlock.started_at < v_now - interval '12 hours' THEN 'max_age'
-    WHEN v_unlock.method = 'roster' AND haven.timeclock_state(v_unlock.staff_id, v_now) NOT IN ('in', 'meal') THEN 'clocked_out'
+    WHEN v_unlock.method = 'roster' AND haven.floor_clocked_in_at(v_unlock.staff_id, v_unlock.facility_id, v_now) IS NULL THEN 'clocked_out'
   END;
   IF v_reason IS NOT NULL THEN
     UPDATE public.floor_unlocks SET ended_at = v_now, end_reason = v_reason WHERE id = v_unlock.id;
@@ -1210,7 +1231,7 @@ $$;
 REVOKE ALL ON FUNCTION public.floor_heartbeat(text, uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.floor_heartbeat(text, uuid) TO service_role;
 COMMENT ON FUNCTION public.floor_heartbeat(text, uuid) IS
-  'Keeps or ends a floor unlock: inactive once ended, when the tablet is revoked, after 12 hours, or when a roster unlock''s person is off the clock (ending the row with that reason). An unlock id that is not this tablet''s answers reason unknown. COL-37 ruling: definer required -- updates floor_unlocks, which has no request-role write grant, for a session-less tablet through service_role only.';
+  'Keeps or ends a floor unlock: inactive once ended, when the tablet is revoked, after 12 hours, or when a roster unlock''s person is no longer on the clock at this facility (ending the row with that reason). An unlock id that is not this tablet''s answers reason unknown. COL-37 ruling: definer required -- updates floor_unlocks, which has no request-role write grant, for a session-less tablet through service_role only.';
 
 CREATE FUNCTION public.floor_end_unlock(p_device_token text, p_unlock_id uuid, p_reason text)
 RETURNS jsonb
@@ -1452,6 +1473,13 @@ ALTER TABLE public.visitor_log_entries
   ADD CONSTRAINT visitor_log_entries_sign_out_method_check
     CHECK (sign_out_method IS NULL OR sign_out_method IN ('individual', 'bulk_end_of_day', 'kiosk_self'));
 
+-- New kiosk sign-ins allowed per kiosk tablet per 10 minutes (spec 40 section 5).
+ALTER TABLE public.timeclock_facility_settings
+  ADD COLUMN kiosk_visitor_sign_ins_per_10_minutes integer NOT NULL DEFAULT 30
+    CONSTRAINT timeclock_facility_settings_kiosk_visitor_cap_check CHECK (kiosk_visitor_sign_ins_per_10_minutes BETWEEN 1 AND 500);
+COMMENT ON COLUMN public.timeclock_facility_settings.kiosk_visitor_sign_ins_per_10_minutes IS
+  'COL-692: new visitor sign-ins one front-door kiosk accepts in a rolling 10 minutes; past it the kiosk answers device_throttled. Runtime setting; the column default is the only default.';
+
 CREATE UNIQUE INDEX idx_visitor_log_entries_kiosk_device_client_entry
   ON public.visitor_log_entries (kiosk_device_id, kiosk_client_entry_id)
   WHERE kiosk_device_id IS NOT NULL AND kiosk_client_entry_id IS NOT NULL;
@@ -1490,6 +1518,40 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION haven.visitor_kiosk_device(text) FROM PUBLIC, anon, authenticated, service_role;
+
+-- Throttled by the shared device counter (staff PIN misses, visitor sign-out misses).
+CREATE FUNCTION haven.visitor_kiosk_throttled(p_device_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.timeclock_devices d WHERE d.id = p_device_id AND d.throttled_until > clock_timestamp())
+$$;
+REVOKE ALL ON FUNCTION haven.visitor_kiosk_throttled(uuid) FROM PUBLIC, anon, authenticated, service_role;
+
+-- New sign-ins from one kiosk in the last 10 minutes against the facility cap.
+-- A facility without a settings row gets one with column defaults, so the
+-- column default stays the only place the default lives.
+CREATE FUNCTION haven.visitor_kiosk_over_cap(p_device_id uuid, p_organization_id uuid, p_facility_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  v_cap integer;
+BEGIN
+  INSERT INTO public.timeclock_facility_settings (organization_id, facility_id)
+  VALUES (p_organization_id, p_facility_id)
+  ON CONFLICT (organization_id, facility_id) DO NOTHING;
+  SELECT kiosk_visitor_sign_ins_per_10_minutes INTO v_cap
+  FROM public.timeclock_facility_settings
+  WHERE organization_id = p_organization_id AND facility_id = p_facility_id;
+  RETURN (SELECT count(*) FROM public.visitor_log_entries
+          WHERE kiosk_device_id = p_device_id AND created_at >= now() - interval '10 minutes') >= v_cap;
+END;
+$$;
+REVOKE ALL ON FUNCTION haven.visitor_kiosk_over_cap(uuid, uuid, uuid) FROM PUBLIC, anon, authenticated, service_role;
 
 -- "Jordan P." -- first word plus the last word's initial. Never a resident name.
 CREATE FUNCTION haven.visitor_kiosk_display_name(p_visitor_name text)
@@ -1549,6 +1611,10 @@ BEGIN
   WHERE kiosk_device_id = v_dev.id AND kiosk_client_entry_id = p_client_entry_id;
   IF FOUND THEN
     RETURN jsonb_build_object('ok', true, 'replayed', true, 'entry_id', e.id, 'checked_in_at', e.checked_in_at);
+  END IF;
+  IF haven.visitor_kiosk_throttled(v_dev.id)
+     OR haven.visitor_kiosk_over_cap(v_dev.id, v_dev.organization_id, v_dev.facility_id) THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'device_throttled');
   END IF;
 
   IF p_client_entry_id IS NULL
@@ -1610,6 +1676,9 @@ BEGIN
   IF NOT FOUND THEN
     RETURN jsonb_build_object('ok', false, 'error', 'device_unknown');
   END IF;
+  IF haven.visitor_kiosk_throttled(v_dev.id) THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'device_throttled');
+  END IF;
   IF char_length(regexp_replace(v_prefix, '[^[:alpha:]]', '', 'g')) < 3 THEN
     RETURN jsonb_build_object('ok', true, 'matches', '[]'::jsonb);
   END IF;
@@ -1653,14 +1722,21 @@ BEGIN
   IF NOT FOUND THEN
     RETURN jsonb_build_object('ok', false, 'error', 'device_unknown');
   END IF;
+  IF haven.visitor_kiosk_throttled(v_dev.id) THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'device_throttled');
+  END IF;
   SELECT * INTO e FROM public.visitor_log_entries
   WHERE id = p_entry_id AND organization_id = v_dev.organization_id AND facility_id = v_dev.facility_id
     AND deleted_at IS NULL AND voided_at IS NULL AND checked_in_at >= now() - interval '24 hours'
   FOR UPDATE;
+  -- Misses count toward the device throttle the kiosk PIN pad uses, so the
+  -- sign-out endpoint cannot be walked to learn who is in the building.
   IF NOT FOUND THEN
+    PERFORM haven.timeclock_note_device_failure(v_dev.id);
     RETURN jsonb_build_object('ok', false, 'error', 'not_found');
   END IF;
   IF e.checked_out_at IS NOT NULL THEN
+    PERFORM haven.timeclock_note_device_failure(v_dev.id);
     RETURN jsonb_build_object('ok', false, 'error', 'already_signed_out');
   END IF;
   UPDATE public.visitor_log_entries
@@ -1677,8 +1753,11 @@ COMMENT ON FUNCTION public.visitor_kiosk_sign_out(text, uuid) IS
   'A visitor signs themselves out at the kiosk, once: an open, unvoided visit from the last 24 hours at the kiosk''s facility, recorded as kiosk_self. COL-37 ruling: definer required -- authenticated has no UPDATE on public.visitor_log_entries and the session-less kiosk has no request role; service_role only.';
 
 -- Front desk turns a typed "who are you visiting" into the resident record.
+-- Front-desk roles only: the office and floor roles that work /admin/front-desk.
+-- Housekeepers (no visitor log), cooks, maintenance, brokers, recruiters and
+-- family are refused. Returns only the ids the caller already has.
 CREATE FUNCTION public.visitor_match_resident(p_entry_id uuid, p_resident_id uuid)
-RETURNS public.visitor_log_entries
+RETURNS jsonb
 LANGUAGE plpgsql
 VOLATILE
 SECURITY DEFINER
@@ -1686,6 +1765,9 @@ SET search_path = public
 AS $$
 DECLARE e public.visitor_log_entries;
 BEGIN
+  IF COALESCE(haven.app_role()::text, '') NOT IN ('owner', 'org_admin', 'facility_admin', 'manager', 'admin_assistant', 'coordinator', 'med_tech') THEN
+    RAISE EXCEPTION 'Not authorized for this facility' USING ERRCODE = '42501';
+  END IF;
   e := haven.visitor_entry_for_update(p_entry_id);
   IF e.voided_at IS NOT NULL THEN RAISE EXCEPTION 'This entry was voided' USING ERRCODE = '22023'; END IF;
   IF e.kiosk_device_id IS NULL OR e.visiting_name_text IS NULL THEN
@@ -1701,13 +1783,13 @@ BEGIN
   UPDATE public.visitor_log_entries SET resident_id = p_resident_id, visiting_type = 'resident'
    WHERE id = e.id RETURNING * INTO e;
   PERFORM haven.visitor_audit(e, 'visitor_resident_matched');
-  RETURN e;
+  RETURN jsonb_build_object('entry_id', e.id, 'resident_id', e.resident_id);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.visitor_match_resident(uuid, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.visitor_match_resident(uuid, uuid) TO authenticated;
 COMMENT ON FUNCTION public.visitor_match_resident(uuid, uuid) IS
-  'Matches a kiosk entry''s typed visit to a resident of the same facility, once. COL-37 ruling: definer required -- authenticated has no UPDATE on public.visitor_log_entries and no UPDATE policy exists, deliberately; the body asserts the caller''s facility grant with haven.has_facility_access, refuses the family role, takes FOR UPDATE, and writes an audit row. Keep it definer.';
+  'Matches a kiosk entry''s typed visit to a resident of the same facility, once; returns {entry_id, resident_id}. COL-37 ruling: definer required -- authenticated has no UPDATE on public.visitor_log_entries and no UPDATE policy exists, deliberately; the body allows only front-desk roles (owner, org_admin, facility_admin, manager, admin_assistant, coordinator, med_tech), asserts the caller''s facility grant with haven.has_facility_access, takes FOR UPDATE, and writes an audit row. Keep it definer.';
 
 -- ---------------------------------------------------------------------------
 -- 9. One clock (spec 40 section 1): where the kiosk is live, staff do not
