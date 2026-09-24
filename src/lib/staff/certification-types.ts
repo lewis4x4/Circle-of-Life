@@ -1,3 +1,5 @@
+import { enumLabel } from "@/lib/display/enum-label";
+
 /**
  * Certification types offered when recording a certification or a
  * requirement. `staff_certifications.certification_type` is free text; these
@@ -20,5 +22,5 @@ export const CERT_TYPE_PRESETS = [
 const PRESET_LABELS: Record<string, string> = Object.fromEntries(CERT_TYPE_PRESETS.map((t) => [t.value, t.label]));
 
 export function certificationTypeLabel(type: string): string {
-  return PRESET_LABELS[type] ?? type.replace(/_/g, " ");
+  return enumLabel(type, { overrides: PRESET_LABELS });
 }
