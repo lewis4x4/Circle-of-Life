@@ -464,7 +464,7 @@ export function VendorsTab(props: Props) {
           </div>
           <DialogFooter className="sm:justify-between">
             <Link
-              href="/admin/vendors/new"
+              href="/admin/vendors/directory"
               target="_blank"
               rel="noopener noreferrer"
               className={buttonVariants({ variant: "ghost", size: "sm", className: "rounded-md" })}
@@ -570,7 +570,7 @@ function RequiredCategoriesPanel(props: {
                   <>
                     <span className="text-warning">⚠ Required · not linked</span>
                     <div className="mt-2">
-                      <Link href="/admin/vendors/new" className={cn(buttonVariants({ variant: "outline", size: "sm", className: "rounded-md" }))}>
+                      <Link href="/admin/vendors/directory" className={cn(buttonVariants({ variant: "outline", size: "sm", className: "rounded-md" }))}>
                         Add →
                       </Link>
                     </div>
