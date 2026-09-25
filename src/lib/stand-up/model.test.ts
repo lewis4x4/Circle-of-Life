@@ -244,3 +244,27 @@ describe('field-state vocabulary', () => {
   expect(easternStamp('2026-09-15T19:05:00Z')).toBe('September 15 at 3:05 p.m. Eastern')
  })
 })
+
+describe('Monday reads its times from the meeting schedule (COL-805)', () => {
+  it('uses the schedule’s Monday row and falls back to the seeded times only without one', async () => {
+    const { mondayTimesFromSchedule, DEFAULT_MONDAY_TIMES } = await import('./model')
+    expect(mondayTimesFromSchedule([{ meeting_day: 'monday', entry_due_local: '09:00', call_local: '09:30' }])).toEqual({ dueMinutes: 540, callMinutes: 570 })
+    expect(mondayTimesFromSchedule([{ meeting_day: 'thursday', entry_due_local: '09:00', call_local: '09:30' }])).toEqual(DEFAULT_MONDAY_TIMES)
+    expect(mondayTimesFromSchedule(undefined)).toEqual(DEFAULT_MONDAY_TIMES)
+  })
+
+  it('states, opens and closes the window at the scheduled times', async () => {
+    const { entryWindowLine, entryOpenLabel, deadlinePassed, getStandUpEntryWindow } = await import('./model')
+    const times = { dueMinutes: 540, callMinutes: 570 }
+    // Unchanged schedule: the words are exactly what they were.
+    expect(entryWindowLine(undefined)).toBe('Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern')
+    expect(entryWindowLine(undefined, times)).toBe('Opens Sunday 12:15 a.m. · Due Monday 9:00 a.m. · Call 9:30 a.m. Eastern')
+    // A choice is named for when it actually opens against the scheduled deadline.
+    expect(entryOpenLabel(1965, times)).toBe('Sunday 12:15 a.m.')
+    expect(deadlinePassed('2026-09-21', new Date('2026-09-21T12:50:00Z'))).toBe(true)
+    expect(deadlinePassed('2026-09-21', new Date('2026-09-21T12:50:00Z'), times)).toBe(false)
+    const window = getStandUpEntryWindow({ meetingMonday: '2026-09-21', now: new Date('2026-09-21T12:00:00Z'), times })
+    expect(window.deadlineAt.toISOString()).toBe('2026-09-21T13:00:00.000Z')
+    expect(window.callAt.toISOString()).toBe('2026-09-21T13:30:00.000Z')
+  })
+})

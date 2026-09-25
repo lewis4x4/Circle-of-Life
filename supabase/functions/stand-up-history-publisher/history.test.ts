@@ -256,6 +256,48 @@ Deno.test("meeting history is unavailable until Monday 09:15 Eastern", async () 
   assert(built.items.length === 1, "The meeting snapshot opens at 09:15");
 });
 
+Deno.test("meeting history follows the scheduled Monday call and publishes the same rows (COL-805)", async () => {
+  // The archive states the call it used; with the seeded 09:15 the rows are byte-identical to an archive without the key.
+  const seeded = await buildHistoryItems(
+    { ...archive([snapshot("2026-09-14", 2)], "2026-09-14T13:15:00Z"), monday_call_local: "09:15" },
+    MAP,
+    1,
+  );
+  const legacy = await buildHistoryItems(
+    archive([snapshot("2026-09-14", 2)], "2026-09-14T13:15:00Z"),
+    MAP,
+    1,
+  );
+  // Every build carries a fresh batch id; everything else must match byte for byte.
+  const rows = (built: typeof seeded) => built.items.map((item) => { const { batchId: _batch, ...rest } = JSON.parse(item.body); return stableStringify(rest); });
+  equal(rows(seeded), rows(legacy), "Stating the seeded call must not change a published row");
+  // A later call keeps the snapshot closed until it starts.
+  let refused = false;
+  try {
+    await buildHistoryItems(
+      { ...archive([snapshot("2026-09-14", 2)], "2026-09-14T13:15:00Z"), monday_call_local: "09:30" },
+      MAP,
+      1,
+    );
+  } catch {
+    refused = true;
+  }
+  assert(refused, "A 09:30 call must keep the 09:15 archive closed");
+  const later = await buildHistoryItems(
+    { ...archive([snapshot("2026-09-14", 2)], "2026-09-14T13:30:00Z"), monday_call_local: "09:30" },
+    MAP,
+    1,
+  );
+  assert(later.items.length === 1, "The meeting snapshot opens at the scheduled call");
+  let invalid = false;
+  try {
+    await buildHistoryItems({ ...archive([]), monday_call_local: "9am" }, MAP, 1);
+  } catch {
+    invalid = true;
+  }
+  assert(invalid, "An unreadable call time must fail closed");
+});
+
 Deno.test("history validation rejects duplicate identities and unreviewed facility IDs", async () => {
   for (
     const bad of [

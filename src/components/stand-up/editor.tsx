@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { registerRouteLeaveGuard, supportsRouteLeaveProtection, standUpHasDocumentEntry, useRouteTransitionPending, isRouteTransitionPending } from '@/components/layout/navigation-pending';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { METRICS, SECTIONS, emptyValues, dateLabel, entryOpensStamp, getStandUpEntryWindow, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
+import { METRICS, SECTIONS, emptyValues, wallClockMinutes, DEFAULT_MONDAY_TIMES, type MondayTimes, dateLabel, entryOpensStamp, getStandUpEntryWindow, reportDeadlineState, derivedValues, easternTime, fieldState, metricDisplay, sectionMetrics, sectionPeriodLabel, staffingPeriod, shiftDay, validateValues, FIELD_STATE_TEXT, type MetricKey, type StandUpReport, type StandUpValues } from '@/lib/stand-up/model';
 import { changesFromPrevious, lastSaveLine, reportStatus, snapshotAsOf, submissionChecklist, submissionEvidence } from '@/lib/stand-up/report-presentation';
 import { REPORTING_QUALIFICATION, UNCHECKED_KEYS, uncheckedNote } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes } from '@/lib/stand-up/duration';
@@ -30,6 +30,8 @@ type Props = {
   canEditSubmitted?: boolean;
   /** COL-555: opened from a Reconcile link; show the dialog once the disagreement is read. */
   autoReconcile?: boolean;
+  /** COL-805: Monday's deadline and call from the schedule. */
+  times?: MondayTimes;
   onSaved: (report: StandUpReport) => void; onDenied: () => void; onReload: () => Promise<void>;
   bindGuard: (guard: (silent?: boolean) => boolean) => () => void;
 };
@@ -94,7 +96,8 @@ export function StandUpEditor(props: Props) {
   const savingRef = useRef(false); const pending = useRef<SaveAttempt | null>(null);
   // One window model decides all three states of this page: a meeting whose
   // entry has not opened yet, the open reporting period, and a past meeting.
-  const entryWindow = getStandUpEntryWindow({ meetingMonday: week, leadMinutes: props.leadMinutes, now: props.now });
+  const times = props.times ?? DEFAULT_MONDAY_TIMES;
+  const entryWindow = getStandUpEntryWindow({ meetingMonday: week, leadMinutes: props.leadMinutes, now: props.now, times });
   const notOpen = entryWindow.state === 'not_open';
   const historical = week < currentWeek;
   // Roster suggestions belong to a report that can be entered now. A past
@@ -307,7 +310,7 @@ export function StandUpEditor(props: Props) {
   const complete = values ? derivedValues(values) : null;
   const missing = values ? METRICS.filter(metric => values[metric.key] === null) : [];
   const prior = props.reports.filter(report => report.facility_id === facility.id && report.week_start < week).sort((a, b) => b.week_start.localeCompare(a.week_start))[0];
-  const deadlineState = reportDeadlineState(saved, week, currentWeek, props.now);
+  const deadlineState = reportDeadlineState(saved, week, currentWeek, props.now, times);
   const isLate = deadlineState === 'past_target';
   // The Monday-to-Sunday payroll week closes at the meeting Monday's midnight.
   const staffingClosed = props.now >= entryWindow.staffingPeriodEnd;
@@ -334,10 +337,10 @@ export function StandUpEditor(props: Props) {
         <p className="mt-1 text-sm text-muted-foreground">{lastSaveLine(saved, props.userId)}</p>
         <p className="mt-1 text-sm text-muted-foreground">{submissionEvidence(saved)}</p>
         {entering && !saved && prefillApplied.current && <p className="mt-1 text-sm">Prefilled from Haven. Check each figure against what you know, change any that are wrong, then submit.</p>}
-        {isLate && <p className="mt-1 text-sm">The 8:45 a.m. Haven submission target has passed; you can still finish or correct this report.</p>}
+        {isLate && <p className="mt-1 text-sm">The {wallClockMinutes(times.dueMinutes)} Haven submission target has passed; you can still finish or correct this report.</p>}
         {/* One line for a report nobody can enter yet, so the aide reading it at
             11:30 p.m. knows exactly when it opens rather than why saving failed. */}
-        {notOpen && <p role="status" className="mt-1 text-sm">This report opens {entryOpensStamp(week, props.leadMinutes)}.</p>}
+        {notOpen && <p role="status" className="mt-1 text-sm">This report opens {entryOpensStamp(week, props.leadMinutes, times)}.</p>}
         {/* Open, but the payroll week has not closed: name what is still moving. */}
         {entering && !staffingClosed && <p className="mt-1 text-sm">Staffing and payroll run through Sunday 11:59 p.m. Update overtime and callouts before you submit.</p>}
       </div>
@@ -347,7 +350,7 @@ export function StandUpEditor(props: Props) {
       <summary className="cursor-pointer rounded text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Reporting periods and timings</summary>
       <ul className="mt-2 space-y-1 border-l-2 border-border pl-3 text-sm text-muted-foreground">
         <li>Staffing and payroll covers {staffingPeriod(week)}.</li>
-        {entering && <li>The next Monday report opens {entryOpensStamp(shiftDay(currentWeek, 7), props.leadMinutes)}.</li>}
+        {entering && <li>The next Monday report opens {entryOpensStamp(shiftDay(currentWeek, 7), props.leadMinutes, times)}.</li>}
         {prior && <li>Previous figures come from the report for {dateLabel(prior.week_start)}{prior.week_start !== shiftDay(week, -7) ? ', because the previous calendar week is missing' : ''}, and are not copied into this one.</li>}
       </ul>
     </details>

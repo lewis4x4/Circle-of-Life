@@ -120,7 +120,21 @@ export function historyRange(
   return { fromWeek: subtractDays(toWeek, (HISTORY_WEEKS - 1) * 7), toWeek };
 }
 
-function meetingSnapshotAvailable(week: string, generated: Date): boolean {
+/**
+ * COL-805: the Monday call comes from the meeting schedule. The archive states
+ * the call it used (`monday_call_local`, "HH:MM" Eastern); an archive from
+ * before that key existed was taken at the seeded 09:15.
+ */
+export const SEEDED_MONDAY_CALL = "09:15";
+export function archiveMondayCall(value: unknown): string {
+  if (value === undefined || value === null) return SEEDED_MONDAY_CALL;
+  if (typeof value !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    throw new PublisherError("Invalid Monday call time in history archive");
+  }
+  return value;
+}
+
+export function meetingSnapshotAvailable(week: string, generated: Date, mondayCall = SEEDED_MONDAY_CALL): boolean {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -134,11 +148,12 @@ function meetingSnapshotAvailable(week: string, generated: Date): boolean {
     parts.find((entry) => entry.type === name)?.value ?? "";
   const localDate = `${part("year")}-${part("month")}-${part("day")}`;
   if (localDate !== week) return localDate > week;
-  return `${part("hour")}:${part("minute")}` >= "09:15";
+  return `${part("hour")}:${part("minute")}` >= mondayCall;
 }
 
 function checkedArchive(value: unknown): {
   generated: Date;
+  mondayCall: string;
   snapshots: JsonObject[];
 } {
   const archive = object(value, "history archive");
@@ -156,6 +171,7 @@ function checkedArchive(value: unknown): {
   }
   return {
     generated,
+    mondayCall: archiveMondayCall(archive.monday_call_local),
     snapshots: archive.snapshots.map((item) =>
       object(item, "history snapshot")
     ),
@@ -170,7 +186,7 @@ export async function buildHistoryItems(
   if (!Number.isSafeInteger(firstSequence) || firstSequence <= 0) {
     throw new PublisherError("Invalid first history sequence");
   }
-  const { generated, snapshots } = checkedArchive(archiveValue);
+  const { generated, mondayCall, snapshots } = checkedArchive(archiveValue);
   const identities = new Set<string>();
   const mappedIds = new Set(Object.values(facilityMap));
   const sorted = [...snapshots].sort((left, right) => {
@@ -192,9 +208,9 @@ export async function buildHistoryItems(
     ) {
       throw new PublisherError("Invalid history snapshot kind");
     }
-    if (kind === 2 && !meetingSnapshotAvailable(week, generated)) {
+    if (kind === 2 && !meetingSnapshotAvailable(week, generated, mondayCall)) {
       throw new PublisherError(
-        "Meeting snapshot is unavailable before Monday 09:15 Eastern",
+        `Meeting snapshot is unavailable before Monday ${mondayCall} Eastern`,
       );
     }
     const identity = `${week}:${kind}`;

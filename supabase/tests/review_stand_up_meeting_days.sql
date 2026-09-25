@@ -160,13 +160,14 @@ SELECT pg_temp.md_as('outsider');
 SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('revisions',jsonb_build_object('meeting_day','thursday','facility_id',%L,'week_start',%L::date))$q$,facility,open_week),'Stand Up access denied') FROM md_plan;
 
 -- 8. The schedule is runtime configuration: an owner moves one facility's
---    Thursday call; the other facility keeps the organization's. Monday's times
---    are not changed here, and a facility administrator cannot change any.
+--    Thursday call; the other facility keeps the organization's. Monday has no
+--    facility override, and a facility administrator cannot change any.
 SELECT pg_temp.md_as('admin');
 SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('set_meeting_schedule',jsonb_build_object('meeting_day','thursday','facility_id',%L,'call_local','10:00'))$q$,facility),'Stand Up access denied') FROM md_plan;
 SELECT pg_temp.md_as('owner');
 SELECT public.stand_up_command('set_meeting_schedule',jsonb_build_object('meeting_day','thursday','facility_id',facility,'weekday',5,'entry_due_local','09:30','call_local','10:00')) FROM md_plan;
-SELECT pg_temp.md_fail($q$SELECT public.stand_up_command('set_meeting_schedule','{"meeting_day":"monday","call_local":"10:00"}')$q$,'Only a meeting other than Monday');
+-- COL-805: Monday is set for the whole organization only (review_stand_up_monday_schedule.sql covers moving it).
+SELECT pg_temp.md_fail(format($q$SELECT public.stand_up_command('set_meeting_schedule',jsonb_build_object('meeting_day','monday','facility_id',%L,'call_local','10:00'))$q$,facility),'whole organization') FROM md_plan;
 SELECT pg_temp.md_fail($q$SELECT public.stand_up_command('set_meeting_schedule','{"meeting_day":"thursday","time_zone":"Mars/Olympus"}')$q$,'Unknown time zone');
 RESET ROLE;
 DO $$ DECLARE p md_plan%ROWTYPE; t jsonb; o jsonb; BEGIN

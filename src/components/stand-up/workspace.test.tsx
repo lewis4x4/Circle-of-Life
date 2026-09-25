@@ -908,3 +908,15 @@ describe('Monday arrives prefilled from Haven (COL-753)', () => {
     expect(await screen.findByText('Haven had 4 · override: Haven is not up to date')).toBeInTheDocument();
   });
 });
+
+describe('Monday times come from the meeting schedule (COL-805)', () => {
+  it('states the scheduled deadline and call, not fixed ones', async () => {
+    mocks.request.mockImplementation(async (action: string) => {
+      if (action === 'workspace') return { ...workspace, schedule: [{ meeting_day: 'monday', weekday: 1, entry_due_local: '09:00', call_local: '09:30', time_zone: 'America/New_York', facility_override: false }] };
+      throw new Error('Unexpected operation');
+    });
+    await start();
+    expect(screen.getByText('Opens Sunday 12:15 a.m. · Due Monday 9:00 a.m. · Call 9:30 a.m. Eastern')).toBeInTheDocument();
+    expect(screen.getByText('0 of 2 submitted · Monday target: 9:00 a.m.')).toBeInTheDocument();
+  });
+});
