@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { NO_ROSTER_TEXT, OVERRIDE_REASONS, ROSTER_FIELD_KEYS, STAND_UP_ROSTER_CENSUS_STATUSES, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, recordedConfirmationLine, rosterAsOfLine, rosterSourceSuffix, rosterSuggestion, selectHospitalSuggestion, type RosterCensus } from './roster-census'
+import { NO_ROSTER_TEXT, ROSTER_FIELD_KEYS, STAND_UP_ROSTER_CENSUS_STATUSES, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, recordedConfirmationLine, rosterAsOfLine, rosterSourceSuffix, rosterSuggestion, selectHospitalSuggestion, type RosterCensus } from './roster-census'
 
 const roster: RosterCensus = { facility_id: 'a', in_house_count: 32, hospital_hold_count: 1, loa_count: 1, roster_census_count: 34, resident_count_in_haven: 40, roster_as_of: '2026-09-16T18:14:00Z' }
 const empty: RosterCensus = { facility_id: 'b', in_house_count: 0, hospital_hold_count: 0, loa_count: 0, roster_census_count: 0, resident_count_in_haven: 0, roster_as_of: null }
@@ -53,14 +53,18 @@ describe('roster census suggestion', () => {
     expect(expectedSource(empty, 'current_total_census', 12)).toBe('entered_no_roster')
     expect(expectedSource(roster, 'current_total_census', null)).toBeNull()
   })
-  it('keeps override reasons to a fixed list', () => {
-    expect(OVERRIDE_REASONS.map(reason => reason.key)).toEqual(['roster_not_current', 'change_not_entered', 'different_definition', 'other'])
-    expect(isOverrideReason('other')).toBe(true)
-    expect(isOverrideReason('because')).toBe(false)
+  it('takes override reasons from the facility setting, not a list in code (COL-555)', () => {
+    const options = [{ key: 'awaiting_paperwork', label: 'Paperwork not back from the hospital' }, { key: 'other', label: 'Other' }]
+    expect(isOverrideReason('awaiting_paperwork', options)).toBe(true)
+    expect(isOverrideReason('roster_not_current', options)).toBe(false)
+    expect(isOverrideReason('other', null)).toBe(false)
+    const source = readFileSync(resolve(process.cwd(), 'src/lib/stand-up/roster-census.ts'), 'utf8')
+    expect(source).not.toMatch(/OVERRIDE_REASONS\s*=/)
+    expect(source).not.toContain("'Roster not updated yet'")
   })
   it('says something only for an override, and shows a past confirmation as recorded', () => {
     const confirmed = { source: 'roster_confirmed' as const, suggested: 34, confirmed: 34, override_reason: null, roster_as_of: roster.roster_as_of, confirmed_at: '2026-09-14T12:00:00Z' }
-    const overridden = { ...confirmed, source: 'overridden' as const, confirmed: 35, override_reason: 'roster_not_current' as const }
+    const overridden = { ...confirmed, source: 'overridden' as const, confirmed: 35, override_reason: 'roster_not_current', override_reason_label: 'Roster not updated yet' }
     const typed = { ...confirmed, source: 'entered_no_roster' as const, suggested: null, confirmed: 12 }
     expect(rosterSourceSuffix(confirmed)).toBeNull()
     expect(rosterSourceSuffix(typed)).toBeNull()

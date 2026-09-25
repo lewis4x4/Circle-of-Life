@@ -1,17 +1,26 @@
 /**
- * Settings → Threshold targets: the organization's operating rules (COL-710).
+ * Settings → Threshold targets: the operating rules (COL-710), for the whole
+ * organization or one facility (COL-555, migration 534).
  * Pure helpers for the editor, shared by the server loader and its tests.
  */
 import type { OperatingRuleKey } from "./operating-rules";
 import {
+  ARRIVAL_APPROVAL_ROLE_CHOICES,
+  CENSUS_NOTICE_CHANNEL_CHOICES,
   CENSUS_NOTICE_ROLE_CHOICES,
+  parseArrivalApprovalRoles,
   parseBackdateWindowDays,
+  parseCensusNoticeChannels,
   parseCensusNoticeLeadMinutes,
   parseCensusNoticeRoles,
+  parseCensusReasonOptions,
   parseCensusReasonWindowDays,
   parseDueWindowDays,
   parseScoreAlertBelowPct,
+  parseSwitch,
+  type ArrivalApprovalRole,
   type CensusNoticeRole,
+  type CensusReasonOption,
 } from "./operating-rules";
 import { enumLabel } from "@/lib/display/enum-label";
 import { parseRiskScoreBands } from "./risk-bands";
@@ -19,27 +28,46 @@ import { parseRiskScoreBands } from "./risk-bands";
 export type OperatingRuleHistoryRow = {
   id: string;
   ruleKey: OperatingRuleKey;
+  /** Null for the organization rule. */
+  facilityId: string | null;
   value: unknown;
   effectiveFrom: string;
   changeReason: string;
   createdAt: string;
 };
 
+/** A facility's own value for a rule, in force today. */
+export type OperatingRuleFacilityOverride = {
+  facilityId: string;
+  facilityName: string;
+  value: unknown;
+  effectiveFrom: string;
+};
+
 export type OperatingRuleSetting = {
   key: OperatingRuleKey;
   label: string;
   description: string;
-  /** The value in force today (JSON null is a real value: "off"); undefined when it could not be read. */
+  /** The organization value in force today (JSON null is a real value: "off"); undefined when it could not be read. */
   current: unknown;
+  /** Facility values in force today, by facility name. */
+  facilityOverrides: OperatingRuleFacilityOverride[];
   /** Rows effective after today, soonest first. */
   scheduled: OperatingRuleHistoryRow[];
-  /** Every organization row, newest effective date first. */
+  /** Every organization and facility row the caller can read, newest effective date first. */
   history: OperatingRuleHistoryRow[];
 };
 
+export type OperatingRuleFacility = { id: string; name: string };
+
 export type OperatingRulesSettingsLoad = {
+  /** Owner, org admin or facility administrator: may set a rule for a facility they can access. */
   canEdit: boolean;
-  /** Needed to write a row; null when the caller has no organization. */
+  /** Owner or org admin: may also set the organization rule. */
+  canEditOrganization: boolean;
+  /** Facilities the caller can access, by name. */
+  facilities: OperatingRuleFacility[];
+  /** Null when the caller has no organization. */
   organizationId: string | null;
   userId: string | null;
   todayIso: string;
@@ -80,7 +108,98 @@ export const OPERATING_RULE_COPY: Record<OperatingRuleKey, { label: string; desc
     label: "Stand Up census notice goes to",
     description: "Who is told about an open census disagreement before the Stand Up deadline, at each facility they can access.",
   },
+  "stand_up.census_reason_options": {
+    label: "Stand Up census reasons",
+    description:
+      "The reasons an administrator can choose when a Monday or Thursday Stand Up census or hospital figure differs from the resident roster. A reason you remove stays on reports where it was already given.",
+  },
+  "stand_up.census_notice_channels": {
+    label: "Stand Up census notice delivery",
+    description:
+      "How a census disagreement notice reaches people. Notices are delivered in Haven; push and text are not available yet. Leave it unticked to send no census notices.",
+  },
+  "stand_up.thursday_census_vs_monday": {
+    label: "Thursday census checked against Monday",
+    description:
+      "When on, Thursday's census and hospital figures are also compared with Monday's submitted figures plus the roster's change since Monday. When off, Thursday is compared with the roster only.",
+  },
+  "stand_up.thursday_admission_notes_to_recruiters": {
+    label: "Recruiters read admission notes on the Thursday report",
+    description: "When on, recruiters see the admission notes on the Thursday Stand Up report. When off, those notes are hidden from recruiters.",
+  },
+  "admissions.arrival_approval_roles": {
+    label: "Who approves an arrival",
+    description:
+      "Who may approve a new resident's arrival before it is confirmed. The approval itself cannot be switched off; this only sets who may give it.",
+  },
 };
+
+/** How a census notice channel reads on the settings page. */
+export const CENSUS_NOTICE_CHANNEL_LABELS: Record<string, string> = {
+  in_app: "In Haven (Home and the Stand Up page)",
+  push: "Push notification",
+  sms: "Text message",
+};
+
+/** How an arrival approval role reads on the settings page. */
+export function arrivalApprovalRoleLabel(role: ArrivalApprovalRole): string {
+  return role === "facility_admin" ? "Administrator" : enumLabel(role);
+}
+
+const REASON_KEY_MAX = 40;
+
+/**
+ * A key for a new census reason, from its label: lowercase, anything but a
+ * letter or digit becomes "_", it starts with a letter, is at most 40
+ * characters, and is made unique against `taken` with a numeric suffix.
+ */
+export function censusReasonKeyFromLabel(label: string, taken: ReadonlySet<string>): string {
+  const base =
+    label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^[^a-z]+/, "")
+      .slice(0, REASON_KEY_MAX)
+      .replace(/_+$/, "") || "reason";
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n += 1) {
+    const suffix = `_${n}`;
+    const candidate = `${base.slice(0, REASON_KEY_MAX - suffix.length).replace(/_+$/, "")}${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
+
+/**
+ * For each facility, its latest row effective on or before today (the value
+ * the resolver uses there instead of the organization's).
+ */
+export function facilityOverridesInForce(
+  rows: OperatingRuleHistoryRow[],
+  facilities: OperatingRuleFacility[],
+  todayIso: string,
+): OperatingRuleFacilityOverride[] {
+  const latest = new Map<string, OperatingRuleHistoryRow>();
+  for (const row of rows) {
+    if (!row.facilityId || row.effectiveFrom > todayIso) continue;
+    const held = latest.get(row.facilityId);
+    if (
+      !held ||
+      row.effectiveFrom > held.effectiveFrom ||
+      (row.effectiveFrom === held.effectiveFrom && row.createdAt > held.createdAt)
+    ) {
+      latest.set(row.facilityId, row);
+    }
+  }
+  const names = new Map(facilities.map((f) => [f.id, f.name]));
+  return [...latest.values()]
+    .map((row) => ({
+      facilityId: row.facilityId!,
+      facilityName: names.get(row.facilityId!) ?? "Another facility",
+      value: row.value,
+      effectiveFrom: row.effectiveFrom,
+    }))
+    .sort((a, b) => a.facilityName.localeCompare(b.facilityName));
+}
 
 /** How a census notice role reads on the settings page. */
 export function censusNoticeRoleLabel(role: CensusNoticeRole): string {
@@ -127,8 +246,36 @@ export function describeOperatingRuleValue(key: OperatingRuleKey, value: unknown
       const roles = parseCensusNoticeRoles(value);
       return roles ? roles.map(censusNoticeRoleLabel).join(", ") : "Not readable";
     }
+    case "stand_up.census_reason_options": {
+      const reasons = parseCensusReasonOptions(value);
+      return reasons ? reasons.map((reason) => reason.label).join(", ") : "Not readable";
+    }
+    case "stand_up.census_notice_channels": {
+      const channels = parseCensusNoticeChannels(value);
+      if (!channels) return "Not readable";
+      return channels.length === 0 ? "No notices" : channels.map((channel) => CENSUS_NOTICE_CHANNEL_LABELS[channel]).join(", ");
+    }
+    case "stand_up.thursday_census_vs_monday": {
+      const on = parseSwitch(value);
+      if (on === null) return "Not readable";
+      return on
+        ? "On: Thursday's census and hospital figures are also compared with Monday's submitted figures plus the roster's change since Monday"
+        : "Off: Thursday is compared with the roster only";
+    }
+    case "stand_up.thursday_admission_notes_to_recruiters": {
+      const on = parseSwitch(value);
+      if (on === null) return "Not readable";
+      return on ? "On: recruiters read admission notes on the Thursday report" : "Off: admission notes are hidden from recruiters";
+    }
+    case "admissions.arrival_approval_roles": {
+      const roles = parseArrivalApprovalRoles(value);
+      return roles ? roles.map(arrivalApprovalRoleLabel).join(", ") : "Not readable";
+    }
   }
 }
+
+/** One row of the census reason editor. `key` is null for a reason added in the form. */
+export type CensusReasonDraftRow = { key: string | null; label: string };
 
 export type OperatingRuleDraft =
   | { key: "risk.score_bands"; critical: string; high: string; moderate: string }
@@ -137,7 +284,80 @@ export type OperatingRuleDraft =
   | { key: "resident_movement.backdate_window_days"; days: string }
   | { key: "stand_up.census_reason_window_days"; days: string }
   | { key: "stand_up.census_notice_lead_minutes"; minutes: string }
-  | { key: "stand_up.census_notice_roles"; roles: CensusNoticeRole[] };
+  | { key: "stand_up.census_notice_roles"; roles: CensusNoticeRole[] }
+  | { key: "stand_up.census_reason_options"; reasons: CensusReasonDraftRow[] }
+  | { key: "stand_up.census_notice_channels"; channels: string[] }
+  | { key: "stand_up.thursday_census_vs_monday"; on: boolean | null }
+  | { key: "stand_up.thursday_admission_notes_to_recruiters"; on: boolean | null }
+  | { key: "admissions.arrival_approval_roles"; roles: ArrivalApprovalRole[] };
+
+/** The form's starting state for a rule value (an unreadable value starts blank). */
+export function draftFromValue(key: OperatingRuleKey, value: unknown): OperatingRuleDraft {
+  switch (key) {
+    case "risk.score_bands": {
+      const bands = parseRiskScoreBands(value);
+      return {
+        key,
+        critical: bands ? String(bands.critical_below) : "",
+        high: bands ? String(bands.high_below) : "",
+        moderate: bands ? String(bands.moderate_below) : "",
+      };
+    }
+    case "survey_binder.due_window_days": {
+      const days = parseDueWindowDays(value);
+      return { key, days: days === null ? "" : String(days) };
+    }
+    case "compliance.score_alert_below_pct": {
+      const alert = parseScoreAlertBelowPct(value);
+      return { key, off: !alert || alert.off, belowPct: alert && !alert.off ? String(alert.belowPct) : "" };
+    }
+    case "resident_movement.backdate_window_days": {
+      const days = parseBackdateWindowDays(value);
+      return { key, days: days === null ? "" : String(days) };
+    }
+    case "stand_up.census_reason_window_days": {
+      const days = parseCensusReasonWindowDays(value);
+      return { key, days: days === null ? "" : String(days) };
+    }
+    case "stand_up.census_notice_lead_minutes": {
+      const minutes = parseCensusNoticeLeadMinutes(value);
+      return { key, minutes: minutes === null ? "" : String(minutes) };
+    }
+    case "stand_up.census_notice_roles":
+      return { key, roles: parseCensusNoticeRoles(value) ?? [] };
+    case "stand_up.census_reason_options":
+      return { key, reasons: (parseCensusReasonOptions(value) ?? []).map((reason) => ({ key: reason.key, label: reason.label })) };
+    case "stand_up.census_notice_channels":
+      return { key, channels: parseCensusNoticeChannels(value) ?? [] };
+    case "stand_up.thursday_census_vs_monday":
+    case "stand_up.thursday_admission_notes_to_recruiters":
+      return { key, on: parseSwitch(value) };
+    case "admissions.arrival_approval_roles":
+      return { key, roles: parseArrivalApprovalRoles(value) ?? [] };
+  }
+}
+
+/** The census reason list the database will accept, new rows keyed from their labels. */
+function censusReasonsFromDraft(rows: CensusReasonDraftRow[]): { ok: true; value: CensusReasonOption[] } | { ok: false; error: string } {
+  if (rows.length < 1 || rows.length > 12) return { ok: false, error: "Keep between 1 and 12 reasons." };
+  const labels = new Set<string>();
+  for (const row of rows) {
+    const label = row.label.trim();
+    if (label.length < 1 || label.length > 80) return { ok: false, error: "Give every reason a name of 1 to 80 characters." };
+    if (labels.has(label.toLowerCase())) return { ok: false, error: `"${label}" is listed twice. Give each reason a different name.` };
+    labels.add(label.toLowerCase());
+  }
+  const taken = new Set(rows.flatMap((row) => (row.key ? [row.key] : [])));
+  if (taken.size !== rows.filter((row) => row.key).length) return { ok: false, error: "Two reasons share a key. Reload the page and try again." };
+  const value = rows.map((row) => {
+    const label = row.label.trim();
+    if (row.key) return { key: row.key, label };
+    const key = censusReasonKeyFromLabel(label, taken);
+    taken.add(key);
+    return { key, label };
+  });
+  return parseCensusReasonOptions(value) ? { ok: true, value } : { ok: false, error: "These reasons cannot be saved. Check each name." };
+}
 
 /**
  * Turns the form into a value the database will accept, or a message saying
@@ -186,6 +406,24 @@ export function operatingRuleValueFromDraft(draft: OperatingRuleDraft): { ok: tr
     case "stand_up.census_notice_roles": {
       const roles = CENSUS_NOTICE_ROLE_CHOICES.filter((role) => draft.roles.includes(role));
       return roles.length > 0 ? { ok: true, value: roles } : { ok: false, error: "Choose at least one role." };
+    }
+    case "stand_up.census_reason_options":
+      return censusReasonsFromDraft(draft.reasons);
+    case "stand_up.census_notice_channels": {
+      if (draft.channels.some((channel) => !(CENSUS_NOTICE_CHANNEL_CHOICES as readonly string[]).includes(channel))) {
+        return { ok: false, error: "Push and text delivery are not available yet. Census notices are delivered in Haven." };
+      }
+      const channels = CENSUS_NOTICE_CHANNEL_CHOICES.filter((channel) => draft.channels.includes(channel));
+      return { ok: true, value: channels };
+    }
+    case "stand_up.thursday_census_vs_monday":
+    case "stand_up.thursday_admission_notes_to_recruiters":
+      return draft.on === null ? { ok: false, error: "Choose On or Off." } : { ok: true, value: draft.on };
+    case "admissions.arrival_approval_roles": {
+      const roles = ARRIVAL_APPROVAL_ROLE_CHOICES.filter((role) => draft.roles.includes(role));
+      return roles.length > 0
+        ? { ok: true, value: roles }
+        : { ok: false, error: "Choose at least one role. An arrival always needs an approval." };
     }
   }
 }

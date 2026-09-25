@@ -16,12 +16,30 @@ describe('census disagreement (COL-555)', () => {
   it('words the same fact the same way everywhere, with both numbers in the words', () => {
     const [open] = parseDisagreements([row()])!
     expect(chipText(open)).toBe('Monday Stand Up disagrees with the roster · Census: Stand Up 35, roster 33')
-    const [explained] = parseDisagreements([row({ state: 'explained' }, { state: 'explained', reason: 'change_not_entered', reason_at: '2026-09-21T13:00:00Z', reason_until: '2026-09-28T13:00:00Z' })])!
+    const [explained] = parseDisagreements([row({ state: 'explained' }, { state: 'explained', reason: 'change_not_entered', reason_label: 'Admission or discharge not entered in Haven', reason_at: '2026-09-21T13:00:00Z', reason_until: '2026-09-28T13:00:00Z' })])!
     expect(chipText(explained)).toBe('Monday Stand Up differs from the roster, explained · Census: Stand Up 35, roster 33 · reason: Admission or discharge not entered in Haven (Sep 21, until Sep 28)')
-    const [lapsed] = parseDisagreements([row({}, { reason: 'roster_not_current', reason_at: '2026-09-14T13:00:00Z', roster_changed_since_reason: true })])!
+    const [lapsed] = parseDisagreements([row({}, { reason: 'roster_not_current', reason_label: 'Roster not updated yet', reason_at: '2026-09-14T13:00:00Z', roster_changed_since_reason: true })])!
     expect(chipText(lapsed)).toContain('reason: Roster not updated yet (Sep 14, the roster has changed since)')
     const [late] = parseDisagreements([row({ unreconciled: true, meeting_day: 'thursday' })])!
     expect(chipText(late)).toBe('Thursday Stand Up census unreconciled · Census: Stand Up 35, roster 33')
+  })
+
+  it('names a reason by the label it was given with, from the facility setting (COL-555)', () => {
+    const [d] = parseDisagreements([row({ state: 'explained', reason_options: [{ key: 'awaiting_paperwork', label: 'Paperwork not back' }] },
+      { state: 'explained', reason: 'awaiting_paperwork', reason_label: 'Paperwork not back', reason_at: '2026-09-21T13:00:00Z', reason_until: '2026-09-28T13:00:00Z' })])!
+    expect(chipText(d)).toContain('reason: Paperwork not back (Sep 21, until Sep 28)')
+    expect(d.reason_options).toEqual([{ key: 'awaiting_paperwork', label: 'Paperwork not back' }])
+    // An unreadable reason list offers nothing rather than a list from code.
+    expect(parseDisagreements([row({ reason_options: [{ key: 'Bad Key', label: 'x' }] })])![0].reason_options).toEqual([])
+  })
+
+  it('words a Thursday check against Monday with Monday and the roster change (COL-751)', () => {
+    const [d] = parseDisagreements([row({ meeting_day: 'thursday', compares_with_monday: true }, {
+      against: 'monday', label: 'Census against Monday', stand_up: 35, roster: 34, monday: 33, roster_change_since_monday: 1 })])!
+    expect(d.compares_with_monday).toBe(true)
+    expect(d.figures[0].against).toBe('monday')
+    expect(chipText(d)).toBe("Thursday Stand Up disagrees with the roster · Census against Monday: Stand Up 35, Monday 33 with the roster's change since (+1) is 34")
+    expect(parseDisagreements([row({}, { against: 'tuesday' })])).toBeNull()
   })
 
   it('shows a chip only for open or explained disagreements', () => {

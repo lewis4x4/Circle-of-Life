@@ -1,3 +1,4 @@
+import type { RosterConfirmations } from './roster-census'
 /**
  * Stand Up meets more than once a week (COL-749 / COL-752). Monday is the weekly
  * report in `model.ts`; every other meeting has its own short figure set, read
@@ -42,6 +43,8 @@ export type MeetingReport = {
   updated_by?: string | null; updated_by_name?: string | null
   first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; last_submitted_by?: string | null
   monday_submitted: MondaySubmitted; not_started?: boolean
+  /** COL-555: what the roster said and any reason given, on the current revision (open period only). */
+  roster_confirmations?: RosterConfirmations
 }
 export type MeetingFacility = { id: string; name: string; open_week: string | null; window: MeetingWindow | null }
 export type MeetingWorkspace = {

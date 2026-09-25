@@ -8,7 +8,11 @@ import { StandUpRequestError } from './transport';
 const mocks = vi.hoisted(() => ({ request: vi.fn(), outOfHouse: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'org_admin' } }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
 // Census chips and notices read through the browser client; nothing is open in these fixtures.
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async () => ({ data: [], error: null }) }) }));
+// COL-555: the facility's census reasons are a setting, read through haven_operating_rule.
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async (name: string, args: Record<string, unknown> = {}) =>
+  name === 'haven_operating_rule' && args.p_rule_key === 'stand_up.census_reason_options'
+    ? { data: [{ value: [{ key: 'roster_not_current', label: 'Roster not updated yet' }, { key: 'change_not_entered', label: 'Admission or discharge not entered in Haven' }, { key: 'other', label: 'Other' }], rule_id: 'r', effective_from: '2026-09-25', facility_id: null }], error: null }
+    : { data: [], error: null } }) }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 vi.mock('@/lib/residents/out-of-house', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/residents/out-of-house')>()), fetchOutOfHouse: mocks.outOfHouse }));
 const workspace = { facilities: [{ id: 'a', name: 'Homewood' }, { id: 'b', name: 'Oakridge' }], reports: [] as StandUpReport[], current_week: '2026-09-14', can_import: false, server_now: '2026-09-14T12:30:00Z' };
@@ -671,7 +675,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').length).toBeGreaterThanOrEqual(2);
   });
   it('blocks a differing figure until a reason is chosen, then saves it as overridden', async () => {
-    withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current' }) } }));
+    withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current', override_reason_label: 'Roster not updated yet' }) } }));
     await start(); await choose(); await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)');
     vi.useFakeTimers();
     changeCensus('35');
@@ -736,7 +740,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     expect(screen.queryByText('Test Resident C')).not.toBeInTheDocument();
   });
   it('shows a past report as it was recorded and never asks the roster again for it', async () => {
-    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ id: 'old', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 35 }, roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current' }) } })] });
+    mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ id: 'old', week_start: '2026-09-07', values: { ...emptyValues(), current_total_census: 35 }, roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current', override_reason_label: 'Roster not updated yet' }) } })] });
     withRoster();
     await start(); await choose();
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
@@ -751,7 +755,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
   });
   it('marks an override on the all-facilities overview and says nothing for a confirmed figure', async () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [
-      report({ values: { ...emptyValues(), current_total_census: 35 }, roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'change_not_entered' }) } }),
+      report({ values: { ...emptyValues(), current_total_census: 35 }, roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'change_not_entered', override_reason_label: 'Admission or discharge not entered in Haven' }) } }),
       report({ id: 'r2', facility_id: 'b', values: { ...emptyValues(), current_total_census: 12 }, roster_confirmations: { current_total_census: confirmed({ confirmed: 12, suggested: 12 }) } }),
     ] });
     await start();

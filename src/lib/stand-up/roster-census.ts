@@ -1,4 +1,5 @@
 import type { MetricKey } from './model'
+import type { CensusReasonOption } from '@/lib/operating-rules/operating-rules'
 
 /**
  * COL-351: the Weekly Stand Up census and hospital figures are suggested from
@@ -36,19 +37,19 @@ export type RosterCensus = {
   server_now?: string
 }
 
-export const ROSTER_SOURCES = ['roster_confirmed', 'entered_no_roster', 'overridden'] as const
+/** differs_unexplained: a Thursday draft saved with a differing figure and no reason yet (COL-555). */
+export const ROSTER_SOURCES = ['roster_confirmed', 'entered_no_roster', 'overridden', 'differs_unexplained'] as const
 export type RosterSource = typeof ROSTER_SOURCES[number]
 
-/** Fixed override reasons. No free text: free text invites resident names. */
-export const OVERRIDE_REASONS = [
-  { key: 'roster_not_current', label: 'Roster not updated yet' },
-  { key: 'change_not_entered', label: 'Admission or discharge not entered in Haven' },
-  { key: 'different_definition', label: 'Workbook counts census differently' },
-  { key: 'other', label: 'Other' },
-] as const
-export type OverrideReason = typeof OVERRIDE_REASONS[number]['key']
-export const isOverrideReason = (value: string): value is OverrideReason => OVERRIDE_REASONS.some(reason => reason.key === value)
-export function overrideReasonLabel(reason: OverrideReason): string { return OVERRIDE_REASONS.find(item => item.key === reason)!.label }
+/**
+ * An override reason is a key from the facility's reason list, a setting
+ * (`stand_up.census_reason_options`, COL-555, migration 534), never a list in
+ * code. No free text: free text invites resident names. The server checks the
+ * key against the list in force and keeps the label it was given with.
+ */
+export type OverrideReason = string
+export const isOverrideReason = (value: string, options: readonly CensusReasonOption[] | null | undefined): value is OverrideReason =>
+  !!options && options.some(reason => reason.key === value)
 
 /** What the server recorded for one figure on one saved revision. */
 export type RosterConfirmation = {
@@ -56,6 +57,8 @@ export type RosterConfirmation = {
   suggested: number | null
   confirmed: number
   override_reason: OverrideReason | null
+  /** The reason's label when it was given (COL-555); absent from a server before migration 534. */
+  override_reason_label?: string | null
   roster_as_of: string | null
   confirmed_at: string
 }
@@ -118,7 +121,7 @@ export function expectedSource(roster: RosterCensus | null | undefined, key: Ros
 /** Neutral suffix for a saved figure: only an override says anything. */
 export function rosterSourceSuffix(confirmation: RosterConfirmation | undefined): string | null {
   if (!confirmation || confirmation.source !== 'overridden' || !confirmation.override_reason) return null
-  return `override: ${overrideReasonLabel(confirmation.override_reason)}`
+  return `override: ${confirmation.override_reason_label ?? 'reason recorded'}`
 }
 
 /** What a past report recorded at the time. The suggestion is never recomputed for a past meeting. */
@@ -127,5 +130,6 @@ export function recordedConfirmationLine(confirmation: RosterConfirmation | unde
   if (confirmation.source === 'entered_no_roster') return 'Entered without a Haven roster'
   const suggested = confirmation.suggested === null ? 'none' : confirmation.suggested.toLocaleString('en-US')
   if (confirmation.source === 'roster_confirmed') return `Confirmed from the roster (${suggested})`
+  if (confirmation.source === 'differs_unexplained') return `Roster suggested ${suggested} · no reason given yet`
   return `Roster suggested ${suggested} · ${rosterSourceSuffix(confirmation)}`
 }

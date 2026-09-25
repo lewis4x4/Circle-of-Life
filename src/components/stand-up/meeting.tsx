@@ -19,6 +19,8 @@ import { showsChip, type CensusDisagreement } from '@/lib/stand-up/census-disagr
 import Link from 'next/link';
 import { reportFigureLine, thursdayPrefill, thursdayPrintHref, type FacilityReport, type ThursdayReport } from '@/lib/stand-up/thursday-report';
 import { ThursdayReportSections } from './ThursdayReportSections';
+import { useCensusReasonOptions } from './useCensusReasonOptions';
+import { isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey } from '@/lib/stand-up/roster-census';
 
 type Fields = Record<ThursdayKey, string>;
 const fieldsFor = (values: ThursdayValues = emptyThursdayValues()): Fields =>
@@ -199,6 +201,26 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
   const [reconcileTarget, setReconcileTarget] = useState<CensusDisagreement | null>(null);
   const [disagreementTick, setDisagreementTick] = useState(0);
   const current = week === openWeek;
+  // COL-555: Thursday records a reason for a census or hospital figure that
+  // differs from the roster, from the facility's reason list (a setting). A
+  // draft may keep the difference open; submitting needs the reason.
+  const [roster, setRoster] = useState<RosterCensus | null>(null);
+  const [rosterReasons, setRosterReasons] = useState<Partial<Record<RosterFieldKey, OverrideReason>>>({});
+  const [rosterTick, setRosterTick] = useState(0);
+  const reasonOptions = useCensusReasonOptions(facility.id, current && editable);
+  useEffect(() => {
+    if (!current || !editable) return;
+    let live = true;
+    standUpRequest<RosterCensus>('roster', { facility_id: facility.id })
+      .then(data => { if (live && data.facility_id === facility.id) setRoster(data); })
+      .catch(() => { if (live) setRoster(null); });
+    return () => { live = false; };
+  }, [current, editable, facility.id, rosterTick]);
+  const differsFromRoster = (key: RosterFieldKey): number | null => {
+    const suggested = rosterSuggestion(roster, key);
+    const value = typed ? typed[key] : null;
+    return suggested !== null && value !== null && value !== suggested ? suggested : null;
+  };
   useEffect(() => {
     if (!autoReconcile || !current) return;
     let live = true;
@@ -209,10 +231,18 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
     return () => { live = false; };
   }, [autoReconcile, current, facility.id, day]);
 
-  const save = async (status: 'draft' | 'ready') => {
+  const save = async (status: 'draft' | 'ready', reasonsOverride?: Partial<Record<RosterFieldKey, OverrideReason>>) => {
     if (!typed) { setProblem(parseError); return; }
     if (historical && !reason.trim()) { setProblem('A past meeting needs a written reason for the change.'); return; }
-    const payload: Record<string, unknown> = { meeting_day: day, facility_id: facility.id, week_start: week, expected_version: saved?.version ?? 0, status, values: typed, ...(historical ? { reason: reason.trim() } : {}) };
+    const chosen = reasonsOverride ?? rosterReasons;
+    const unexplained = current ? (['current_total_census', 'hospital_and_rehab_total'] as RosterFieldKey[]).filter(key => differsFromRoster(key) !== null && !chosen[key]) : [];
+    if (status === 'ready' && unexplained.length) {
+      setProblem(unexplained.map(key => `${key === 'current_total_census' ? 'Current census' : 'Residents at hospital or rehab'} differs from the roster (${differsFromRoster(key)}). Choose why it is different, or use the roster figure.`).join(' '));
+      return;
+    }
+    const rosterBlock = current ? Object.fromEntries((['current_total_census', 'hospital_and_rehab_total'] as RosterFieldKey[])
+      .filter(key => differsFromRoster(key) !== null && chosen[key]).map(key => [key, { override_reason: chosen[key] }])) : {};
+    const payload: Record<string, unknown> = { meeting_day: day, facility_id: facility.id, week_start: week, expected_version: saved?.version ?? 0, status, values: typed, ...(historical ? { reason: reason.trim() } : {}), ...(Object.keys(rosterBlock).length ? { roster: rosterBlock } : {}) };
     // The same attempt keeps its request id so a retried save returns its receipt instead of saving twice.
     const key = JSON.stringify(payload);
     if (request.current?.key !== key) request.current = { key, id: crypto.randomUUID() };
@@ -221,6 +251,7 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
       const result = await standUpRequest<MeetingReport>('save', { ...payload, request_id: request.current.id });
       request.current = null;
       setSaved(result.not_started ? undefined : result); setFields(fieldsFor(result.values)); setChanged(false);
+      setDisagreementTick(tick => tick + 1); setRosterTick(tick => tick + 1);
       onSaved(result);
       setMessage(status === 'ready' ? `Submitted ${meetingStamp(result.last_submitted_at)}.` : 'Draft saved.');
     } catch (cause) {
@@ -241,8 +272,10 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
       action={d => <Button variant="outline" size="sm" onClick={() => setReconcileTarget(d)}>Reconcile</Button>} />}
     {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={next => { if (!next) setReconcileTarget(null); }} canChange={editable}
       onUseRoster={figure => { if (figure.roster === null) return; setFields(prev => ({ ...prev, [figure.key]: String(figure.roster) })); setChanged(true); setMessage(''); }}
-      explainUnavailable={`The ${MEETING_LABELS[day]} report records no reasons. Put the roster’s figure on it, or fix the roster.`}
-      onCheckAgain={() => { setDisagreementTick(tick => tick + 1); setReconcileTarget(null); }} />}
+      canFixRoster={canEdit}
+      onExplain={editable && current ? (figure, why) => { const next = { ...rosterReasons, [figure.key]: why }; setRosterReasons(next); void save('draft', next); } : undefined}
+      explainUnavailable={`A reason can be recorded only on the open ${MEETING_LABELS[day]} report, by its administrator. Put the roster’s figure on it, or fix the roster.`}
+      onCheckAgain={() => { setDisagreementTick(tick => tick + 1); setRosterTick(tick => tick + 1); }} />}
     <p className="text-sm text-muted-foreground">{monday ? `Compared with what was submitted on Monday, ${meetingStamp(monday.submitted_at)}.` : 'Monday’s report for this week was not submitted, so there is nothing to compare with.'}</p>
     <div className="overflow-x-auto rounded border border-border">
       <table className="w-full text-left text-sm">
@@ -256,7 +289,15 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
               {week === openWeek && reportFigureLine(haven, figure.key, value => thursdayDisplay(figure.key, value)) && <span className="block text-xs font-normal">{reportFigureLine(haven, figure.key, value => thursdayDisplay(figure.key, value))}</span>}</th>
             <td className="p-3">{editable
               ? <Input aria-label={figure.label} inputMode={figure.money ? 'decimal' : 'numeric'} value={fields[figure.key]} disabled={busy} onChange={e => { const value = e.target.value; setFields(current => ({ ...current, [figure.key]: value })); setChanged(true); setMessage(''); }} />
-              : <span className="tabular-nums">{thursdayDisplay(figure.key, saved?.values[figure.key])}</span>}</td>
+              : <span className="tabular-nums">{thursdayDisplay(figure.key, saved?.values[figure.key])}</span>}
+              {isRosterFieldKey(figure.key) && editable && week === openWeek && differsFromRoster(figure.key) !== null && <span className="mt-2 block space-y-1">
+                <label htmlFor={`thursday-${figure.key}-reason`} className="block text-xs font-medium">Why is this different from the roster ({differsFromRoster(figure.key)})?</label>
+                <select id={`thursday-${figure.key}-reason`} disabled={busy} value={rosterReasons[figure.key] ?? ''} className="block min-h-10 w-full max-w-xs rounded border border-border bg-background px-3 text-sm"
+                  onChange={e => { const value = e.target.value; setRosterReasons(prev => ({ ...prev, [figure.key]: isOverrideReason(value, reasonOptions) ? value : undefined })); setChanged(true); setMessage(''); }}>
+                  <option value="">{reasonOptions ? 'Choose a reason' : 'Reasons could not be loaded'}</option>{(reasonOptions ?? []).map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </select>
+              </span>}
+              {isRosterFieldKey(figure.key) && recordedConfirmationLine(saved?.roster_confirmations?.[figure.key]) && <span className="mt-1 block text-xs text-muted-foreground">{recordedConfirmationLine(saved?.roster_confirmations?.[figure.key])}</span>}</td>
             <td className="whitespace-nowrap p-3 tabular-nums">{comparison.monday}</td>
             <td className="whitespace-nowrap p-3 tabular-nums">{comparison.change ?? '—'}</td>
           </tr>

@@ -1,4 +1,5 @@
-import { OVERRIDE_REASONS, isOverrideReason, type OverrideReason } from './roster-census'
+import type { OverrideReason } from './roster-census'
+import { parseCensusReasonOptions, type CensusReasonOption } from '@/lib/operating-rules/operating-rules'
 import { MEETING_LABELS, isMeetingDay, type MeetingDay } from './meetings'
 import { easternStamp } from './model'
 
@@ -14,11 +15,22 @@ export type DisagreementState = typeof DISAGREEMENT_STATES[number]
 
 export type DisagreementFigure = {
   key: 'current_total_census' | 'hospital_and_rehab_total'
+  /**
+   * What the figure is compared with: the live roster, or (Thursday, when the
+   * facility turns on stand_up.thursday_census_vs_monday) Monday's submitted
+   * figure plus the roster's change since, which is then `roster` (COL-751).
+   */
+  against: 'roster' | 'monday'
   label: string
   stand_up: number | null
   roster: number | null
+  /** Monday's submitted figure, on a comparison against Monday. */
+  monday: number | null
+  roster_change_since_monday: number | null
   state: DisagreementState
   reason: OverrideReason | null
+  /** The reason's label as it was given (the facility's list may have changed since). */
+  reason_label: string | null
   reason_at: string | null
   reason_until: string | null
   roster_changed_since_reason: boolean
@@ -34,8 +46,14 @@ export type CensusDisagreement = {
   unreconciled: boolean
   roster_as_of: string | null
   reason_window_days: number
+  /** The facility's census reasons in force today (COL-555, a setting). */
+  reason_options: CensusReasonOption[]
+  compares_with_monday: boolean
   figures: DisagreementFigure[]
 }
+
+/** A stable key for one figure's comparison, for lists and ids. */
+export const figureId = (figure: Pick<DisagreementFigure, 'key' | 'against'>): string => `${figure.key}-${figure.against}`
 
 /** What the signed-in person was told before a deadline and is still open (COL-751). */
 export type CensusNotice = {
@@ -60,10 +78,13 @@ function parseFigure(raw: unknown): DisagreementFigure | null {
   if ((row.key !== 'current_total_census' && row.key !== 'hospital_and_rehab_total') || !isState(row.state) || typeof row.label !== 'string') return null
   const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : null)
   const text = (value: unknown) => (typeof value === 'string' ? value : null)
+  if (row.against !== undefined && row.against !== 'roster' && row.against !== 'monday') return null
   return {
-    key: row.key, label: row.label, state: row.state,
+    key: row.key, against: row.against === 'monday' ? 'monday' : 'roster', label: row.label, state: row.state,
     stand_up: num(row.stand_up), roster: num(row.roster),
-    reason: typeof row.reason === 'string' && isOverrideReason(row.reason) ? row.reason : null,
+    monday: num(row.monday), roster_change_since_monday: num(row.roster_change_since_monday),
+    reason: typeof row.reason === 'string' && /^[a-z][a-z0-9_]{0,39}$/.test(row.reason) ? row.reason : null,
+    reason_label: text(row.reason_label),
     reason_at: text(row.reason_at), reason_until: text(row.reason_until),
     roster_changed_since_reason: row.roster_changed_since_reason === true,
   }
@@ -86,6 +107,8 @@ export function parseDisagreements(data: unknown): CensusDisagreement[] | null {
       state: row.state, unreconciled: row.unreconciled === true,
       roster_as_of: typeof row.roster_as_of === 'string' ? row.roster_as_of : null,
       reason_window_days: typeof row.reason_window_days === 'number' ? row.reason_window_days : 0,
+      reason_options: parseCensusReasonOptions(row.reason_options) ?? [],
+      compares_with_monday: row.compares_with_monday === true,
       figures: figures as DisagreementFigure[],
     })
   }
@@ -114,7 +137,8 @@ export function parseNotices(data: unknown): CensusNotice[] | null {
 /** A disagreement worth showing: open, or explained by a reason still in force. */
 export const showsChip = (d: CensusDisagreement): boolean => d.state === 'open' || d.state === 'explained'
 
-const reasonLabel = (reason: OverrideReason): string => OVERRIDE_REASONS.find(item => item.key === reason)!.label
+const reasonLabel = (figure: DisagreementFigure): string => figure.reason_label ?? 'reason recorded'
+const signed = (n: number): string => (n > 0 ? `+${n}` : String(n))
 const monthDay = (iso: string): string => new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' }).format(new Date(iso))
 
 /**
@@ -130,12 +154,14 @@ export function chipText(d: CensusDisagreement): string {
       ? `${MEETING_LABELS[d.meeting_day]} Stand Up differs from the roster, explained`
       : `${MEETING_LABELS[d.meeting_day]} Stand Up disagrees with the roster`
   const parts = differing.map(figure => {
-    const numbers = `${figure.label}: Stand Up ${figure.stand_up ?? 'blank'}, roster ${figure.roster ?? 'none'}`
+    const numbers = figure.against === 'monday'
+      ? `${figure.label}: Stand Up ${figure.stand_up ?? 'blank'}, Monday ${figure.monday ?? 'none'} with the roster's change since (${signed(figure.roster_change_since_monday ?? 0)}) is ${figure.roster ?? 'none'}`
+      : `${figure.label}: Stand Up ${figure.stand_up ?? 'blank'}, roster ${figure.roster ?? 'none'}`
     if (!figure.reason || !figure.reason_at) return numbers
     const tail = figure.state === 'explained' && figure.reason_until
       ? `until ${monthDay(figure.reason_until)}`
       : figure.roster_changed_since_reason ? 'the roster has changed since' : 'no longer in force'
-    return `${numbers} · reason: ${reasonLabel(figure.reason)} (${monthDay(figure.reason_at)}, ${tail})`
+    return `${numbers} · reason: ${reasonLabel(figure)} (${monthDay(figure.reason_at)}, ${tail})`
   })
   return [lead, ...parts].join(' · ')
 }

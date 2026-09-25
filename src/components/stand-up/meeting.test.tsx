@@ -8,7 +8,11 @@ import { StandUpRequestError } from './transport';
 const mocks = vi.hoisted(() => ({ request: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'facility_admin' } }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
 // Census chips and notices read through the browser client; nothing is open in these fixtures.
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async () => ({ data: [], error: null }) }) }));
+// COL-555: the facility's census reasons are a setting, read through haven_operating_rule.
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async (name: string, args: Record<string, unknown> = {}) =>
+  name === 'haven_operating_rule' && args.p_rule_key === 'stand_up.census_reason_options'
+    ? { data: [{ value: [{ key: 'roster_not_current', label: 'Roster not updated yet' }, { key: 'change_not_entered', label: 'Admission or discharge not entered in Haven' }, { key: 'other', label: 'Other' }], rule_id: 'r', effective_from: '2026-09-25', facility_id: null }], error: null }
+    : { data: [], error: null } }) }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 
 const monday = { facilities: [{ id: 'a', name: 'Homewood' }], reports: [], current_week: '2026-09-21', can_import: false, server_now: '2026-09-24T12:30:00Z' };
@@ -107,11 +111,40 @@ describe('Stand Up meets Monday and Thursday (COL-752)', () => {
     mocks.request.mockImplementationOnce(async () => saved());
     fireEvent.click(screen.getByRole('button', { name: 'Submit Thursday figures' }));
     await screen.findByText(/^Submitted September 24/);
-    const [action, payload] = mocks.request.mock.calls.at(-1)!;
+    // The roster is read again after a save; the save is the last 'save' call.
+    const [action, payload] = mocks.request.mock.calls.filter(call => call[0] === 'save').at(-1)!;
     expect(action).toBe('save');
     expect(payload).toMatchObject({ meeting_day: 'thursday', facility_id: 'a', week_start: '2026-09-21', expected_version: 0, status: 'ready',
       values: { current_ar_cents: 11710800, current_total_census: 36, departures_since_monday: 2, hospital_and_rehab_total: 3, hospital_total: 1, rehab_total: 2 } });
     expect(typeof payload.request_id).toBe('string');
+  });
+
+  it('asks why Thursday census differs from the roster, refuses to submit without it, and records it (COL-555)', async () => {
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday() : monday;
+      if (action === 'report' && payload.meeting_day === 'thursday') return thursdayReport;
+      if (action === 'roster') return { facility_id: 'a', in_house_count: 34, hospital_hold_count: 3, loa_count: 1, roster_census_count: 38, resident_count_in_haven: 40, roster_as_of: '2026-09-23T12:00:00Z' };
+      if (action === 'save') return saved({ values: payload.values as MeetingReport['values'] });
+      throw new Error('Unexpected operation');
+    });
+    await openThursday();
+    fireEvent.change(screen.getByLabelText('Current A/R'), { target: { value: '117,108.00' } });
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '36' } });
+    fireEvent.change(screen.getByLabelText('Departures since Monday'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Residents at hospital or rehab'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('At a hospital'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('In rehab'), { target: { value: '2' } });
+    const reason = await screen.findByLabelText('Why is this different from the roster (38)?');
+    expect(screen.queryByLabelText(/Why is this different from the roster \(3\)/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Thursday figures' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Current census differs from the roster (38). Choose why it is different, or use the roster figure.');
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+    await waitFor(() => expect(within(reason).getByRole('option', { name: 'Admission or discharge not entered in Haven' })).toBeInTheDocument());
+    fireEvent.change(reason, { target: { value: 'change_not_entered' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Thursday figures' }));
+    await screen.findByText(/^Submitted September 24/);
+    const [, payload] = mocks.request.mock.calls.filter(call => call[0] === 'save').at(-1)!;
+    expect(payload.roster).toEqual({ current_total_census: { override_reason: 'change_not_entered' } });
   });
 
   it('says Monday was not submitted rather than showing a change of zero', async () => {
