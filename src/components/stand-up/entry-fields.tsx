@@ -4,7 +4,8 @@ import { METRICS, METRIC_KEYS, SECTIONS, dollars, emptyValues, metricDisplay, fi
 import { DERIVED_NOTES, SECTION_NOTES, fieldHelp, uncheckedNote, sectionUncheckedCount } from '@/lib/stand-up/field-definitions';
 import { legacyOvertimeToMinutes, overtimeMinuteParts, overtimePartsToLegacy } from '@/lib/stand-up/duration';
 import { PREFILL_OVERRIDE_REASONS, expectedPrefillSource, isPrefillKey, isPrefillOverrideReason, prefillIssueMessage, prefillLine, prefillValue, recordedPrefillLine, type MondayPrefill, type PrefillConfirmations, type PrefillKey, type PrefillOverrideReason } from '@/lib/stand-up/prefill';
-import { NO_ROSTER_TEXT, OVERRIDE_REASONS, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterAsOfLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterConfirmations, type RosterFieldKey } from '@/lib/stand-up/roster-census';
+import type { CensusReasonOption } from '@/lib/operating-rules/operating-rules';
+import { NO_ROSTER_TEXT, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterAsOfLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterConfirmations, type RosterFieldKey } from '@/lib/stand-up/roster-census';
 
 /**
  * The roster suggestion for the open reporting period. `data` is undefined
@@ -16,6 +17,8 @@ export type RosterEntry = {
   reasons: Partial<Record<RosterFieldKey, OverrideReason>>;
   onReason: (key: RosterFieldKey, reason: OverrideReason | null) => void;
   onUseRoster: (key: RosterFieldKey) => void;
+  /** COL-555: the facility's census reasons (a setting); null when they could not be read. */
+  reasonOptions: CensusReasonOption[] | null;
 };
 /**
  * COL-753: Haven's own figures for the open reporting period. `data` is
@@ -122,8 +125,8 @@ export function EntryQuestions({ fields, onChange, disabled, readOnly = false, w
       <span className="block text-xs text-muted-foreground">{rosterAsOfLine(roster.data)}</span>
       {differs && <span className="block space-y-1 pt-1">
         <label htmlFor={rosterReasonId(key)} className="block text-xs font-medium">Why is this different?</label>
-        <select id={rosterReasonId(key)} disabled={disabled || readOnly} value={reason ?? ''} aria-invalid={reason ? undefined : true} aria-describedby={reason ? undefined : rosterIssueId(key)} onChange={event => roster.onReason(key, isOverrideReason(event.target.value) ? event.target.value : null)} className="block min-h-10 w-full max-w-sm rounded border border-border bg-background px-3 text-sm">
-          <option value="">Choose a reason</option>{OVERRIDE_REASONS.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+        <select id={rosterReasonId(key)} disabled={disabled || readOnly} value={reason ?? ''} aria-invalid={reason ? undefined : true} aria-describedby={reason ? undefined : rosterIssueId(key)} onChange={event => roster.onReason(key, isOverrideReason(event.target.value, roster.reasonOptions) ? event.target.value : null)} className="block min-h-10 w-full max-w-sm rounded border border-border bg-background px-3 text-sm">
+          <option value="">{roster.reasonOptions ? 'Choose a reason' : 'Reasons could not be loaded'}</option>{(roster.reasonOptions ?? []).map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
         </select>
         {!reason && <span id={rosterIssueId(key)} className="block text-sm text-muted-foreground">{rosterIssueMessage(key, suggested)}</span>}
       </span>}

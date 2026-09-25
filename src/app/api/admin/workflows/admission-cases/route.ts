@@ -3,7 +3,7 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
 import { logError } from "@/lib/observability/logger";
-import { ensureForm1823Checklist, emitWorkflowEvent, syncLeadToApplicationPending } from "@/lib/workflows/workflow-events";
+import { ensureForm1823Checklist } from "@/lib/workflows/workflow-events";
 
 const ALLOWED_ROLES = [
   "owner",
@@ -58,6 +58,9 @@ const ADMISSION_CASE_SOURCES: AdmissionCaseSource[] = [
   "other",
 ];
 
+const REFERRAL_INTAKE_ELSEWHERE =
+  "Start an intake from a referral on the referral's own intake so the resident, case and referral stay in step.";
+
 type RequestBody = {
   create_request_id?: string;
   facility_id?: string;
@@ -99,6 +102,13 @@ export async function POST(request: NextRequest) {
 
   if (!body.facility_id || !body.resident_id) {
     return NextResponse.json({ error: "facility_id and resident_id are required" }, { status: 400 });
+  }
+
+  // COL-333: an intake from a referral is one transaction on its own route
+  // (POST /api/admin/workflows/admission-intake), so the resident, the case and
+  // the referral cannot fall out of step here.
+  if (body.referral_lead_id) {
+    return NextResponse.json({ error: REFERRAL_INTAKE_ELSEWHERE }, { status: 409 });
   }
 
   const intent: "draft" | "submit" = body.create_intent === "draft" ? "draft" : "submit";
@@ -172,19 +182,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Resident not found in facility" }, { status: 400 });
   }
 
-  if (body.referral_lead_id) {
-    const { data: lead, error: leadError } = await actor.admin
-      .from("referral_leads")
-      .select("id, facility_id")
-      .eq("id", body.referral_lead_id)
-      .is("deleted_at", null)
-      .maybeSingle();
-
-    if (leadError || !lead || lead.facility_id !== body.facility_id) {
-      return NextResponse.json({ error: "Referral lead not found in facility" }, { status: 400 });
-    }
-  }
-
   const payerSource =
     body.anticipated_payer_source && String(body.anticipated_payer_source).trim()
       ? (body.anticipated_payer_source as AnticipatedPayerSource)
@@ -212,7 +209,7 @@ export async function POST(request: NextRequest) {
       organization_id: facility.organization_id,
       facility_id: body.facility_id,
       resident_id: body.resident_id,
-      referral_lead_id: body.referral_lead_id ?? null,
+      referral_lead_id: null,
       bed_id: bedId,
       target_move_in_date: moveInDate,
       notes: body.notes ?? null,
@@ -251,30 +248,6 @@ export async function POST(request: NextRequest) {
       facilityId: inserted.facility_id,
       admissionCaseId: inserted.id,
       actorId: actor.id,
-    });
-  }
-
-  if (intent === "submit" && inserted.referral_lead_id) {
-    await syncLeadToApplicationPending(actor.client, {
-      leadId: inserted.referral_lead_id,
-      admissionCaseId: inserted.id,
-    });
-
-    await emitWorkflowEvent(actor.admin, {
-      organization_id: inserted.organization_id,
-      facility_id: inserted.facility_id,
-      referral_lead_id: inserted.referral_lead_id,
-      admission_case_id: inserted.id,
-      resident_id: inserted.resident_id,
-      event_type: "referral_admission_started",
-      source_module: "admissions",
-      event_key: `referral-admission-started:${inserted.id}`,
-      created_by: actor.id,
-      payload_json: {
-        status: "pending_clearance",
-        target_move_in_date: body.target_move_in_date ?? null,
-        bed_id: body.bed_id ?? null,
-      },
     });
   }
 

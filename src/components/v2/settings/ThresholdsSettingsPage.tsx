@@ -33,9 +33,9 @@ export async function ThresholdsSettingsPage() {
           },
           {
             id: "operating-rules",
-            label: "Organization rules",
+            label: "Operating rules",
             description:
-              "Dated rules for the whole organization: risk score bands, the survey binder look-ahead, and the compliance pass-rate alert. A change takes effect on the date you choose and keeps its history.",
+              "Dated rules such as the risk score bands, the survey binder look-ahead, the compliance alert, the Stand Up census rules and who approves an arrival. Set a rule for the whole organization, or for one facility to override it there. A change takes effect on the date you choose and keeps its history.",
             body: <OperatingRulesEditor load={operatingRules} />,
           },
         ]}

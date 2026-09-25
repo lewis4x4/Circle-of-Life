@@ -36,6 +36,9 @@ const trustedArrivalErrors = [
   "The selected bed is reserved for another admission",
   "The selected bed is occupied by another resident",
   "The bed is unavailable for arrival",
+  "An administrator must approve the current readiness before arrival",
+  "You no longer have access to confirm this arrival",
+  "The arrival time must fall on the arrival date",
 ];
 
 describe("admission arrival error boundary", () => {

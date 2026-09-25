@@ -172,6 +172,9 @@ DO $$ DECLARE f record; admission uuid; fixture_bed uuid:=gen_random_uuid(); roo
  -- This RPC is service-only in production; preserve the validated business
  -- actor argument while exercising arrival without an end-user JWT.
  PERFORM set_config('request.jwt.claims','{}',true);
+ -- COL-333: an administrator approves the current readiness before the arrival.
+ BEGIN PERFORM confirm_admission_arrival_review(admission,f.actor,f.business_today); RAISE EXCEPTION 'Arrival accepted without approval'; EXCEPTION WHEN insufficient_privilege THEN IF SQLERRM<>'An administrator must approve the current readiness before arrival' THEN RAISE; END IF; END;
+ PERFORM admission_arrival_approve(admission,f.actor,haven.admission_arrival_readiness(admission)->>'fingerprint',gen_random_uuid());
  PERFORM confirm_admission_arrival_review(admission,f.actor,f.business_today);
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',f.actor,'session_id',f.actor_session,
    'role','authenticated','auth_claim_version',(SELECT auth_claim_version FROM user_profiles WHERE id=f.actor))::text,true);

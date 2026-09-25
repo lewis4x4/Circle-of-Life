@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { describeOperatingRuleValue, operatingRuleValueFromDraft } from "./operating-rules-settings";
+import {
+  censusReasonKeyFromLabel,
+  describeOperatingRuleValue,
+  draftFromValue,
+  facilityOverridesInForce,
+  operatingRuleValueFromDraft,
+} from "./operating-rules-settings";
 
 describe("describeOperatingRuleValue", () => {
   it("names each rule's value", () => {
@@ -77,11 +83,159 @@ describe("Stand Up census settings (COL-555 / COL-751)", () => {
 
   it("holds the same keys and bounds as the database", async () => {
     const { readFileSync } = await import("node:fs");
-    const sql = readFileSync(`${process.cwd()}/supabase/migrations/523_census_disagreement_notice.sql`, "utf8");
-    const { OPERATING_RULE_KEYS, CENSUS_NOTICE_ROLE_CHOICES } = await import("./operating-rules");
+    const sql = readFileSync(`${process.cwd()}/supabase/migrations/534_stand_up_census_reason_settings.sql`, "utf8");
+    const { OPERATING_RULE_KEYS, CENSUS_NOTICE_ROLE_CHOICES, ARRIVAL_APPROVAL_ROLE_CHOICES } = await import("./operating-rules");
     for (const key of OPERATING_RULE_KEYS) expect(sql).toContain(`'${key}'`);
     expect(sql).toContain(`NOT IN (${CENSUS_NOTICE_ROLE_CHOICES.map((role) => `'${role}'`).join(", ")})`);
+    expect(sql).toContain(`NOT IN (${ARRIVAL_APPROVAL_ROLE_CHOICES.map((role) => `'${role}'`).join(", ")})`);
     expect(sql).toContain("NOT BETWEEN 0 AND 60");
     expect(sql).toContain("NOT BETWEEN 0 AND 1440");
+    expect(sql).toContain("^[a-z][a-z0-9_]{0,39}$");
+  });
+});
+
+describe("Stand Up census reasons (COL-555, migration 534)", () => {
+  const reasons = [
+    { key: "roster_not_current", label: "Roster not updated yet" },
+    { key: "other", label: "Other" },
+  ];
+
+  it("describes the list as its labels", () => {
+    expect(describeOperatingRuleValue("stand_up.census_reason_options", reasons)).toBe("Roster not updated yet, Other");
+    expect(describeOperatingRuleValue("stand_up.census_reason_options", [])).toBe("Not readable");
+  });
+
+  it("derives a key from the label: lowercase, underscores, starts with a letter, at most 40 characters", () => {
+    expect(censusReasonKeyFromLabel("Hospital hold not closed", new Set())).toBe("hospital_hold_not_closed");
+    expect(censusReasonKeyFromLabel("  3rd-party count (DCF)!  ", new Set())).toBe("rd_party_count_dcf");
+    expect(censusReasonKeyFromLabel("123", new Set())).toBe("reason");
+    const long = censusReasonKeyFromLabel("A".repeat(60), new Set());
+    expect(long).toBe("a".repeat(40));
+    expect(long).toMatch(/^[a-z][a-z0-9_]{0,39}$/);
+  });
+
+  it("makes a derived key unique with a numeric suffix", () => {
+    expect(censusReasonKeyFromLabel("Other", new Set(["other"]))).toBe("other_2");
+    expect(censusReasonKeyFromLabel("Other", new Set(["other", "other_2"]))).toBe("other_3");
+    const taken = new Set(["a".repeat(40)]);
+    const key = censusReasonKeyFromLabel("a".repeat(45), taken);
+    expect(key).toBe(`${"a".repeat(38)}_2`);
+    expect(key).toMatch(/^[a-z][a-z0-9_]{0,39}$/);
+  });
+
+  it("keeps existing keys, keys new rows from their labels and trims labels", () => {
+    const draft = draftFromValue("stand_up.census_reason_options", reasons);
+    expect(draft).toEqual({ key: "stand_up.census_reason_options", reasons });
+    if (draft.key !== "stand_up.census_reason_options") throw new Error("wrong draft");
+    const result = operatingRuleValueFromDraft({
+      ...draft,
+      reasons: [
+        { key: "roster_not_current", label: "Roster behind  " },
+        { key: "other", label: "Other" },
+        { key: null, label: " Other reason " },
+        { key: null, label: "Other!" },
+      ],
+    });
+    expect(result).toEqual({
+      ok: true,
+      value: [
+        { key: "roster_not_current", label: "Roster behind" },
+        { key: "other", label: "Other" },
+        { key: "other_reason", label: "Other reason" },
+        { key: "other_2", label: "Other!" },
+      ],
+    });
+  });
+
+  it("refuses an empty list, more than 12, blank labels and repeated labels", () => {
+    const fromRows = (rows: Array<{ key: string | null; label: string }>) =>
+      operatingRuleValueFromDraft({ key: "stand_up.census_reason_options", reasons: rows });
+    expect(fromRows([]).ok).toBe(false);
+    expect(fromRows(Array.from({ length: 13 }, (_, i) => ({ key: null, label: `Reason ${i}` }))).ok).toBe(false);
+    expect(fromRows(Array.from({ length: 12 }, (_, i) => ({ key: null, label: `Reason ${i}` }))).ok).toBe(true);
+    expect(fromRows([{ key: null, label: "   " }]).ok).toBe(false);
+    expect(fromRows([{ key: null, label: "x".repeat(81) }]).ok).toBe(false);
+    expect(fromRows([{ key: "other", label: "Other" }, { key: null, label: "other" }]).ok).toBe(false);
+  });
+});
+
+describe("Stand Up census notice delivery", () => {
+  it("describes in-app delivery and no notices", () => {
+    expect(describeOperatingRuleValue("stand_up.census_notice_channels", ["in_app"])).toBe("In Haven (Home and the Stand Up page)");
+    expect(describeOperatingRuleValue("stand_up.census_notice_channels", [])).toBe("No notices");
+    expect(describeOperatingRuleValue("stand_up.census_notice_channels", ["push"])).toBe("Not readable");
+  });
+
+  it("stores [] for no notices and refuses anything but in_app", () => {
+    expect(operatingRuleValueFromDraft({ key: "stand_up.census_notice_channels", channels: [] })).toEqual({ ok: true, value: [] });
+    expect(operatingRuleValueFromDraft({ key: "stand_up.census_notice_channels", channels: ["in_app"] })).toEqual({ ok: true, value: ["in_app"] });
+    expect(operatingRuleValueFromDraft({ key: "stand_up.census_notice_channels", channels: ["in_app", "push"] }).ok).toBe(false);
+    expect(operatingRuleValueFromDraft({ key: "stand_up.census_notice_channels", channels: ["sms"] }).ok).toBe(false);
+    expect(operatingRuleValueFromDraft({ key: "stand_up.census_notice_channels", channels: ["email"] }).ok).toBe(false);
+  });
+});
+
+describe("Thursday switches", () => {
+  it("describes on and off in plain words", () => {
+    expect(describeOperatingRuleValue("stand_up.thursday_census_vs_monday", true)).toMatch(/^On: Thursday's census and hospital figures are also compared with Monday's/);
+    expect(describeOperatingRuleValue("stand_up.thursday_census_vs_monday", false)).toBe("Off: Thursday is compared with the roster only");
+    expect(describeOperatingRuleValue("stand_up.thursday_admission_notes_to_recruiters", true)).toMatch(/^On: recruiters read admission notes/);
+    expect(describeOperatingRuleValue("stand_up.thursday_admission_notes_to_recruiters", "yes")).toBe("Not readable");
+  });
+
+  it("stores a boolean and needs a choice", () => {
+    expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_census_vs_monday", on: true })).toEqual({ ok: true, value: true });
+    expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_admission_notes_to_recruiters", on: false })).toEqual({ ok: true, value: false });
+    expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_census_vs_monday", on: null }).ok).toBe(false);
+    expect(draftFromValue("stand_up.thursday_census_vs_monday", "junk")).toEqual({ key: "stand_up.thursday_census_vs_monday", on: null });
+  });
+});
+
+describe("Who approves an arrival (COL-333)", () => {
+  it("names the roles, with facility_admin as Administrator", () => {
+    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["owner", "facility_admin"])).toBe("Owner, Administrator");
+    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", [])).toBe("Not readable");
+    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["manager"])).toBe("Not readable");
+  });
+
+  it("needs at least one role and keeps the database order", () => {
+    expect(operatingRuleValueFromDraft({ key: "admissions.arrival_approval_roles", roles: [] }).ok).toBe(false);
+    expect(operatingRuleValueFromDraft({ key: "admissions.arrival_approval_roles", roles: ["facility_admin", "owner"] })).toEqual({
+      ok: true,
+      value: ["owner", "facility_admin"],
+    });
+  });
+});
+
+describe("facilityOverridesInForce", () => {
+  const row = (id: string, facilityId: string | null, effectiveFrom: string, value: unknown, createdAt = "2026-09-01T00:00:00Z") => ({
+    id,
+    ruleKey: "stand_up.thursday_census_vs_monday" as const,
+    facilityId,
+    value,
+    effectiveFrom,
+    changeReason: "why",
+    createdAt,
+  });
+
+  it("takes each facility's latest row on or before today, skipping organization and future rows", () => {
+    const out = facilityOverridesInForce(
+      [
+        row("1", null, "2026-09-20", false),
+        row("2", "f-b", "2026-09-10", true),
+        row("3", "f-b", "2026-09-20", false),
+        row("4", "f-a", "2026-09-30", true),
+        row("5", "f-a", "2026-09-01", true),
+      ],
+      [
+        { id: "f-a", name: "Alpha" },
+        { id: "f-b", name: "Beta" },
+      ],
+      "2026-09-25",
+    );
+    expect(out).toEqual([
+      { facilityId: "f-a", facilityName: "Alpha", value: true, effectiveFrom: "2026-09-01" },
+      { facilityId: "f-b", facilityName: "Beta", value: false, effectiveFrom: "2026-09-20" },
+    ]);
   });
 });

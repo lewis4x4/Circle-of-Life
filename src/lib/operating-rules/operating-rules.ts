@@ -27,6 +27,11 @@ export const OPERATING_RULE_KEYS = [
   "stand_up.census_reason_window_days",
   "stand_up.census_notice_lead_minutes",
   "stand_up.census_notice_roles",
+  "stand_up.census_reason_options",
+  "stand_up.census_notice_channels",
+  "stand_up.thursday_census_vs_monday",
+  "stand_up.thursday_admission_notes_to_recruiters",
+  "admissions.arrival_approval_roles",
 ] as const;
 
 export type OperatingRuleKey = (typeof OPERATING_RULE_KEYS)[number];
@@ -110,6 +115,78 @@ export type CensusNoticeRole = (typeof CENSUS_NOTICE_ROLE_CHOICES)[number];
 export function parseCensusNoticeRoles(value: unknown): CensusNoticeRole[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   return value.every((role) => (CENSUS_NOTICE_ROLE_CHOICES as readonly unknown[]).includes(role)) ? (value as CensusNoticeRole[]) : null;
+}
+
+/**
+ * COL-555: one reason an administrator may give for a Stand Up census that
+ * differs from the roster. The list is a facility setting
+ * (`stand_up.census_reason_options`, migration 534); keys never change meaning.
+ */
+export type CensusReasonOption = { key: string; label: string };
+
+const REASON_KEY = /^[a-z][a-z0-9_]{0,39}$/;
+
+/** The facility's reasons; null when the value is not a valid list (the database trigger enforces the same shape). */
+export function parseCensusReasonOptions(value: unknown): CensusReasonOption[] | null {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 12) return null;
+  const keys = new Set<string>();
+  const labels = new Set<string>();
+  const out: CensusReasonOption[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const row = item as Record<string, unknown>;
+    if (Object.keys(row).length !== 2 || typeof row.key !== "string" || typeof row.label !== "string") return null;
+    const label = row.label;
+    if (!REASON_KEY.test(row.key) || label.trim() !== label || label.length < 1 || label.length > 80) return null;
+    if (keys.has(row.key) || labels.has(label.toLowerCase())) return null;
+    keys.add(row.key);
+    labels.add(label.toLowerCase());
+    out.push({ key: row.key, label });
+  }
+  return out;
+}
+
+/**
+ * COL-751: how a census notice is delivered. Only in-app delivery is built;
+ * the database refuses push and text until they are. An empty list is a real
+ * setting: no census notices for the facility.
+ */
+export const CENSUS_NOTICE_CHANNEL_CHOICES = ["in_app"] as const;
+export type CensusNoticeChannel = (typeof CENSUS_NOTICE_CHANNEL_CHOICES)[number];
+/** Channels named so the settings page can say they are not available yet. */
+export const CENSUS_NOTICE_CHANNELS_NOT_BUILT = ["push", "sms"] as const;
+
+export function parseCensusNoticeChannels(value: unknown): CensusNoticeChannel[] | null {
+  if (!Array.isArray(value)) return null;
+  if (new Set(value).size !== value.length) return null;
+  return value.every((channel) => (CENSUS_NOTICE_CHANNEL_CHOICES as readonly unknown[]).includes(channel)) ? (value as CensusNoticeChannel[]) : null;
+}
+
+/** An on/off rule; null when the value is not a boolean. */
+export function parseSwitch(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
+/**
+ * COL-333: who may approve an arrival. The rule can narrow the list; it can
+ * never empty it or add a role outside these three, so it refines the
+ * approval and never waives it.
+ */
+export const ARRIVAL_APPROVAL_ROLE_CHOICES = ["owner", "org_admin", "facility_admin"] as const;
+export type ArrivalApprovalRole = (typeof ARRIVAL_APPROVAL_ROLE_CHOICES)[number];
+
+export function parseArrivalApprovalRoles(value: unknown): ArrivalApprovalRole[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  return value.every((role) => (ARRIVAL_APPROVAL_ROLE_CHOICES as readonly unknown[]).includes(role)) ? (value as ArrivalApprovalRole[]) : null;
+}
+
+/** The facility's census reasons in force; null when they cannot be read. */
+export async function loadCensusReasonOptions(
+  supabase: SupabaseClient,
+  input: { organizationId?: string | null; facilityId?: string | null; asOf?: string },
+): Promise<CensusReasonOption[] | null> {
+  const rule = await loadOperatingRule(supabase, { key: "stand_up.census_reason_options", ...input });
+  return rule ? parseCensusReasonOptions(rule.value) : null;
 }
 
 /**

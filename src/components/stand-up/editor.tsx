@@ -17,6 +17,7 @@ import { RecoveryTools } from './recovery';
 import { StandUpRequestError, standUpRequest } from './transport';
 import type { RecoveryPreview } from './types';
 import { CensusDisagreementChips, loadCensusDisagreements } from './CensusDisagreementChip';
+import { useCensusReasonOptions } from './useCensusReasonOptions';
 import { ReconcileDialog } from './ReconcileDialog';
 import { showsChip, type CensusDisagreement } from '@/lib/stand-up/census-disagreement';
 
@@ -295,8 +296,9 @@ export function StandUpEditor(props: Props) {
     });
     return () => { live = false; };
   }, [props.autoReconcile, entering, facility.id]);
+  const reasonOptions = useCensusReasonOptions(facility.id, entering);
   const prefillEntry: PrefillEntry | undefined = !entering ? undefined : { data: prefill, loading: prefillLoading, error: prefillError, reasons: prefillReasons, onReason: setPrefillReason, onUsePrefill: applyPrefill };
-  const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: applyRoster };
+  const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: applyRoster, reasonOptions };
   const discard = () => {
     if (savingRef.current || advancedBusy || pending.current) return;
     const latest = props.report && props.report.version > (savedRef.current?.version ?? 0) ? props.report : savedRef.current;
@@ -360,7 +362,7 @@ export function StandUpEditor(props: Props) {
     {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={open => { if (!open) setReconcileTarget(null); }} canChange={editable && !readOnly}
       onUseRoster={figure => applyRoster(figure.key)}
       onExplain={(figure, why) => { setRosterReason(figure.key, why); void save('draft').then(() => setDisagreementTick(tick => tick + 1)); }}
-      onCheckAgain={() => { void loadRoster(); setDisagreementTick(tick => tick + 1); setReconcileTarget(null); }} />}
+      onCheckAgain={() => { void loadRoster(); setDisagreementTick(tick => tick + 1); }} />}
     {overtimeError && <p role="alert" className="rounded border border-destructive p-3">{overtimeError.message}</p>}
     {!online && <p role="status" className="rounded border border-border p-3 text-sm">Haven is offline. Keep this page open to retain unsaved entries. The shared Google workbook is your outage fallback while Drive is available.</p>}
     {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.{readOnly ? ' Figures are read-only.' : ''}</p>{canManage && !mayEditSubmitted && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}
