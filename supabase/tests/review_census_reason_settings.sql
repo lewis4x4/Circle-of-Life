@@ -62,7 +62,7 @@ DO $$ DECLARE v jsonb; BEGIN
  -- COL-749 ruling 3 (migration 542): the Thursday check against Monday is on by default, through the census bridge.
  IF (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'stand_up.thursday_census_vs_monday',current_date))<>'true'::jsonb
   OR (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'stand_up.thursday_admission_notes_to_recruiters',current_date))<>'false'::jsonb
-  OR (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'admissions.arrival_approval_roles',current_date))<>'["owner", "org_admin", "facility_admin"]'::jsonb
+  OR (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'admissions.arrival_approval_roles',current_date))<>'["owner", "org_admin", "facility_admin", "admin_assistant"]'::jsonb
  THEN RAISE EXCEPTION 'A new rule default is wrong'; END IF;
 END $$;
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'stand_up.census_reason_options','[]'::jsonb,current_date,'Probe' FROM rs$q$,'Census reasons must be');
@@ -76,6 +76,7 @@ INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,ef
  SELECT org,fac,'stand_up.thursday_census_vs_monday','false'::jsonb,current_date-30,'Probe: roster only' FROM rs;
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'admissions.arrival_approval_roles','[]'::jsonb,current_date,'Probe' FROM rs$q$,'cannot be switched off');
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'admissions.arrival_approval_roles','["recruiter"]'::jsonb,current_date,'Probe' FROM rs$q$,'cannot be switched off');
+SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'admissions.arrival_approval_roles','["owner","owner"]'::jsonb,current_date,'Probe' FROM rs$q$,'cannot be switched off');
 
 -- 2. The command: the administrator sets a facility list; the organization scope is refused; a manager is refused.
 SELECT pg_temp.rs_login(admin_id,admin_session) FROM rs;

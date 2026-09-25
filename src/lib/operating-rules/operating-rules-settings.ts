@@ -160,7 +160,7 @@ export const CENSUS_NOTICE_CHANNEL_LABELS: Record<string, string> = {
 
 /** How an arrival approval role reads on the settings page. */
 export function arrivalApprovalRoleLabel(role: ArrivalApprovalRole): string {
-  return role === "facility_admin" ? "Administrator" : enumLabel(role);
+  return enumLabel(role, { overrides: { facility_admin: "Administrator", admin_assistant: "Assistant administrator" } });
 }
 
 const REASON_KEY_MAX = 40;
@@ -220,7 +220,7 @@ export function facilityOverridesInForce(
 
 /** How a census notice role reads on the settings page. */
 export function censusNoticeRoleLabel(role: CensusNoticeRole): string {
-  return role === "facility_admin" ? "Administrator" : enumLabel(role);
+  return enumLabel(role, { overrides: { facility_admin: "Administrator", admin_assistant: "Assistant administrator" } });
 }
 
 /** Human summary of a rule value, for the current and scheduled lines. */
