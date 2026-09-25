@@ -86,6 +86,8 @@ const RECRUITER_ADMIN_PATH_PREFIXES = [
   // COL-752: recruiters attend the Thursday Stand Up and read it. The page shows
   // them Thursday only, and the server refuses them Monday and every write.
   "/admin/stand-up",
+  // COL-754: the printable Thursday report (no shell), read-only for recruiters.
+  "/print/stand-up",
   // Pipeline aliases for the referral CRM. /pipeline/recent-admissions leads into
   // resident records and stays closed, as does /admin/discharge.
   "/pipeline/referrals",

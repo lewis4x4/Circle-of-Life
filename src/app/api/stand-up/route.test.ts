@@ -53,6 +53,14 @@ describe('Stand Up caller API', () => {
     const differs = await POST(request({ action: 'save', payload: { facility_id: 'f', roster: {} } }));
     expect(differs.status).toBe(400); expect((await differs.json()).error).toMatch(/differs from the Haven roster/);
   });
+  it('passes the Monday prefill and the Thursday report through (COL-753, COL-754)', async () => {
+    mocks.command.mockResolvedValue({ ok: true });
+    expect((await POST(request({ action: 'prefill', payload: { facility_id: 'f' } }))).status).toBe(200);
+    expect(mocks.command).toHaveBeenCalledWith('prefill', { facility_id: 'f' });
+    expect((await POST(request({ action: 'report', payload: { meeting_day: 'thursday', facility_id: 'f' } }))).status).toBe(200);
+    expect(mocks.command).toHaveBeenCalledWith('report', { meeting_day: 'thursday', facility_id: 'f' });
+    expect((await POST(request({ action: 'submitted_latest', payload: {} }))).status).toBe(200);
+  });
   it('returns a no-store receipt and exposes version conflicts for review', async () => {
     mocks.command.mockResolvedValueOnce({ revision_id: 'r' });
     const saved = await POST(request({ action: 'save', payload: { expected_version: 1 } }));

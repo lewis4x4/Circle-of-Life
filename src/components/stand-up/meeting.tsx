@@ -16,6 +16,9 @@ import { CensusDisagreementChips, loadCensusDisagreements } from './CensusDisagr
 import { CensusNotices } from './CensusNotices';
 import { ReconcileDialog } from './ReconcileDialog';
 import { showsChip, type CensusDisagreement } from '@/lib/stand-up/census-disagreement';
+import Link from 'next/link';
+import { reportFigureLine, thursdayPrefill, thursdayPrintHref, type FacilityReport, type ThursdayReport } from '@/lib/stand-up/thursday-report';
+import { ThursdayReportSections } from './ThursdayReportSections';
 
 type Fields = Record<ThursdayKey, string>;
 const fieldsFor = (values: ThursdayValues = emptyThursdayValues()): Fields =>
@@ -76,6 +79,19 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
     if (next) useFacilityStore.getState().setSelectedFacility(next);
     setWeek(workspace?.facilities.find(facility => facility.id === next)?.open_week ?? workspace?.current_week ?? '');
   };
+  // COL-754: the facility's Thursday report: Haven's figures, who left and who is
+  // away, the potential residents and the recruiters' activity since Monday.
+  const [facilityReport, setFacilityReport] = useState<{ key: string; report: FacilityReport | null; error: string } | null>(null);
+  const reportKey = selected && week ? `${selected.id}:${week}` : null;
+  useEffect(() => {
+    if (!reportKey || !selected) return;
+    let live = true;
+    standUpRequest<ThursdayReport>('report', { meeting_day: day, facility_id: selected.id, week_start: week })
+      .then(data => { if (live) setFacilityReport({ key: reportKey, report: data.facilities.find(item => item.facility_id === selected.id) ?? null, error: '' }); })
+      .catch(cause => { if (live) setFacilityReport({ key: reportKey, report: null, error: cause instanceof Error ? cause.message : 'The report could not be read.' }); });
+    return () => { live = false; };
+  }, [reportKey, selected, day, week]);
+  const currentReport = facilityReport?.key === reportKey ? facilityReport : null;
   const accept = useCallback((saved: MeetingReport) => {
     setWorkspace(current => current ? { ...current, reports: [...current.reports.filter(report => !(report.facility_id === saved.facility_id && report.week_start === saved.week_start)), ...(saved.not_started ? [] : [saved])] } : current);
   }, []);
@@ -88,6 +104,7 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
       </div>
       <div className="flex flex-wrap items-end gap-3">
         {picker?.(guard)}
+        {workspace?.scheduled && day === 'thursday' && <Link href={thursdayPrintHref({ facilityId, week })} target="_blank" className="inline-flex min-h-10 items-center rounded border border-border px-3 text-sm font-medium">Print the report</Link>}
         {workspace && <Button variant="outline" disabled={loading || routePending} onClick={() => { if (guard()) void reload(false); }}>Refresh reports</Button>}
       </div>
     </header>
@@ -112,7 +129,11 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
         {!selected ? <MeetingOverview facilities={workspace.facilities} reports={reportsForWeek} baseline={baseline} onOpen={chooseFacility} />
           : <MeetingEditor key={`${selected.id}:${week}`} day={day} facility={selected} week={week} openWeek={openWeek}
               report={reportsForWeek.find(report => report.facility_id === selected.id)} monday={baseline(selected.id) ?? null}
-              canEdit={workspace.can_edit} dirty={dirty} onSaved={accept} onError={setError} autoReconcile={selected.id === reconcileFacilityId} />}
+              canEdit={workspace.can_edit} dirty={dirty} onSaved={accept} onError={setError} autoReconcile={selected.id === reconcileFacilityId}
+              haven={currentReport?.report ?? undefined} />}
+        {selected && day === 'thursday' && (currentReport?.report ? <ThursdayReportSections report={currentReport.report} />
+          : currentReport?.error ? <p role="alert" className="rounded border border-destructive p-3 text-sm">{currentReport.error}</p>
+          : <p role="status" className="text-sm">Loading the potential residents and recruiter activity…</p>)}
       </>}
   </div>;
 }
@@ -145,9 +166,11 @@ type EditorProps = {
   canEdit: boolean; dirty: { current: boolean }; onSaved: (report: MeetingReport) => void; onError: (message: string) => void
   /** COL-555: opened from a Reconcile link. */
   autoReconcile?: boolean
+  /** COL-754: Haven's own Thursday figures for this facility, to prefill and show beside each input. */
+  haven?: FacilityReport
 };
 
-function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError, autoReconcile }: EditorProps) {
+function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError, autoReconcile, haven }: EditorProps) {
   const [saved, setSaved] = useState(report);
   const [fields, setFields] = useState(() => fieldsFor(report?.values));
   const [reason, setReason] = useState('');
@@ -164,6 +187,14 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
   let typed: ThursdayValues | null = null; let parseError = '';
   try { typed = Object.fromEntries(THURSDAY_KEYS.map(key => [key, parseThursdayField(key, fields[key])])) as ThursdayValues; } catch (cause) { parseError = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const complete = !!typed && THURSDAY_KEYS.every(key => typed![key] !== null);
+  // COL-754: a report nobody has started opens with Haven's figures for the
+  // administrator to verify; blanks stay blank, and nothing saves until they do.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!haven || prefilled.current || saved || changed || week !== openWeek || !canEdit) return;
+    prefilled.current = true;
+    setFields(fieldsFor(thursdayPrefill(haven, emptyThursdayValues())));
+  }, [haven, saved, changed, week, openWeek, canEdit]);
   // COL-555: this meeting's census against the roster, with the Reconcile dialog.
   const [reconcileTarget, setReconcileTarget] = useState<CensusDisagreement | null>(null);
   const [disagreementTick, setDisagreementTick] = useState(0);
@@ -221,7 +252,8 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
           const current = typed ? typed[figure.key] : saved?.values[figure.key] ?? null
           const comparison = mondayComparison(figure.key, current, monday)
           return <tr key={figure.key} className="border-t border-border align-top">
-            <th scope="row" className="p-3 font-medium"><span className="block">{figure.label}</span><span className="block text-xs font-normal text-muted-foreground">{figure.help}</span></th>
+            <th scope="row" className="p-3 font-medium"><span className="block">{figure.label}</span><span className="block text-xs font-normal text-muted-foreground">{figure.help}</span>
+              {week === openWeek && reportFigureLine(haven, figure.key, value => thursdayDisplay(figure.key, value)) && <span className="block text-xs font-normal">{reportFigureLine(haven, figure.key, value => thursdayDisplay(figure.key, value))}</span>}</th>
             <td className="p-3">{editable
               ? <Input aria-label={figure.label} inputMode={figure.money ? 'decimal' : 'numeric'} value={fields[figure.key]} disabled={busy} onChange={e => { const value = e.target.value; setFields(current => ({ ...current, [figure.key]: value })); setChanged(true); setMessage(''); }} />
               : <span className="tabular-nums">{thursdayDisplay(figure.key, saved?.values[figure.key])}</span>}</td>

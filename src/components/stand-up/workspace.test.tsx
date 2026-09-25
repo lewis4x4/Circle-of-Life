@@ -7,6 +7,8 @@ import { allowRouteLeave } from '@/components/layout/navigation-pending';
 import { StandUpRequestError } from './transport';
 const mocks = vi.hoisted(() => ({ request: vi.fn(), outOfHouse: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'org_admin' } }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
+// Census chips and notices read through the browser client; nothing is open in these fixtures.
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async () => ({ data: [], error: null }) }) }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 vi.mock('@/lib/residents/out-of-house', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/residents/out-of-house')>()), fetchOutOfHouse: mocks.outOfHouse }));
 const workspace = { facilities: [{ id: 'a', name: 'Homewood' }, { id: 'b', name: 'Oakridge' }], reports: [] as StandUpReport[], current_week: '2026-09-14', can_import: false, server_now: '2026-09-14T12:30:00Z' };

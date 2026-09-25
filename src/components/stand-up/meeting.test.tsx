@@ -7,6 +7,8 @@ import { StandUpRequestError } from './transport';
 
 const mocks = vi.hoisted(() => ({ request: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'facility_admin' } }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
+// Census chips and notices read through the browser client; nothing is open in these fixtures.
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async () => ({ data: [], error: null }) }) }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 
 const monday = { facilities: [{ id: 'a', name: 'Homewood' }], reports: [], current_week: '2026-09-21', can_import: false, server_now: '2026-09-24T12:30:00Z' };
@@ -32,12 +34,42 @@ const saved = (patch: Partial<MeetingReport> = {}): MeetingReport => ({
   last_submitted_at: '2026-09-24T12:31:00Z', monday_submitted: baseline, ...patch,
 });
 
+// COL-754: the facility's Thursday report as the server returns it.
+const facilityReport = {
+  facility_id: 'a', facility_name: 'Homewood', week_start: '2026-09-21', since: '2026-09-21T13:15:00Z',
+  figures: {
+    current_ar_cents: { value: 11710800, source: 'Invoices in Haven: sent with a balance, plus drafts not yet sent' },
+    current_total_census: { value: 36, source: 'Resident roster: in house, at hospital or rehab, and on leave' },
+    departures_since_monday: { value: 2, source: 'Discharges and deaths dated since Monday’s call' },
+    hospital_and_rehab_total: { value: 3, source: 'Resident roster: bed-hold stays at a hospital or in rehab' },
+    hospital_total: { value: 1, source: 'Resident roster: stays recorded as hospital', note: '1 stay(s) have no hospital or rehab recorded and are in the total only' },
+    rehab_total: { value: 1, source: 'Resident roster: stays recorded as rehab' },
+  },
+  departures: [{ resident: 'Test Resident C', kind: 'discharged', at: '2026-09-22T15:00:00Z', recorded_at: '2026-09-22T15:05:00Z', new: true }],
+  hospital: { out_now: [{ resident: 'Test Resident B', stay_type: 'rehab', since: '2026-09-22T14:00:00Z' }], went_out: [], came_back: [] },
+  names_shown: true, admission_notes_shown: true,
+  potential_residents: [{
+    lead_id: 'l1', name: 'Avery Prospect', stage: 'tour_scheduled', work_state: 'assigned', owner_name: 'Robin Recruiter',
+    next_action: 'Call back to book the tour', next_action_at: '2026-09-26T13:00:00Z', created_at: '2026-09-15T12:00:00Z', new: false,
+    tours: [{ scheduled_for: '2026-09-25T15:00:00Z', outcome: 'scheduled', completed_at: null, owner_name: 'Robin Recruiter', new: true }],
+    admission: { status: 'pending_clearance', target_move_in_date: '2026-10-05', financial_clearance_at: null, physician_orders_received_at: null, medicaid_pipeline_stage: 'prospect', bed_label: null, form_1823_status: 'pending' },
+    notes_withheld: false,
+    timeline: [
+      { at: '2026-09-15T12:00:00Z', recorded_at: '2026-09-15T12:00:00Z', new: false, kind: 'lead_note', by: null, method: null, with: null, text: 'Prefers a private room.', status: null },
+      { at: '2026-09-22T14:30:00Z', recorded_at: '2026-09-22T14:31:00Z', new: true, kind: 'contact', by: 'Robin Recruiter', method: 'phone_call', with: 'Jordan Prospect (Daughter)', text: 'Daughter wants a tour next week.', status: null },
+    ],
+  }],
+  recruiters: [{ user_id: 'r1', name: 'Robin Recruiter', contacts: 1, tours: 1, outreach: 0, items: [{ at: '2026-09-22T14:31:00Z', kind: 'contact', lead_name: 'Avery Prospect', method: 'phone_call', text: 'Daughter wants a tour next week.', status: null }] }],
+};
+const thursdayReport = { meeting_day: 'thursday', generated_at: '2026-09-24T12:30:00Z', actor_role: 'facility_admin', facilities: [facilityReport] };
+
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 beforeEach(() => {
   mocks.auth.appRole = 'facility_admin';
   mocks.request.mockReset();
   mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
     if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday() : monday;
+    if (action === 'report' && payload.meeting_day === 'thursday') return thursdayReport;
     throw new Error('Unexpected operation');
   });
   useFacilityStore.setState({ selectedFacilityId: null, availableFacilities: [], facilitiesCacheUserId: 'u' });
@@ -116,5 +148,58 @@ describe('Stand Up meets Monday and Thursday (COL-752)', () => {
     mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => payload.meeting_day === 'thursday' ? thursday({ scheduled: false, schedule: [schedule[0]] as MeetingWorkspace['schedule'], facilities: [] }) : monday);
     await openThursday();
     expect(screen.getByText('No Thursday meeting is scheduled')).toBeInTheDocument();
+  });
+});
+
+describe('The Thursday report (COL-754)', () => {
+  it('opens an unstarted report with Haven’s figures, beside Monday’s, with each source', async () => {
+    await openThursday();
+    await waitFor(() => expect(screen.getByLabelText('Current census')).toHaveValue('36'));
+    expect(screen.getByLabelText('Current A/R')).toHaveValue('117108.00');
+    expect(screen.getByLabelText('In rehab')).toHaveValue('1');
+    expect(screen.getByText('Haven: 36 · Resident roster: in house, at hospital or rehab, and on leave')).toBeInTheDocument();
+    expect(screen.getByText(/Haven: 1 · Resident roster: stays recorded as hospital \(1 stay\(s\) have no hospital or rehab recorded/)).toBeInTheDocument();
+    // Nothing is saved until the administrator submits.
+    expect(mocks.request.mock.calls.some(([action]) => action === 'save')).toBe(false);
+  });
+
+  it('lists every potential resident with tours, admission stage, next step and all notes in time order, new since Monday marked', async () => {
+    await openThursday();
+    const lead = await screen.findByRole('article', { name: 'Avery Prospect' });
+    expect(lead).toHaveTextContent('Tour scheduled · Owner: Robin Recruiter');
+    expect(lead).toHaveTextContent('Next: Call back to book the tour');
+    expect(lead).toHaveTextContent('Case: Pending clearance');
+    expect(lead).toHaveTextContent('Form 1823: Pending');
+    const notes = within(lead).getAllByRole('listitem').filter(item => /Lead notes|Contact/.test(item.textContent ?? ''));
+    expect(notes[0]).toHaveTextContent('Prefers a private room.');
+    expect(notes[1]).toHaveTextContent('Phone call with Jordan Prospect (Daughter) · Daughter wants a tour next week.');
+    expect(notes[1]).toHaveTextContent('New since Monday');
+    expect(screen.getByText(/Robin Recruiter · 1 contact · 1 tour · 0 outreach activities/)).toBeInTheDocument();
+    expect(screen.getByText(/Test Resident C · Discharged/)).toBeInTheDocument();
+    expect(screen.getByText(/Test Resident B · Bed Hold — Rehab/)).toBeInTheDocument();
+    expect(mocks.request).toHaveBeenCalledWith('report', { meeting_day: 'thursday', facility_id: 'a', week_start: '2026-09-21' });
+  });
+
+  it('offers the printable report', async () => {
+    await openThursday();
+    expect(screen.getByRole('link', { name: 'Print the report' })).toHaveAttribute('href', '/print/stand-up/thursday?facility=a&week=2026-09-21');
+  });
+
+  it('shows a recruiter counts, not resident names, and the figures read-only', async () => {
+    mocks.auth.appRole = 'recruiter';
+    const hidden = { ...facilityReport, names_shown: false, admission_notes_shown: false,
+      departures: [{ ...facilityReport.departures[0], resident: null }], hospital: { ...facilityReport.hospital, out_now: [{ ...facilityReport.hospital.out_now[0], resident: null }] } };
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (payload.meeting_day !== 'thursday') throw new StandUpRequestError('Stand Up access denied', 403);
+      if (action === 'report') return { ...thursdayReport, actor_role: 'recruiter', facilities: [hidden] };
+      return thursday({ can_edit: false, can_edit_submitted: false, actor_role: 'recruiter' });
+    });
+    render(<StandUpWorkspace />);
+    await screen.findByRole('article', { name: 'Avery Prospect' });
+    expect(screen.getByText(/Names are shown to administrators; you see how many\./)).toBeInTheDocument();
+    expect(screen.getByText(/A resident · Discharged/)).toBeInTheDocument();
+    expect(screen.queryByText(/Test Resident/)).not.toBeInTheDocument();
+    expect(screen.getByText('Admission notes are shown to administrators.')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 });
