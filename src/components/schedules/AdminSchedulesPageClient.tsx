@@ -182,7 +182,7 @@ export function AdminSchedulesPageClient({
         whenDatasetEmpty: {
           title: "No schedules in this scope",
           description: selectedFacilityId
-            ? "Live data returned no schedule weeks for the selected facility. Choose Create week to start one."
+            ? "Live data returned no schedule weeks for this facility. Choose Create week to start one."
             : "Live data returned no schedule weeks at any of your facilities. Choose Create week to start one.",
         },
         whenFiltersExcludeAll: {

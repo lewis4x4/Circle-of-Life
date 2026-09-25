@@ -247,7 +247,7 @@ export default function AdminTimeRecordsPage() {
         whenDatasetEmpty: {
           title: "No time records in this scope",
           description:
-            "Live data returned no punches for the selected facility or organization filter. Use Add time record for manual corrections or wait for staff clock events.",
+            "Live data returned no punches for this facility or organization filter. Use Add time record for manual corrections or wait for staff clock events.",
         },
         whenFiltersExcludeAll: {
           title: "No time records match the current filters",
