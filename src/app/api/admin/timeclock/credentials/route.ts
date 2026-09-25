@@ -22,6 +22,10 @@ function generatePin(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");
 }
 
+function generateTimeclockId(): string {
+  return String(randomInt(10_000_000, 100_000_000));
+}
+
 function rpcErrorResponse(message: string): NextResponse {
   if (/employee_number_taken/.test(message)) return NextResponse.json({ error: "employee_number_taken" }, { status: 409 });
   if (/badge_taken/.test(message)) return NextResponse.json({ error: "badge_taken" }, { status: 409 });
@@ -91,10 +95,14 @@ export async function POST(request: Request) {
   let pin: string | null = null;
   let employeeNumber: string | null = null;
   let badgeHmac: string | null = null;
+  let generatedId = false;
 
   if (action === "create") {
     employeeNumber = typeof body.employee_number === "string" ? body.employee_number.trim() : "";
-    if (!employeeNumber) return NextResponse.json({ error: "employee_number is required" }, { status: 400 });
+    if (!employeeNumber) {
+      employeeNumber = generateTimeclockId();
+      generatedId = true;
+    }
     pin = generatePin();
   } else if (action === "set_number") {
     employeeNumber = typeof body.employee_number === "string" ? body.employee_number.trim() : "";
@@ -109,16 +117,25 @@ export async function POST(request: Request) {
     badgeHmac = badgeLookupHmac(badge);
   }
 
-  const { data, error } = await actor.client.rpc("timeclock_set_credentials", {
-    p_staff_id: staffId,
-    p_mode: mode,
-    p_employee_number: employeeNumber,
-    p_pin: pin,
-    p_badge_lookup_hmac: badgeHmac,
-  });
-  if (error) {
+  for (let attempt = 0; attempt < (generatedId ? 5 : 1); attempt += 1) {
+    const { data, error } = await actor.client.rpc("timeclock_set_credentials", {
+      p_staff_id: staffId,
+      p_mode: mode,
+      p_employee_number: employeeNumber,
+      p_pin: pin,
+      p_badge_lookup_hmac: badgeHmac,
+    });
+    if (!error) {
+      return NextResponse.json({ status: data, pin }, { headers: { "Cache-Control": "no-store" } });
+    }
+    const numberTaken = /employee_number_taken/.test(error.message ?? "") ||
+      (error.code === "23505" && /employee_number/.test(error.message ?? ""));
+    if (generatedId && numberTaken && attempt < 4) {
+      employeeNumber = generateTimeclockId();
+      continue;
+    }
     logError("timeclock.credentials", error, { action });
-    return rpcErrorResponse(error.message ?? "");
+    return numberTaken ? rpcErrorResponse("employee_number_taken") : rpcErrorResponse(error.message ?? "");
   }
-  return NextResponse.json({ status: data, pin }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ error: "Could not update timeclock access" }, { status: 500 });
 }

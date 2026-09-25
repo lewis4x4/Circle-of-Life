@@ -35,20 +35,19 @@ describe("StaffTimeclockAccess", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("sets the employee number, generates a PIN shown once with Copy and Print", async () => {
+  it("creates a timeclock ID and PIN without asking the manager for a number", async () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(json(200, { status: status(), badge_secret_configured: true }))
-      .mockResolvedValueOnce(json(200, { status: status({ exists: true, employee_number: "A-100", pin_set_at: "2026-09-16T12:00:00.000Z" }), pin: "482913" }));
+      .mockResolvedValueOnce(json(200, { status: status({ exists: true, employee_number: "12345678", pin_set_at: "2026-09-16T12:00:00.000Z" }), pin: "482913" }));
     render(<StaffTimeclockAccess staffId={STAFF} canEdit fetchImpl={fetchImpl as unknown as typeof fetch} />);
-    const input = await screen.findByLabelText("Employee number");
-    fireEvent.change(input, { target: { value: "a-100" } });
-    fireEvent.click(screen.getByRole("button", { name: "Set number and generate PIN" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Generate timeclock ID and PIN" }));
     expect(await screen.findByTestId("revealed-pin")).toHaveTextContent("482913");
+    expect(screen.getByText("12345678")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Print" })).toBeInTheDocument();
     const body = JSON.parse(String((fetchImpl.mock.calls[1] as unknown as [string, RequestInit])[1].body));
-    expect(body).toEqual({ staff_id: STAFF, action: "create", employee_number: "A-100" });
+    expect(body).toEqual({ staff_id: STAFF, action: "create" });
     expect(screen.getByRole("button", { name: "Reset PIN" })).toBeInTheDocument();
   });
 
