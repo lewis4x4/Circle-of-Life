@@ -237,7 +237,7 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
     </div>
     {notOpen && <p role="status" className="rounded border border-border p-3 text-sm">This report opens {meetingWindow?.entry_opens_at ? easternStamp(meetingWindow.entry_opens_at) : 'after the meeting before it'}.</p>}
     {saved?.updated_at && <p className="text-xs text-muted-foreground">Last saved {meetingStamp(saved.updated_at)}{saved.updated_by_name ? ` by ${saved.updated_by_name}` : ''}{saved.last_submitted_at ? ` · Submitted ${meetingStamp(saved.last_submitted_at)}` : ''}</p>}
-    {current && <CensusDisagreementChips facilityId={facility.id} meetingDay={day} refreshKey={`${saved?.version ?? 0}:${disagreementTick}`}
+    {current && <CensusDisagreementChips facilityId={facility.id} meetingDay={day} refreshKey={`${saved?.version ?? 'new'}:${disagreementTick}`}
       action={d => <Button variant="outline" size="sm" onClick={() => setReconcileTarget(d)}>Reconcile</Button>} />}
     {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={next => { if (!next) setReconcileTarget(null); }} canChange={editable}
       onUseRoster={figure => { if (figure.roster === null) return; setFields(prev => ({ ...prev, [figure.key]: String(figure.roster) })); setChanged(true); setMessage(''); }}

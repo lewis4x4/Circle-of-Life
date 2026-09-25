@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { dateLabel } from "@/lib/stand-up/model";
 import { MEETING_LABELS, THURSDAY_FIGURES, mondayComparison, thursdayDisplay, type MeetingWorkspace, type MondaySubmitted } from "@/lib/stand-up/meetings";
 import { reportFigureLine, reportStamp, type FacilityReport, type ThursdayReport } from "@/lib/stand-up/thursday-report";
@@ -57,6 +58,7 @@ function FacilityPrint({ facility, workspace }: { facility: FacilityReport; work
       <h2 className="text-lg font-semibold">{facility.facility_name}</h2>
       <p className="text-muted-foreground">Week of {dateLabel(facility.week_start)} · {submitted ? "Figures submitted by the administrator" : saved ? "Figures saved as a draft, not submitted" : "Figures not entered yet"}</p>
     </div>
+    <HorizontalScroll label={`${facility.facility_name} Thursday figures`}>
     <table className="w-full border-collapse text-left">
       <caption className="sr-only">{facility.facility_name} Thursday figures beside Monday&rsquo;s submitted figures</caption>
       <thead><tr className="border-b border-border"><th scope="col" className="py-1 pr-3 font-medium">Figure</th><th scope="col" className="py-1 pr-3 font-medium">Thursday</th><th scope="col" className="py-1 pr-3 font-medium">Monday submitted</th><th scope="col" className="py-1 pr-3 font-medium">Change</th></tr></thead>
@@ -72,6 +74,7 @@ function FacilityPrint({ facility, workspace }: { facility: FacilityReport; work
         </tr>;
       })}</tbody>
     </table>
+    </HorizontalScroll>
     <ThursdayReportSections report={facility} />
   </section>;
 }

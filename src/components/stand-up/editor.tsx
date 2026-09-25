@@ -355,7 +355,7 @@ export function StandUpEditor(props: Props) {
       </ul>
     </details>
     {saved?.entry_origin === 'imported' && !saved.last_submitted_at && <p className="border-l-2 border-border pl-3 text-sm">These figures came from a historical import, not from entry in Haven. Check every section before submitting; filled fields do not mean administrator review is complete.</p>}
-    {entering && <CensusDisagreementChips facilityId={facility.id} meetingDay="monday" refreshKey={`${saved?.version ?? 0}:${rosterTick}:${disagreementTick}`}
+    {entering && <CensusDisagreementChips facilityId={facility.id} meetingDay="monday" refreshKey={`${saved?.version ?? 'new'}:${rosterTick}:${disagreementTick}`}
       action={d => <Button variant="outline" size="sm" onClick={() => setReconcileTarget(d)}>Reconcile</Button>} />}
     {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={open => { if (!open) setReconcileTarget(null); }} canChange={editable && !readOnly}
       onUseRoster={figure => applyRoster(figure.key)}
