@@ -145,6 +145,8 @@ test("CI exposes an always-present required summary and retains nightly database
   assert.match(workflow, /cancel-in-progress: true/);
 
   const nightly = readFileSync(path.join(root, ".github/workflows/ci-nightly.yml"), "utf8");
+  assert.match(nightly, /uses: denoland\/setup-deno@v2/);
+  assert.ok(nightly.indexOf("uses: denoland/setup-deno@v2") < nightly.indexOf("name: Full gate suite"), "nightly source-contract replay requires Deno first");
   assert.match(nightly, /REQUIRE_PG_VERIFY: "1"/);
   assert.doesNotMatch(nightly, /SKIP_PG_VERIFY: "1"/);
 });
