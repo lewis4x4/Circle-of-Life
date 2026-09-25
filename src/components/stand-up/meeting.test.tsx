@@ -80,6 +80,8 @@ async function openThursday() {
   render(<StandUpWorkspace />);
   fireEvent.change(await screen.findByLabelText('Meeting'), { target: { value: 'thursday' } });
   await screen.findByRole('heading', { name: 'Thursday Stand Up' });
+  // The heading shows while the workspace loads; wait until it has.
+  await waitFor(() => expect(screen.queryByText('Loading your permitted facilities and reports…')).not.toBeInTheDocument());
 }
 
 describe('Stand Up meets Monday and Thursday (COL-752)', () => {
@@ -137,7 +139,8 @@ describe('Stand Up meets Monday and Thursday (COL-752)', () => {
     render(<StandUpWorkspace />);
     await screen.findByRole('heading', { name: 'Thursday Stand Up' });
     expect(screen.queryByLabelText('Meeting')).not.toBeInTheDocument();
-    expect(screen.getByText('You can read these figures. The facility administrator enters them.')).toBeInTheDocument();
+    // The heading shows while the workspace loads; wait for the report itself.
+    expect(await screen.findByText('You can read these figures. The facility administrator enters them.')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Submit|Save draft/ })).not.toBeInTheDocument();
     expect(screen.getByText('$117,108.00')).toBeInTheDocument();
