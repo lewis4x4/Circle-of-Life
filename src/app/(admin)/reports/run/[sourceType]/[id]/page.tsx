@@ -25,6 +25,7 @@ import { classifyReportRunSource } from "@/lib/reports/report-run-route";
 import { resolveSavedViewForRun } from "@/lib/reports/resolve-saved-view-for-run";
 import { runTemplateAndPersist, finishReportRun, failReportRun } from "@/lib/reports/run-persistence";
 import { PHASE1_TEMPLATE_SEED } from "@/lib/reports/templates";
+import { formatReportRunScopeLabel } from "@/lib/reports/report-run-display-copy";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
@@ -90,8 +91,8 @@ function TemplateReportRun({
   const template = useMemo(() => PHASE1_TEMPLATE_SEED.find((item) => item.slug === slug), [slug]);
 
   const scopeLabel = useMemo(() => {
-    if (scopeFacilityId === null) return "All facilities";
-    return facilityOptions.find((f) => f.id === scopeFacilityId)?.name ?? "Selected facility";
+    const name = facilityOptions.find((f) => f.id === scopeFacilityId)?.name;
+    return formatReportRunScopeLabel(scopeFacilityId, name);
   }, [scopeFacilityId, facilityOptions]);
 
   useEffect(() => {
@@ -339,8 +340,8 @@ function PackReportRun({ packId }: { packId: string }) {
   const [orgWide, setOrgWide] = useState(false);
 
   const scopeLabel = useMemo(() => {
-    if (scopeFacilityId === null) return "All facilities";
-    return facilityOptions.find((f) => f.id === scopeFacilityId)?.name ?? "Selected facility";
+    const name = facilityOptions.find((f) => f.id === scopeFacilityId)?.name;
+    return formatReportRunScopeLabel(scopeFacilityId, name);
   }, [scopeFacilityId, facilityOptions]);
 
   useEffect(() => {
