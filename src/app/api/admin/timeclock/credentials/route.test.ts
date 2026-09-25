@@ -28,6 +28,7 @@ function post(body: unknown): Request {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mock.rpc.mockReset();
   delete process.env.TIMECLOCK_BADGE_HMAC_SECRET;
   mock.staffRow = { facility_id: "facility-1", organization_id: ORG };
   mock.requireAdminApiActor.mockResolvedValue({ actor: actor() });
@@ -62,6 +63,32 @@ describe("/api/admin/timeclock/credentials", () => {
     expect(args[0]).toBe("timeclock_set_credentials");
     expect(args[1]).toMatchObject({ p_staff_id: STAFF, p_mode: "create", p_employee_number: "a-100", p_badge_lookup_hmac: null });
     expect(args[1].p_pin).toBe(json.pin);
+  });
+
+  it("assigns a numeric timeclock ID when none was provided", async () => {
+    const response = await POST(post({ staff_id: STAFF, action: "create" }));
+    expect(response.status).toBe(200);
+    const [, args] = mock.rpc.mock.calls[0] as unknown as [string, Record<string, unknown>];
+    expect(args.p_employee_number).toMatch(/^[1-9][0-9]{7}$/);
+    expect(args.p_employee_number).not.toBe((await response.json()).pin);
+  });
+
+  it("retries a generated ID collision without resetting the PIN", async () => {
+    mock.rpc.mockResolvedValueOnce({ data: null, error: { message: "timeclock: employee_number_taken" } });
+    const response = await POST(post({ staff_id: STAFF, action: "create" }));
+    expect(response.status).toBe(200);
+    expect(mock.rpc).toHaveBeenCalledTimes(2);
+    const first = mock.rpc.mock.calls[0][1];
+    const second = mock.rpc.mock.calls[1][1];
+    expect(first.p_employee_number).not.toBe(second.p_employee_number);
+    expect(first.p_pin).toBe(second.p_pin);
+  });
+
+  it("stops after five generated ID collisions", async () => {
+    mock.rpc.mockResolvedValue({ data: null, error: { code: "23505", message: "duplicate key value violates unique constraint timeclock_credentials_organization_id_employee_number_key" } });
+    const response = await POST(post({ staff_id: STAFF, action: "create" }));
+    expect(response.status).toBe(409);
+    expect(mock.rpc).toHaveBeenCalledTimes(5);
   });
 
   it("resets the PIN through set_pin and never accepts a caller-supplied PIN", async () => {

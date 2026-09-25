@@ -15,7 +15,7 @@ This plan has phases and gates, not dates. Each phase ends when its gate is met 
 Homewood staff keep punching on uPunch. In parallel:
 
 1. Confirm the organization pay period in Haven (`Timeclock` page, owner or organization administrator): frequency and anchor Monday. This must match ADP; record the TBD confirmation from Jessica Murphy and payroll on COL-352 before leaving Phase 1.
-2. Give every active Homewood staff member timeclock access from the staff profile (`Timeclock access`): employee number, a generated PIN handed over once, and a badge scan where a badge exists. Badge registration needs `TIMECLOCK_BADGE_HMAC_SECRET` on the server; employee number and PIN work without it.
+2. Give every active Homewood staff member timeclock access from the staff profile (`Timeclock access`): generate a Haven timeclock ID and a separate PIN, hand over the PIN once, and scan a badge where one exists. The timeclock ID is an internal sign-in identifier, not a payroll number. Badge registration needs `TIMECLOCK_BADGE_HMAC_SECRET` on the server; timeclock ID and PIN work without it.
 3. Enroll the front-door kiosk per `docs/operations/timeclock-kiosk-lockdown.md` and turn the facility `Timeclock` flag on.
 4. Ask staff to punch on both the uPunch clock and the Haven kiosk for every in, meal and out. The floor tablets depend on the Haven punch (see "Floor tablets depend on the kiosk" below), so the Haven punch is not optional even while uPunch is still the payroll record.
 

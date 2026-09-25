@@ -125,7 +125,7 @@ export const KIOSK_COPY = {
   enrollCodeLabel: "Enrollment code",
   enrollButton: "Enroll",
   enrollLabelLabel: "Tablet name",
-  identifierLabel: "Badge or employee number",
+  identifierLabel: "Badge or timeclock ID",
   pinLabel: "PIN",
   continueButton: "Continue",
   actionLabels: {

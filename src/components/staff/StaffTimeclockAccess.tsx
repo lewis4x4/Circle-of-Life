@@ -2,7 +2,7 @@
 
 /**
  * "Timeclock access" section on the staff profile (COL-352, spec 37 §6).
- * Managers set the employee number, register a badge by scanning into a
+ * Managers generate a timeclock ID, register a badge by scanning into a
  * focused input, generate or reset a PIN shown once, and unlock. The badge
  * value and the PIN are sent to the server once and never displayed again.
  */
@@ -34,12 +34,12 @@ export type StaffTimeclockAccessProps = {
 };
 
 const ERROR_COPY: Record<string, string> = {
-  employee_number_taken: "That employee number is already in use.",
+  employee_number_taken: "That timeclock ID is already in use.",
   badge_taken: "That badge is already registered to someone else.",
-  badge_secret_missing: "Badge registration is not configured on this server yet. Employee number and PIN still work.",
+  badge_secret_missing: "Badge registration is not configured on this server yet. Timeclock ID and PIN still work.",
   credential_exists: "Timeclock access already exists for this person.",
   inactive_staff: "This person is not active, so timeclock access cannot be set.",
-  invalid_input: "Check the employee number: letters, digits and dashes only, up to 20 characters.",
+  invalid_input: "Check the timeclock ID: letters, digits and dashes only, up to 20 characters.",
 };
 
 export function StaffTimeclockAccess({ staffId, canEdit, className, fetchImpl }: StaffTimeclockAccessProps) {
@@ -134,7 +134,7 @@ export function StaffTimeclockAccess({ staffId, canEdit, className, fetchImpl }:
   const locked = status?.locked_until ? new Date(status.locked_until).getTime() > Date.now() : false;
 
   return (
-    <RecordDetailSection title="Timeclock access" description="Kiosk sign-in: employee number or badge, plus a six digit PIN" className={className}>
+    <RecordDetailSection title="Timeclock access" description="Kiosk sign-in: timeclock ID or badge, plus a six digit PIN" className={className}>
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : status && !status.eligible ? (
@@ -149,7 +149,7 @@ export function StaffTimeclockAccess({ staffId, canEdit, className, fetchImpl }:
             </p>
           ) : null}
 
-          <DetailRow label="Employee number" value={status?.employee_number ?? "Not set"} />
+          <DetailRow label="Timeclock ID" value={status?.employee_number ?? "Not set"} />
           <DetailRow label="Badge" value={status?.has_badge ? "Registered" : "Not registered"} />
           <DetailRow label="PIN" value={status?.exists ? `Set ${status.pin_set_at ? formatDisplayDate(status.pin_set_at) : ""}`.trim() : "Not set"} />
           {locked ? <DetailRow label="Lock" value="Locked after failed PIN attempts" /> : null}
@@ -177,31 +177,40 @@ export function StaffTimeclockAccess({ staffId, canEdit, className, fetchImpl }:
 
           {canEdit ? (
             <div className="space-y-3">
-              <form
-                className="flex flex-wrap items-end gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void post({ action: status?.exists ? "set_number" : "create", employee_number: employeeNumber });
-                }}
-              >
-                <div>
-                  <label htmlFor="timeclock-employee-number" className="text-xs font-medium text-muted-foreground">
-                    Employee number
-                  </label>
-                  <Input
-                    id="timeclock-employee-number"
-                    className="mt-1 w-48"
-                    value={employeeNumber}
-                    onChange={(e) => setEmployeeNumber(e.target.value.toUpperCase().slice(0, 20))}
-                    autoComplete="off"
-                    aria-invalid={error ? true : undefined}
-                    aria-describedby={error ? "timeclock-access-error" : undefined}
-                  />
+              {!status?.exists ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Haven will assign a timeclock ID for kiosk sign-in and generate a separate PIN. This ID is not a payroll number.</p>
+                  <Button type="button" size="sm" disabled={busy} onClick={() => void post({ action: "create" })}>
+                    Generate timeclock ID and PIN
+                  </Button>
                 </div>
-                <Button type="submit" size="sm" disabled={busy || !employeeNumber.trim()}>
-                  {status?.exists ? "Save number" : "Set number and generate PIN"}
-                </Button>
-              </form>
+              ) : (
+                <form
+                  className="flex flex-wrap items-end gap-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void post({ action: "set_number", employee_number: employeeNumber });
+                  }}
+                >
+                  <div>
+                    <label htmlFor="timeclock-employee-number" className="text-xs font-medium text-muted-foreground">
+                      Timeclock ID
+                    </label>
+                    <Input
+                      id="timeclock-employee-number"
+                      className="mt-1 w-48"
+                      value={employeeNumber}
+                      onChange={(e) => setEmployeeNumber(e.target.value.toUpperCase().slice(0, 20))}
+                      autoComplete="off"
+                      aria-invalid={error ? true : undefined}
+                      aria-describedby={error ? "timeclock-access-error" : undefined}
+                    />
+                  </div>
+                  <Button type="submit" size="sm" disabled={busy || !employeeNumber.trim()}>
+                    Save ID
+                  </Button>
+                </form>
+              )}
 
               {status?.exists ? (
                 <div className="flex flex-wrap gap-2">
