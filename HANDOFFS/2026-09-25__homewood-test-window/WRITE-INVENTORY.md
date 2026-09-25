@@ -6,45 +6,51 @@ Terms: **HW** is `facility_id = '00000000-0000-0000-0002-000000000003'`. **ws** 
 
 ## Deleted by the wipe (children first)
 
+The numbers are the wipe's delete order (`col849_counts.ord` in `scripts/floor/homewood-test-window-wipe.sql`).
+
 | # | Table | How the test writes it | Window scope | Guard triggers disabled for the delete |
 |---|---|---|---|---|
-| 1 | `observation_escalation_deliveries` | `record_observation_escalation_rung` queues a row per recipient and channel; the engine claims and records outcomes | HW and `created_at >= ws` | none |
+| 1 | `observation_escalation_deliveries` | `record_observation_escalation_rung` queues a row per recipient and channel; the engine claims them and records outcomes | HW and `created_at >= ws` | none |
 | 2 | `observation_escalation_dispatches` | `record_observation_escalation_rung` (one per task and rung) | HW and `created_at >= ws` | none |
-| 3 | `resident_observation_escalations` | `record_observation_escalation_rung` for non-nudge rungs | HW and `created_at >= ws` | none |
+| 3 | `resident_observation_escalations` | `record_observation_escalation_rung` for the non-nudge rungs | HW and `created_at >= ws` | none |
 | 4 | `watchlist_signal_notifications` | `haven.notify_watchlist_acute` (watchlist engine, hourly) | HW and `created_at >= ws` | none |
-| 5 | `watchlist_signal_dispositions` | `record_watchlist_disposition` trigger when an admin dispositions a signal | HW and `created_at >= ws` | none |
-| 6 | `resident_monitoring_order_notifications` | `haven.notify_monitoring_order_created` | HW and `created_at >= ws` | none |
-| 7 | `care_event_deliveries` | `submit_care_event` step 0 and `care_event_escalation_tick` later steps; dispatcher updates | HW and `created_at >= ws` | none |
-| 8 | `exec_alert_user_state` | an administrator acknowledges, snoozes or dismisses a test alert in Haven | parent `exec_alerts` row in set 10 | none |
+| 5 | `watchlist_signal_dispositions` | `haven.record_watchlist_disposition` trigger on every signal insert and status change | HW and `created_at >= ws` | none |
+| 6 | `resident_monitoring_order_notifications` | `haven.notify_monitoring_order_created` when an order is placed | HW and `created_at >= ws` | none |
+| 7 | `care_event_deliveries` | `submit_care_event` step 0 and `care_event_escalation_tick` later steps; the dispatcher updates them | HW and `created_at >= ws` | none |
+| 8 | `exec_alert_user_state` | an administrator acknowledges, snoozes or dismisses a test alert | parent `exec_alerts` row in set 10 | none |
 | 9 | `exec_actions` | an administrator opens an action on a test alert | parent `exec_alerts` row in set 10 | none |
-| 10 | `exec_alerts` | four producers only: rung alerts (`record_observation_escalation_rung`, title ends `: observation window at <facility>`), staffing gaps (`record_observation_staffing_gap`, title `Nobody is scheduled for the ... at <facility> on ...`), care events (`submit_care_event`, `deep_link_path = /admin/care-events/<care event in set 24>`), Smart Rounding notifications (`claim_smart_rounding_notifications`, `id` = a watchlist instance in set 17) | HW and `created_at >= ws` and one of the four producers | none |
+| 10 | `exec_alerts` | four producers only: rung alerts (`record_observation_escalation_rung`, title ends `: observation window at <facility>`), staffing gaps (`record_observation_staffing_gap`, title `Nobody is scheduled for the ... at <facility> on ...`), care events (`submit_care_event`, `deep_link_path = /admin/care-events/<care event in set 28>`), Smart Rounding notices (`claim_smart_rounding_notifications`, category `smart_rounding`, `id` = a watchlist instance in set 20, a monitoring order in set 19, or the order of a notice in set 6) | HW and `created_at >= ws` and one of the four producers | none |
 | 11 | `resident_watch_events` | `auto_trigger_watch_protocol` on a new incident; task and log links | HW and `created_at >= ws` | none |
 | 12 | `resident_observation_exceptions` | `haven.complete_rounding_task_core` (anything-wrong chips) | HW and `created_at >= ws` | none |
 | 13 | `resident_observation_integrity_flags` | `complete_rounding_task_review` (late entries, patterns) | HW and `created_at >= ws` | none |
 | 14 | `rounding_completion_receipts` | `complete_rounding_task_review` | HW and `created_at >= ws` | `tr_rounding_completion_receipts_immutable` |
-| 15 | `resident_observation_assignments` | `record_cadence_observation_tasks`, `assign_unowned_observation_tasks`, `claim_observation_task` | HW and `created_at >= ws` | none |
-| 16 | `resident_observation_tasks` and `resident_observation_logs` (one statement: they reference each other) | generator under the test cadence; lapse and rung updates; charting inserts the log and completes the task | HW and `created_at >= ws` | `tr_rounding_task_write_guard`, `tr_rounding_logs_immutable` |
-| 17 | `watchlist_signal_instances` | `evaluate_watchlist_signals` (watchlist engine) from window observations and care events | HW and `created_at >= ws` | none |
-| 18 | `incident_photos` | `attach_care_event_file` after the upload to bucket `incident-photos` | `incident_id` in set 25 or `care_event_id` in set 24 | none |
-| 19 | `incident_followups` | `submit_care_event`, witness tasks | `incident_id` in set 25 | none |
-| 20 | `regulatory_reporting_obligations` | `care_event_create_ahca_obligations` | `incident_id` in set 25 | none |
-| 21 | `incident_rca`, `incident_root_causes` | an administrator works the test incident | `incident_id` in set 25 | none |
-| 22 | `care_plan_review_alerts` | `care_plan_alert_on_incident` trigger (falls, wandering, skin) | `trigger_source_id` in set 25 | none |
-| 23 | `resident_watch_instances` | `auto_trigger_watch_protocol` trigger on a new incident | `triggered_by_type = 'incident'` and `triggered_by_id` in set 25 | none |
-| 24 | `care_events` | `submit_care_event` (online, `/api/care-events/submit`, `floor_replay_submit_care_event`); note, file and acknowledge updates | HW and `created_at >= ws` | none |
-| 25 | `incidents` | `submit_care_event` at level 2 and above | `id` = `care_events.incident_id` of set 24 | none |
-| 26 | `behavioral_logs`, `condition_changes` | `submit_care_event` for the behavior and condition tiles | `id` = `care_events.behavioral_log_id` / `condition_change_id` of set 24 | none |
-| 27 | `shift_handoff_notes` | Handoff tab (`src/lib/floor/handoff-notes.ts`, direct insert and read receipt) | HW and `created_at >= ws` and `source_kind IS NULL` (system notes such as admissions carry a `source_kind` and are kept) | none |
-| 28 | `shift_handoffs` | caregiver handoff surface | HW and `created_at >= ws` | none |
-| 29 | `visitor_log_entries` | `visitor_kiosk_sign_in`, `visitor_kiosk_sign_out`, `visitor_match_resident` | HW and `created_at >= ws` and `kiosk_device_id IS NOT NULL` (staff-typed entries are kept) | none |
-| 30 | `med_passes` | `haven.med_tech_shift_open_from_clock` on a kiosk clock-in | `shift_id` in set 32 | none |
-| 31 | `shift_tape_events`, `med_tech_shift_residents` | the same clock-in and clock-out triggers | `shift_id` in set 32 | none |
-| 32 | `med_tech_shifts` | `tr_time_punches_med_tech_shift` on each punch; `assign_unowned_observation_tasks` | HW and `created_at >= ws` | none |
-| 33 | `time_punch_corrections` | an administrator corrects a test punch on the timesheet | HW and `corrected_at >= ws` | `tr_time_punch_corrections_append_only` |
-| 34 | `time_punches` | `timeclock_record_punch` (kiosk online and offline replay) | HW and `created_at >= ws` | `tr_time_punches_append_only` |
-| 35 | `timeclock_sync_rejections` | `timeclock_record_punch` for a refused offline punch | HW and `created_at >= ws` | `tr_timeclock_sync_rejections_append_only` (not in the GOAL list; it is the same append-only guard and blocks the delete) |
-| 36 | `floor_unlocks` | `floor_verify_unlock`, `floor_end_unlock`, `floor_heartbeat` | HW and `started_at >= ws` | `tr_floor_unlocks_guard` |
-| 37 | Storage bucket `incident-photos` | fall report photo upload (`src/lib/care-events/attachments.ts`, path `<org>/<facility>/<care event>/<uuid>.<ext>`) | objects under `<org>/<HW>/` with `created_at >= ws` | removed through the Storage API by `homewood-test-window-photos.mjs` before the SQL wipe; the SQL wipe refuses while any remain |
+| 15 | `resident_observation_assignments` | `record_cadence_observation_tasks`, `assign_unowned_observation_tasks`, `claim_observation_task`, `generate_monitoring_order_tasks` | HW and `created_at >= ws` | none |
+| 16, 17 | `resident_observation_tasks`, `resident_observation_logs` (one statement: they reference each other) | the generator under the test cadence and for monitoring orders; lapse and rung updates; charting inserts the log and completes the task | HW and `created_at >= ws` | `tr_rounding_task_write_guard`, `tr_rounding_logs_immutable` |
+| 18 | `resident_monitoring_order_events` | `haven.record_monitoring_order_event` trigger on the order | `monitoring_order_id` in set 19 | none |
+| 19 | `resident_monitoring_orders` | `haven.bridge_watch_instance_to_monitoring_order`: a test fall's watch instance places an order | HW and `created_at >= ws` and `source_watch_instance_id` in set 27 | none |
+| 20 | `watchlist_signal_instances` | `evaluate_watchlist_signals` (watchlist engine) from window observations and care events | HW and `created_at >= ws` | none |
+| 21 | `incident_photos` | `attach_care_event_file` after the upload to bucket `incident-photos` | `incident_id` in set 29 or `care_event_id` in set 28 | none |
+| 22 | `incident_followups` | `submit_care_event`, witness tasks | `incident_id` in set 29 | none |
+| 23 | `regulatory_reporting_obligations` | `care_event_create_ahca_obligations` | `incident_id` in set 29 | none |
+| 24, 25 | `incident_rca`, `incident_root_causes` | an administrator works the test incident | `incident_id` in set 29 | none |
+| 26 | `care_plan_review_alerts` | `care_plan_alert_on_incident` (falls, wandering, skin) and `care_plan_alert_on_condition_change` | `trigger_source_id` in set 29 or set 31 | none |
+| 27 | `resident_watch_instances` | `auto_trigger_watch_protocol` trigger on a new incident | `triggered_by_type` in (`incident_fall`, `incident_elopement`, `incident_wandering`) and `triggered_by_id` in set 29 | none |
+| 28 | `care_events` | `submit_care_event` (online, `/api/care-events/submit`, `floor_replay_submit_care_event`); note, file and acknowledge updates | HW and `created_at >= ws` | none |
+| 29 | `incidents` | `submit_care_event` at level 2 and above | `id` = `care_events.incident_id` of set 28 | none |
+| 30, 31 | `behavioral_logs`, `condition_changes` | `submit_care_event` for the behavior and condition tiles | `id` = `care_events.behavioral_log_id` / `condition_change_id` of set 28 | none |
+| 32 | `shift_handoff_notes` | Handoff tab (`src/lib/floor/handoff-notes.ts`, direct insert and read receipt) | HW and `created_at >= ws` and `source_kind IS NULL` (admission notes carry a `source_kind` and are kept) | none |
+| 33 | `shift_handoffs` | caregiver handoff surface | HW and `created_at >= ws` | none |
+| 34 | `visitor_log_entries` | `visitor_kiosk_sign_in`, `visitor_kiosk_sign_out`, `visitor_match_resident` | HW and `created_at >= ws` and `kiosk_device_id IS NOT NULL` (staff-typed entries are kept) | none |
+| 35 | `med_passes` | `haven.med_tech_shift_open_from_clock` on a kiosk clock-in | `shift_id` in set 38 | none |
+| 36, 37 | `shift_tape_events`, `med_tech_shift_residents` | the same clock-in and clock-out triggers | `shift_id` in set 38 | none |
+| 38 | `med_tech_shifts` | `tr_time_punches_med_tech_shift` on each punch; `assign_unowned_observation_tasks` | HW and `created_at >= ws` | none |
+| 39 | `time_punch_corrections` | an administrator corrects a test punch on the timesheet | HW and `corrected_at >= ws` | `tr_time_punch_corrections_append_only` |
+| 40 | `time_punches` | `timeclock_record_punch` (kiosk online and offline replay) | HW and `created_at >= ws` | `tr_time_punches_append_only` |
+| 41 | `timeclock_sync_rejections` | `timeclock_record_punch` for a refused offline punch | HW and `created_at >= ws` | `tr_timeclock_sync_rejections_append_only` (not in the GOAL list; it is the same append-only guard and blocks the delete) |
+| 42 | `floor_unlocks` | `floor_verify_unlock`, `floor_end_unlock`, `floor_heartbeat` | HW and `started_at >= ws` | `tr_floor_unlocks_guard` |
+| Storage | bucket `incident-photos` | fall report photo upload (`src/lib/care-events/attachments.ts`, path `<org>/<facility>/<care event>/<uuid>.<ext>`) | objects under `<org>/<HW>/` with `created_at >= ws` | removed through the Storage API by `scripts/floor/homewood-test-window-photos.mjs` before the SQL wipe; the SQL wipe refuses while any remain |
+
+Found by the local proof, not by reading the code: `care_plan_alert_on_condition_change` (a trigger on `condition_changes`), `haven.bridge_watch_instance_to_monitoring_order` (a test fall places a real monitoring order, which then generates checks and notices), and `triggered_by_type` values of `incident_fall` and friends rather than `incident`. Each is now in the sets above, and the proof asserts that the only Homewood rows left inside the window afterwards are the ones it deliberately made through other producers.
 
 `tr_payroll_source_revision` (on `time_punches`, `time_punch_corrections`, `timeclock_sync_rejections`, `floor_unlocks`) fires on DELETE but does not block it: it bumps `haven.payroll_packet_source_revisions` so any payroll preview built from these punches is marked stale. It stays enabled on purpose.
 
@@ -79,4 +85,4 @@ The snapshot of every one of these, plus all organization routes, escalation ver
 
 ## Tables outside the set that can point at set rows
 
-`emar_records`, `prn_events` and `witness_signatures` (to `med_passes`, `med_tech_shifts`), `insurance_claims` and `medication_errors` (to `incidents`), `resident_monitoring_orders` (to `resident_watch_instances`), `admission_arrival_reversals` (to `shift_handoff_notes`). None of these is part of the test plan. The wipe counts them in the dry run and stops before deleting anything if one exists, because deleting would need a decision about a record outside the test.
+`emar_records`, `prn_events` and `witness_signatures` (to `med_passes`, `med_tech_shifts`), `insurance_claims` and `medication_errors` (to `incidents`), `resident_monitoring_orders` placed some other way (to `resident_watch_instances`), tasks of a kept order, `admission_arrival_reversals` (to `shift_handoff_notes`). None of these is part of the test plan. The wipe counts them in the dry run and stops before deleting anything if one exists, because deleting would need a decision about a record outside the test.
