@@ -59,6 +59,22 @@ export function completionChoiceError(body: CompletionPayload): string | null {
   return null;
 }
 
+/** Chip selections, when present, map a chip group to a list of codes. Null when they are well formed. */
+export function chipSelectionsShapeError(body: CompletionPayload): string | null {
+  if (body.chipSelections === undefined) return null;
+  const chips = body.chipSelections;
+  if (!chips || typeof chips !== "object" || Array.isArray(chips)
+    || Object.values(chips).some((codes) => !Array.isArray(codes) || codes.some((code) => typeof code !== "string"))) {
+    return "chipSelections must map a chip group to a list of codes";
+  }
+  return null;
+}
+
+/**
+ * The floor tablet's chips ride this payload as `chip_selections`, which
+ * `haven.require_observation_capture` checks against `observation_vocab` for
+ * cadence and monitoring checks and `complete_rounding_task_core` stores.
+ */
 export function buildRoundingReviewPayload(body: CompletionPayload, input: { requestId: string; observedAt: Date; offline: boolean }) {
   const exceptionType = inferExceptionType(body);
   return {
@@ -79,6 +95,7 @@ export function buildRoundingReviewPayload(body: CompletionPayload, input: { req
     fall_hazard_observed: body.fallHazardObserved ?? false,
     refused_assistance: body.refusedAssistance ?? false,
     intervention_codes: body.interventionCodes ?? [],
+    chip_selections: body.chipSelections ?? {},
     exception_present: !!exceptionType,
     exception_type: exceptionType,
     exception_severity: body.exceptionSeverity ?? "medium",

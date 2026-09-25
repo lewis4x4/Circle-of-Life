@@ -67,7 +67,18 @@ describe("selectFloorReplayItems", () => {
     expect(items.map((i) => i.client_id)).toEqual(["r1", "r2"]);
   });
 
-  it("leaves chip-capture checks and terminal care events for their owner", () => {
+  it("sends the floor's own charted chips, which replay through the review writer", () => {
+    const chipSelections = { meal_intake: ["ate_well"], mood_state: ["pleasant"] };
+    const items = selectFloorReplayItems({
+      rounding: [round("floor-chips", A, UNLOCK_A, 1, { captureSurface: "floor", residentLocation: "dining_room", residentState: "eating_meal", chipSelections })],
+      careEvents: [],
+      signedInUserId: null,
+    });
+    expect(items.map((i) => i.client_id)).toEqual(["floor-chips"]);
+    expect(items[0].payload).toMatchObject({ captureSurface: "floor", residentState: "eating_meal", chipSelections });
+  });
+
+  it("leaves caregiver chip-capture checks and terminal care events for their owner", () => {
     const items = selectFloorReplayItems({
       rounding: [round("chips", A, UNLOCK_A, 1, { chipSelections: { mood: ["calm"] } })],
       careEvents: [event("done", A, UNLOCK_A, 2, true)],

@@ -124,8 +124,9 @@ function resolveQueueStore(store?: FloorQueueStore): FloorQueueStore {
 /**
  * Items the device replay should send: captured under a floor unlock, and not
  * the signed-in person's (theirs go out through the normal owner sync). With
- * nobody signed in, every floor item qualifies. Chip-capture checks have no
- * device replay writer and wait for their owner; terminal care events are
+ * nobody signed in, every floor item qualifies. Caregiver chip-capture checks
+ * have no device replay writer and wait for their owner (the floor's own
+ * chart, `captureSurface: "floor"`, replays); terminal care events are
  * reconciliation items and are never resent. Oldest first.
  */
 export function selectFloorReplayItems(input: {
@@ -135,7 +136,8 @@ export function selectFloorReplayItems(input: {
 }): FloorReplayItem[] {
   const notMine = (owner: string) => !input.signedInUserId || owner !== input.signedInUserId;
   const rounding: FloorReplayItem[] = input.rounding
-    .filter((item) => Boolean(item.unlockId) && Boolean(item.ownerUserId) && notMine(item.ownerUserId) && item.payload.chipSelections === undefined)
+    .filter((item) => Boolean(item.unlockId) && Boolean(item.ownerUserId) && notMine(item.ownerUserId)
+      && (item.payload.chipSelections === undefined || item.payload.captureSurface === "floor"))
     .map((item) => ({
       kind: "rounding",
       client_id: item.id,

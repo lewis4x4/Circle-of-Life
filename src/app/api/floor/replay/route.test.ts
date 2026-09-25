@@ -83,7 +83,31 @@ describe("POST /api/floor/replay", () => {
     ]);
   });
 
-  it("rejects a malformed item without calling the database, and chip capture it cannot replay", async () => {
+  it("replays a floor chart's chips, location and state through the review writer", async () => {
+    mock.rpc.mockResolvedValue({ data: { ok: true, log_id: "log-1", status: "completed_on_time" }, error: null });
+    const chipSelections = { meal_intake: ["ate_some"], med_response: ["took_meds"] };
+    const item = { ...ROUNDING, payload: { ...ROUNDING.payload, captureSurface: "floor", residentLocation: "resident_room", residentState: "resting_in_bed", chipSelections } };
+    const json = await (await POST(request({ items: [item] }))).json();
+    expect(json.results).toEqual([{ client_id: ROUND_ID, status: "sent" }]);
+    const [name, args] = mock.rpc.mock.calls[0] as [string, Record<string, unknown>];
+    expect(name).toBe("floor_replay_complete_rounding_task");
+    expect(args.p_payload).toMatchObject({
+      resident_location: "resident_room",
+      resident_state: "resting_in_bed",
+      chip_selections: chipSelections,
+      repositioned: true,
+      offline: true,
+    });
+  });
+
+  it("rejects a floor chart whose chips are not a group to code map", async () => {
+    const item = { ...ROUNDING, payload: { ...ROUNDING.payload, captureSurface: "floor", chipSelections: { mood_state: "pleasant" } } };
+    const json = await (await POST(request({ items: [item] }))).json();
+    expect(json.results).toEqual([{ client_id: ROUND_ID, status: "rejected", error: "invalid_input" }]);
+    expect(mock.rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed item without calling the database, and caregiver chip capture it cannot replay", async () => {
     const json = await (await POST(request({ items: [
       { ...ROUNDING, payload: { ...ROUNDING.payload, quickStatus: "sleepy" } },
       { ...CARE_EVENT, client_id: "b1111111-1111-4111-8111-111111111111", payload: { ...CARE_EVENT.payload, kind: "not_a_kind" } },

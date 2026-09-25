@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccessibleRoundingFacilityIds, getRoundingRequestContext, revalidateRoundingRequestContext, type RoundingRequestContext } from "@/lib/rounding/auth";
 import { logError } from "@/lib/observability/logger";
-import { buildRoundingReviewPayload, completionChoiceError, completionFieldError } from "@/lib/rounding/review-payload";
+import { buildRoundingReviewPayload, chipSelectionsShapeError, completionChoiceError, completionFieldError } from "@/lib/rounding/review-payload";
 import type { CompletionPayload } from "@/lib/rounding/types";
 
 function retryOwnerMatches(owner: NonNullable<CompletionPayload["retryOwner"]>, context: RoundingRequestContext) {
@@ -66,15 +66,15 @@ export async function POST(
   // Chip capture. Presence of this key is what routes the write through the
   // composing command; the command itself rejects a code this facility does
   // not offer rather than dropping it, so nothing is validated twice here
-  // beyond the shape.
-  const usesChipCapture = body.chipSelections !== undefined;
-  if (usesChipCapture) {
-    const chips = body.chipSelections;
-    if (!chips || typeof chips !== "object" || Array.isArray(chips)
-      || Object.values(chips).some((codes) => !Array.isArray(codes) || codes.some((code) => typeof code !== "string"))) {
-      return NextResponse.json({ error: "chipSelections must map a chip group to a list of codes" }, { status: 400 });
-    }
+  // beyond the shape. The floor tablet's chips stay on the review writer with
+  // its flat answers (see `captureSurface`); the review writer checks the chips
+  // against the vocabulary for cadence and monitoring checks.
+  const chipShapeError = chipSelectionsShapeError(body);
+  if (chipShapeError) {
+    return NextResponse.json({ error: chipShapeError }, { status: 400 });
   }
+  const hasChips = body.chipSelections !== undefined;
+  const usesChipCapture = hasChips && body.captureSurface !== "floor";
 
   const accessibleFacilityIds = await getAccessibleRoundingFacilityIds(context);
   const { data: task, error: taskError } = await context.admin

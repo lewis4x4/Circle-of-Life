@@ -9,7 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isCareEventKind } from "@/lib/care-events/level-engine";
 import type { FloorReplayItem, FloorReplayResult } from "@/lib/floor/contract";
 import { logError, logWarn } from "@/lib/observability/logger";
-import { buildRoundingReviewPayload, completionChoiceError, completionFieldError } from "@/lib/rounding/review-payload";
+import { buildRoundingReviewPayload, chipSelectionsShapeError, completionChoiceError, completionFieldError } from "@/lib/rounding/review-payload";
 import type { CompletionPayload } from "@/lib/rounding/types";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { isRecord } from "@/lib/timeclock/server";
@@ -56,15 +56,16 @@ export function parseReplayItem(raw: unknown): { item: FloorReplayItem } | { cli
 
 function roundingReviewPayload(item: Extract<FloorReplayItem, { kind: "rounding" }>): { payload: Json } | { reject: string } {
   const body = item.payload as CompletionPayload;
-  // Chip capture writes through submit_observation, which has no device replay
-  // wrapper; the tablet keeps those for their owner's signed-in sync.
-  if (body.chipSelections !== undefined) return { reject: "chip_capture_not_replayable" };
+  // The caregiver chip capture writes through submit_observation, which has no
+  // device replay wrapper; the tablet keeps those for their owner's signed-in
+  // sync. The floor's own chart carries its chips on the review payload.
+  if (body.chipSelections !== undefined && body.captureSurface !== "floor") return { reject: "chip_capture_not_replayable" };
   const requestId = body.requestId ?? item.client_id;
   if (typeof requestId !== "string" || !UUID_STRING_RE.test(requestId)) return { reject: "invalid_input" };
   const observedAtRaw = typeof body.observedAt === "string" ? body.observedAt : item.captured_at;
   const observedAt = new Date(observedAtRaw);
   if (Number.isNaN(observedAt.getTime())) return { reject: "invalid_input" };
-  if (completionFieldError(body) || completionChoiceError(body)) return { reject: "invalid_input" };
+  if (completionFieldError(body) || completionChoiceError(body) || chipSelectionsShapeError(body)) return { reject: "invalid_input" };
   return { payload: buildRoundingReviewPayload(body, { requestId, observedAt, offline: true }) as unknown as Json };
 }
 

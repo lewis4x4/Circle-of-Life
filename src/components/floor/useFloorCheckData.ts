@@ -1,10 +1,9 @@
 "use client";
 
-import { fetchFloorCensus, fetchFloorTasks } from "@/lib/floor/floor-data";
+import { fetchFloorCensus, fetchFloorCheckVocab, fetchFloorTasks } from "@/lib/floor/floor-data";
 import { residentNameOf, type FloorTaskApiRow } from "@/lib/floor/now-rows";
 import { readFloorCache, writeFloorCache } from "@/lib/floor/memory-cache";
-import { fetchLocationChips } from "@/lib/care-events/report-data";
-import type { ObservationVocabOption } from "@/lib/rounding/observation-chips";
+import { emptyObservationVocabCatalog, type ObservationVocabCatalog } from "@/lib/rounding/observation-chips";
 
 import { useFloorSession } from "./FloorContext";
 import { useFloorQuery } from "./useFloorQuery";
@@ -15,34 +14,41 @@ export type FloorCheckData = {
   residentName: string;
   room: string | null;
   gender: string | null;
-  locations: ObservationVocabOption[];
+  /** Places, what they are doing, and the meal, mood and medication chips. */
+  vocab: ObservationVocabCatalog;
   /** False when the census could not be read: the room is unknown, not missing. */
   roomKnown: boolean;
-  /** True when the places could not be read: say so, never "none set up". */
-  locationsFailed: boolean;
+  /** True when the choices could not be read: say so, never "none set up". */
+  vocabFailed: boolean;
 };
 
+const VOCAB_MAX_AGE_MS = 12 * 60 * 60_000;
 
-/** The check, its resident (room, recorded gender for the questions) and the facility's location chips. */
+
+/** The check, its resident (room, recorded gender for the questions) and the facility's check choices. */
 export function useFloorCheckData(taskId: string) {
   const { supabase, facility } = useFloorSession();
   const facilityId = facility.facilityId;
   return useFloorQuery<FloorCheckData | null>(
     `check:${taskId}`,
     async () => {
-      const [rows, locations] = await Promise.all([
+      const vocabKey = `vocab:${facilityId}`;
+      const [rows, vocab] = await Promise.all([
         // Offline, the queue Now already read this unlock still has the check.
         fetchFloorTasks({ facilityId, taskId }).catch((error: unknown) => {
           const cached = readFloorCache<FloorTaskApiRow[]>(`tasks:${facilityId}`, 12 * 60 * 60_000)?.filter((row) => row.id === taskId);
           if (cached && cached.length > 0) return cached;
           throw error;
         }),
-        // The same six in-building places the report flow offers (observation_vocab, no out-of-facility codes).
-        fetchLocationChips(supabase, facilityId)
-          .then((chips) => chips.map((chip) => ({ code: chip.code, label: chip.label })))
+        // Offline, the choices an earlier check on this unlock read still stand.
+        fetchFloorCheckVocab(supabase, facilityId)
+          .then((catalog) => {
+            writeFloorCache(vocabKey, catalog);
+            return catalog;
+          })
           .catch((error: unknown) => {
-            console.error("[floor] location chips", error);
-            return null;
+            console.error("[floor] check choices", error);
+            return readFloorCache<ObservationVocabCatalog>(vocabKey, VOCAB_MAX_AGE_MS);
           }),
       ]);
       const task = rows[0];
@@ -70,9 +76,9 @@ export function useFloorCheckData(taskId: string) {
         residentName: residentNameOf(task.residents),
         room: census?.find((row) => row.id === residentId)?.room ?? null,
         roomKnown: census !== null,
-        locationsFailed: locations === null,
+        vocabFailed: vocab === null,
         gender,
-        locations: locations ?? [],
+        vocab: vocab ?? emptyObservationVocabCatalog(),
       };
     },
     5_000,

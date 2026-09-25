@@ -19,6 +19,13 @@ import {
   type FloorCheckDraft,
 } from "@/lib/floor/check-form";
 import { FloorOperatorError, claimFloorCheck, currentRetryOwner, saveFloorCheck } from "@/lib/floor/check-submit";
+import {
+  OBSERVATION_CHIP_GROUPS,
+  OBSERVATION_CHIP_GROUP_HEADINGS,
+  isObservationChipSelected,
+  toggleObservationChip,
+  type ObservationVocabOption,
+} from "@/lib/rounding/observation-chips";
 import { dropFloorCache } from "@/lib/floor/memory-cache";
 import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { FLOOR_CHECK_NAME, checkTiming } from "@/lib/floor/now-rows";
@@ -36,9 +43,10 @@ import { useFloorCheckData, type FloorCheckData } from "./useFloorCheckData";
 
 /**
  * `/floor/check/[taskId]` (spec 40 §6 screen 5, DESIGN.md 05): chart one check
- * with chips. How they are is the one required pick; why late is required once
- * the check is over. Saves through the caregiver completion path, or the
- * offline queue.
+ * with chips. How they are, where, what they are doing and at least one meal,
+ * mood or medication chip are required, as the database requires for a Smart
+ * Rounding check; why late is required once the check is over. Saves through
+ * the caregiver completion route, or the offline queue.
  */
 export function FloorCheckScreen({ taskId }: { taskId: string }) {
   const { state, reload } = useFloorCheckData(taskId);
@@ -56,7 +64,7 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
   const router = useRouter();
   const { profile, facility, timeZone } = useFloorSession();
   const now = useFloorNow();
-  const ids = { how: useId(), where: useId(), help: useId(), wrong: useId(), late: useId() };
+  const ids = { how: useId(), where: useId(), doing: useId(), chips: useId(), help: useId(), wrong: useId(), late: useId() };
   const [draft, setDraft] = useState<FloorCheckDraft>(emptyFloorCheckDraft);
   const [needsClaim, setNeedsClaim] = useState(Boolean(data.task.requires_claim));
   const [serverWantsReason, setServerWantsReason] = useState(false);
@@ -108,7 +116,7 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
     const result = await saveFloorCheck({
       taskId: data.task.id,
       residentId: data.residentId,
-      draft: buildFloorCompletionPayload(draft),
+      draft: buildFloorCompletionPayload(draft, data.vocab),
       owner,
       requestId: attempt.requestId,
       observedAt: attempt.observedAt,
@@ -166,20 +174,50 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
             ))}
           </ChoiceGroup>
           <ChoiceGroup id={ids.where} title={checkQuestion("where", pronoun)} hint="pick one">
-            {data.locationsFailed ? (
-              <StatusReadError text="The places could not load." onRetry={onRetry} />
-            ) : data.locations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No places are set up for this building yet.</p>
-            ) : (
-              data.locations.map((option) => (
-                <ChoiceChip key={option.code} pressed={draft.location === option.code} disabled={needsClaim} onPress={() => set({ location: draft.location === option.code ? null : option.code })}>
-                  {option.label}
-                </ChoiceChip>
-              ))
-            )}
+            <VocabChips
+              options={data.vocab.location}
+              failed={data.vocabFailed}
+              failedText="The places could not load."
+              emptyText="No places are set up for this building yet. Tell the administrator."
+              isPressed={(code) => draft.location === code}
+              disabled={needsClaim}
+              onPress={(code) => set({ location: draft.location === code ? null : code })}
+              onRetry={onRetry}
+            />
+          </ChoiceGroup>
+          <ChoiceGroup id={ids.doing} title={checkQuestion("doing", pronoun)} hint="pick one">
+            <VocabChips
+              options={data.vocab.state}
+              failed={data.vocabFailed}
+              failedText="The choices could not load."
+              emptyText="Nothing is set up for this building yet. Tell the administrator."
+              isPressed={(code) => draft.residentState === code}
+              disabled={needsClaim}
+              onPress={(code) => set({ residentState: draft.residentState === code ? null : code })}
+              onRetry={onRetry}
+            />
           </ChoiceGroup>
         </div>
         <div className="flex flex-col gap-5.5">
+          <div className="flex flex-col gap-4" role="group" aria-labelledby={ids.chips}>
+            <p id={ids.chips} className="text-[13px] text-muted-foreground">
+              Pick at least one for meals, mood or medications.
+            </p>
+            {OBSERVATION_CHIP_GROUPS.map((group) => (
+              <ChoiceGroup key={group} id={`${ids.chips}-${group}`} title={OBSERVATION_CHIP_GROUP_HEADINGS[group]} hint="any">
+                <VocabChips
+                  options={data.vocab[group]}
+                  failed={data.vocabFailed}
+                  failedText="The choices could not load."
+                  emptyText="Nothing is set up for this building yet."
+                  isPressed={(code) => isObservationChipSelected(draft.chips, group, code)}
+                  disabled={needsClaim}
+                  onPress={(code) => set({ chips: toggleObservationChip(draft.chips, group, code) })}
+                  onRetry={onRetry}
+                />
+              </ChoiceGroup>
+            ))}
+          </div>
           <ChoiceGroup id={ids.help} title="Did you help with" hint="any">
             {FLOOR_HELPED_WITH_OPTIONS.map((option) => (
               <ChoiceChip key={option.value} pressed={draft.helpedWith.includes(option.value)} disabled={needsClaim} onPress={() => set({ helpedWith: toggleValue(draft.helpedWith, option.value) })}>
@@ -232,5 +270,38 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
         </div>
       </div>
     </div>
+  );
+}
+
+/** One vocabulary row of chips, or why there are none: a failed read says so, never "none set up". */
+function VocabChips({
+  options,
+  failed,
+  failedText,
+  emptyText,
+  isPressed,
+  disabled,
+  onPress,
+  onRetry,
+}: {
+  options: readonly ObservationVocabOption[];
+  failed: boolean;
+  failedText: string;
+  emptyText: string;
+  isPressed: (code: string) => boolean;
+  disabled: boolean;
+  onPress: (code: string) => void;
+  onRetry: () => void;
+}) {
+  if (failed) return <StatusReadError text={failedText} onRetry={onRetry} />;
+  if (options.length === 0) return <p className="text-sm text-muted-foreground">{emptyText}</p>;
+  return (
+    <>
+      {options.map((option) => (
+        <ChoiceChip key={option.code} pressed={isPressed(option.code)} disabled={disabled} onPress={() => onPress(option.code)}>
+          {option.label}
+        </ChoiceChip>
+      ))}
+    </>
   );
 }
