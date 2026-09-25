@@ -55,4 +55,16 @@ SET LOCAL ROLE service_role;
 SELECT pg_temp.tassert((pg_temp.tgate('overridden')->>'satisfied')::boolean AND (pg_temp.tgate('overridden')->>'overridden')::boolean,'executive override passes');
 DO $$ BEGIN PERFORM public.benefits_move_in_gate(gen_random_uuid(),'medicaid_pending'); RAISE EXCEPTION 'COL575 unknown admission answered'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END $$;
 RESET ROLE;
+-- COL-333 moved move-in to the approved arrival: the gate is part of the arrival readiness (550).
+CREATE FUNCTION pg_temp.tready(p_label text) RETURNS jsonb LANGUAGE sql AS $$ SELECT haven.admission_arrival_readiness((SELECT admission FROM tr WHERE label=p_label)) $$;
+SELECT pg_temp.tassert(EXISTS(SELECT 1 FROM jsonb_array_elements_text(pg_temp.tready('stopped')->'blocked_by') b WHERE b LIKE 'Medicaid preliminary review%does not qualify now%'),'readiness does not block on the Medicaid review');
+SELECT pg_temp.tassert(NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(pg_temp.tready('likely')->'blocked_by') b WHERE b LIKE 'Medicaid%'),'likely to qualify still blocked');
+SELECT pg_temp.tassert(NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(pg_temp.tready('overridden')->'blocked_by') b WHERE b LIKE 'Medicaid%'),'executive override still blocked');
+SELECT pg_temp.tassert(NOT (pg_temp.tready('private')->'snapshot' ? 'medicaid_review'),'fingerprint changed for a case the gate does not touch');
+SELECT pg_temp.tassert(pg_temp.tready('stopped')->'snapshot'->'medicaid_review'->>'result'='not_qualified_now','review not in the fingerprint');
+-- An override changes the fingerprint, so an approval given before it no longer counts (and vice versa).
+CREATE TEMP TABLE tfp AS SELECT pg_temp.tready('stopped')->>'fingerprint' fp;
+UPDATE public.admission_cases SET medicaid_gate_override_reason='Synthetic override',medicaid_gate_override_by=(SELECT id FROM ta),medicaid_gate_override_at=now() WHERE id=(SELECT admission FROM tr WHERE label='stopped');
+SELECT pg_temp.tassert(pg_temp.tready('stopped')->>'fingerprint'<>(SELECT fp FROM tfp),'override did not change the readiness fingerprint');
+SELECT pg_temp.tassert(NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(pg_temp.tready('stopped')->'blocked_by') b WHERE b LIKE 'Medicaid%'),'override did not clear the block');
 ROLLBACK;
