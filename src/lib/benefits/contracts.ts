@@ -62,7 +62,7 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("void_document"), payload: z.object({ document_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict() }).strict(),
 ]);
-export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days", "score.reapply_days", "stalled.days", "plan.rates", "document.valid_days", "summary.goals"] as const;
+export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days", "score.reapply_days", "stalled.days", "plan.rates", "document.valid_days", "summary.goals", "prompt.over_income"] as const;
 export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
 export const checklistRuleSchema = z.array(z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(BENEFITS_STAGES), signature_status: z.enum(["not_required", "pending"]).default("not_required") }).strict()).max(60);
 export const screeningStandardSchema = z.object({ income_cents: z.number().int().min(1).max(99_999_999), assets_cents: z.number().int().min(1).max(9_999_999_999), label: z.string().trim().min(1).max(200), source: z.string().max(500).optional() }).strict();
@@ -94,6 +94,7 @@ export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("runway.lead_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("score.reapply_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("stalled.days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("prompt.over_income"), value: z.boolean(), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("summary.goals"), value: summaryGoalsSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("document.valid_days"), value: documentValidDaysSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("plan.rates"), value: z.array(z.object({ plan: z.string().trim().min(1).max(100), monthly_cents: z.number().int().min(1).max(99_999_999), facility_id: uuid.nullable().optional() }).strict()).max(100), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
@@ -132,10 +133,18 @@ export interface SweepStatus { can_start: boolean; facilities: SweepFacility[] }
 export const PROMPT_KINDS = ["runway", "late_payments"] as const;
 export type PromptKind = typeof PROMPT_KINDS[number];
 export const startPromptCaseSchema = z.object({ request_id: uuid, resident_id: uuid, kind: z.enum(PROMPT_KINDS) }).strict();
-export const dismissPromptSchema = z.object({ request_id: uuid, resident_id: uuid, kind: z.enum(PROMPT_KINDS), days: z.number().int().min(1).max(180), reason: z.string().trim().min(1).max(2000) }).strict();
+/** COL-769: informational prompts; set aside with an optional reason, never a case start. */
+export const INFO_PROMPT_KINDS = ["over_income", "property_lookback"] as const;
+export type InfoPromptKind = typeof INFO_PROMPT_KINDS[number];
+export const dismissPromptSchema = z.union([
+  z.object({ request_id: uuid, resident_id: uuid, kind: z.enum(PROMPT_KINDS), days: z.number().int().min(1).max(180), reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ request_id: uuid, resident_id: uuid, kind: z.enum(INFO_PROMPT_KINDS), days: z.number().int().min(1).max(180), reason: z.string().trim().max(2000).optional() }).strict(),
+]);
+export interface OverIncomePrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; answered_at: string; can_write: boolean }
+export interface LookbackPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; changed_at: string; can_write: boolean }
 export interface RunwayPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; runway_date: string; days_left: number; last_result: ScreeningResult; can_write: boolean }
 export interface LatePaymentPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; oldest_due: string; owed_cents: number; can_write: boolean }
-export interface MedicaidPrompts { as_of: string; late_signal: Array<{ facility_id: string; facility_name: string; live: boolean }>; runway: RunwayPrompt[]; late_payments: LatePaymentPrompt[] }
+export interface MedicaidPrompts { as_of: string; late_signal: Array<{ facility_id: string; facility_name: string; live: boolean }>; runway: RunwayPrompt[]; late_payments: LatePaymentPrompt[]; over_income?: OverIncomePrompt[]; property_lookback?: LookbackPrompt[] }
 export const BOARD_STEPS = ["intake_requested", "intake_emailed", "assessment_complete", "score", "form_3008_requested", "form_3008_returned", "app_requested", "app_returned", "cares_processing", "cares_appointment", "dcf_decision", "plan_enrolled", "plan_authorized"] as const;
 export type BoardStep = typeof BOARD_STEPS[number];
 export const CONTACT_AGENCIES = ["dcf", "elder_options", "elder_affairs", "cares", "plan", "other"] as const;
