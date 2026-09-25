@@ -9,14 +9,24 @@ vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 const before = {
   localDate: "2026-09-22",
   shifts: [
-    { assignmentId: "sa-ann", staffId: "s-ann", staffName: "Probe, Ann", shiftType: "day", status: "assigned", uncovered: false },
-    { assignmentId: "sa-ben", staffId: "s-ben", staffName: "Probe, Ben", shiftType: "day", status: "confirmed", uncovered: false },
+    { assignmentId: "sa-ann", staffId: "s-ann", staffName: "Probe, Ann", shiftType: "day", startsAt: "2026-09-22T10:00:00Z", endsAt: "2026-09-22T22:00:00Z", status: "assigned", uncovered: false },
+    { assignmentId: "sa-ben", staffId: "s-ben", staffName: "Probe, Ben", shiftType: "day", startsAt: "2026-09-22T10:00:00Z", endsAt: "2026-09-22T22:00:00Z", status: "confirmed", uncovered: false },
   ],
   staff: [{ staffId: "s-ann", staffName: "Probe, Ann" }, { staffId: "s-ben", staffName: "Probe, Ben" }, { staffId: "s-cy", staffName: "Probe, Cy" }],
 };
 const after = { ...before, shifts: [{ ...before.shifts[0], status: "called_out", uncovered: true }, before.shifts[1]] };
 
 describe("CallOutDialog (COL-596)", () => {
+  it("offers nonoverlapping custom staff and shows the saved option name", async () => {
+    const today = { ...after, shifts: [
+      { ...after.shifts[0], shiftType: "custom", presetName: "Saved morning", customStart: "06:00", customEnd: "12:00", startsAt: "2026-09-22T10:00:00Z", endsAt: "2026-09-22T16:00:00Z" },
+      { ...after.shifts[1], shiftType: "custom", startsAt: "2026-09-22T16:00:00Z", endsAt: "2026-09-22T22:00:00Z" },
+    ] };
+    render(<CallOutDialog open onOpenChange={vi.fn()} facilityId="f-1" coverAssignmentId="sa-ann" load={async () => today} />);
+    expect(await screen.findByRole("option", { name: "Probe, Ben" })).toBeInTheDocument();
+    expect(screen.getByText(/Saved morning/)).toBeInTheDocument();
+  });
+
   it("records who and why in a few taps, then offers only people not already on that shift to cover", async () => {
     const load = vi.fn().mockResolvedValueOnce(before).mockResolvedValue(after);
     const record = vi.fn().mockResolvedValue({ ok: true });
@@ -45,5 +55,16 @@ describe("CallOutDialog (COL-596)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record call-out" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("not switched on");
     expect(screen.getByRole("radio", { name: /Probe, Ben/ })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("keeps server facility and role refusal authoritative for an offered cover candidate", async () => {
+    const cover = vi.fn().mockResolvedValue({ ok: false, message: "Replacement must have an active role at this facility" });
+    render(<CallOutDialog open onOpenChange={vi.fn()} facilityId="f-1" coverAssignmentId="sa-ann" load={async () => after} cover={cover} />);
+    await screen.findByRole("option", { name: "Probe, Cy" });
+    fireEvent.change(screen.getByLabelText("Who is covering?"), { target: { value: "s-cy" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cover it" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("active role at this facility");
+    expect(screen.getByLabelText("Who is covering?")).toHaveValue("s-cy");
+    expect(screen.queryByText(/Covered\./)).not.toBeInTheDocument();
   });
 });

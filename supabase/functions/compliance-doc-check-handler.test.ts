@@ -1,7 +1,9 @@
+import { handleComplianceRequest } from "./compliance-doc-check/request.ts";
+import { main as calibration } from "../../scripts/check-compliance-doc.ts";
 import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { triageDocument } from "./compliance-doc-check/handler.ts";
+import { triageDocument as triage, compareEpiPeriod, type EpiFacts } from "./compliance-doc-check/handler.ts";
 import { TypeSafeError, type SystemOneResponse } from "./_shared/typesafe-client.ts";
-import { categoryMayBeSent, QUESTIONS_VERSION } from "./_shared/compliance-doc-questions.ts";
+import { categoryMayBeSent, COMPLIANCE_QUESTIONS, QUESTIONS_VERSION } from "./_shared/compliance-doc-questions.ts";
 
 /**
  * Answers a fully compliant, issued ACORD 28 for Rising Oaks would produce.
@@ -48,6 +50,9 @@ function answers(overrides: Record<string, unknown> = {}): SystemOneResponse {
 }
 
 const RISING_OAKS = "Rising Oaks ALF";
+function triageDocument(response: SystemOneResponse, facility: string | null, facts: EpiFacts = { status: "stated", value: 180, unit: "days" }) {
+  return triage(response, facility, facts);
+}
 
 Deno.test("issued, compliant, correctly filed document is send-ready", () => {
   const triage = triageDocument(answers(), RISING_OAKS);
@@ -114,6 +119,7 @@ Deno.test("a stated EPI shorter than 180 days blocks", () => {
       },
     }),
     RISING_OAKS,
+    { status: "stated", value: 179, unit: "days" },
   );
   assertEquals(triage.route, "blocked");
   assertEquals(triage.flags, ["EPI_UNDER_180_DAYS"]);
@@ -136,6 +142,7 @@ Deno.test("an EPI endorsement that states no period blocks; other documents are 
       },
     }),
     RISING_OAKS,
+    { status: "not_stated" },
   );
   assertEquals(unstatedOnEndorsement.flags, ["EPI_PERIOD_NOT_STATED"]);
 
@@ -155,6 +162,7 @@ Deno.test("an EPI endorsement that states no period blocks; other documents are 
       },
     }),
     RISING_OAKS,
+    { status: "not_stated" },
   );
   assertEquals(unstatedOnLiability.flags, []);
 });
@@ -307,8 +315,71 @@ Deno.test("a loss run or resident contract is withheld from the model entirely",
   // detail that can name a resident, and the gate is the subprocessor's BAA.
   assertEquals(categoryMayBeSent("insurance_loss_run"), false);
   assertEquals(categoryMayBeSent("resident_contracts_master"), false);
-  assertEquals(categoryMayBeSent("insurance_property"), true);
-  assertEquals(categoryMayBeSent("insurance_certificate"), true);
-  // A calibration run has no vault row and therefore no category to refuse on.
-  assertEquals(categoryMayBeSent(null), true);
+  assertEquals(categoryMayBeSent("insurance_property"), false);
+  assertEquals(categoryMayBeSent("insurance_certificate"), false);
+  // Missing category/source proof never authorizes provider processing.
+  assertEquals(categoryMayBeSent(null), false);
+});
+
+Deno.test("Jev never compares the EPI duration against a numeric requirement", () => {
+  assertEquals("epi_period" in COMPLIANCE_QUESTIONS, false);
+});
+
+Deno.test("a category alone cannot authorize the legacy provider path", () => {
+  for (const category of [null, "insurance_property", "insurance_certificate", "unknown"]) {
+    assertEquals(categoryMayBeSent(category), false);
+  }
+});
+
+Deno.test("EPI day comparison belongs to code, including the exact 180-day boundary", () => {
+  for (const [value, expected] of [[179, "under_180"], [180, "at_least_180"], [181, "at_least_180"]] as const) {
+    assertEquals(compareEpiPeriod({ status: "stated", value, unit: "days" }), expected);
+  }
+  for (const value of [-1, 0, 179.5, NaN, Infinity]) {
+    assertEquals(compareEpiPeriod({ status: "stated", value, unit: "days" }), "unknown");
+  }
+  assertEquals(compareEpiPeriod({ status: "stated", value: 6, unit: "months" }), "unknown");
+  assertEquals(compareEpiPeriod(), "unknown");
+});
+
+Deno.test("a model adequacy verdict cannot replace missing reader facts", () => {
+  const result = triage(answers(), RISING_OAKS);
+  assertEquals(result.route, "human_review");
+  assertEquals(result.epi_period, "unknown");
+  assertEquals(result.uncertainties, ["EPI_PERIOD_UNCERTAIN"]);
+  assertEquals(triageDocument(answers(), RISING_OAKS, { status: "stated", value: 179, unit: "days" }).flags, ["EPI_UNDER_180_DAYS"]);
+});
+
+Deno.test("all legacy intake shapes refuse before reading the body or making network calls", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = () => { calls++; throw new Error("Unexpected network call"); };
+  try {
+    for (const body of [
+      { extracted_text: "synthetic" },
+      { facility_document_id: "00000000-0000-0000-0000-000000000001", extracted_text: "synthetic", document_category: "insurance_property" },
+      { extracted_text: "synthetic", sender: { authenticated: true, type: "insurance_agent" }, open_obligations: [{ phi: false }] },
+      { extracted_text: "synthetic", sender: { authenticated: true, type: "facility" } },
+      { extracted_text: "synthetic", source_sha256: "caller-supplied", phi: false },
+    ]) {
+      const req = new Request("https://haven.invalid/compliance-doc-check", {
+        method: "POST", headers: { "x-cron-secret": "test-secret" }, body: JSON.stringify(body),
+      });
+      const res = handleComplianceRequest(req, "test-secret");
+      assertEquals(res.status, 409);
+      assertEquals((await res.json()).code, "VERIFIED_INTAKE_REQUIRED");
+      assertEquals(req.bodyUsed, false);
+    }
+    assertEquals(calls, 0);
+    // The CLI also refuses before reading a local file, even with an old API key present.
+    assertEquals(await calibration(["does-not-exist.pdf"]), 2);
+    assertEquals(calls, 0);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+Deno.test("legacy refusal preserves authentication and HTTP method checks", () => {
+  assertEquals(handleComplianceRequest(new Request("https://haven.invalid", { method: "OPTIONS" }), undefined).status, 200);
+  assertEquals(handleComplianceRequest(new Request("https://haven.invalid"), "test-secret").status, 405);
+  assertEquals(handleComplianceRequest(new Request("https://haven.invalid", { method: "POST" }), "test-secret").status, 401);
+  assertEquals(handleComplianceRequest(new Request("https://haven.invalid", { method: "POST", headers: { "x-cron-secret": "test-secret" } }), undefined).status, 401);
 });

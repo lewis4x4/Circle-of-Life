@@ -12,6 +12,10 @@ const shiftSchema = z.object({
   staffName: z.string(),
   shiftType: z.string(),
   status: z.string(),
+  startsAt: z.string().nullable().optional(),
+  endsAt: z.string().nullable().optional(),
+  presetName: z.string().nullable().optional(),
+  presetColor: z.string().nullable().optional(),
   customStart: z.string().nullable().optional(),
   customEnd: z.string().nullable().optional(),
   coversAssignmentId: z.string().nullable().optional(),
@@ -62,14 +66,31 @@ export async function coverShift(
 
 const SHIFT_LABEL: Record<string, string> = { day: "Day", evening: "Evening", night: "Night", custom: "Custom" };
 
-export function shiftLabel(shift: Pick<HomeShift, "shiftType" | "customStart" | "customEnd">): string {
-  if (shift.shiftType === "custom" && shift.customStart && shift.customEnd) {
-    return `${shift.customStart.slice(0, 5)}–${shift.customEnd.slice(0, 5)}`;
+export function shiftLabel(shift: Pick<HomeShift, "shiftType" | "customStart" | "customEnd" | "presetName">): string {
+  const name = shift.presetName?.trim();
+  if ((name || shift.shiftType === "custom") && shift.customStart && shift.customEnd) {
+    return `${name ? `${name} · ` : ""}${shift.customStart.slice(0, 5)}–${shift.customEnd.slice(0, 5)}`;
   }
+  if (name) return name;
   return `${SHIFT_LABEL[shift.shiftType] ?? shift.shiftType} shift`;
 }
 
 /** Shifts someone can still call out of today, scheduled staff first. */
 export function callableShifts(today: HomeShiftsToday): HomeShift[] {
   return today.shifts.filter((shift) => ["assigned", "confirmed", "swap_requested"].includes(shift.status));
+}
+
+/** The picker is advisory; home_cover_shift rechecks facility, role and conflicts on save. */
+export function coverCandidates(today: HomeShiftsToday, gap: HomeShift | null): HomeShiftsToday["staff"] {
+  if (!gap) return [];
+  const gapStart = Date.parse(gap.startsAt ?? "");
+  const gapEnd = Date.parse(gap.endsAt ?? "");
+  const onShift = new Set(today.shifts.filter((shift) => {
+    if (["called_out", "no_show"].includes(shift.status)) return false;
+    const start = Date.parse(shift.startsAt ?? "");
+    const end = Date.parse(shift.endsAt ?? "");
+    // Missing intervals cannot establish a conflict. Never infer one from a shared shift type.
+    return gapStart < gapEnd && start < end && start < gapEnd && gapStart < end;
+  }).map((shift) => shift.staffId));
+  return today.staff.filter((person) => person.staffId !== gap.staffId && !onShift.has(person.staffId));
 }

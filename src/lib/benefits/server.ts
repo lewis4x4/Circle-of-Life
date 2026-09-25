@@ -10,7 +10,7 @@ import {
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
   admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
-  completeRecheckSchema,
+  completeRecheckSchema, startSweepSchema,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -230,6 +230,30 @@ export async function completeBenefitsRecheck(request: Request, recheckId: strin
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ recheck_id: uuid, outcome: z.enum(["no_change", "resident_left"]), next_recheck_id: uuid.nullable(), next_due_on: z.string().nullable() }).safeParse(result.data);
   return reply.success && reply.data.recheck_id === recheckId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+const sweepFacilitySchema = z.object({
+  facility_id: uuid, facility_name: z.string(), started_at: z.string().nullable(), started_by_name: z.string().nullable(), can_write: z.boolean(),
+  total: z.number().int().min(0), answered: z.number().int().min(0),
+  remaining: z.array(z.object({ resident_id: uuid, resident_name: z.string(), status: z.string() })).nullable(),
+});
+export async function getBenefitsSweep(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const query = z.object({ facility_id: uuid.optional() }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
+  if (!query.success) return benefitsFailure(400, "Invalid facility.");
+  const result = await rpc(auth.actor, "benefits_sweep_status", { p_facility_id: query.data.facility_id ?? null });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = z.object({ can_start: z.boolean(), facilities: z.array(sweepFacilitySchema) }).safeParse(result.data);
+  if (!parsed.success || (query.data.facility_id && parsed.data.facilities.some((f) => f.facility_id !== query.data.facility_id))) return benefitsFailure();
+  return NextResponse.json(parsed.data, { headers: noStore });
+}
+export async function startBenefitsSweep(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = startSweepSchema.safeParse(await readBody(request));
+  if (!parsed.success) return benefitsFailure(400, "Choose the facility.");
+  const result = await rpc(auth.actor, "benefits_sweep_start", { p_facility_id: parsed.data.facility_id, p_note: parsed.data.note ?? null, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ sweep_id: uuid, facility_id: uuid, started_at: z.string(), already_started: z.boolean() }).safeParse(result.data);
+  return reply.success && reply.data.facility_id === parsed.data.facility_id ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
 }
 /** Reading private financial evidence is recorded in the case history before any bytes leave the server. */
 export async function recordBenefitsDocumentAccess(actor: CurrentApiActor, caseId: string, documentId: string, kind: "download" | "packet"): Promise<NextResponse | null> {

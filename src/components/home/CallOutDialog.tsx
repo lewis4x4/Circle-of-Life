@@ -8,6 +8,7 @@ import {
   CALLOUT_REASONS,
   callableShifts,
   coverShift,
+  coverCandidates,
   fetchShiftsToday,
   recordCallout,
   shiftLabel,
@@ -63,8 +64,7 @@ export function CallOutDialog({
 
   const shifts = today ? callableShifts(today) : [];
   const gap = today?.shifts.find((s) => s.assignmentId === coverFor) ?? null;
-  const onShift = new Set(today?.shifts.filter((s) => gap && s.shiftType === gap.shiftType && !["called_out", "no_show"].includes(s.status)).map((s) => s.staffId));
-  const candidates = today?.staff.filter((p) => p.staffId !== gap?.staffId && !onShift.has(p.staffId)) ?? [];
+  const candidates = today ? coverCandidates(today, gap) : [];
 
   async function submitCallout() {
     if (!assignmentId || !reason || busy) return;
