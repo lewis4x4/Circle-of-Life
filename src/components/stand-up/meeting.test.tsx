@@ -5,14 +5,15 @@ import { useFacilityStore } from '@/hooks/useFacilityStore';
 import type { MeetingReport, MeetingWorkspace } from '@/lib/stand-up/meetings';
 import { StandUpRequestError } from './transport';
 
-const mocks = vi.hoisted(() => ({ request: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'facility_admin' } }));
+const mocks = vi.hoisted(() => ({ request: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'facility_admin' }, disagreements: [] as unknown[] }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
 // Census chips and notices read through the browser client; nothing is open in these fixtures.
 // COL-555: the facility's census reasons are a setting, read through haven_operating_rule.
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async (name: string, args: Record<string, unknown> = {}) =>
   name === 'haven_operating_rule' && args.p_rule_key === 'stand_up.census_reason_options'
     ? { data: [{ value: [{ key: 'roster_not_current', label: 'Roster not updated yet' }, { key: 'change_not_entered', label: 'Admission or discharge not entered in Haven' }, { key: 'other', label: 'Other' }], rule_id: 'r', effective_from: '2026-09-25', facility_id: null }], error: null }
-    : { data: [], error: null } }) }));
+    : name === 'stand_up_census_disagreements' ? { data: mocks.disagreements, error: null }
+    : { data: [], error: null }, from: () => { const q: Record<string, unknown> = {}; for (const m of ['select', 'eq', 'in', 'is', 'order', 'limit']) q[m] = () => q; q.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(resolve); return q } }) }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 
 const monday = { facilities: [{ id: 'a', name: 'Homewood' }], reports: [], current_week: '2026-09-21', can_import: false, server_now: '2026-09-24T12:30:00Z' };
@@ -70,6 +71,7 @@ const thursdayReport = { meeting_day: 'thursday', generated_at: '2026-09-24T12:3
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 beforeEach(() => {
   mocks.auth.appRole = 'facility_admin';
+  mocks.disagreements = [];
   mocks.request.mockReset();
   mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
     if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday() : monday;
@@ -237,5 +239,79 @@ describe('The Thursday report (COL-754)', () => {
     expect(screen.queryByText(/Test Resident/)).not.toBeInTheDocument();
     expect(screen.getByText('Admission notes are shown to administrators.')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+});
+
+// COL-749 ruling 3: the census bridge heads the building's Thursday section.
+const bridge = (patch: Record<string, unknown> = {}) => ({
+  state: 'matches', monday_census: 34, monday_at: '2026-09-21T12:40:00Z', arrivals: 3, departures: 1, hospital_out: 1, returns: 0,
+  hospital_in_census: true, expected: 36, actual: 36, gap: 0, tolerance: 0, through: '2026-09-24T12:31:00Z', ...patch,
+});
+
+describe('The Thursday census bridge (COL-749)', () => {
+  it('heads the entry form with the bridge: Monday, the movements, expected beside actual, green with a check', async () => {
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday() : monday;
+      if (action === 'report') return { ...thursdayReport, facilities: [{ ...facilityReport, bridge: bridge() }] };
+      throw new Error('Unexpected operation');
+    });
+    await openThursday();
+    const section = await screen.findByRole('region', { name: 'Census bridge from Monday' });
+    expect(section).toHaveAttribute('data-bridge-state', 'matches');
+    expect(section.className).toMatch(/border-success/);
+    expect(within(section).getByRole('status')).toHaveTextContent(
+      'Census bridge matches: Monday 34, plus 3 arrivals, minus 1 departure, expected 36. Thursday 36, exactly as expected. Hospital or rehab: 1 hospital or rehab out and 0 returns, still counted in census.');
+    expect(section).toHaveTextContent('Matches');
+    // It sits above the figures table.
+    const table = screen.getByRole('table', { name: /Thursday figures beside Monday/ });
+    expect(section.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(section).queryByRole('button', { name: 'Reconcile the census' })).not.toBeInTheDocument();
+  });
+
+  it('shows a gap in red with its number and opens the same Reconcile dialog, fix first', async () => {
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday() : monday;
+      if (action === 'report') return { ...thursdayReport, facilities: [{ ...facilityReport, bridge: bridge({ state: 'differs', actual: 37, gap: 1 }) }] };
+      throw new Error('Unexpected operation');
+    });
+    mocks.disagreements = [{ facility_id: 'a', facility_name: 'Homewood', meeting_day: 'thursday', week_start: '2026-09-21', entry_due_at: meetingWindow.entry_due_at, call_at: meetingWindow.call_at,
+      state: 'open', unreconciled: false, roster_as_of: null, reason_window_days: 7, compares_with_monday: true, reason_options: [{ key: 'other', label: 'Other' }],
+      figures: [{ key: 'current_total_census', against: 'monday', label: 'Census against Monday', stand_up: 37, roster: 36, monday: 34, roster_change_since_monday: 2, state: 'open',
+        bridge: { monday: 34, expected: 36, arrivals: 3, departures: 1, hospital_out: 1, returns: 0, hospital_in_census: true, tolerance: 0 },
+        reason: null, reason_at: null, reason_until: null, roster_changed_since_reason: false }] }];
+    await openThursday();
+    const section = await screen.findByRole('region', { name: 'Census bridge from Monday' });
+    expect(section.className).toMatch(/border-destructive/);
+    expect(section).toHaveTextContent('Off by 1');
+    expect(within(section).getByRole('status')).toHaveTextContent('Census bridge is off by 1: Monday 34, plus 3 arrivals, minus 1 departure, expected 36. Thursday 37, 1 resident more than expected.');
+    fireEvent.click(within(section).getByRole('button', { name: 'Reconcile the census' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reconcile census · Homewood' });
+    expect([...dialog.querySelectorAll('[data-reconcile-step]')].map(node => node.getAttribute('data-reconcile-step'))).toEqual(['fix', 'use-roster', 'reason']);
+    expect(within(dialog).getByRole('button', { name: 'Use the expected census from Monday: 36' })).toBeInTheDocument();
+  });
+
+  it('shows a recruiter the bridge and the admission steps, and says the admission’s own notes are for administrators', async () => {
+    mocks.auth.appRole = 'recruiter';
+    const lead = facilityReport.potential_residents[0];
+    const recruiterView = { ...facilityReport, names_shown: false, admission_notes_shown: false, admission_workflow_shown: true, bridge: bridge(),
+      potential_residents: [{ ...lead, timeline: [...lead.timeline,
+        { at: '2026-09-23T14:00:00Z', recorded_at: '2026-09-23T14:00:00Z', new: true, kind: 'admission_step', by: 'Charlene', method: 'admission_status_changed', with: 'pending_clearance', text: null, status: 'bed_reserved' },
+        { at: '2026-09-23T15:00:00Z', recorded_at: '2026-09-23T15:00:00Z', new: true, kind: 'admission_step', by: null, method: 'admission_move_in_blocked', with: null, text: 'quoted rate terms, Form 1823', status: null },
+        { at: '2026-09-23T16:00:00Z', recorded_at: '2026-09-23T16:00:00Z', new: true, kind: 'rate_note', by: null, method: null, with: null, text: 'Family asked about a second-floor room.', status: 'private' },
+        { at: '2026-09-23T17:00:00Z', recorded_at: '2026-09-23T17:00:00Z', new: true, kind: 'checklist_note', by: null, method: 'waived', with: null, text: 'Waived: Private pay; no card.', status: 'insurance_financial_cards' },
+      ] }] };
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (payload.meeting_day !== 'thursday') throw new StandUpRequestError('Stand Up access denied', 403);
+      if (action === 'report') return { ...thursdayReport, actor_role: 'recruiter', facilities: [recruiterView] };
+      return thursday({ can_edit: false, can_edit_submitted: false, actor_role: 'recruiter' });
+    });
+    render(<StandUpWorkspace />);
+    const article = await screen.findByRole('article', { name: 'Avery Prospect' });
+    expect(screen.getByRole('region', { name: 'Census bridge from Monday' })).toBeInTheDocument();
+    expect(article).toHaveTextContent('Admission moved from pending clearance to bed reserved');
+    expect(article).toHaveTextContent('Move-in blocked: quoted rate terms, Form 1823');
+    expect(article).toHaveTextContent('Quoted private room · Family asked about a second-floor room.');
+    expect(article).toHaveTextContent('Insurance financial cards, waived · Waived: Private pay; no card.');
+    expect(screen.getByText(/The admission’s own notes and anything clinical are shown to administrators\./)).toBeInTheDocument();
   });
 });

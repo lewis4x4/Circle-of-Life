@@ -19,6 +19,7 @@ import { showsChip, type CensusDisagreement } from '@/lib/stand-up/census-disagr
 import Link from 'next/link';
 import { reportFigureLine, thursdayPrefill, thursdayPrintHref, type FacilityReport, type ThursdayReport } from '@/lib/stand-up/thursday-report';
 import { ThursdayReportSections } from './ThursdayReportSections';
+import { CensusBridge } from './CensusBridge';
 import { useCensusReasonOptions } from './useCensusReasonOptions';
 import { isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey } from '@/lib/stand-up/roster-census';
 
@@ -84,6 +85,8 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
   // COL-754: the facility's Thursday report: Haven's figures, who left and who is
   // away, the potential residents and the recruiters' activity since Monday.
   const [facilityReport, setFacilityReport] = useState<{ key: string; report: FacilityReport | null; error: string } | null>(null);
+  // Read again after a save or a roster fix, so the census bridge is current.
+  const [reportTick, setReportTick] = useState(0);
   const reportKey = selected && week ? `${selected.id}:${week}` : null;
   useEffect(() => {
     if (!reportKey || !selected) return;
@@ -92,9 +95,10 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
       .then(data => { if (live) setFacilityReport({ key: reportKey, report: data.facilities.find(item => item.facility_id === selected.id) ?? null, error: '' }); })
       .catch(cause => { if (live) setFacilityReport({ key: reportKey, report: null, error: cause instanceof Error ? cause.message : 'The report could not be read.' }); });
     return () => { live = false; };
-  }, [reportKey, selected, day, week]);
+  }, [reportKey, selected, day, week, reportTick]);
   const currentReport = facilityReport?.key === reportKey ? facilityReport : null;
   const accept = useCallback((saved: MeetingReport) => {
+    setReportTick(tick => tick + 1);
     setWorkspace(current => current ? { ...current, reports: [...current.reports.filter(report => !(report.facility_id === saved.facility_id && report.week_start === saved.week_start)), ...(saved.not_started ? [] : [saved])] } : current);
   }, []);
 
@@ -111,7 +115,8 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
       </div>
     </header>
     {error && workspace && <p role="alert" className="rounded border border-destructive p-3 text-sm">{error}</p>}
-    {workspace?.can_edit && <CensusNotices refreshKey={workspace.reports.map(report => report.version).join(':')} />}
+    {/* COL-751: every notice recipient reads their notices here; a reader who cannot change the report reconciles by fixing the roster in place. */}
+    {workspace && <CensusNotices refreshKey={workspace.reports.map(report => report.version).join(':')} reconcileHere={!workspace.can_edit} />}
     {loading ? <p role="status">Loading your permitted facilities and reports…</p>
       : !workspace ? <section role="alert" className="space-y-3 rounded border border-destructive p-4"><p>{error || 'Reports could not be loaded.'}</p><Button onClick={() => void reload(true)}>Check access and reload</Button></section>
       : !workspace.scheduled ? <section className="rounded border border-border p-5"><h2 className="font-semibold">No {label} meeting is scheduled</h2><p className="mt-2 text-sm">Your company administrator sets which days Stand Up meets.</p></section>
@@ -132,7 +137,7 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
           : <MeetingEditor key={`${selected.id}:${week}`} day={day} facility={selected} week={week} openWeek={openWeek}
               report={reportsForWeek.find(report => report.facility_id === selected.id)} monday={baseline(selected.id) ?? null}
               canEdit={workspace.can_edit} dirty={dirty} onSaved={accept} onError={setError} autoReconcile={selected.id === reconcileFacilityId}
-              haven={currentReport?.report ?? undefined} />}
+              haven={currentReport?.report ?? undefined} onRefreshReport={() => setReportTick(tick => tick + 1)} />}
         {selected && day === 'thursday' && (currentReport?.report ? <ThursdayReportSections report={currentReport.report} />
           : currentReport?.error ? <p role="alert" className="rounded border border-destructive p-3 text-sm">{currentReport.error}</p>
           : <p role="status" className="text-sm">Loading the potential residents and recruiter activity…</p>)}
@@ -170,9 +175,11 @@ type EditorProps = {
   autoReconcile?: boolean
   /** COL-754: Haven's own Thursday figures for this facility, to prefill and show beside each input. */
   haven?: FacilityReport
+  /** Reads the facility's report again (the census bridge) after the roster changes. */
+  onRefreshReport?: () => void
 };
 
-function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError, autoReconcile, haven }: EditorProps) {
+function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError, autoReconcile, haven, onRefreshReport }: EditorProps) {
   const [saved, setSaved] = useState(report);
   const [fields, setFields] = useState(() => fieldsFor(report?.values));
   const [reason, setReason] = useState('');
@@ -231,6 +238,14 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
     return () => { live = false; };
   }, [autoReconcile, current, facility.id, day]);
 
+  // The bridge's gap opens the same Reconcile dialog as the chip: fix first, a reason second.
+  const openReconcile = async () => {
+    const rows = await loadCensusDisagreements(facility.id);
+    const row = rows?.find(item => item.meeting_day === day && item.facility_id === facility.id);
+    if (row) setReconcileTarget(row);
+    else onError('The census disagreement could not be read. Refresh reports and try again.');
+  };
+
   const save = async (status: 'draft' | 'ready', reasonsOverride?: Partial<Record<RosterFieldKey, OverrideReason>>) => {
     if (!typed) { setProblem(parseError); return; }
     if (historical && !reason.trim()) { setProblem('A past meeting needs a written reason for the change.'); return; }
@@ -268,6 +283,9 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
     </div>
     {notOpen && <p role="status" className="rounded border border-border p-3 text-sm">This report opens {meetingWindow?.entry_opens_at ? easternStamp(meetingWindow.entry_opens_at) : 'after the meeting before it'}.</p>}
     {saved?.updated_at && <p className="text-xs text-muted-foreground">Last saved {meetingStamp(saved.updated_at)}{saved.updated_by_name ? ` by ${saved.updated_by_name}` : ''}{saved.last_submitted_at ? ` · Submitted ${meetingStamp(saved.last_submitted_at)}` : ''}</p>}
+    {/* COL-749 ruling 3: the census bridge heads the building's Thursday section. */}
+    {day === 'thursday' && haven?.bridge && <CensusBridge bridge={haven.bridge}
+      action={current ? <Button variant="destructive" size="sm" onClick={() => void openReconcile()}>Reconcile the census</Button> : undefined} />}
     {current && <CensusDisagreementChips facilityId={facility.id} meetingDay={day} refreshKey={`${saved?.version ?? 'new'}:${disagreementTick}`}
       action={d => <Button variant="outline" size="sm" onClick={() => setReconcileTarget(d)}>Reconcile</Button>} />}
     {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={next => { if (!next) setReconcileTarget(null); }} canChange={editable}
@@ -275,7 +293,7 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
       canFixRoster={canEdit}
       onExplain={editable && current ? (figure, why) => { const next = { ...rosterReasons, [figure.key]: why }; setRosterReasons(next); void save('draft', next); } : undefined}
       explainUnavailable={`A reason can be recorded only on the open ${MEETING_LABELS[day]} report, by its administrator. Put the roster’s figure on it, or fix the roster.`}
-      onCheckAgain={() => { setDisagreementTick(tick => tick + 1); setRosterTick(tick => tick + 1); }} />}
+      onCheckAgain={() => { setDisagreementTick(tick => tick + 1); setRosterTick(tick => tick + 1); onRefreshReport?.(); }} />}
     <p className="text-sm text-muted-foreground">{monday ? `Compared with what was submitted on Monday, ${meetingStamp(monday.submitted_at)}.` : 'Monday’s report for this week was not submitted, so there is nothing to compare with.'}</p>
     <div className="overflow-x-auto rounded border border-border">
       <table className="w-full text-left text-sm">

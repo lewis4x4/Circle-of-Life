@@ -28,6 +28,7 @@ import { describeCountTile } from "@/lib/metrics/head-count";
 import { Users, FileText, MessageSquare, Truck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLatestLoad } from "@/hooks/useLatestLoad";
+import { CensusNotices } from "@/components/stand-up/CensusNotices";
 
 type AssistantDashboardPageClientProps = {
   initialBrief: AdminAssistantDashboardBrief | null;
@@ -125,6 +126,9 @@ export function AssistantDashboardPageClient({
           </p>
         </div>
       </div>
+
+      {/* COL-751: the census notice reaches the assistant too (stand_up.census_notice_roles). They reconcile by fixing the roster here. */}
+      <div className="empty:hidden"><CensusNotices reconcileHere /></div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard

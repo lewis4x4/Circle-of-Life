@@ -10,6 +10,7 @@ import {
   CENSUS_NOTICE_ROLE_CHOICES,
   parseArrivalApprovalRoles,
   parseBackdateWindowDays,
+  parseBridgeTolerance,
   parseCensusNoticeChannels,
   parseCensusNoticeLeadMinutes,
   parseCensusNoticeRoles,
@@ -106,7 +107,8 @@ export const OPERATING_RULE_COPY: Record<OperatingRuleKey, { label: string; desc
   },
   "stand_up.census_notice_roles": {
     label: "Stand Up census notice goes to",
-    description: "Who is told about an open census disagreement before the Stand Up deadline, at each facility they can access.",
+    description:
+      "Who is told about an open census disagreement before the Stand Up deadline, at each facility they can access. The notice shows on their Home page and on Stand Up.",
   },
   "stand_up.census_reason_options": {
     label: "Stand Up census reasons",
@@ -121,7 +123,22 @@ export const OPERATING_RULE_COPY: Record<OperatingRuleKey, { label: string; desc
   "stand_up.thursday_census_vs_monday": {
     label: "Thursday census checked against Monday",
     description:
-      "When on, Thursday's census and hospital figures are also compared with Monday's submitted figures plus the roster's change since Monday. When off, Thursday is compared with the roster only.",
+      "When on, Thursday's census and hospital figures are also checked against the census bridge: Monday's submitted figure plus arrivals, minus departures, and hospital or rehab stays and returns where they change census. A legitimate move since Monday is never flagged. When off, Thursday is compared with the roster only.",
+  },
+  "stand_up.thursday_bridge_tolerance": {
+    label: "Thursday census bridge tolerance",
+    description:
+      "How many residents either way Thursday's census may be from the census bridge's expected figure and still match. 0 means it must match exactly.",
+  },
+  "stand_up.census_bridge_hospital_in_census": {
+    label: "Hospital and rehab stays count in census",
+    description:
+      "When on, a resident at a hospital or in rehab stays in the census, as the resident roster counts them, so the bridge shows stays and returns without changing the expected census. When off, the bridge subtracts each stay and adds each return.",
+  },
+  "stand_up.thursday_admission_workflow_to_recruiters": {
+    label: "Recruiters read admission steps on the Thursday report",
+    description:
+      "When on, recruiters see each potential resident's admission steps, quoted-rate notes and paperwork notes on the Thursday Stand Up report. Nothing clinical is ever included.",
   },
   "stand_up.thursday_admission_notes_to_recruiters": {
     label: "Recruiters read admission notes on the Thursday report",
@@ -259,8 +276,24 @@ export function describeOperatingRuleValue(key: OperatingRuleKey, value: unknown
       const on = parseSwitch(value);
       if (on === null) return "Not readable";
       return on
-        ? "On: Thursday's census and hospital figures are also compared with Monday's submitted figures plus the roster's change since Monday"
+        ? "On: Thursday's census and hospital figures are also checked against the census bridge from Monday"
         : "Off: Thursday is compared with the roster only";
+    }
+    case "stand_up.thursday_bridge_tolerance": {
+      const n = parseBridgeTolerance(value);
+      if (n === null) return "Not readable";
+      if (n === 0) return "Must match exactly";
+      return n === 1 ? "Within 1 resident" : `Within ${n} residents`;
+    }
+    case "stand_up.census_bridge_hospital_in_census": {
+      const on = parseSwitch(value);
+      if (on === null) return "Not readable";
+      return on ? "On: hospital and rehab stays stay in census" : "Off: a hospital or rehab stay leaves the census until the return";
+    }
+    case "stand_up.thursday_admission_workflow_to_recruiters": {
+      const on = parseSwitch(value);
+      if (on === null) return "Not readable";
+      return on ? "On: recruiters read admission steps and paperwork notes" : "Off: admission steps are hidden from recruiters";
     }
     case "stand_up.thursday_admission_notes_to_recruiters": {
       const on = parseSwitch(value);
@@ -289,6 +322,9 @@ export type OperatingRuleDraft =
   | { key: "stand_up.census_notice_channels"; channels: string[] }
   | { key: "stand_up.thursday_census_vs_monday"; on: boolean | null }
   | { key: "stand_up.thursday_admission_notes_to_recruiters"; on: boolean | null }
+  | { key: "stand_up.census_bridge_hospital_in_census"; on: boolean | null }
+  | { key: "stand_up.thursday_admission_workflow_to_recruiters"; on: boolean | null }
+  | { key: "stand_up.thursday_bridge_tolerance"; residents: string }
   | { key: "admissions.arrival_approval_roles"; roles: ArrivalApprovalRole[] };
 
 /** The form's starting state for a rule value (an unreadable value starts blank). */
@@ -331,7 +367,13 @@ export function draftFromValue(key: OperatingRuleKey, value: unknown): Operating
       return { key, channels: parseCensusNoticeChannels(value) ?? [] };
     case "stand_up.thursday_census_vs_monday":
     case "stand_up.thursday_admission_notes_to_recruiters":
+    case "stand_up.census_bridge_hospital_in_census":
+    case "stand_up.thursday_admission_workflow_to_recruiters":
       return { key, on: parseSwitch(value) };
+    case "stand_up.thursday_bridge_tolerance": {
+      const n = parseBridgeTolerance(value);
+      return { key, residents: n === null ? "" : String(n) };
+    }
     case "admissions.arrival_approval_roles":
       return { key, roles: parseArrivalApprovalRoles(value) ?? [] };
   }
@@ -418,7 +460,15 @@ export function operatingRuleValueFromDraft(draft: OperatingRuleDraft): { ok: tr
     }
     case "stand_up.thursday_census_vs_monday":
     case "stand_up.thursday_admission_notes_to_recruiters":
+    case "stand_up.census_bridge_hospital_in_census":
+    case "stand_up.thursday_admission_workflow_to_recruiters":
       return draft.on === null ? { ok: false, error: "Choose On or Off." } : { ok: true, value: draft.on };
+    case "stand_up.thursday_bridge_tolerance": {
+      const n = whole(draft.residents);
+      return n !== null && parseBridgeTolerance(n) !== null
+        ? { ok: true, value: n }
+        : { ok: false, error: "Enter a whole number of residents from 0 to 20." };
+    }
     case "admissions.arrival_approval_roles": {
       const roles = ARRIVAL_APPROVAL_ROLE_CHOICES.filter((role) => draft.roles.includes(role));
       return roles.length > 0

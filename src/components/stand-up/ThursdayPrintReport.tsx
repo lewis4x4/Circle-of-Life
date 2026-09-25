@@ -9,6 +9,7 @@ import { MEETING_LABELS, THURSDAY_FIGURES, mondayComparison, thursdayDisplay, ty
 import { reportFigureLine, reportStamp, type FacilityReport, type ThursdayReport } from "@/lib/stand-up/thursday-report";
 import { standUpRequest } from "./transport";
 import { ThursdayReportSections } from "./ThursdayReportSections";
+import { CensusBridge } from "./CensusBridge";
 
 type Loaded = { report: ThursdayReport; workspace: MeetingWorkspace };
 
@@ -58,6 +59,7 @@ function FacilityPrint({ facility, workspace }: { facility: FacilityReport; work
       <h2 className="text-lg font-semibold">{facility.facility_name}</h2>
       <p className="text-muted-foreground">Week of {dateLabel(facility.week_start)} · {submitted ? "Figures submitted by the administrator" : saved ? "Figures saved as a draft, not submitted" : "Figures not entered yet"}</p>
     </div>
+    {facility.bridge && <CensusBridge bridge={facility.bridge} />}
     <HorizontalScroll label={`${facility.facility_name} Thursday figures`}>
     <table className="w-full border-collapse text-left">
       <caption className="sr-only">{facility.facility_name} Thursday figures beside Monday&rsquo;s submitted figures</caption>

@@ -6,6 +6,7 @@ import {
   draftFromValue,
   facilityOverridesInForce,
   operatingRuleValueFromDraft,
+  OPERATING_RULE_COPY,
 } from "./operating-rules-settings";
 
 describe("describeOperatingRuleValue", () => {
@@ -83,7 +84,8 @@ describe("Stand Up census settings (COL-555 / COL-751)", () => {
 
   it("holds the same keys and bounds as the database", async () => {
     const { readFileSync } = await import("node:fs");
-    const sql = readFileSync(`${process.cwd()}/supabase/migrations/534_stand_up_census_reason_settings.sql`, "utf8");
+    // The latest validator and rule-key check (migration 542, COL-749).
+    const sql = readFileSync(`${process.cwd()}/supabase/migrations/542_stand_up_thursday_census_bridge.sql`, "utf8");
     const { OPERATING_RULE_KEYS, CENSUS_NOTICE_ROLE_CHOICES, ARRIVAL_APPROVAL_ROLE_CHOICES } = await import("./operating-rules");
     for (const key of OPERATING_RULE_KEYS) expect(sql).toContain(`'${key}'`);
     expect(sql).toContain(`NOT IN (${CENSUS_NOTICE_ROLE_CHOICES.map((role) => `'${role}'`).join(", ")})`);
@@ -91,6 +93,7 @@ describe("Stand Up census settings (COL-555 / COL-751)", () => {
     expect(sql).toContain("NOT BETWEEN 0 AND 60");
     expect(sql).toContain("NOT BETWEEN 0 AND 1440");
     expect(sql).toContain("^[a-z][a-z0-9_]{0,39}$");
+    expect(sql).toContain("NOT BETWEEN 0 AND 20");
   });
 });
 
@@ -177,7 +180,7 @@ describe("Stand Up census notice delivery", () => {
 
 describe("Thursday switches", () => {
   it("describes on and off in plain words", () => {
-    expect(describeOperatingRuleValue("stand_up.thursday_census_vs_monday", true)).toMatch(/^On: Thursday's census and hospital figures are also compared with Monday's/);
+    expect(describeOperatingRuleValue("stand_up.thursday_census_vs_monday", true)).toBe("On: Thursday's census and hospital figures are also checked against the census bridge from Monday");
     expect(describeOperatingRuleValue("stand_up.thursday_census_vs_monday", false)).toBe("Off: Thursday is compared with the roster only");
     expect(describeOperatingRuleValue("stand_up.thursday_admission_notes_to_recruiters", true)).toMatch(/^On: recruiters read admission notes/);
     expect(describeOperatingRuleValue("stand_up.thursday_admission_notes_to_recruiters", "yes")).toBe("Not readable");
@@ -188,6 +191,25 @@ describe("Thursday switches", () => {
     expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_admission_notes_to_recruiters", on: false })).toEqual({ ok: true, value: false });
     expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_census_vs_monday", on: null }).ok).toBe(false);
     expect(draftFromValue("stand_up.thursday_census_vs_monday", "junk")).toEqual({ key: "stand_up.thursday_census_vs_monday", on: null });
+  });
+});
+
+describe("Thursday census bridge settings (COL-749, migration 542)", () => {
+  it("keeps the tolerance a whole number of residents from 0 to 20", () => {
+    expect(describeOperatingRuleValue("stand_up.thursday_bridge_tolerance", 0)).toBe("Must match exactly");
+    expect(describeOperatingRuleValue("stand_up.thursday_bridge_tolerance", 1)).toBe("Within 1 resident");
+    expect(describeOperatingRuleValue("stand_up.thursday_bridge_tolerance", 21)).toBe("Not readable");
+    expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_bridge_tolerance", residents: "2" })).toEqual({ ok: true, value: 2 });
+    expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_bridge_tolerance", residents: "21" }).ok).toBe(false);
+    expect(operatingRuleValueFromDraft({ key: "stand_up.thursday_bridge_tolerance", residents: "1.5" }).ok).toBe(false);
+    expect(draftFromValue("stand_up.thursday_bridge_tolerance", 0)).toEqual({ key: "stand_up.thursday_bridge_tolerance", residents: "0" });
+  });
+
+  it("words the hospital-in-census and recruiter workflow switches", () => {
+    expect(describeOperatingRuleValue("stand_up.census_bridge_hospital_in_census", true)).toBe("On: hospital and rehab stays stay in census");
+    expect(describeOperatingRuleValue("stand_up.thursday_admission_workflow_to_recruiters", false)).toBe("Off: admission steps are hidden from recruiters");
+    expect(operatingRuleValueFromDraft({ key: "stand_up.census_bridge_hospital_in_census", on: false })).toEqual({ ok: true, value: false });
+    expect(OPERATING_RULE_COPY["stand_up.thursday_admission_workflow_to_recruiters"].description).toMatch(/Nothing clinical is ever included/);
   });
 });
 

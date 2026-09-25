@@ -115,21 +115,19 @@ DO $$ DECLARE d jsonb; due timestamptz; n integer; BEGIN
  PERFORM haven.stand_up_census_notice_sweep(due-interval '30 minutes');
  PERFORM haven.stand_up_census_notice_sweep(due-interval '25 minutes');
  SELECT count(*) INTO n FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM cd) AND phase='before_deadline';
- IF n<>1 THEN RAISE EXCEPTION 'The administrator must get exactly one notice before the deadline, got %',n; END IF;
+ -- COL-751 (migration 541): the default recipients are the administrator, the assistant and the manager.
+ IF n<>2 THEN RAISE EXCEPTION 'The administrator and the manager must each get exactly one notice before the deadline, got %',n; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM cd) AND recipient_user_id=(SELECT admin_id FROM cd)
    AND message LIKE 'Census: Stand Up says 3, roster says 2. Reconcile before 8:45 AM.') THEN RAISE EXCEPTION 'The notice words are wrong: %',(SELECT message FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM cd) LIMIT 1); END IF;
- IF EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE recipient_user_id IN ((SELECT manager_id FROM cd),(SELECT medtech_id FROM cd),(SELECT outsider_id FROM cd))) THEN
+ IF EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE recipient_user_id IN ((SELECT medtech_id FROM cd),(SELECT outsider_id FROM cd))) THEN
   RAISE EXCEPTION 'Only the notice roles with access to the facility are told'; END IF;
  PERFORM haven.stand_up_census_notice_sweep(due+interval '1 minute');
  IF NOT EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM cd) AND phase='at_deadline') THEN RAISE EXCEPTION 'No second notice at the deadline'; END IF;
  IF (pg_temp.cd_state('monday',(d->>'call_at')::timestamptz+interval '1 minute')->>'unreconciled')::boolean IS NOT TRUE THEN RAISE EXCEPTION 'After the call an open disagreement must read unreconciled'; END IF;
 END $$;
--- The recipient roles are a setting: add managers.
-INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason)
- SELECT org,fac,'stand_up.census_notice_roles','["facility_admin","manager"]'::jsonb,current_date-14,'Probe: managers too' FROM cd;
+-- The recipient roles are a setting (review_census_notice_recipients.sql narrows and widens it).
 DO $$ BEGIN
- PERFORM haven.stand_up_census_notice_sweep((pg_temp.cd_state('monday')->>'entry_due_at')::timestamptz-interval '10 minutes');
- IF NOT EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE recipient_user_id=(SELECT manager_id FROM cd)) THEN RAISE EXCEPTION 'A role added to the setting was not told'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE recipient_user_id=(SELECT manager_id FROM cd)) THEN RAISE EXCEPTION 'The manager was not told'; END IF;
 END $$;
 
 -- 5. The recipient reads it; it clears the moment either side is fixed.
@@ -156,7 +154,7 @@ DO $$ BEGIN
  IF (SELECT jsonb_array_length(value) FROM cd_results WHERE name='mine_after')<>0 THEN RAISE EXCEPTION 'A fixed disagreement must clear the notice'; END IF;
  -- An agreeing facility sends nothing.
  PERFORM haven.stand_up_census_notice_sweep((pg_temp.cd_state('monday')->>'entry_due_at')::timestamptz-interval '5 minutes');
- IF (SELECT count(*) FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM cd))<>3 THEN RAISE EXCEPTION 'An agreeing facility was notified'; END IF;
+ IF (SELECT count(*) FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM cd))<>4 THEN RAISE EXCEPTION 'An agreeing facility was notified'; END IF;
 END $$;
 
 -- 6. Thursday compares its own figures with the roster; with no reason a difference is open.

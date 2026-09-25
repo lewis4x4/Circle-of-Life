@@ -195,7 +195,30 @@ function RuleValueFields({
       </fieldset>
     );
   }
-  if (draft.key === "stand_up.thursday_census_vs_monday" || draft.key === "stand_up.thursday_admission_notes_to_recruiters") {
+  if (draft.key === "stand_up.thursday_bridge_tolerance") {
+    return (
+      <label className="flex flex-col gap-1 text-xs text-text-muted" htmlFor={`${idPrefix}-residents`}>
+        Residents either way
+        <input
+          id={`${idPrefix}-residents`}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={20}
+          step={1}
+          value={draft.residents}
+          onChange={(e) => onChange({ ...draft, residents: e.target.value })}
+          className={`${INPUT} w-24 text-right`}
+        />
+      </label>
+    );
+  }
+  if (
+    draft.key === "stand_up.thursday_census_vs_monday" ||
+    draft.key === "stand_up.thursday_admission_notes_to_recruiters" ||
+    draft.key === "stand_up.census_bridge_hospital_in_census" ||
+    draft.key === "stand_up.thursday_admission_workflow_to_recruiters"
+  ) {
     const radio = (on: boolean) => (
       <label className="flex items-center gap-2 text-sm text-text-primary" htmlFor={`${idPrefix}-${on ? "on" : "off"}`}>
         <input
