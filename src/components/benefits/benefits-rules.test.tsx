@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BenefitsCase, BenefitsRuleEntry } from "@/lib/benefits/contracts";
 import { caseFlags, daysUntil, renewalWarningDays } from "./BenefitsQueue";
-import { checklistText, describeRule, parseChecklist, parseValidDays, validDaysText } from "./BenefitsRules";
+import { checklistText, describeRule, parseChecklist, parseValidDays, validDaysText, parseGoals, goalsTextOf } from "./BenefitsRules";
 import { screeningStandardFromRules } from "./BenefitsCaseWorkspace";
 
 const base: BenefitsCase = {
@@ -80,5 +80,16 @@ describe("document good-for periods (COL-768)", () => {
     const entry = (value: unknown) => ({ rule_key: "document.valid_days", current: null, value, scheduled: [], history_count: 0 }) as BenefitsRuleEntry;
     expect(describeRule(entry([{ match: "bank statement", days: 90 }]))).toBe("bank statement: 90 days");
     expect(describeRule(entry([]))).toBe("No document expires");
+  });
+});
+
+describe("summary goals (COL-775)", () => {
+  it("round-trips goals and refuses bad lines or duplicates", () => {
+    const f = "11111111-1111-4111-8111-111111111111";
+    expect(parseGoals(`${f} | 12`)).toEqual([{ facility_id: f, medicaid_residents: 12 }]);
+    expect(goalsTextOf([{ facility_id: f, medicaid_residents: 12 }])).toBe(`${f} | 12`);
+    expect(() => parseGoals("Homewood | 12")).toThrow(/facility id/);
+    expect(() => parseGoals(`${f} | -1`)).toThrow(/whole number/);
+    expect(() => parseGoals(`${f} | 1\n${f} | 2`)).toThrow(/One goal per facility/);
   });
 });

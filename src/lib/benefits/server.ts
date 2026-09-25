@@ -343,6 +343,23 @@ export async function reopenDocumentFreshness(request: Request, caseId: string) 
   const reply = commandReply.safeParse(result.data);
   return reply.success && reply.data.case_id === caseId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
 }
+const summarySchema = z.object({
+  as_of: z.string(), month_start: z.string(), can_set_goals: z.boolean(), steps: z.array(z.object({ step: boardStepEnum, label: z.string() })),
+  facilities: z.array(z.object({
+    facility_id: uuid, facility_name: z.string(), licensed_beds: z.number().int(), census: z.number().int(), medicaid_residents: z.number().int(), goal_medicaid_residents: z.number().int().nullable(),
+    open_cases: z.number().int(), by_step: z.partialRecord(boardStepEnum, z.number().int()), awaiting_first_payment: z.number().int(), approved_this_month: z.number().int(),
+    revenue_not_collected_cents: z.number().int().nullable(), cases_without_rate: z.number().int(), medicaid_payments_this_month_cents: z.number().int().nullable(),
+    sweep_started_at: z.string().nullable(), sweep_answered: z.number().int(),
+  })),
+});
+/** COL-775: owner Medicaid summary per facility (aggregates only). */
+export async function getMedicaidSummary() {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const result = await rpc(auth.actor, "benefits_summary", {});
+  if (result.error) return rpcFailure(result.error);
+  const parsed = summarySchema.safeParse(result.data);
+  return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
 export async function saveBenefitsContact(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const parsed = contactSaveSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "A contact needs a name and an agency.");
