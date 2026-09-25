@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { FormLabel } from "@/components/ui/form-label";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { dollars } from "@/lib/benefits/admission-screening";
 import type { BoardRow, BoardStep, MedicaidBoard as BoardData } from "@/lib/benefits/contracts";
 import { BenefitsRequestError, benefitsFetch, ErrorNotice, fieldClass, Panel } from "./benefits-ui";
@@ -143,9 +145,7 @@ function AddContact({ onSaved }: { onSaved: () => Promise<void> }) {
 /** Jessica's Medicaid Log as a live board: one row per open case, one column per step. */
 export function MedicaidBoard() {
   const selectedFacilityId = useFacilityStore((state) => state.selectedFacilityId);
-  const availableFacilities = useFacilityStore((state) => state.availableFacilities);
-  const [chosen, setChosen] = useState<string | null>(null);
-  const facilityId = selectedFacilityId ?? chosen;
+  const facilityId = isValidFacilityIdForQuery(selectedFacilityId) ? selectedFacilityId : null;
   const [data, setData] = useState<BoardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [target, setTarget] = useState<Target | null>(null);
@@ -178,15 +178,7 @@ export function MedicaidBoard() {
 
   return (
     <Panel title="Medicaid board" description="Jessica's Medicaid Log, live: one row per open long-term-care case, one column per step. Record the next step in one click; dates come from the case record.">
-      {!facilityId && (
-        <div className="space-y-2">
-          <FormLabel htmlFor="board-facility" required>Facility</FormLabel>
-          <select id="board-facility" className={`${fieldClass} max-w-sm`} value="" onChange={(e) => setChosen(e.target.value || null)}>
-            <option value="">Choose a facility…</option>
-            {availableFacilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-          </select>
-        </div>
-      )}
+      {!facilityId && <FacilityGateNotice reason="Jessica's log is kept per building, so the Medicaid board shows one facility at a time." />}
       <ErrorNotice error={error} />
       {facilityId && !data && !error && <p role="status">Loading the board…</p>}
       {data && totals && (

@@ -7,6 +7,8 @@ vi.mock("@/hooks/useFacilityStore", () => ({
     selector({ selectedFacilityId: store.selectedFacilityId, availableFacilities: [{ id: "11111111-1111-4111-8111-111111111111", name: "Anon Facility" }] }),
 }));
 
+vi.mock("@/components/common/FacilityGate", () => ({ FacilityGateNotice: ({ reason }: { reason: string }) => <p data-testid="facility-gate">{reason}</p> }));
+
 import { MedicaidBoard, boardDate, revenueLabel } from "./MedicaidBoard";
 
 const facilityId = "11111111-1111-4111-8111-111111111111";
@@ -55,7 +57,8 @@ describe("Medicaid board", () => {
     store.selectedFacilityId = null;
     vi.stubGlobal("fetch", vi.fn());
     render(<MedicaidBoard />);
-    expect(screen.getByLabelText(/Facility/)).toBeTruthy();
+    expect(screen.getByTestId("facility-gate").textContent).toContain("one facility at a time");
+    expect(fetch).not.toHaveBeenCalled();
   });
   it("an unexpected reply is an error, not an empty board", async () => {
     vi.stubGlobal("fetch", vi.fn().mockImplementation(() => json({ rows: "nope" })));

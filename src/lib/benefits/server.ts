@@ -302,7 +302,7 @@ const boardSchema = z.object({
 export async function getMedicaidBoard(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const query = z.object({ facility_id: uuid }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
-  if (!query.success) return benefitsFailure(400, "Choose a facility.");
+  if (!query.success) return benefitsFailure(400, "A facility id is required.");
   const result = await rpc(auth.actor, "benefits_board", { p_facility_id: query.data.facility_id });
   if (result.error) return rpcFailure(result.error);
   const parsed = boardSchema.safeParse(result.data);
