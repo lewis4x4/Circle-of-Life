@@ -295,6 +295,8 @@ const boardSchema = z.object({
     agency_score: z.number().int().min(1).max(5).nullable(), reapply_on: z.string().nullable(), caseworker_id: uuid.nullable(), caseworker_name: z.string().nullable(), caseworker_phone: z.string().nullable(),
     step_dates: z.record(z.string(), z.string()), next_step: boardStepEnum.nullable(), waiting_on: z.enum(["us", "agency"]), days_since_last_step: z.number().int(), stalled: z.boolean(),
     plan_rate_cents: z.number().int().nullable(), revenue_not_collected_cents: z.number().int().nullable(),
+    phase: z.enum(["working", "awaiting_first_payment", "renewal"]).optional(), phase_days: z.number().int().nullable().optional(),
+    first_payment_on: z.string().nullable().optional(), renewal_date: z.string().nullable().optional(),
   })),
   needs_answers: z.array(z.object({ resident_id: uuid, resident_name: z.string() })), rechecks_due: z.number().int(),
   contacts: z.array(z.object({ id: uuid, name: z.string(), agency: z.enum(CONTACT_AGENCIES), phone: z.string().nullable() })),
