@@ -115,6 +115,9 @@ export interface RecheckRow {
   q_property_non_primary: "yes" | "no" | "unknown"; q_income_over_limit: "yes" | "no" | "unknown"; q_assets: "yes" | "no" | "unknown";
 }
 export interface RecheckList { as_of: string; rechecks: RecheckRow[] }
+export const startSweepSchema = z.object({ request_id: uuid, facility_id: uuid, note: z.string().trim().max(2000).nullable().optional() }).strict();
+export interface SweepFacility { facility_id: string; facility_name: string; started_at: string | null; started_by_name: string | null; can_write: boolean; total: number; answered: number; remaining: Array<{ resident_id: string; resident_name: string; status: string }> | null }
+export interface SweepStatus { can_start: boolean; facilities: SweepFacility[] }
 export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }
 export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
 export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }
