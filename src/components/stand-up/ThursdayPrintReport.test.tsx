@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ThursdayPrintReport } from './ThursdayPrintReport'
+import { axeViolations } from '@/test-utils/axe'
 
 const request = vi.hoisted(() => vi.fn())
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: request }))
@@ -55,6 +56,7 @@ describe('printable Thursday report (COL-754)', () => {
     expect(bridge).toHaveTextContent('= 36 expected')
     expect(bridge).toHaveTextContent('Thursday 35')
     expect(within(bridge).getByRole('status')).toHaveTextContent('Census bridge is off by 1: Monday 38, plus 0 arrivals, minus 2 departures, expected 36. Thursday 35, 1 resident fewer than expected.')
+    expect(await axeViolations(bridge)).toEqual([])
     // First in the facility's section, before the figures table.
     expect(bridge.compareDocumentPosition(within(section).getByRole('table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
