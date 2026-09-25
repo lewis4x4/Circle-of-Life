@@ -15,7 +15,8 @@ DO $$ DECLARE fn text; BEGIN
     'public.floor_unlock_for_replay(text,uuid,uuid,timestamptz)',
     'public.floor_replay_complete_rounding_task(text,uuid,uuid,timestamptz,uuid,jsonb)',
     'public.floor_replay_submit_care_event(text,uuid,uuid,timestamptz,jsonb)',
-    'public.visitor_kiosk_sign_in(text,uuid,text,text,text,text,text,text,boolean)',
+    'public.visitor_kiosk_sign_in(text,uuid,text,text,text,text,text,text,boolean,uuid)',
+    'public.visitor_kiosk_resident_matches(text,text)',
     'public.visitor_kiosk_open_matches(text,text)', 'public.visitor_kiosk_sign_out(text,uuid)',
     'public.timeclock_enroll_device(text,text,text)'
   ] LOOP
@@ -629,6 +630,36 @@ DO $$ DECLARE r jsonb; r2 jsonb; f record; c uuid := gen_random_uuid(); res reco
      OR public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'family', 'Probe Visitor', NULL, NULL, 'Typed', NULL, false)->>'error' <> 'invalid_input' THEN
     RAISE EXCEPTION 'Kiosk sign in validation too loose';
   END IF;
+  -- Resident picker (migration 551): nothing before three letters, current residents of this
+  -- building only, and a picked resident is stored as the visit's resident.
+  SELECT id, first_name INTO e FROM public.residents
+  WHERE facility_id = f.facility AND organization_id = f.org AND deleted_at IS NULL AND status IN ('active', 'hospital_hold', 'loa')
+    AND char_length(regexp_replace(first_name, '[^[:alpha:]]', '', 'g')) >= 3
+  ORDER BY id LIMIT 1;
+  IF e.id IS NULL THEN RAISE EXCEPTION 'Fixture: a current resident with a first name of three letters is required'; END IF;
+  IF jsonb_array_length(public.visitor_kiosk_resident_matches(pg_temp.tok('kiosk'), left(e.first_name, 2))->'matches') <> 0 THEN
+    RAISE EXCEPTION 'Resident matches listed before three letters';
+  END IF;
+  r := public.visitor_kiosk_resident_matches(pg_temp.tok('kiosk'), left(e.first_name, 3));
+  IF NOT (r->'matches' @> jsonb_build_array(jsonb_build_object('resident_id', e.id))) OR jsonb_array_length(r->'matches') > 6 THEN
+    RAISE EXCEPTION 'Resident matches wrong: %', r;
+  END IF;
+  IF public.visitor_kiosk_resident_matches(pg_temp.tok('floor'), left(e.first_name, 3))->>'error' <> 'device_unknown' THEN
+    RAISE EXCEPTION 'A floor token listed residents';
+  END IF;
+  IF public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'vendor_contractor', 'Pickprobe Vendor', NULL, 'Probe Co', NULL, NULL, false, e.id)->>'error' <> 'invalid_input'
+     OR public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'family_friend', 'Pickprobe Both', NULL, NULL, 'Typed', NULL, false, e.id)->>'error' <> 'invalid_input'
+     OR public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'family_friend', 'Pickprobe Neither', NULL, NULL, NULL, NULL, false)->>'error' <> 'invalid_input'
+     OR public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'family_friend', 'Pickprobe Stranger', NULL, NULL, NULL, NULL, false, gen_random_uuid())->>'error' <> 'invalid_input' THEN
+    RAISE EXCEPTION 'Kiosk resident pick validation too loose';
+  END IF;
+  r := public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'family_friend', 'Pickprobe Picked', NULL, NULL, NULL, NULL, false, e.id);
+  IF NOT (r->>'ok')::boolean
+     OR (SELECT resident_id FROM public.visitor_log_entries WHERE id = (r->>'entry_id')::uuid) IS DISTINCT FROM e.id
+     OR (SELECT visiting_type FROM public.visitor_log_entries WHERE id = (r->>'entry_id')::uuid) IS DISTINCT FROM 'resident' THEN
+    RAISE EXCEPTION 'Picked resident not stored: %', r;
+  END IF;
+  UPDATE public.timeclock_devices SET visitor_failure_count = 0, visitor_failure_window_started_at = NULL, visitor_throttled_until = NULL;
   r := public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'healthcare_provider', 'Visitorprobe Romeo', NULL, 'Probe Home Health', NULL, NULL, true);
   IF (SELECT screening_passed FROM public.visitor_log_entries WHERE id = (r->>'entry_id')::uuid) IS DISTINCT FROM false THEN
     RAISE EXCEPTION 'Reported symptoms did not fail screening';
