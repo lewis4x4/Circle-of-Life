@@ -563,6 +563,9 @@ BEGIN
   UPDATE px_state SET dry_run_stop = format('others fenced %s, Brian queued %s', v_fenced, v_brian);
 END $$;
 
+-- A setting changed while testing (Settings, Timeclock) is put back by the wipe.
+UPDATE public.timeclock_facility_settings t SET floor_idle_lock_minutes = 5, kiosk_visitor_sign_ins_per_10_minutes = 40 FROM px WHERE t.facility_id = px.hw;
+
 -- Kept: rows at Homewood in the window that the floor and kiosk flows do not produce.
 CREATE TEMP TABLE px_kept (tbl text, id uuid);
 WITH a AS (INSERT INTO public.exec_alerts (organization_id, facility_id, source_module, severity, title, body)

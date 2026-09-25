@@ -35,8 +35,8 @@
 --      cadence version 2 active and version 3 scheduled, the test and end versions gone,
 --      the template binding, the notification routes (Brian's route removed), the
 --      delivery fence dropped, the Homewood incident number counter.
---   5. Timeclock off at Homewood; failed PIN counters, PIN lockouts and device failure and
---      throttle columns reset. Devices, credentials, staff and users are kept. The
+--   5. Timeclock off at Homewood and its other timeclock settings back to the snapshot;
+--      failed PIN counters, PIN lockouts and device failure and throttle columns reset. Devices, credentials, staff and users are kept. The
 --      col695-homewood-timeclock-on cron job is not touched.
 --   6. Verifies inside the transaction: no window row left in any inventory table, every
 --      pre-window row unchanged (row hashes), every guard on, the configuration equal to
@@ -572,7 +572,21 @@ BEGIN
     INSERT INTO col849_report (section, item, detail) VALUES ('restored', 'incident number counter', 'left as it is (' || v_kept_incidents || ' kept Homewood incidents were numbered in the window)');
   END IF;
 
-  -- Timeclock off; lockouts and throttles cleared. Devices and credentials stay.
+  -- Timeclock off, every other Homewood timeclock setting back to the snapshot (idle lock,
+  -- roster roles, visitor cap, rounding owner rules), lockouts and throttles cleared.
+  -- Devices and credentials stay.
+  IF v_old IS NOT NULL AND jsonb_typeof(v_old -> 'timeclock_settings') = 'object' THEN
+    SELECT string_agg(format('%I', a.attname), ', ' ORDER BY a.attnum), string_agg(format('s.%I', a.attname), ', ' ORDER BY a.attnum) INTO v_tbl, v_trg
+    FROM pg_attribute a
+    WHERE a.attrelid = 'public.timeclock_facility_settings'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+      AND a.attname NOT IN ('id', 'organization_id', 'facility_id', 'timeclock_enabled', 'updated_at', 'updated_by');
+    EXECUTE format('UPDATE public.timeclock_facility_settings t SET (%s) = (SELECT %s FROM jsonb_populate_record(NULL::public.timeclock_facility_settings, $1) s)
+                    WHERE t.organization_id = $2 AND t.facility_id = $3
+                      AND (to_jsonb(t) - ARRAY[''updated_at'', ''updated_by'', ''timeclock_enabled'']) IS DISTINCT FROM $1', v_tbl, v_trg)
+    USING v_old -> 'timeclock_settings', c_org, v_fac_id;
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    INSERT INTO col849_report (section, item, detail) VALUES ('restored', 'timeclock settings other than the switch', CASE WHEN v_n = 0 THEN 'already equal to the snapshot' ELSE 'set back to the snapshot' END);
+  END IF;
   UPDATE public.timeclock_facility_settings t SET timeclock_enabled = false
   WHERE t.organization_id = c_org AND t.facility_id = v_fac_id AND t.timeclock_enabled;
   UPDATE public.timeclock_credentials c SET failed_attempts = 0, locked_until = NULL
