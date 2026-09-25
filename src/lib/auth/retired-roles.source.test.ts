@@ -24,7 +24,6 @@ const BASELINE: Record<string, number> = {
   "src/app/(admin)/admin/feedback/page.tsx": 1,
   "src/app/(admin)/admin/operations/work/_components/dietary-service-entry.tsx": 1,
   "src/app/(admin)/admin/settings/notifications/page.tsx": 1,
-  "src/app/(admin)/staff/new/page.tsx": 1,
   "src/app/(caregiver)/caregiver/resident/[id]/timeline/page.tsx": 1,
   "src/components/feedback/PilotFeedbackLauncher.tsx": 2,
   "src/components/layout/AdminShell.tsx": 1,
@@ -48,6 +47,7 @@ const BASELINE: Record<string, number> = {
   "src/lib/routing/legacy-redirects.ts": 1,
   "src/lib/search-tools.ts": 2,
   "src/lib/staff/load-staff.ts": 5,
+  "src/lib/staff/staff-positions.ts": 1,
   "src/lib/stand-up/model.ts": 4,
   "src/types/staff.ts": 2,
 };

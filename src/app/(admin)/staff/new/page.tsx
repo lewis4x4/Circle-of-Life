@@ -21,36 +21,7 @@ import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
-
-/** Matches `staff_role` enum in DB */
-const STAFF_ROLES: { value: string; label: string }[] = [
-  { value: "cna", label: "CNA" },
-  { value: "lpn", label: "LPN" },
-  { value: "rn", label: "RN" },
-  { value: "administrator", label: "Administrator" },
-  { value: "assistant_administrator", label: "Assistant administrator" },
-  { value: "admin_support_coordinator", label: "Admin support coordinator" },
-  { value: "medication_tech", label: "Medication tech" },
-  { value: "resident_aide", label: "Resident aide" },
-  { value: "resident_services_coordinator", label: "Resident services coordinator" },
-  { value: "activities_director", label: "Activities director" },
-  { value: "activity_aide", label: "Activity aide" },
-  { value: "dietary_staff", label: "Dietary staff" },
-  { value: "cook", label: "Cook" },
-  { value: "dietary_manager", label: "Dietary manager" },
-  { value: "dietary_aide", label: "Dietary aide" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "maintenance_director", label: "Maintenance director" },
-  { value: "maintenance_standby", label: "Maintenance standby" },
-  { value: "housekeeping", label: "Housekeeper" },
-  { value: "driver", label: "Driver" },
-  { value: "marketing_consultant", label: "Marketing consultant" },
-  { value: "owner", label: "Owner" },
-  { value: "ceo", label: "CEO" },
-  { value: "coo", label: "COO" },
-  { value: "cfo", label: "CFO" },
-  { value: "other", label: "Other" },
-];
+import { STAFF_POSITION_OPTIONS } from "@/lib/staff/staff-positions";
 
 const EMPLOYMENT_STATUSES: { value: string; label: string }[] = [
   { value: "active", label: "Active" },
@@ -221,7 +192,7 @@ export default function AdminNewStaffPage() {
                     value={staffRole}
                     onChange={(e) => setStaffRole(e.target.value)}
                   >
-                    {STAFF_ROLES.map((r) => (
+                    {STAFF_POSITION_OPTIONS.map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
                       </option>
