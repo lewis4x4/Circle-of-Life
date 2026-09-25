@@ -13,12 +13,29 @@ import { easternStamp } from './model'
 export const DISAGREEMENT_STATES = ['not_entered', 'no_roster', 'agrees', 'explained', 'open'] as const
 export type DisagreementState = typeof DISAGREEMENT_STATES[number]
 
+/**
+ * COL-749 ruling 3: a Thursday-against-Monday figure is checked against the
+ * census bridge (migration 542): Monday's submitted figure plus the movements
+ * dated since, within the facility's tolerance. Never a raw difference.
+ */
+export type DisagreementBridge = {
+  monday: number
+  expected: number
+  arrivals: number
+  departures: number
+  hospital_out: number
+  returns: number
+  /** True when a hospital or rehab stay stays in the census (the roster's own definition). */
+  hospital_in_census: boolean
+  tolerance: number
+}
+
 export type DisagreementFigure = {
   key: 'current_total_census' | 'hospital_and_rehab_total'
   /**
-   * What the figure is compared with: the live roster, or (Thursday, when the
-   * facility turns on stand_up.thursday_census_vs_monday) Monday's submitted
-   * figure plus the roster's change since, which is then `roster` (COL-751).
+   * What the figure is compared with: the live roster, or (Thursday, with
+   * stand_up.thursday_census_vs_monday on, the default since migration 542)
+   * the census bridge's expected figure from Monday, which is then `roster`.
    */
   against: 'roster' | 'monday'
   label: string
@@ -27,6 +44,8 @@ export type DisagreementFigure = {
   /** Monday's submitted figure, on a comparison against Monday. */
   monday: number | null
   roster_change_since_monday: number | null
+  /** The bridge behind a comparison against Monday; null against the roster. */
+  bridge: DisagreementBridge | null
   state: DisagreementState
   reason: OverrideReason | null
   /** The reason's label as it was given (the facility's list may have changed since). */
@@ -79,14 +98,30 @@ function parseFigure(raw: unknown): DisagreementFigure | null {
   const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : null)
   const text = (value: unknown) => (typeof value === 'string' ? value : null)
   if (row.against !== undefined && row.against !== 'roster' && row.against !== 'monday') return null
+  const bridge = parseDisagreementBridge(row.bridge)
   return {
     key: row.key, against: row.against === 'monday' ? 'monday' : 'roster', label: row.label, state: row.state,
     stand_up: num(row.stand_up), roster: num(row.roster),
     monday: num(row.monday), roster_change_since_monday: num(row.roster_change_since_monday),
+    bridge,
     reason: typeof row.reason === 'string' && /^[a-z][a-z0-9_]{0,39}$/.test(row.reason) ? row.reason : null,
     reason_label: text(row.reason_label),
     reason_at: text(row.reason_at), reason_until: text(row.reason_until),
     roster_changed_since_reason: row.roster_changed_since_reason === true,
+  }
+}
+
+function parseDisagreementBridge(raw: unknown): DisagreementBridge | null {
+  if (!raw || typeof raw !== 'object') return null
+  const row = raw as Record<string, unknown>
+  const whole = (value: unknown) => (typeof value === 'number' && Number.isInteger(value) ? value : null)
+  const monday = whole(row.monday), expected = whole(row.expected)
+  if (monday === null || expected === null) return null
+  return {
+    monday, expected,
+    arrivals: whole(row.arrivals) ?? 0, departures: whole(row.departures) ?? 0,
+    hospital_out: whole(row.hospital_out) ?? 0, returns: whole(row.returns) ?? 0,
+    hospital_in_census: row.hospital_in_census !== false, tolerance: whole(row.tolerance) ?? 0,
   }
 }
 
@@ -148,14 +183,16 @@ const monthDay = (iso: string): string => new Intl.DateTimeFormat('en-US', { tim
  */
 export function chipText(d: CensusDisagreement): string {
   const differing = d.figures.filter(figure => figure.state === 'open' || figure.state === 'explained')
+  // Only the bridge differs (the roster agrees): say so, not "the roster".
+  const against = differing.length > 0 && differing.every(figure => figure.against === 'monday') ? 'the census bridge from Monday' : 'the roster'
   const lead = d.unreconciled
     ? `${MEETING_LABELS[d.meeting_day]} Stand Up census unreconciled`
     : d.state === 'explained'
-      ? `${MEETING_LABELS[d.meeting_day]} Stand Up differs from the roster, explained`
-      : `${MEETING_LABELS[d.meeting_day]} Stand Up disagrees with the roster`
+      ? `${MEETING_LABELS[d.meeting_day]} Stand Up differs from ${against}, explained`
+      : `${MEETING_LABELS[d.meeting_day]} Stand Up disagrees with ${against}`
   const parts = differing.map(figure => {
     const numbers = figure.against === 'monday'
-      ? `${figure.label}: Stand Up ${figure.stand_up ?? 'blank'}, Monday ${figure.monday ?? 'none'} with the roster's change since (${signed(figure.roster_change_since_monday ?? 0)}) is ${figure.roster ?? 'none'}`
+      ? `${figure.label}: Stand Up ${figure.stand_up ?? 'blank'}, expected ${figure.roster ?? 'none'} from Monday's ${figure.monday ?? 'none'} and the movements since (${signed(figure.roster_change_since_monday ?? 0)})`
       : `${figure.label}: Stand Up ${figure.stand_up ?? 'blank'}, roster ${figure.roster ?? 'none'}`
     if (!figure.reason || !figure.reason_at) return numbers
     const tail = figure.state === 'explained' && figure.reason_until
@@ -177,6 +214,16 @@ export function noticeDueLine(notice: CensusNotice): string {
   return notice.phase === 'at_deadline'
     ? `The ${MEETING_LABELS[notice.meeting_day]} entry deadline, ${easternStamp(notice.entry_due_at)}, has passed.`
     : `Due ${easternStamp(notice.entry_due_at)}.`
+}
+
+/**
+ * COL-751: whether a notice recipient reconciles where they read the notice
+ * (by fixing the roster) rather than on the report. Only the report's writers
+ * (owner, org admin, the facility's administrator; the database decides the
+ * same) change the report; the manager and the assistant fix the roster.
+ */
+export function reconcilesInPlace(role: string | null | undefined): boolean {
+  return !!role && !['owner', 'org_admin', 'facility_admin'].includes(role)
 }
 
 /** The query a Stand Up link carries to open a facility's Reconcile dialog. */

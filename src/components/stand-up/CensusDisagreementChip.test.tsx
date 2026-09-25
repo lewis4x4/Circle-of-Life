@@ -93,13 +93,36 @@ describe('reconcile in either direction (COL-555)', () => {
     expect(screen.queryByRole('button', { name: /Record the reason/ })).not.toBeInTheDocument()
   })
 
-  it('offers Monday’s figure with the roster’s change on a Thursday check against Monday (COL-751)', () => {
+  it('offers the census bridge’s expected figure on a Thursday check against Monday (COL-749)', () => {
     const [d] = parseDisagreements([disagreement('open', { meeting_day: 'thursday', compares_with_monday: true, figures: [
       { key: 'current_total_census', against: 'monday', label: 'Census against Monday', stand_up: 35, roster: 34, monday: 33, roster_change_since_monday: 1, state: 'open', reason: null, reason_at: null, reason_until: null, roster_changed_since_reason: false }] })])!
     const onUseRoster = vi.fn()
     render(<ReconcileDialog disagreement={d} open onOpenChange={() => {}} canChange onUseRoster={onUseRoster} onCheckAgain={() => {}} canFixRoster={false} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Use Monday’s census with the roster’s change: 34' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Use the expected census from Monday: 34' }))
     expect(onUseRoster).toHaveBeenCalledWith(d.figures[0])
+  })
+})
+
+describe('fix first, reason second (COL-749 ruling 1)', () => {
+  it('leads with fixing the roster, open and prominent, and keeps the reason behind a disclosure', async () => {
+    tables.residents = [{ id: 'r1', first_name: 'Test', last_name: 'Resident', preferred_name: null, status: 'active', bed_hold_stay_type: null }]
+    const [d] = parseDisagreements([disagreement()])!
+    render(<ReconcileDialog disagreement={d} open onOpenChange={() => {}} canChange onUseRoster={() => {}} onExplain={() => {}} onCheckAgain={() => {}} />)
+    const dialog = await screen.findByRole('dialog', { name: 'Reconcile census · Homewood Lodge' })
+    const steps = [...dialog.querySelectorAll('[data-reconcile-step]')].map(node => node.getAttribute('data-reconcile-step'))
+    expect(steps).toEqual(['fix', 'use-roster', 'reason'])
+    expect(within(dialog).getByRole('heading', { name: 'Fix the roster now' })).toBeInTheDocument()
+    expect(within(dialog).getByText(/should never differ\. Fix it now; give a reason only if it cannot be fixed yet/)).toBeInTheDocument()
+    // The roster list is open at once, and Check again is the primary button.
+    await screen.findByText('Residents on the roster (1)')
+    expect(screen.getByText('Residents on the roster (1)').closest('details')).toHaveAttribute('open')
+    expect(within(dialog).getByRole('button', { name: 'Check again' }).className).toMatch(/bg-primary/)
+    // The reason is a closed disclosure, and its button is secondary.
+    const reason = dialog.querySelector('[data-reconcile-step="reason"]') as HTMLDetailsElement
+    expect(reason.tagName).toBe('DETAILS')
+    expect(reason.open).toBe(false)
+    expect(within(reason).getByText('Cannot fix it yet? Give a reason')).toBeInTheDocument()
+    expect(within(reason).getByText(/A reason is a stopgap, not a fix\. It holds for 7 days, and only while the roster does not change/)).toBeInTheDocument()
   })
 })
 
@@ -135,5 +158,21 @@ describe('census notices (COL-751)', () => {
     expect(notice).toHaveTextContent('Due September 24 at 8:45 a.m. Eastern.')
     expect(within(notice).getByRole('link', { name: 'Reconcile' })).toHaveAttribute('href', '/admin/stand-up?facility=f1&meeting=thursday&reconcile=1')
     expect(rpc).toHaveBeenCalledWith('stand_up_census_notices_for_me')
+  })
+
+  it('lets a manager or assistant reconcile where they read it, by fixing the roster (COL-751)', async () => {
+    const notice = { id: 'n1', facility_id: 'f1', facility_name: 'Homewood Lodge', meeting_day: 'monday', week_start: '2026-09-21', phase: 'before_deadline',
+      entry_due_at: '2026-09-21T12:45:00Z', sent_at: '2026-09-21T11:45:00Z', message: 'Census: Stand Up says 35, roster says 33. Reconcile before 8:45 AM.', unreconciled: false,
+      figures: [{ key: 'current_total_census', label: 'Census', stand_up: 35, roster: 33, state: 'open', reason: null, reason_at: null, reason_until: null, roster_changed_since_reason: false }] }
+    rpc.mockImplementation(async (name: string) => name === 'stand_up_census_notices_for_me' ? { data: [notice], error: null } : { data: [disagreement()], error: null })
+    render(<CensusNotices reconcileHere />)
+    const alert = await screen.findByRole('alert')
+    expect(within(alert).queryByRole('link', { name: 'Reconcile' })).not.toBeInTheDocument()
+    fireEvent.click(within(alert).getByRole('button', { name: 'Reconcile Homewood Lodge census' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Reconcile census · Homewood Lodge' })
+    expect(within(dialog).getByRole('heading', { name: 'Fix the roster now' })).toBeInTheDocument()
+    // The report is not theirs to change: the roster figure is offered but disabled, and no reason can be recorded.
+    expect(within(dialog).getByRole('button', { name: 'Use the roster for census: 33' })).toBeDisabled()
+    expect(within(dialog).getByText(/Only the facility administrator changes the report or records a reason/)).toBeInTheDocument()
   })
 })

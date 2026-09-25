@@ -9,16 +9,19 @@ import { loadCensusDisagreements } from './CensusDisagreementChip';
 import { RosterFixPanel } from './RosterFixPanel';
 
 /**
- * COL-555: fix a census disagreement from where it is seen, in either direction.
- * Three exits, each leaving Haven consistent, none needing SQL:
- *   1. The roster is right: put the roster's figure on the report.
- *   2. The report is right: fix the roster now, inside this dialog, through the
- *      roster's own presence, discharge and arrival flows. The report is
- *      untouched; the dialog reads the disagreement again after each change
- *      and says so when the two agree.
- *   3. Neither is known yet: record why, from the facility's reason list (a
- *      setting). The reason holds for the facility's reason window, and only
- *      while the roster does not change. Monday and Thursday both record it.
+ * COL-555: fix a census disagreement from where it is seen.
+ *
+ * Brian, 2026-09-25: "there should not ever be a difference. I would expect the
+ * admin to fix it right then and there." So the dialog leads with the fix:
+ *   1. Fix the roster now (primary, open): the roster's own presence, discharge
+ *      and arrival flows, inside this dialog. The report is untouched; the
+ *      dialog reads the disagreement again after each change and says so when
+ *      the two agree.
+ *   2. The roster is already right: put its figure (or, against Monday, the
+ *      census bridge's expected figure) on the report.
+ *   3. Only when neither can be fixed yet, behind a disclosure: record why,
+ *      from the facility's reason list (a setting). The reason holds for the
+ *      facility's reason window, and only while the roster does not change.
  */
 export function ReconcileDialog({ disagreement, open, onOpenChange, onUseRoster, onExplain, onCheckAgain, canChange, canFixRoster = true, explainUnavailable }: {
   disagreement: CensusDisagreement
@@ -61,45 +64,48 @@ export function ReconcileDialog({ disagreement, open, onOpenChange, onUseRoster,
       </DialogHeader>
       <div className="space-y-5 text-sm">
         {agreesNow && <p role="status">Reconciled. The notice and the chip clear on every page.</p>}
-        {!agreesNow && <section aria-labelledby="reconcile-roster-right" className="space-y-2">
-          <h3 id="reconcile-roster-right" className="font-medium">The roster is right</h3>
-          <p className="text-muted-foreground">Put the roster’s figure on this report.</p>
+        {!agreesNow && <p className="font-medium">The report and the roster should never differ. Fix it now; give a reason only if it cannot be fixed yet.</p>}
+        <section aria-labelledby="reconcile-fix-roster" className="space-y-3 rounded-lg border-2 border-primary bg-primary/5 p-4" data-reconcile-step="fix">
+          <h3 id="reconcile-fix-roster" className="text-base font-semibold">Fix the roster now</h3>
+          <p>Record the arrival, discharge, hospital or rehab stay, or return that is missing, with when it happened. The report stays as it is, and this clears when the two agree.</p>
+          {canFixRoster
+            ? <RosterFixPanel facilityId={current.facility_id} facilityName={current.facility_name} onRosterChanged={() => void checkAgain()} defaultOpen />
+            : <p>Ask the facility administrator to fix the roster.</p>}
+          <Button disabled={checking} onClick={() => void checkAgain()}>{checking ? 'Checking…' : 'Check again'}</Button>
+        </section>
+        {!agreesNow && <section aria-labelledby="reconcile-roster-right" className="space-y-2" data-reconcile-step="use-roster">
+          <h3 id="reconcile-roster-right" className="font-medium">The roster is already right</h3>
+          <p className="text-muted-foreground">Then the report is wrong. Put the roster’s figure on it.</p>
           <div className="flex flex-wrap gap-2">{differing.map(figure => <Button key={figureId(figure)} variant="outline" disabled={!canChange || figure.roster === null}
             onClick={() => { onUseRoster(figure); onOpenChange(false); }}>
             {figure.against === 'monday'
-              ? `Use Monday’s ${figure.label.replace(/ against Monday$/, '').toLowerCase()} with the roster’s change: ${figure.roster ?? 'none'}`
+              ? `Use the expected ${figure.label.replace(/ against Monday$/, '').toLowerCase()} from Monday: ${figure.roster ?? 'none'}`
               : `Use the roster for ${figure.label.toLowerCase()}: ${figure.roster ?? 'none'}`}</Button>)}</div>
+          {!canChange && <p role="status">This report cannot be changed right now. Fix the roster, or reopen the report to change it.</p>}
         </section>}
-        <section aria-labelledby="reconcile-report-right" className="space-y-2">
-          <h3 id="reconcile-report-right" className="font-medium">The report is right: fix the roster now</h3>
-          <p className="text-muted-foreground">Record the arrival, discharge, hospital stay or return that is missing. The report stays as it is, and this clears when the roster matches.</p>
-          {canFixRoster
-            ? <RosterFixPanel facilityId={current.facility_id} facilityName={current.facility_name} onRosterChanged={() => void checkAgain()} />
-            : <p className="text-muted-foreground">Ask the facility administrator to fix the roster.</p>}
-          <Button variant="ghost" size="sm" disabled={checking} onClick={() => void checkAgain()}>{checking ? 'Checking…' : 'Check again'}</Button>
-        </section>
-        {!agreesNow && <section aria-labelledby="reconcile-explain" className="space-y-2">
-          <h3 id="reconcile-explain" className="font-medium">Not known yet: say why</h3>
-          {!onExplain ? <p className="text-muted-foreground">{explainUnavailable ?? 'A reason cannot be recorded here. Fix one side.'}</p>
-            : options.length === 0 ? <p className="text-muted-foreground">This facility’s reasons could not be read. Fix one side, or try again later.</p>
-            : <>
-              <p className="text-muted-foreground">The reason holds for {current.reason_window_days === 1 ? '1 day' : `${current.reason_window_days} days`}, and only while the roster does not change. Then this opens again.</p>
-              {explainable.map(figure => {
-                const label = figure.label.replace(/ against Monday$/, '').toLowerCase();
-                const id = `reconcile-reason-${figure.key}`;
-                return <div key={figure.key} className="flex flex-wrap items-end gap-2">
-                  <label htmlFor={id} className="block text-xs font-medium">Why {label} is different
-                    <select id={id} className="mt-1 block min-h-10 w-full max-w-sm rounded border border-border bg-background px-3 text-sm" value={reasons[figure.key] ?? ''} disabled={!canChange}
-                      onChange={event => { const value = event.target.value; setReasons(prev => ({ ...prev, [figure.key]: isOverrideReason(value, options) ? value : undefined })); }}>
-                      <option value="">Choose a reason</option>{options.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
-                    </select>
-                  </label>
-                  <Button disabled={!canChange || !reasons[figure.key]} onClick={() => { onExplain(figure, reasons[figure.key]!); onOpenChange(false); }}>Record the reason<span className="sr-only"> for {label}</span></Button>
-                </div>;
-              })}
-            </>}
-        </section>}
-        {!canChange && !agreesNow && <p role="status" className="text-sm">This report cannot be changed right now. Fix the roster, or reopen the report to change it.</p>}
+        {!agreesNow && <details className="rounded border border-border p-3" data-reconcile-step="reason">
+          <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Cannot fix it yet? Give a reason</summary>
+          <div className="mt-2 space-y-2">
+            {!onExplain ? <p className="text-muted-foreground">{explainUnavailable ?? 'A reason cannot be recorded here. Fix one side.'}</p>
+              : options.length === 0 ? <p className="text-muted-foreground">This facility’s reasons could not be read. Fix one side, or try again later.</p>
+              : <>
+                <p className="text-muted-foreground">A reason is a stopgap, not a fix. It holds for {current.reason_window_days === 1 ? '1 day' : `${current.reason_window_days} days`}, and only while the roster does not change. Then this opens again.</p>
+                {explainable.map(figure => {
+                  const label = figure.label.replace(/ against Monday$/, '').toLowerCase();
+                  const id = `reconcile-reason-${figure.key}`;
+                  return <div key={figure.key} className="flex flex-wrap items-end gap-2">
+                    <label htmlFor={id} className="block text-xs font-medium">Why {label} is different
+                      <select id={id} className="mt-1 block min-h-10 w-full max-w-sm rounded border border-border bg-background px-3 text-sm" value={reasons[figure.key] ?? ''} disabled={!canChange}
+                        onChange={event => { const value = event.target.value; setReasons(prev => ({ ...prev, [figure.key]: isOverrideReason(value, options) ? value : undefined })); }}>
+                        <option value="">Choose a reason</option>{options.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+                      </select>
+                    </label>
+                    <Button variant="outline" disabled={!canChange || !reasons[figure.key]} onClick={() => { onExplain(figure, reasons[figure.key]!); onOpenChange(false); }}>Record the reason<span className="sr-only"> for {label}</span></Button>
+                  </div>;
+                })}
+              </>}
+          </div>
+        </details>}
       </div>
     </DialogContent>
   </Dialog>;

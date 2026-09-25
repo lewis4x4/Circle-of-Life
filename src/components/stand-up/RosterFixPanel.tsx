@@ -22,10 +22,12 @@ const personName = (row: { first_name?: string | null; last_name?: string | null
  * `onRosterChanged` so the dialog reads the disagreement again. A resident who
  * is not in Haven at all needs a full admission, which the last line links to.
  */
-export function RosterFixPanel({ facilityId, facilityName, onRosterChanged }: {
+export function RosterFixPanel({ facilityId, facilityName, onRosterChanged, defaultOpen = false }: {
   facilityId: string
   facilityName: string
   onRosterChanged: () => void
+  /** Open the lists at once: the fix is the primary action (COL-749 ruling 1). */
+  defaultOpen?: boolean
 }) {
   const [roster, setRoster] = useState<RosterRow[] | null>(null);
   const [arrivals, setArrivals] = useState<ArrivalRow[] | null>(null);
@@ -63,7 +65,7 @@ export function RosterFixPanel({ facilityId, facilityName, onRosterChanged }: {
   if (error) return <p role="alert" className="text-sm">{error}</p>;
   if (!roster || !arrivals) return <p role="status" className="text-sm text-muted-foreground">Reading the {facilityName} roster…</p>;
   return <div className="space-y-3">
-    <details className="rounded border border-border p-2">
+    <details className="rounded border border-border bg-background p-2" open={defaultOpen && arrivals.length > 0}>
       <summary className="cursor-pointer rounded text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Arrivals waiting to be confirmed ({arrivals.length})</summary>
       {arrivals.length === 0
         ? <p className="mt-2 text-sm text-muted-foreground">No admission at {facilityName} is waiting for its arrival.</p>
@@ -72,7 +74,7 @@ export function RosterFixPanel({ facilityId, facilityName, onRosterChanged }: {
             <AdmissionArrivalPanel caseId={row.caseId} facilityId={facilityId} residentId={row.residentId} onChanged={changed} />
           </li>)}</ul>}
     </details>
-    <details className="rounded border border-border p-2">
+    <details className="rounded border border-border bg-background p-2" open={defaultOpen}>
       <summary className="cursor-pointer rounded text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Residents on the roster ({roster.length})</summary>
       <p className="mt-2 text-xs text-muted-foreground">Record a hospital stay, rehab, leave or return here, or record a discharge. Each change is dated when it happened.</p>
       <ul className="mt-2 divide-y divide-border">{roster.map(row => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">

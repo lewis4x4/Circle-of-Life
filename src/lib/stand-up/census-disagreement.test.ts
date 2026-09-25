@@ -33,12 +33,14 @@ describe('census disagreement (COL-555)', () => {
     expect(parseDisagreements([row({ reason_options: [{ key: 'Bad Key', label: 'x' }] })])![0].reason_options).toEqual([])
   })
 
-  it('words a Thursday check against Monday with Monday and the roster change (COL-751)', () => {
+  it('words a Thursday check against Monday as the census bridge, never a raw difference (COL-749)', () => {
     const [d] = parseDisagreements([row({ meeting_day: 'thursday', compares_with_monday: true }, {
-      against: 'monday', label: 'Census against Monday', stand_up: 35, roster: 34, monday: 33, roster_change_since_monday: 1 })])!
+      against: 'monday', label: 'Census against Monday', stand_up: 35, roster: 34, monday: 33, roster_change_since_monday: 1,
+      bridge: { monday: 33, expected: 34, arrivals: 2, departures: 1, hospital_out: 1, returns: 0, hospital_in_census: true, tolerance: 0 } })])!
     expect(d.compares_with_monday).toBe(true)
     expect(d.figures[0].against).toBe('monday')
-    expect(chipText(d)).toBe("Thursday Stand Up disagrees with the roster · Census against Monday: Stand Up 35, Monday 33 with the roster's change since (+1) is 34")
+    expect(d.figures[0].bridge).toEqual({ monday: 33, expected: 34, arrivals: 2, departures: 1, hospital_out: 1, returns: 0, hospital_in_census: true, tolerance: 0 })
+    expect(chipText(d)).toBe("Thursday Stand Up disagrees with the census bridge from Monday · Census against Monday: Stand Up 35, expected 34 from Monday's 33 and the movements since (+1)")
     expect(parseDisagreements([row({}, { against: 'tuesday' })])).toBeNull()
   })
 

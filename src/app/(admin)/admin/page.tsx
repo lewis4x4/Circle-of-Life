@@ -65,6 +65,7 @@ async function CommandCenterData() {
           initialFacilityId={facilityId}
           currentUserId={auth.ctx.userId}
           fullName={auth.ctx.fullName}
+          appRole={auth.ctx.appRole}
         />
       );
     }

@@ -59,7 +59,8 @@ DO $$ DECLARE v jsonb; BEGIN
  IF jsonb_array_length(v)<>4 OR v->1->>'key'<>'change_not_entered' THEN RAISE EXCEPTION 'Reason list default wrong: %',v; END IF;
  SELECT value INTO v FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'stand_up.census_notice_channels',current_date);
  IF v<>'["in_app"]'::jsonb THEN RAISE EXCEPTION 'Channel default wrong: %',v; END IF;
- IF (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'stand_up.thursday_census_vs_monday',current_date))<>'false'::jsonb
+ -- COL-749 ruling 3 (migration 542): the Thursday check against Monday is on by default, through the census bridge.
+ IF (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'stand_up.thursday_census_vs_monday',current_date))<>'true'::jsonb
   OR (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'stand_up.thursday_admission_notes_to_recruiters',current_date))<>'false'::jsonb
   OR (SELECT value FROM public.haven_operating_rule((SELECT org FROM rs),(SELECT fac FROM rs),'admissions.arrival_approval_roles',current_date))<>'["owner", "org_admin", "facility_admin"]'::jsonb
  THEN RAISE EXCEPTION 'A new rule default is wrong'; END IF;
@@ -70,6 +71,9 @@ SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,fac
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'stand_up.census_notice_channels','["in_app","push"]'::jsonb,current_date,'Probe' FROM rs$q$,'Push and text delivery');
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'stand_up.census_notice_channels','["sms"]'::jsonb,current_date,'Probe' FROM rs$q$,'Push and text delivery');
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'stand_up.thursday_census_vs_monday','"yes"'::jsonb,current_date,'Probe' FROM rs$q$,'on (true) or off');
+-- Sections 2 to 4 check Thursday against the roster alone; section 5 turns the Monday check back on.
+INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason)
+ SELECT org,fac,'stand_up.thursday_census_vs_monday','false'::jsonb,current_date-30,'Probe: roster only' FROM rs;
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'admissions.arrival_approval_roles','[]'::jsonb,current_date,'Probe' FROM rs$q$,'cannot be switched off');
 SELECT pg_temp.rs_fail($q$INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason) SELECT org,fac,'admissions.arrival_approval_roles','["recruiter"]'::jsonb,current_date,'Probe' FROM rs$q$,'cannot be switched off');
 
@@ -185,7 +189,7 @@ DO $$ DECLARE due timestamptz; BEGIN
  IF EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM rs) AND meeting_day='thursday') THEN RAISE EXCEPTION 'A facility with no notice channel was notified'; END IF;
  DELETE FROM public.operating_rules WHERE facility_id=(SELECT fac FROM rs) AND rule_key='stand_up.census_notice_channels';
  PERFORM haven.stand_up_census_notice_sweep(due-interval '9 minutes');
- IF NOT EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM rs) AND meeting_day='thursday' AND message LIKE '%Monday''s 2 with the roster''s change since is 2%') THEN
+ IF NOT EXISTS(SELECT 1 FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM rs) AND meeting_day='thursday' AND message LIKE '%Monday''s 2 with the movements since expects 2%') THEN
   RAISE EXCEPTION 'The in-app notice with the Monday comparison did not go out: %',(SELECT array_agg(message) FROM public.stand_up_census_notices WHERE facility_id=(SELECT fac FROM rs)); END IF;
 END $$;
 

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { dateLabel, entryOpensStamp, entryWindowLine, mondayTimesFromSchedule, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, wallClockMinutes, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
 import { rosterSourceSuffix } from '@/lib/stand-up/roster-census';
 import { MEETING_DAYS, MEETING_LABELS, type MeetingDay } from '@/lib/stand-up/meetings';
-import { readReconcileRequest } from '@/lib/stand-up/census-disagreement';
+import { readReconcileRequest, reconcilesInPlace } from '@/lib/stand-up/census-disagreement';
 import { CensusNotices } from './CensusNotices';
 import { StandUpEditor } from './editor';
 import { MeetingStandUp } from './meeting';
@@ -34,7 +34,7 @@ export function StandUpWorkspace() {
   // Switching meeting asks the open report first, so unsaved figures are never dropped.
   const picker = (guard: () => boolean) => <MeetingPicker value={meeting} onChange={next => { if (guard()) setMeeting(next); }} />;
   if (meeting !== 'monday') return <MeetingStandUp key={`${session}:${meeting}`} day={meeting} picker={picker} reconcileFacilityId={reconcile} />;
-  return <StandUpSession key={session} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} picker={picker} reconcileFacilityId={reconcile} />;
+  return <StandUpSession key={session} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} picker={picker} reconcileFacilityId={reconcile} reconcileNoticesHere={reconcilesInPlace(auth.appRole)} />;
 }
 
 function MeetingPicker({ value, onChange }: { value: MeetingDay; onChange: (next: MeetingDay) => void }) {
@@ -43,7 +43,7 @@ function MeetingPicker({ value, onChange }: { value: MeetingDay; onChange: (next
   </select></label>;
 }
 
-function StandUpSession({ userId, canOpenRollUp, picker, reconcileFacilityId }: { userId: string; canOpenRollUp: boolean; picker?: (guard: () => boolean) => ReactNode; reconcileFacilityId?: string | null }) {
+function StandUpSession({ userId, canOpenRollUp, picker, reconcileFacilityId, reconcileNoticesHere = false }: { userId: string; canOpenRollUp: boolean; picker?: (guard: () => boolean) => ReactNode; reconcileFacilityId?: string | null; reconcileNoticesHere?: boolean }) {
   const routePending = useRouteTransitionPending();
   const selectedId = useFacilityStore(state => state.selectedFacilityId);
   const setSelectedFacility = useFacilityStore(state => state.setSelectedFacility);
@@ -144,7 +144,7 @@ function StandUpSession({ userId, canOpenRollUp, picker, reconcileFacilityId }: 
     {google?.state === 'reconnect_required' && <section role="alert" className="space-y-2 rounded border border-destructive bg-destructive/5 p-4"><h2 className="font-semibold">Google workbook disconnected</h2><p className="text-sm">Drive changes are not reaching Haven. Reconnect the dedicated Stand Up account before relying on workbook figures.</p>{google.last_success_at && <p className="text-xs text-muted-foreground">Last successful workbook synchronization: {easternTime(google.last_success_at)}.</p>}</section>}
     {googleDelayed && <section role="alert" className="space-y-2 rounded border border-warning bg-warning/5 p-4"><h2 className="font-semibold">Google workbook synchronization is delayed</h2><p className="text-sm">The connector has not completed within five minutes. Drive may be newer than Haven; check the connection before using these figures.</p>{google?.last_checked_at && <p className="text-xs text-muted-foreground">Last connector check: {easternTime(google.last_checked_at)}.</p>}</section>}
     {error && workspace && <p role="alert" className="rounded border border-destructive p-3 text-sm">{error} Your current entries are retained.</p>}
-    <CensusNotices refreshKey={currentReports.map(report => report.version).join(':')} />
+    <CensusNotices refreshKey={currentReports.map(report => report.version).join(':')} reconcileHere={reconcileNoticesHere} />
     {loading ? <p role="status">Loading your permitted facilities and reports…</p> : error && !workspace ? <section role="alert" className="space-y-3 rounded border border-destructive p-4"><p>{error}</p><Button onClick={() => void reload(true)}>Check access and reload</Button></section> : workspace && <>
       {workspace.facilities.length === 0 ? <section className="rounded border border-border p-5"><h2 className="font-semibold">No facility assignment</h2><p className="mt-2 text-sm">Ask your company administrator to assign your Haven account to the ALF you report for. Entry stays unavailable until access is assigned.</p></section> : <>
         <section aria-label="Report identity" className="grid gap-4 border-y border-border py-4 sm:grid-cols-[1fr_auto]">

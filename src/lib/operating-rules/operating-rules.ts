@@ -32,6 +32,9 @@ export const OPERATING_RULE_KEYS = [
   "stand_up.thursday_census_vs_monday",
   "stand_up.thursday_admission_notes_to_recruiters",
   "admissions.arrival_approval_roles",
+  "stand_up.thursday_bridge_tolerance",
+  "stand_up.census_bridge_hospital_in_census",
+  "stand_up.thursday_admission_workflow_to_recruiters",
 ] as const;
 
 export type OperatingRuleKey = (typeof OPERATING_RULE_KEYS)[number];
@@ -105,6 +108,11 @@ export function parseCensusReasonWindowDays(value: unknown): number | null {
 /** COL-751: minutes before the Stand Up entry deadline that an open census disagreement notifies (0–1440). */
 export function parseCensusNoticeLeadMinutes(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 1440 ? value : null;
+}
+
+/** COL-749: residents either way the Thursday census may be from the bridge and still match (0–20). */
+export function parseBridgeTolerance(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 20 ? value : null;
 }
 
 /** The login roles a census notice may go to. The database trigger holds the same list. */

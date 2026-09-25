@@ -36,4 +36,26 @@ describe('printable Thursday report (COL-754)', () => {
     expect(screen.getByRole('button', { name: 'Print' })).toBeInTheDocument()
     expect(request).toHaveBeenCalledWith('report', { meeting_day: 'thursday', facility_id: 'a', week_start: '2026-09-21' })
   })
+
+  it('prints the census bridge at the top of each facility, in words as well as colour (COL-749)', async () => {
+    const withBridge = { ...facility, bridge: { state: 'differs', monday_census: 38, monday_at: '2026-09-21T12:40:00Z', arrivals: 0, departures: 2, hospital_out: 2, returns: 0,
+      hospital_in_census: true, expected: 36, actual: 35, gap: -1, tolerance: 0, through: '2026-09-24T12:31:00Z' } }
+    request.mockImplementation(async (action: string) => action === 'report'
+      ? { meeting_day: 'thursday', generated_at: '2026-09-24T12:30:00Z', actor_role: 'facility_admin', facilities: [withBridge] }
+      : { meeting_day: 'thursday', scheduled: true, current_week: '2026-09-21', window: null, schedule: [], keys: [], facilities: [], monday_baselines: [],
+          can_edit: true, can_edit_submitted: true, server_now: '2026-09-24T12:30:00Z', actor_role: 'facility_admin', reports: [] })
+    render(<ThursdayPrintReport facilityId="a" week="2026-09-21" />)
+    const section = await screen.findByRole('region', { name: 'Homewood' })
+    const bridge = within(section).getByRole('region', { name: 'Census bridge from Monday' })
+    expect(bridge.className).toMatch(/break-inside-avoid/)
+    expect(bridge.className).toMatch(/print:border-foreground/)
+    expect(bridge).toHaveTextContent('Off by 1')
+    expect(bridge).toHaveTextContent('Monday 38')
+    expect(bridge).toHaveTextContent('− 2 departures')
+    expect(bridge).toHaveTextContent('= 36 expected')
+    expect(bridge).toHaveTextContent('Thursday 35')
+    expect(within(bridge).getByRole('status')).toHaveTextContent('Census bridge is off by 1: Monday 38, plus 0 arrivals, minus 2 departures, expected 36. Thursday 35, 1 resident fewer than expected.')
+    // First in the facility's section, before the figures table.
+    expect(bridge.compareDocumentPosition(within(section).getByRole('table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })

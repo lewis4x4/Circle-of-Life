@@ -32,6 +32,7 @@ import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
 import { CensusNotices } from "@/components/stand-up/CensusNotices";
+import { reconcilesInPlace } from "@/lib/stand-up/census-disagreement";
 import { QuickActions } from "./QuickActions";
 
 export type FacilityOperatorHomePageClientProps = {
@@ -39,6 +40,8 @@ export type FacilityOperatorHomePageClientProps = {
   initialFacilityId: string;
   currentUserId: string;
   fullName: string | null;
+  /** The signed-in role: a manager reconciles a census notice here, by fixing the roster (COL-751). */
+  appRole?: string;
   /**
    * Owner / org admin preview (COL-707). Mounts no control that writes and makes the
    * write handlers refuse, so a preview cannot claim, clear, record or post anything.
@@ -106,7 +109,7 @@ function formatTime(iso: string, timeZone: string) {
  * writes go through the claim RPC and the operations completion route, and the
  * page then refreshes from the server so nothing is re-derived on the client.
  */
-export function FacilityOperatorHomePageClient({ initial, initialFacilityId, currentUserId, fullName, readOnly = false }: FacilityOperatorHomePageClientProps) {
+export function FacilityOperatorHomePageClient({ initial, initialFacilityId, currentUserId, fullName, appRole, readOnly = false }: FacilityOperatorHomePageClientProps) {
   const router = useRouter();
   const [isRefreshing, startRefresh] = useTransition();
   const data = initial;
@@ -310,7 +313,7 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
       ) : null}
 
       {/* COL-751: a Stand Up census disagreement reaches the administrator before the deadline. */}
-      <div className="mb-4 empty:hidden"><CensusNotices /></div>
+      <div className="mb-4 empty:hidden"><CensusNotices reconcileHere={reconcilesInPlace(appRole)} /></div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[2fr_1fr]">
         <section className={cn(CARD_CLASS, "overflow-hidden", loading && "opacity-60")} aria-labelledby="on-tap-heading" aria-busy={loading}>
