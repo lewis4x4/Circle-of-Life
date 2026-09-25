@@ -84,8 +84,8 @@ describe("Stand Up census settings (COL-555 / COL-751)", () => {
 
   it("holds the same keys and bounds as the database", async () => {
     const { readFileSync } = await import("node:fs");
-    // The latest validator and rule-key check (migration 542, COL-749).
-    const sql = readFileSync(`${process.cwd()}/supabase/migrations/542_stand_up_thursday_census_bridge.sql`, "utf8");
+    // The latest validator (migration 544, COL-333).
+    const sql = readFileSync(`${process.cwd()}/supabase/migrations/544_admission_arrival_approvers_role_list.sql`, "utf8");
     const { OPERATING_RULE_KEYS, CENSUS_NOTICE_ROLE_CHOICES, ARRIVAL_APPROVAL_ROLE_CHOICES } = await import("./operating-rules");
     for (const key of OPERATING_RULE_KEYS) expect(sql).toContain(`'${key}'`);
     expect(sql).toContain(`NOT IN (${CENSUS_NOTICE_ROLE_CHOICES.map((role) => `'${role}'`).join(", ")})`);
@@ -217,7 +217,18 @@ describe("Who approves an arrival (COL-333)", () => {
   it("names the roles, with facility_admin as Administrator", () => {
     expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["owner", "facility_admin"])).toBe("Owner, Administrator");
     expect(describeOperatingRuleValue("admissions.arrival_approval_roles", [])).toBe("Not readable");
-    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["manager"])).toBe("Not readable");
+    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["recruiter"])).toBe("Not readable");
+    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["owner", "owner"])).toBe("Not readable");
+  });
+
+  it("can be widened to the Assistant Administrator (Brian, 2026-09-25)", () => {
+    expect(describeOperatingRuleValue("admissions.arrival_approval_roles", ["owner", "org_admin", "facility_admin", "admin_assistant"])).toBe(
+      "Owner, Org admin, Administrator, Assistant administrator",
+    );
+    expect(operatingRuleValueFromDraft({ key: "admissions.arrival_approval_roles", roles: ["admin_assistant", "manager"] })).toEqual({
+      ok: true,
+      value: ["admin_assistant", "manager"],
+    });
   });
 
   it("needs at least one role and keeps the database order", () => {

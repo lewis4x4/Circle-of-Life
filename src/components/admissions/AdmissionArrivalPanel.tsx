@@ -46,7 +46,7 @@ export const APPROVAL_INVALID_COPY: Record<NonNullable<ArrivalStatus["approval_i
 
 /** How an approving role reads. */
 export function approvalRoleLabel(role: string): string {
-  return role === "facility_admin" ? "Administrator" : enumLabel(role);
+  return enumLabel(role, { overrides: { facility_admin: "Administrator", admin_assistant: "Assistant administrator" } });
 }
 
 const stamp = (iso: string | null | undefined) =>

@@ -176,15 +176,15 @@ export function parseSwitch(value: unknown): boolean | null {
 }
 
 /**
- * COL-333: who may approve an arrival. The rule can narrow the list; it can
- * never empty it or add a role outside these three, so it refines the
- * approval and never waives it.
+ * COL-333: who may approve an arrival. Any of the roles that can open a case's
+ * arrival (migration 544); the list is never empty, so the approval is never
+ * waived. Brian, 2026-09-25: the Assistant Administrator approves too.
  */
-export const ARRIVAL_APPROVAL_ROLE_CHOICES = ["owner", "org_admin", "facility_admin"] as const;
+export const ARRIVAL_APPROVAL_ROLE_CHOICES = ["owner", "org_admin", "facility_admin", "admin_assistant", "manager", "coordinator", "med_tech"] as const;
 export type ArrivalApprovalRole = (typeof ARRIVAL_APPROVAL_ROLE_CHOICES)[number];
 
 export function parseArrivalApprovalRoles(value: unknown): ArrivalApprovalRole[] | null {
-  if (!Array.isArray(value) || value.length === 0) return null;
+  if (!Array.isArray(value) || value.length === 0 || new Set(value).size !== value.length) return null;
   return value.every((role) => (ARRIVAL_APPROVAL_ROLE_CHOICES as readonly unknown[]).includes(role)) ? (value as ArrivalApprovalRole[]) : null;
 }
 

@@ -176,6 +176,13 @@ INSERT INTO operating_rules(organization_id,facility_id,rule_key,value,effective
 SELECT pg_temp.ia_fail($q$SELECT admission_arrival_approve(c,admin_id,pg_temp.ia_fp(c),gen_random_uuid()) FROM ia,ia_case$q$,'Only an administrator');
 SELECT admission_arrival_approve(c,owner_id,pg_temp.ia_fp(c),gen_random_uuid()) FROM ia,ia_case;
 DELETE FROM operating_rules WHERE facility_id=(SELECT fac FROM ia) AND rule_key='admissions.arrival_approval_roles';
+-- The rule can also widen who approves (migration 544): listed, a med-tech approves.
+INSERT INTO operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason)
+ SELECT org,fac,'admissions.arrival_approval_roles','["facility_admin","med_tech"]'::jsonb,today-1,'Probe: med-techs approve' FROM ia;
+SELECT admission_arrival_approve(c,medtech_id,pg_temp.ia_fp(c),gen_random_uuid()) FROM ia,ia_case;
+DELETE FROM operating_rules WHERE facility_id=(SELECT fac FROM ia) AND rule_key='admissions.arrival_approval_roles';
+-- Once the rule stops listing med-techs, their approval no longer stands; the owner approves again.
+SELECT admission_arrival_approve(c,owner_id,pg_temp.ia_fp(c),gen_random_uuid()) FROM ia,ia_case;
 -- A recruiter can never confirm; a revoked med-tech cannot either.
 SELECT pg_temp.ia_fail($q$SELECT confirm_admission_arrival_review(c,recruiter_id,today) FROM ia,ia_case$q$,'no longer have access to confirm');
 UPDATE user_facility_access SET revoked_at=now() WHERE user_id=(SELECT medtech_id FROM ia);
