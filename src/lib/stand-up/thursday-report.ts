@@ -22,8 +22,13 @@ export type TimelineItem = {
    * is the step, `with` the stage it left and `status` the stage it reached;
    * for a rate_note `status` is the accommodation quoted; for a checklist_note
    * `status` is the document and `method` whether it is received or waived.
+   * physician_orders, form_1823 and arrival_decision are clinical admission
+   * notes (migration 549), shown wherever admission notes are: for a form_1823
+   * `by` is the examining physician and `status` the form's status; for an
+   * arrival_decision `method` is approved, withdrawn or reversed.
    */
   kind: 'contact' | 'next_step' | 'tour' | 'status' | 'lead_note' | 'admission_note' | 'admission_step' | 'rate_note' | 'checklist_note'
+    | 'physician_orders' | 'form_1823' | 'arrival_decision'
   by: string | null; method: string | null; with: string | null; text: string | null; status: string | null
 }
 export type ReportTour = { scheduled_for: string | null; outcome: string; completed_at: string | null; owner_name: string | null; new: boolean }
@@ -40,9 +45,11 @@ export type RecruiterItem = { at: string; kind: 'contact' | 'tour' | 'outreach';
 export type RecruiterActivity = { user_id: string; name: string; contacts: number; tours: number; outreach: number; items: RecruiterItem[] }
 /**
  * COL-749 ruling 3: the Thursday census bridge (migration 542), counts only.
- * Monday submitted + arrivals - departures (- hospital or rehab out + returns
- * when the census leaves hospital stays out) = expected Thursday, beside
- * Thursday's actual, within the facility's tolerance.
+ * Monday submitted + arrivals - departures = expected Thursday, beside
+ * Thursday's actual, within the facility's tolerance. A resident at a hospital
+ * or in rehab still counts in census (Brian, 2026-09-25), so stays out and
+ * returns are shown but do not move the expected figure; only a facility that
+ * sets stand_up.census_bridge_hospital_in_census off subtracts them.
  */
 export type CensusBridgeState = 'matches' | 'differs' | 'not_entered' | 'no_monday'
 export type CensusBridge = {
@@ -116,6 +123,12 @@ export function stayLabel(stayType: string | null | undefined): string {
 const TIMELINE_KIND_LABELS: Record<TimelineItem['kind'], string> = {
   contact: 'Contact', next_step: 'Next step', tour: 'Tour', status: 'Stage', lead_note: 'Lead notes', admission_note: 'Admission notes',
   admission_step: 'Admission', rate_note: 'Quoted rate', checklist_note: 'Admission paperwork',
+  physician_orders: 'Physician orders', form_1823: 'Form 1823', arrival_decision: 'Arrival',
+}
+const ARRIVAL_DECISION_LABELS: Record<string, string> = {
+  approved: 'Arrival approved',
+  withdrawn: 'Arrival approval withdrawn',
+  reversed: 'Arrival reversed',
 }
 const ADMISSION_STEP_LABELS: Record<string, string> = {
   referral_admission_started: 'Admission started',
@@ -143,6 +156,7 @@ export function timelineLine(item: TimelineItem): string {
   else if (item.kind === 'admission_step') return admissionStepLine(item)
   else if (item.kind === 'rate_note') parts.push(item.status ? `Quoted ${enumLabel(item.status, { case: 'lower' })} room` : 'Quoted rate')
   else if (item.kind === 'checklist_note') parts.push([item.status ? enumLabel(item.status) : 'Paperwork', item.method ? enumLabel(item.method, { case: 'lower' }) : null].filter(Boolean).join(', '))
+  else if (item.kind === 'arrival_decision') parts.push((item.method && ARRIVAL_DECISION_LABELS[item.method]) ?? 'Arrival updated')
   else parts.push(TIMELINE_KIND_LABELS[item.kind])
   if (item.text) parts.push(item.text)
   return parts.join(' · ')
@@ -186,7 +200,11 @@ const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
 /** One term of the bridge: what it adds or takes away, and whether it moves the census. */
 export type BridgeTerm = { key: 'arrivals' | 'departures' | 'hospital_out' | 'returns'; sign: '+' | '−'; count: number; label: string; movesCensus: boolean }
 
-/** The bridge's terms in Brian's order: + arrivals, − departures, − hospital or rehab out, + returns. */
+/**
+ * The bridge's terms: + arrivals, − departures, then hospital or rehab out and
+ * returns, which move the census only where the facility counts census without
+ * its hospital stays (the default keeps them in census).
+ */
 export function bridgeTerms(bridge: CensusBridge): BridgeTerm[] {
   const moves = !bridge.hospital_in_census
   return [

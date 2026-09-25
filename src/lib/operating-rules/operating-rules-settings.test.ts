@@ -209,7 +209,7 @@ describe("Thursday census bridge settings (COL-749, migration 542)", () => {
     expect(describeOperatingRuleValue("stand_up.census_bridge_hospital_in_census", true)).toBe("On: hospital and rehab stays stay in census");
     expect(describeOperatingRuleValue("stand_up.thursday_admission_workflow_to_recruiters", false)).toBe("Off: admission steps are hidden from recruiters");
     expect(operatingRuleValueFromDraft({ key: "stand_up.census_bridge_hospital_in_census", on: false })).toEqual({ ok: true, value: false });
-    expect(OPERATING_RULE_COPY["stand_up.thursday_admission_workflow_to_recruiters"].description).toMatch(/Nothing clinical is ever included/);
+    expect(OPERATING_RULE_COPY["stand_up.thursday_admission_workflow_to_recruiters"].description).toMatch(/Clinical notes follow the admission notes setting/);
   });
 });
 

@@ -31,7 +31,7 @@ export function ThursdayReportSections({ report, headingLevel = 3 }: { report: F
       <H className="font-semibold">Potential residents ({report.potential_residents.length})</H>
       {!report.potential_residents.length && <p className="text-sm">No open referral for this facility.</p>}
       {!report.admission_notes_shown && report.potential_residents.length > 0 && <p className="text-xs text-muted-foreground">{report.admission_workflow_shown
-        ? 'Admission steps, quoted-rate notes and paperwork notes are shown. The admission’s own notes and anything clinical are shown to administrators.'
+        ? 'Admission steps, quoted-rate notes and paperwork notes are shown. The admission’s own notes and clinical notes are shown to administrators.'
         : 'Admission notes are shown to administrators.'}</p>}
       {report.potential_residents.map(lead => <PotentialResidentCard key={lead.lead_id} lead={lead} />)}
     </section>

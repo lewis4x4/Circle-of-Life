@@ -1,8 +1,9 @@
 -- COL-749 ruling 4 (migration 543): recruiters read the non-clinical admission
 -- workflow on the Thursday report (status steps, blocks, quoted-rate notes and
--- non-clinical checklist notes), and never its clinical content (admission
--- notes stay behind their own setting, which stays off; physician orders,
--- Form 1823 content and clinical checklist documents never reach the report).
+-- non-clinical checklist notes). The clinical content (admission notes,
+-- physician orders, Form 1823 content, clinical checklist documents) follows
+-- stand_up.thursday_admission_notes_to_recruiters (migration 549): off, a
+-- recruiter never sees it; on, the recruiter sees what administrators see.
 -- Ruling 3: the report carries the census bridge per facility, counts only.
 -- Fails before migration 543. Native scratch-only probe; every fixture rolls
 -- back. Synthetic data only.
@@ -95,6 +96,13 @@ SELECT pg_temp.aw_login(admin_id,admin_session) FROM aw;
 SET LOCAL ROLE authenticated;
 INSERT INTO aw_results SELECT 'owner',public.stand_up_command('report',jsonb_build_object('meeting_day','thursday')) FROM aw;
 RESET ROLE;
+-- Migration 549: the admission notes switch on at one facility; the recruiter reads again.
+INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason)
+ SELECT org,fac,'stand_up.thursday_admission_notes_to_recruiters','true'::jsonb,current_date-1,'Probe: clinical notes to recruiters' FROM aw;
+SELECT pg_temp.aw_login(recruiter_id,recruiter_session) FROM aw;
+SET LOCAL ROLE authenticated;
+INSERT INTO aw_results SELECT 'recruiter_notes_on',public.stand_up_command('report',jsonb_build_object('meeting_day','thursday')) FROM aw;
+RESET ROLE;
 
 DO $$ DECLARE r jsonb; f jsonb; closed jsonb; t jsonb; BEGIN
  SELECT value INTO r FROM aw_results WHERE name='recruiter';
@@ -123,13 +131,30 @@ DO $$ DECLARE r jsonb; f jsonb; closed jsonb; t jsonb; BEGIN
   OR EXISTS(SELECT 1 FROM jsonb_array_elements(closed->'potential_residents'->0->'timeline') x WHERE x->>'kind' IN ('admission_step','rate_note','checklist_note')) THEN
   RAISE EXCEPTION 'The switch did not hide the workflow: %',closed; END IF;
 
- -- The owner sees the workflow everywhere and the admission notes; still never orders, Form 1823 content or clinical checklist notes.
+ -- The owner sees the workflow everywhere and every admission note, clinical ones included (549).
  SELECT value INTO r FROM aw_results WHERE name='owner';
  SELECT x INTO f FROM jsonb_array_elements(r->'facilities') x WHERE x->>'facility_name'='Workflow facility';
  t:=f->'potential_residents'->0->'timeline';
  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='admission_note' AND x->>'text'='CLINICAL-NOTE reason for admission') THEN RAISE EXCEPTION 'The owner lost the admission notes: %',t; END IF;
- IF r::text ~ 'metformin|penicillin|CLINICAL-CATHETER|CLINICAL-1823|CLINICAL-MEDS' THEN RAISE EXCEPTION 'Clinical admission content is never on the report'; END IF;
- IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(r->'facilities') x WHERE x->>'facility_name'='Workflow facility, switch off' AND (x->>'admission_workflow_shown')::boolean) THEN
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='physician_orders' AND x->>'text'='CLINICAL-ORDERS metformin 500mg')
+  OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='form_1823' AND x->>'text' LIKE '%Allergies: CLINICAL-ALLERGY penicillin%' AND x->>'text' LIKE '%History: CLINICAL-1823 history%')
+  OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='checklist_note' AND x->>'status'='catheter_care' AND x->>'text'='CLINICAL-CATHETER foley since June')
+ THEN RAISE EXCEPTION 'The owner must see the clinical admission notes: %',t; END IF;
+ IF r::text ~ '55500' THEN RAISE EXCEPTION 'The care surcharge is never on the report'; END IF;
+
+ -- With the switch on, the recruiter sees the same clinical notes at that facility, and still only there.
+ SELECT value INTO r FROM aw_results WHERE name='recruiter_notes_on';
+ IF jsonb_array_length(r->'facilities')<>2 OR r::text LIKE '%Casey%' THEN RAISE EXCEPTION 'Recruiter scope widened: %',r->'facilities'; END IF;
+ SELECT x INTO f FROM jsonb_array_elements(r->'facilities') x WHERE x->>'facility_name'='Workflow facility';
+ t:=f->'potential_residents'->0->'timeline';
+ IF (f->>'admission_notes_shown')::boolean IS NOT TRUE
+  OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='admission_note' AND x->>'text'='CLINICAL-NOTE reason for admission')
+  OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='physician_orders' AND x->>'text'='CLINICAL-ORDERS metformin 500mg')
+  OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='form_1823' AND x->>'text' LIKE '%penicillin%')
+  OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t) x WHERE x->>'kind'='checklist_note' AND x->>'status'='medication_list')
+ THEN RAISE EXCEPTION 'The switch did not open the clinical notes to the recruiter: %',t; END IF;
+ IF r::text ~ '55500' THEN RAISE EXCEPTION 'The care surcharge reached a recruiter'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM aw_results o, jsonb_array_elements(o.value->'facilities') x WHERE o.name='owner' AND x->>'facility_name'='Workflow facility, switch off' AND (x->>'admission_workflow_shown')::boolean) THEN
   RAISE EXCEPTION 'The recruiter switch must not hide the workflow from the owner'; END IF;
 END $$;
 

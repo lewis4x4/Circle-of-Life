@@ -312,6 +312,6 @@ describe('The Thursday census bridge (COL-749)', () => {
     expect(article).toHaveTextContent('Move-in blocked: quoted rate terms, Form 1823');
     expect(article).toHaveTextContent('Quoted private room · Family asked about a second-floor room.');
     expect(article).toHaveTextContent('Insurance financial cards, waived · Waived: Private pay; no card.');
-    expect(screen.getByText(/The admission’s own notes and anything clinical are shown to administrators\./)).toBeInTheDocument();
+    expect(screen.getByText(/The admission’s own notes and clinical notes are shown to administrators\./)).toBeInTheDocument();
   });
 });
