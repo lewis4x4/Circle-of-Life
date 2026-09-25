@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { moveInGateOverrideAllowed } from "@/lib/benefits/move-in-gate";
 import { logError } from "@/lib/observability/logger";
 import {
   emitWorkflowEvent,
@@ -35,6 +36,8 @@ const admissionPatchSchema = z.object({
   source_other: z.string().max(2000).nullable().optional(),
   anticipated_payer_source: z.enum(Constants.public.Enums.anticipated_payer_source).nullable().optional(),
   anticipated_payer_other: z.string().max(2000).nullable().optional(),
+  // COL-575: a Facility Executive may let an arrival be approved without a "likely to qualify" Medicaid review.
+  medicaid_gate_override_reason: z.string().trim().min(1).max(2000).optional(),
 }).strict().refine((value) => Object.keys(value).length > 0);
 
 export async function PATCH(
@@ -54,7 +57,10 @@ export async function PATCH(
   }
   const parsed = admissionPatchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid admission fields", details: parsed.error.flatten() }, { status: 400 });
-  const patch = parsed.data;
+  const { medicaid_gate_override_reason: overrideReason, ...patch } = parsed.data;
+  if (overrideReason !== undefined && !moveInGateOverrideAllowed(actor.app_role)) {
+    return NextResponse.json({ error: "Only a Facility Executive can override the Medicaid review" }, { status: 403 });
+  }
   // COL-333: nothing but the confirmed arrival records a move-in (migration 538
   // refuses it in the database too, for every writer).
   if (patch.status === "move_in") {
@@ -134,6 +140,11 @@ export async function PATCH(
 
   const updatePayload = {
     ...patch,
+    ...(overrideReason !== undefined ? {
+      medicaid_gate_override_reason: overrideReason,
+      medicaid_gate_override_by: actor.id,
+      medicaid_gate_override_at: new Date().toISOString(),
+    } : {}),
     ...(patch.financial_clearance_at !== undefined ? { financial_clearance_by: patch.financial_clearance_at ? actor.id : null } : {}),
     updated_at: new Date().toISOString(),
     updated_by: actor.id,
@@ -183,7 +194,7 @@ export async function PATCH(
       source_module: "admissions",
       created_by: actor.id,
       payload_json: {
-        fields: Object.keys(patch),
+        fields: [...Object.keys(patch), ...(overrideReason !== undefined ? ["medicaid_gate_override_reason"] : [])],
       },
     });
   }
