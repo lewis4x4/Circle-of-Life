@@ -16,8 +16,6 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  // Temporary gap: delete this entry when PR #892 merges and the file lands on main.
-  519: "claimed by open PR #892 (COL-767 facility Medicaid board, 519_benefits_medicaid_board.sql); already applied to production and staging",
   // Temporary gaps: the stacked Medicaid chain (#896-#905) is applied on both hosts but not merged. Delete each entry when its file lands on main.
   526: "claimed by open PR #896 (COL-772, 526_benefits_admission_medicaid_status.sql); already applied to production and staging",
   527: "claimed by open PR #897 (COL-773, 527_benefits_medicaid_log_import.sql); already applied to production and staging",
