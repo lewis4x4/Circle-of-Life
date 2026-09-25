@@ -6,7 +6,10 @@ import { reportStamp, bridgeSentence, bridgeStateLabel, bridgeTerms, type Census
  * COL-749 ruling 3: the census bridge at the top of a building's Thursday
  * section (the entry form, the report under it and the printout).
  *
- *   Monday 34  + 2 arrivals  − 1 departure  − 1 hospital or rehab out  + 1 return  = 35 expected   Thursday 35  ✓ Matches
+ *   Monday 34  + 2 arrivals  − 1 departure  1 hospital or rehab out (in census)  1 return (in census)  = 35 expected   Thursday 35  ✓ Matches
+ *
+ * A resident at a hospital or in rehab still counts in census (Brian,
+ * 2026-09-25), so those terms are shown but do not change the expected figure.
  *
  * Green with a check when Thursday matches, red with the gap when it does not
  * (plus the Reconcile action the caller passes). The whole bridge is also one

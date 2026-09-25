@@ -138,11 +138,12 @@ export const OPERATING_RULE_COPY: Record<OperatingRuleKey, { label: string; desc
   "stand_up.thursday_admission_workflow_to_recruiters": {
     label: "Recruiters read admission steps on the Thursday report",
     description:
-      "When on, recruiters see each potential resident's admission steps, quoted-rate notes and paperwork notes on the Thursday Stand Up report. Nothing clinical is ever included.",
+      "When on, recruiters see each potential resident's admission steps, quoted-rate notes and non-clinical paperwork notes on the Thursday Stand Up report. Clinical notes follow the admission notes setting below.",
   },
   "stand_up.thursday_admission_notes_to_recruiters": {
     label: "Recruiters read admission notes on the Thursday report",
-    description: "When on, recruiters see the admission notes on the Thursday Stand Up report. When off, those notes are hidden from recruiters.",
+    description:
+      "When on, recruiters see every admission note on the Thursday Stand Up report, clinical ones included: the admission's notes, the physician orders summary, the Form 1823's medical content, clinical paperwork notes and arrival approval and reversal reasons. When off, those notes are hidden from recruiters.",
   },
   "admissions.arrival_approval_roles": {
     label: "Who approves an arrival",
@@ -298,7 +299,7 @@ export function describeOperatingRuleValue(key: OperatingRuleKey, value: unknown
     case "stand_up.thursday_admission_notes_to_recruiters": {
       const on = parseSwitch(value);
       if (on === null) return "Not readable";
-      return on ? "On: recruiters read admission notes on the Thursday report" : "Off: admission notes are hidden from recruiters";
+      return on ? "On: recruiters read admission notes, clinical ones included, on the Thursday report" : "Off: admission notes are hidden from recruiters";
     }
     case "admissions.arrival_approval_roles": {
       const roles = parseArrivalApprovalRoles(value);

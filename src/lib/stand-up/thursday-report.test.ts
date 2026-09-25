@@ -29,6 +29,11 @@ describe('Thursday report (COL-754)', () => {
   it('words notes, tours, admission stages and recruiter activity without raw codes', () => {
     expect(timelineLine({ at: '', recorded_at: '', new: true, kind: 'contact', by: 'R', method: 'phone_call', with: 'Jordan', text: 'Wants a tour.', status: null })).toBe('Phone call with Jordan · Wants a tour.')
     expect(timelineLine({ at: '', recorded_at: '', new: false, kind: 'tour', by: 'R', method: null, with: null, text: 'Loved the garden.', status: 'no_show' })).toBe('Tour no show · Loved the garden.')
+    // Migration 549: clinical admission notes.
+    expect(timelineLine({ at: '', recorded_at: '', new: true, kind: 'physician_orders', by: null, method: null, with: null, text: 'Metformin 500 mg twice daily', status: null })).toBe('Physician orders · Metformin 500 mg twice daily')
+    expect(timelineLine({ at: '', recorded_at: '', new: true, kind: 'form_1823', by: 'Dr. Reyes', method: null, with: null, text: 'Allergies: penicillin', status: 'received' })).toBe('Form 1823 · Allergies: penicillin')
+    expect(timelineLine({ at: '', recorded_at: '', new: true, kind: 'arrival_decision', by: 'A', method: 'withdrawn', with: null, text: 'Bed not ready', status: null })).toBe('Arrival approval withdrawn · Bed not ready')
+    expect(timelineLine({ at: '', recorded_at: '', new: true, kind: 'arrival_decision', by: 'A', method: 'approved', with: null, text: null, status: null })).toBe('Arrival approved')
     expect(timelineLine({ at: '', recorded_at: '', new: false, kind: 'admission_note', by: null, method: null, with: null, text: 'Orders pending.', status: null })).toBe('Admission notes · Orders pending.')
     expect(admissionLine({ status: 'bed_reserved', target_move_in_date: '2026-10-05', financial_clearance_at: null, physician_orders_received_at: null, medicaid_pipeline_stage: 'app_requested', bed_label: '101-A', form_1823_status: null }))
       .toEqual(['Case: Bed reserved', 'Form 1823: Not on file', 'Financial clearance: Not yet', 'Physician orders: Not yet', 'Bed: 101-A', 'Target move-in: Oct 5', 'Medicaid: App requested'])

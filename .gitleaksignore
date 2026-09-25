@@ -93,3 +93,7 @@ a32a0a4c7bd013f51e14f2ec181af788a32ae11e:scripts/homewood/data-audit.mjs:generic
 57175eb67350fce1abceb26f411184b896ee6dc4:src/lib/reports/executors/index.ts:generic-api-key:255
 57175eb67350fce1abceb26f411184b896ee6dc4:src/lib/reports/executors/staffing-work-blocks.test.ts:generic-api-key:21
 2c77cf51130f43918ef415694d0611d9291bda42:scripts/run-gitleaks.mjs:generic-api-key:139
+# 56cbb673 (open PR #913, document intake) - handler.test.ts fixture HMAC
+# secret "...-secret-0123456789abcdef" is a synthetic test value. The branch is
+# fetched by every CI clone, so it blocks every pull request. Exact fingerprint.
+56cbb673aa91d4f1a23c24f386baf4e744e34c2e:supabase/functions/document-intake-processor/handler.test.ts:generic-api-key:20

@@ -25,6 +25,11 @@ export const ALLOWED_GAPS = {
   531: "claimed by open PR #903 (COL-775, 531_benefits_owner_summary.sql); already applied to production and staging",
   532: "claimed by open PR #904 (COL-769, 532_benefits_trust_and_lookback_prompts.sql); already applied to production and staging",
   533: "claimed by open PR #905 (COL-770, 533_benefits_701s_screening_sheet.sql); already applied to production and staging",
+  // Temporary gaps: document intake (#913) is applied on both hosts but not merged. Delete each entry when its file lands on main.
+  545: "claimed by open PR #913 (545_document_intake.sql); already applied to production and staging",
+  546: "claimed by open PR #913 (546_document_intake_schedules.sql); already applied to production and staging",
+  547: "claimed by open PR #913 (547_document_intake_facility_enablement.sql); already applied to production and staging",
+  548: "claimed by open PR #913 (548_document_intake_facility_mailboxes.sql); already applied to production and staging",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
