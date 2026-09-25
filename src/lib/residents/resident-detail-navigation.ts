@@ -15,6 +15,7 @@ export function adminResidentDetailHrefs(residentId: string): ResidentDetailHref
     medicationsHref: `${residentRootHref}/medications`,
     vitalsHref: `${residentRootHref}/vitals`,
     timelineHref: `${residentRootHref}/timeline`,
+    documentsHref: `${residentRootHref}/documents`,
     billingHref: `${residentRootHref}/billing`,
   };
 }
@@ -28,6 +29,7 @@ export function residentDetailTabFromSegment(
     case "medications":
     case "vitals":
     case "timeline":
+    case "documents":
     case "billing":
       return segment;
     default:

@@ -35,6 +35,7 @@ import {
   GraduationCap,
   Home,
   Hotel,
+  Inbox,
   Landmark,
   LineChart,
   Megaphone,
@@ -120,6 +121,8 @@ export const PILLARS: Pillar[] = [
       { key: "reports", href: "/admin/reports", label: "Reports hub", icon: FileText },
       { key: "facilities", href: "/admin/facilities", label: "Facilities", icon: Hotel },
       { key: "billing", href: "/admin/billing", label: "Billing & AR", icon: CreditCard },
+      // Received scans, photos and email attachments waiting for a person to file them (COL-771).
+      { key: "document-intake", href: "/admin/document-intake", label: "Document Intake", icon: Inbox },
       // Resident trips are a facility-operations desk, not a clinical one (COL-655).
       { key: "transportation", href: "/admin/transportation", label: "Transportation", icon: Bus },
     ],

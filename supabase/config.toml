@@ -553,3 +553,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # Dedicated workforce publisher uses its own x-cron-secret; no browser JWT grants.
 [functions."workforce-publisher"]
 verify_jwt = false
+
+[functions."document-intake-processor"]
+enabled = true
+verify_jwt = false
+
+[functions."document-intake-mail-sync"]
+enabled = true
+verify_jwt = false

@@ -11,6 +11,7 @@ export type ResidentDetailTabId =
   | "medications"
   | "vitals"
   | "timeline"
+  | "documents"
   | "billing";
 
 export type ResidentDetailHrefConfig = {
@@ -22,6 +23,7 @@ export type ResidentDetailHrefConfig = {
   medicationsHref: string;
   vitalsHref: string;
   timelineHref: string;
+  documentsHref: string;
   billingHref: string;
 };
 
@@ -38,6 +40,7 @@ export function ResidentDetailTabStrip(props: {
     { id: "medications", label: "Medications", href: hrefs.medicationsHref },
     { id: "vitals", label: "Vitals", href: hrefs.vitalsHref },
     { id: "timeline", label: "Timeline", href: hrefs.timelineHref },
+    { id: "documents", label: "Documents", href: hrefs.documentsHref },
     { id: "billing", label: "Billing", href: hrefs.billingHref },
   ];
 

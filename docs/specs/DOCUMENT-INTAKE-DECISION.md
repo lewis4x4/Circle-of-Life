@@ -98,7 +98,11 @@ The existing COI build order stands, with these changes: step 1 includes the Cor
 
 ## Haven
 
-Nothing here touches the COL-677 floor tablet and kiosk build or the Oct 1 Homewood go-live. **Haven intake starts after Homewood settles.**
+**Amended 2026-09-25 (Brian):** Document Intake is launch-critical. **Haven intake starts at Homewood only on 2026-10-01**, then one facility at a time (COL-843). It no longer waits for "after Homewood settles" or for the whole Cornerstone/GSMS engine: Haven builds a bounded release (spec `41-document-intake.md`, migration 545, Linear COL-771 / COL-834..843) that reuses the proven contracts (store-first custody, leased jobs, uncertain-outcome reconciliation) without a shared database or package. Every filing needs a person's approval in v1.
+
+Reader and Jev in Haven are governed by `ai_invocation_policies` (PHI allowed with a recorded BAA; `routing_json.document_intake` `enabled`, `jev_enabled`, `jev_phi_enabled`) and the per-type catalog. A type that carries PHI goes to Jev only when `jev_phi_enabled` is set; unknown or unauthenticated senders never go to Jev; payment evidence never goes to any reader. When a stage may not run, the document still arrives for manual review and the screen says why.
+
+**Mailboxes amended 2026-09-25 (Brian):** Haven receives at six shared mailboxes, one per facility plus Front Office (`<facility>.docs@circleoflifecommunities.com`, `frontoffice.docs@…`), all read by the same receiver into the same queue. See spec 41 § Email.
 
 **Legacy checker protection (COL-819):** The legacy `compliance-doc-check` endpoint and direct provider calibration path remain blocked. This documentation alignment does not re-enable them. Reuse requires the separately authorized Haven rollout of the proven shared engine, with stored-source binding, first-hop sender verification and the complete open-obligation PHI gate. Selecting a reader provider/model/API key is not processing, PHI, spending or provider activation approval.
 
