@@ -136,7 +136,7 @@ describe("Facility profile review", () => {
   it("keeps an unavailable URL facility out of the profile fetch", async () => {
     env.query = "facility_id=revoked-site";
     render(<Page />);
-    await screen.findByText("The selected facility is no longer accessible.");
+    await screen.findByText("This facility is no longer accessible.");
     expect(fetch).not.toHaveBeenCalled();
     // COL-651: the page's own dropdown is gone; the gate sets the header scope and the URL follows.
     expect(screen.queryByRole("combobox", { name: "Facility" })).not.toBeInTheDocument();
@@ -224,3 +224,4 @@ describe("Facility profile review", () => {
     // Scan all 91 source items and 110 components, including on shared CI CPUs.
   }, 15_000);
 });
+
