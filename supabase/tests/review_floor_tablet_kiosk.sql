@@ -77,7 +77,7 @@ SELECT gen_random_uuid() owner_user, gen_random_uuid() owner_session,
        f.id facility, f.organization_id org, f.entity_id entity, r.id resident,
        gen_random_uuid() other_facility,
        gen_random_uuid() org2, gen_random_uuid() ent2, gen_random_uuid() fac2, gen_random_uuid() org2_device,
-       gen_random_uuid() plan, gen_random_uuid() rule, gen_random_uuid() task
+       gen_random_uuid() plan, gen_random_uuid() rule, gen_random_uuid() task, gen_random_uuid() cadence
 FROM public.facilities f
 JOIN public.residents r ON r.facility_id = f.id AND r.organization_id = f.organization_id AND r.deleted_at IS NULL
 WHERE f.deleted_at IS NULL ORDER BY f.name, r.id LIMIT 1;
@@ -115,13 +115,23 @@ INSERT INTO public.staff(id, organization_id, facility_id, user_id, first_name, 
   UNION ALL SELECT n_staff, org, facility, NULL, 'Probe', 'November', 'resident_aide'::public.staff_role, current_date - 100, 'active'::public.employment_status FROM fk
   UNION ALL SELECT o_staff, org, facility, o_user, 'Probe', 'Oscar', 'resident_aide'::public.staff_role, current_date - 100, 'active'::public.employment_status FROM fk;
 
--- A rounding check for Probe Alpha at the facility, for the replay.
+-- A Smart Rounding check for Probe Alpha at the facility, for the replay. The
+-- cadence version makes haven.require_observation_capture apply, as it does to
+-- every cadence check at Homewood; a draft stays outside the timeline rule.
+INSERT INTO public.facility_cadence_versions(id, organization_id, facility_id, version_number, status, effective_from, change_reason)
+  SELECT cadence, org, facility,
+    (SELECT COALESCE(max(v.version_number), 0) + 1 FROM public.facility_cadence_versions v WHERE v.facility_id = fk.facility),
+    'draft', now() + interval '30 days', 'Floor tablet replay probe fixture' FROM fk;
+INSERT INTO public.observation_vocab(organization_id, facility_id, field_name, value_code, display_label, display_order, is_oof)
+  SELECT fk.org, NULL, 'mood_state', 'pleasant', 'Pleasant', 1, false FROM fk
+  WHERE NOT EXISTS (SELECT 1 FROM public.observation_vocab v WHERE v.organization_id = fk.org AND v.facility_id IS NULL
+    AND v.field_name = 'mood_state' AND v.value_code = 'pleasant' AND v.active AND v.deleted_at IS NULL);
 INSERT INTO public.resident_observation_plans(id, organization_id, facility_id, resident_id, status, source_type, effective_from, rationale)
   SELECT plan, org, facility, resident, 'active', 'manual', now(), 'COL-690 floor tablet offline replay regression fixture' FROM fk;
 INSERT INTO public.resident_observation_plan_rules(id, plan_id, organization_id, facility_id, resident_id, interval_type, interval_minutes, grace_minutes)
   SELECT rule, plan, org, facility, resident, 'fixed_minutes', 60, 15 FROM fk;
-INSERT INTO public.resident_observation_tasks(id, organization_id, facility_id, resident_id, plan_id, plan_rule_id, assigned_staff_id, scheduled_for, due_at, grace_ends_at, status)
-  SELECT task, org, facility, resident, plan, rule, a_staff, now() - interval '1 hour', now(), now() + interval '15 minutes', 'upcoming'::public.resident_observation_task_status FROM fk;
+INSERT INTO public.resident_observation_tasks(id, organization_id, facility_id, resident_id, plan_id, plan_rule_id, assigned_staff_id, scheduled_for, due_at, grace_ends_at, status, cadence_version_id)
+  SELECT task, org, facility, resident, plan, rule, a_staff, now() - interval '1 hour', now(), now() + interval '15 minutes', 'upcoming'::public.resident_observation_task_status, cadence FROM fk;
 
 CREATE FUNCTION pg_temp.fk_owner() RETURNS void LANGUAGE sql AS $$
   SELECT set_config('request.jwt.claims', jsonb_build_object('sub', f.owner_user, 'session_id', f.owner_session, 'role', 'authenticated',
@@ -517,12 +527,25 @@ DO $$ DECLARE r jsonb; f record; a1 uuid; a1_start timestamptz; log record; BEGI
   r := public.floor_replay_complete_rounding_task(pg_temp.tok('floor'), a1, f.b_user, a1_start, f.task,
     jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', a1_start, 'quick_status', 'calm'));
   IF r->>'error' <> 'unlock_mismatch' THEN RAISE EXCEPTION 'Rounding replay as another person: %', r; END IF;
+  -- A cadence check charted without what they were doing and a chip is refused
+  -- by the writer, as the floor tablet's charts were before it asked for them.
+  BEGIN
+    r := public.floor_replay_complete_rounding_task(pg_temp.tok('floor'), a1, f.a_user, a1_start, f.task,
+      jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', a1_start, 'quick_status', 'calm', 'resident_location', 'room'));
+    RAISE EXCEPTION 'A cadence check replayed without its observation capture: %', r;
+  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+  -- The floor chart's payload: location, state and chips beside the flat answers.
   r := public.floor_replay_complete_rounding_task(pg_temp.tok('floor'), a1, f.a_user, a1_start, f.task,
-    jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', a1_start, 'quick_status', 'calm', 'resident_location', 'room'));
+    jsonb_build_object('request_id', gen_random_uuid(), 'observed_at', a1_start, 'quick_status', 'calm', 'resident_location', 'room',
+      'resident_state', 'sleeping', 'chip_selections', jsonb_build_object('mood_state', jsonb_build_array('pleasant')), 'repositioned', true));
   IF NOT (r->>'ok')::boolean OR r->>'log_id' IS NULL THEN RAISE EXCEPTION 'Rounding replay failed: %', r; END IF;
-  SELECT staff_id, created_by, entry_mode::text AS entry_mode INTO log FROM public.resident_observation_logs WHERE id = (r->>'log_id')::uuid;
+  SELECT staff_id, created_by, entry_mode::text AS entry_mode, resident_state, chip_selections, repositioned INTO log
+    FROM public.resident_observation_logs WHERE id = (r->>'log_id')::uuid;
   IF log.staff_id <> f.a_staff OR log.created_by <> f.a_user OR log.entry_mode <> 'offline_synced' THEN
     RAISE EXCEPTION 'Replayed check not attributed to its owner: %', row_to_json(log);
+  END IF;
+  IF log.resident_state <> 'sleeping' OR log.chip_selections <> jsonb_build_object('mood_state', jsonb_build_array('pleasant')) OR NOT log.repositioned THEN
+    RAISE EXCEPTION 'Replayed floor chart lost its capture or its flat answers: %', row_to_json(log);
   END IF;
   -- The wrapper puts the request identity back.
   IF COALESCE(current_setting('haven.floor_replay_unlock', true), '') <> '' OR auth.jwt() ? 'sub' OR auth.jwt()->>'role' <> 'service_role' THEN

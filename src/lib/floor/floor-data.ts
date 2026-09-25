@@ -8,7 +8,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { liveBoardRungLabel } from "@/lib/rounding/live-board-display-copy";
+import { FLOOR_CHECK_VOCAB_FIELDS, floorCheckVocabFromRows, type FloorVocabRow } from "@/lib/floor/check-form";
 import { compareRooms, residentFlag, type FloorTaskApiRow, type ResidentFlag } from "@/lib/floor/now-rows";
+import type { ObservationVocabCatalog } from "@/lib/rounding/observation-chips";
 import type { Database } from "@/types/database";
 
 type Client = SupabaseClient<Database>;
@@ -165,4 +167,17 @@ export async function fetchMyStaffIds(supabase: Client, userId: string): Promise
   const { data, error } = await supabase.from("staff").select("id").eq("user_id", userId).is("deleted_at", null);
   if (error) throw error;
   return (data ?? []).map((row) => row.id);
+}
+
+/** The check's choices from `observation_vocab` (places, what they are doing, meal, mood and medication chips). */
+export async function fetchFloorCheckVocab(supabase: Client, facilityId: string): Promise<ObservationVocabCatalog> {
+  const { data, error } = await supabase
+    .from("observation_vocab")
+    .select("field_name, value_code, display_label, display_order, is_oof, facility_id")
+    .in("field_name", [...FLOOR_CHECK_VOCAB_FIELDS])
+    .eq("active", true)
+    .is("deleted_at", null)
+    .or(`facility_id.eq.${facilityId},facility_id.is.null`);
+  if (error) throw error;
+  return floorCheckVocabFromRows((data ?? []) as FloorVocabRow[], facilityId);
 }

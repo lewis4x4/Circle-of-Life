@@ -113,6 +113,13 @@ export type CompletionPayload = {
    * absent means an older completion path wrote this observation.
    */
   chipSelections?: Record<string, string[]>;
+  /**
+   * "floor" when the floor tablet charted this check. Its chips go through
+   * `complete_rounding_task_review` with the flat answers rather than through
+   * `submit_observation`, which does not carry them, so the tablet, the owner
+   * sync and the device replay all make the same write.
+   */
+  captureSurface?: "floor";
   note?: string | null;
   lateReason?: string | null;
   exceptionType?: ObservationExceptionType | null;

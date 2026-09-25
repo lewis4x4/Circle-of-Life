@@ -131,6 +131,37 @@ describe("chip capture routes through the composing command", () => {
     expect(current.rpc).toHaveBeenCalledWith("submit_observation", expect.objectContaining({ p_actor_role: "facility_admin", p_chip_selections: { mood_state: ["pleasant"] }, p_resident_state: "eating_meal" }));
   });
 
+  it("writes a floor tablet chart through the review writer, chips beside the flat answers", async () => {
+    const current = install();
+    current.rpc.mockResolvedValue({ data: { log_id: "log-1", status: "completed_on_time" }, error: null });
+    const chipSelections = { meal_intake: ["ate_well"], med_response: ["took_meds"] };
+
+    const response = await POST(
+      request({ captureSurface: "floor", chipSelections, painConcern: true, hydrationOffered: true, lateReason: null }),
+      { params: Promise.resolve({ id: "task-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    const [name, args] = current.rpc.mock.calls[0] as [string, { p_payload: Record<string, unknown> }];
+    expect(name).toBe("complete_rounding_task_review");
+    expect(args.p_payload).toMatchObject({
+      quick_status: "awake",
+      resident_location: "dining_room",
+      resident_state: "eating_meal",
+      chip_selections: chipSelections,
+      pain_concern: true,
+      hydration_offered: true,
+      offline: false,
+    });
+  });
+
+  it("refuses a floor chart with a malformed chip map before any write", async () => {
+    const current = install();
+    const response = await POST(request({ captureSurface: "floor", chipSelections: { mood_state: "pleasant" } }), { params: Promise.resolve({ id: "task-1" }) });
+    expect(response.status).toBe(400);
+    expect(current.rpc).not.toHaveBeenCalled();
+  });
+
   it("sends an unrecognized chip code through rather than dropping it, and surfaces the refusal", async () => {
     const current = install();
     current.rpc.mockResolvedValue({
