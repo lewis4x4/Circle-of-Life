@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import { BackLink } from "@/design-system/components/BackLink";
 import { buildScreeningSheet, type ScreeningSheetFacts } from "@/lib/benefits/screening-sheet";
 import { BenefitsRequestError, benefitsFetch, ErrorNotice } from "./benefits-ui";
@@ -35,6 +36,7 @@ export function ScreeningSheet701S({ caseId }: { caseId: string }) {
       {sections?.map((section) => (
         <section key={section.title} className="break-inside-avoid space-y-1">
           <h2 className="border-b border-border pb-1 text-base font-semibold">{section.title}</h2>
+          <HorizontalScroll label={section.title}>
           <table className="w-full text-sm">
             <tbody>
               {section.items.map((item, index) => (
@@ -55,6 +57,7 @@ export function ScreeningSheet701S({ caseId }: { caseId: string }) {
               ))}
             </tbody>
           </table>
+          </HorizontalScroll>
         </section>
       ))}
     </div>

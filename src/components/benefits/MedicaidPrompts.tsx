@@ -145,7 +145,7 @@ export function MedicaidPromptsPanel() {
               ))}
             </ul>
           )}
-          {(data.over_income?.length ?? 0) > 0 && (
+          {data.over_income && data.over_income.length > 0 && (
             <ul className="divide-y divide-border" aria-label="Over income">
               {data.over_income!.map((p) => (
                 <li key={`o-${p.resident_id}`} className="space-y-2 py-3">
@@ -159,7 +159,7 @@ export function MedicaidPromptsPanel() {
               ))}
             </ul>
           )}
-          {(data.property_lookback?.length ?? 0) > 0 && (
+          {data.property_lookback && data.property_lookback.length > 0 && (
             <ul className="divide-y divide-border" aria-label="Property status changed">
               {data.property_lookback!.map((p) => (
                 <li key={`p-${p.resident_id}`} className="space-y-2 py-3">

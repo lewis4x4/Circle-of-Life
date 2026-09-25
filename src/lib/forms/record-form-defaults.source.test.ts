@@ -54,6 +54,8 @@ const RECORD_FORMS: Record<string, { uiState?: string[]; forbidden?: RegExp[] }>
   // COL-676: quoted care level / room, 1823 status, Medicaid stage, and the resident rate agreement.
   "src/app/(admin)/admin/admissions/[id]/page.tsx": {
     forbidden: [/setRateCareLevelDraft\("[123]"\)/, /setRateAccommodationDraft\("private"\)/, /\?\? "pending"\)/, /\?\? "prospect"\)/],
+    // Reload counters (COL-772 Medicaid status, COL-575 arrival readiness), not record values.
+    uiState: ["medicaidRefresh", "arrivalRefresh"],
   },
   // COL-332: a tour's time, who gives it and its result are chosen, never defaulted.
   "src/components/referrals/ReferralTours.tsx": {

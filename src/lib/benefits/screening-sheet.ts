@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { enumLabel } from "@/lib/display/enum-label";
+
 /**
  * COL-770: the DOEA 701S (April 2013) telephone screening sheet, pre-filled only from this resident's record.
  * Every answer carries its source. Anything the record does not hold stays blank: Haven supplies no default or
@@ -48,7 +50,7 @@ export function buildScreeningSheet(facts: ScreeningSheetFacts): SheetSection[] 
   const latest = facts.forms_1823.find((form) => form.is_current) ?? facts.forms_1823[0] ?? null;
   const latestSource = latest ? `1823 dated ${usDate(latest.exam_date) ?? "(no exam date)"}` : "";
   const adlItem = (q: string, label: string, value: string | null | undefined) =>
-    latest && value && ADL_NEED[value] ? { q, label, answer: ADL_NEED[value], source: `${latestSource}: ${value.replace(/_/g, " ")}` } : blank(q, label);
+    latest && value && ADL_NEED[value] ? { q, label, answer: ADL_NEED[value], source: `${latestSource}: ${enumLabel(value).toLowerCase()}` } : blank(q, label);
   const sex = r.gender === "female" ? "Female" : r.gender === "male" ? "Male" : null;
   const assetsBucket = s?.assets_cents == null ? null : s.assets_cents <= 200000 ? "$0 to $2,000" : s.assets_cents <= 500000 ? "$2,001 to $5,000" : "$5,001 or more";
   const diagnoses = facts.forms_1823.flatMap((form) =>
@@ -56,7 +58,7 @@ export function buildScreeningSheet(facts: ScreeningSheetFacts): SheetSection[] 
       .map((d) => ({ q: "42", label: "Health condition (from Form 1823)", answer: d.trim(), source: `1823 dated ${usDate(form.exam_date) ?? "(no exam date)"}` })));
   const meds = facts.active_medication_count;
   const medication = latest?.medication_assistance && MEDICATION_NEED[latest.medication_assistance]
-    ? { q: "40g", label: "Managing medication (need)", answer: MEDICATION_NEED[latest.medication_assistance], source: `${latestSource}: ${latest.medication_assistance.replace(/_/g, " ")}` }
+    ? { q: "40g", label: "Managing medication (need)", answer: MEDICATION_NEED[latest.medication_assistance], source: `${latestSource}: ${enumLabel(latest.medication_assistance).toLowerCase()}` }
     : blank("40g", "Managing medication (need)");
   return [
     { title: "Identification", items: [
