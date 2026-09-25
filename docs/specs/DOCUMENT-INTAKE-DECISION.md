@@ -40,10 +40,10 @@ Illustrative catalog (the full list is Brian's input): facility → Home Office 
 1. **Store first.** Raw `.eml` and sha256 saved before any processing. Each attachment (and each document inside a multi-document scan) becomes its own envelope row.
 2. **Who sent it.** Sender identity is trusted only when authenticated at the first hop (SPF, DKIM, DMARC results from the receiving mail system, or an internal sender inside the tenant). Sender address maps to a party (Cornerstone `people.email`, `party_aliases`; Haven staff, vendor and contact records; each facility copier and mailbox maps to its facility; an insurance agent maps to every sub it insures). Tokens in the address or subject bind straight to one record. Unauthenticated senders are unknown.
 3. **What do they owe.** Pull that party's open obligations.
-4. **Read it.** The reader turns the PDF or image into text and the fields for the candidate doc types.
-5. **Which one is this.** Jev (only where the sender-type rule allows) or the reader picks the matching obligation from that short list, or "none of these". Jev runs the doc type's yes/no checks. Code runs every date and dollar check.
+4. **Read it.** For authorized processing, the configured OCR/extraction provider and model turns the PDF or image into text and sourced fields for the candidate document types.
+5. **Which one is this.** For inputs allowed by the sender/data rules, the extracted result goes to Jev, which determines the document's purpose and proposed obligation/destination from the eligible short list, or "none of these". Jev runs the doc type's yes/no checks; the reader does not replace this required stage. Inputs not authorized for Jev stay in their existing approved processing/review route. Code runs every date, limit and amount comparison.
 6. **File it.** Proposed filing on the record, a person confirms. Low-risk types go automatic only after measured thresholds. **Never automatic for resident documents or payments.**
-7. **No match or unknown sender.** The reader (never Jev) classifies against the whole catalog, shows the top three guesses, and sends it to the triage queue. The triage pick becomes the sender mapping and training data.
+7. **No match or unknown sender.** Use the existing approved reader/human review route; unknown senders are not authorized for Jev. Where reader processing is authorized, classify against the catalog, show the top three guesses, and send the result to the triage queue. The human triage pick becomes the sender mapping and training data.
 8. **Tell the sender.** Acknowledge what was received and what is still owed. A failed check becomes a correction request. No auto-reply to unknown or unauthenticated senders.
 
 ## Accelerators (optional, not required channels)
@@ -53,18 +53,21 @@ Illustrative catalog (the full list is Brian's input): facility → Home Office 
 
 ## AI roles
 
-- **Reader:** Sol in Cornerstone, or Claude. Reads the PDF or image; returns text plus the fields for the candidate doc types. Jev cannot do this step.
-- **Decider: Jev (TypeSafe).** Choice among the sender's open obligations plus "none of these"; yes/no checks from `jev_questions`; deficiency severity score for triage order; whether the email body needs a human reply. Store probabilities, `questions_version` and model with every answer (Haven's `compliance_doc_triage` already has this shape).
+- **Reader:** An authorized configurable OCR/extraction provider and model reads the PDF or image and returns text plus sourced fields for the candidate document types. Brian can switch supported reader providers/models and API credentials through audited settings. Sol and Claude are options, not fixed dependencies. Jev does not read the original image/PDF.
+- **Decider: Jev (TypeSafe), required after reading for eligible inputs.** Choice among the sender's open obligations plus "none of these"; yes/no checks from `jev_questions`; deficiency severity score for triage order; whether the email body needs a human reply. Store probabilities, `questions_version` and model with every answer (Haven's `compliance_doc_triage` already has this shape).
 - **Sender-type rule for Jev (decided before any AI runs):**
   - Cornerstone: allowed for all authenticated senders (no PHI in GSMS flows).
-  - **Haven: allowed only when the authenticated sender's entire open-obligation set is `phi = false`** (vendors, insurance agents, lenders). Facility senders, employees, families and all unknown senders are read and decided by Claude only. The PHI decision never depends on what an AI predicted the document to be.
+  - **Haven: allowed only when the authenticated sender's entire open-obligation set is `phi = false`** (vendors, insurance agents, lenders). Facility senders, employees, families and all unknown senders retain the existing restricted processing/review route until separately authorized for Jev; this reader configurability does not grant PHI or provider-data permission. The PHI decision never depends on what an AI predicted the document to be.
 - **Code:** every date, limit and amount comparison. Jev never decides whether something is expired, adequate or correctly priced.
 - **Gate:** auto-propose only when the top choice leads the runner-up by the measured margin and all checks clear. Reader and Jev disagreeing sends it to review. Thresholds come from shadow data, not defaults.
 - **Adversarial text:** compare the PDF text layer against OCR of the page image; any gap goes to review. No model has write access to anything.
-- **Keep or drop Jev:** only if shadow data shows it catches errors the reader misses.
+- **Required Jev stage:** Brian clarified that Jev remains part of the adopted architecture. Use shadow measurements to calibrate action thresholds and improve the question set, not to silently remove Jev. Unsupported or unauthorized data remains in its approved review route.
+
+Reader/Jev clarification: Brian, September 24, 2026 local time (captured September 25 UTC). This clarifies component responsibility; live provider access, data handling, spending and consequential actions retain their separate decisions.
 
 ## Plumbing
 
+- **AgentMail is superseded**, not a pending provider choice for this design.
 - **Receive where the public address actually lands. No forwarding hop in front of the receiver** (a forward rewrites the envelope, can break DKIM, turns SPF into a check of the forwarder; Exchange Online blocks external auto-forwarding by default).
 - **COL receiver:** `docs@circleoflifecommunities.com`, a real Exchange Online shared mailbox behind Proofpoint and EOP, read with Microsoft Graph. A delta-query sweep every few minutes is the source of truth; change notifications only accelerate (subscriptions expire in under 7 days). App registration with `Mail.Read` scoped to that one mailbox (Exchange RBAC for Applications). Take the Authentication-Results Exchange stamped at the first hop. Requires full admin control of the tenant (defederate from GoDaddy or confirm the admin path GoDaddy allows).
 - **GSMS receiver:** decided once we know where `gsmsdevelopers.com` mail lands. M365 → same adapter as COL. Otherwise AWS SES or Cloudflare Email Routing on a subdomain whose address is published directly (e.g. `docs@in.gsmsdevelopers.com`), never behind a forward.
@@ -96,6 +99,8 @@ The existing COI build order stands, with these changes: step 1 includes the Cor
 ## Haven
 
 Nothing here touches the COL-677 floor tablet and kiosk build or the Oct 1 Homewood go-live. **Haven intake starts after Homewood settles.**
+
+**Legacy checker protection (COL-819):** The legacy `compliance-doc-check` endpoint and direct provider calibration path remain blocked. This documentation alignment does not re-enable them. Reuse requires the separately authorized Haven rollout of the proven shared engine, with stored-source binding, first-hop sender verification and the complete open-obligation PHI gate. Selecting a reader provider/model/API key is not processing, PHI, spending or provider activation approval.
 
 - **Checks at the front desk:** Receive payment screen (resident, amount, method, check or money order number, photo front and back). End of day, Close deposit lists the items and staff photograph the deposit slip; totals must match. A facility that scans checks and the slip to the intake address lands against its open daily deposit obligation. No AI on check images in v1 (MICR line carries bank account numbers).
 - **ACH and online payments:** not a document flow; evidence comes from bank or processor data.
