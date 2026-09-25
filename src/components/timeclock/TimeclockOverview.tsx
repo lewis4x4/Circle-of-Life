@@ -280,7 +280,7 @@ export function TimeclockOverview({ now: nowProp }: TimeclockOverviewProps) {
         <div className="rounded-xl border border-border bg-card">
           <HorizontalScroll label="Timeclock overview">
             <table className="w-full">
-              <caption className="sr-only">Timeclock summary for {facilityName || "the selected facility"}</caption>
+              <caption className="sr-only">Timeclock summary for {facilityName || "this facility"}</caption>
               <thead className="bg-muted/40">
                 <tr>
                   <th scope="col" className={TH}>Staff</th>

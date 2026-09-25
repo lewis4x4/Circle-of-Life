@@ -262,7 +262,7 @@ export function AdminStaffPageClient({
         whenDatasetEmpty: {
           title: "No staff in this scope",
           description:
-            "Live roster returned no staff rows for the selected facility. Use Add staff or adjust scope.",
+            "Live roster returned no staff rows for this facility. Use Add staff or adjust scope.",
         },
         whenFiltersExcludeAll: {
           title: "No staff match the current filters",
