@@ -19,8 +19,16 @@ describe('roster census suggestion', () => {
     expect([...ROSTER_FIELD_KEYS]).toEqual(['current_total_census', 'hospital_and_rehab_total'])
   })
   it('always shows the total with its components', () => {
-    expect(formatRosterCensusBreakdown(roster)).toBe('Roster: 34 (32 in house, 1 hospital, 1 leave)')
-    expect(formatRosterHospital(roster)).toBe('Roster: 1 at hospital')
+    expect(formatRosterCensusBreakdown(roster)).toBe('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)')
+    expect(formatRosterHospital(roster)).toBe('Roster: 1 at hospital or rehab')
+  })
+  it('shows hospital and rehab apart beside the one Monday figure (COL-755)', () => {
+    expect(formatRosterHospital({ ...roster, hospital_hold_count: 3, hospital_count: 1, rehab_count: 1, bed_hold_type_not_recorded_count: 1 }))
+      .toBe('Roster: 3 at hospital or rehab (1 hospital, 1 rehab, 1 type not recorded)')
+    expect(formatRosterHospital({ ...roster, hospital_hold_count: 2, hospital_count: 0, rehab_count: 2, bed_hold_type_not_recorded_count: 0 }))
+      .toBe('Roster: 2 at hospital or rehab (0 hospital, 2 rehab)')
+    // Monday's suggested figure stays the one total.
+    expect(rosterSuggestion({ ...roster, hospital_hold_count: 3, hospital_count: 1, rehab_count: 1 }, 'hospital_and_rehab_total')).toBe(3)
   })
   it('suggests hospital as a point in time count and census as the three held statuses', () => {
     expect(selectHospitalSuggestion(roster)).toBe(1)

@@ -645,11 +645,6 @@
       "count": 1
     }
   },
-  "src/app/(admin)/schedules/[id]/page.tsx": {
-    "haven-ui/no-mono-prose": {
-      "count": 3
-    }
-  },
   "src/app/(admin)/schedules/new/page.tsx": {
     "haven-back-link/no-adhoc-back-link": {
       "count": 1

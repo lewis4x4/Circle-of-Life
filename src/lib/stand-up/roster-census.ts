@@ -29,6 +29,10 @@ export type RosterCensus = {
   roster_census_count: number
   resident_count_in_haven: number
   roster_as_of: string | null
+  /** COL-755: the bed-hold stays split by type; they add up to hospital_hold_count. Absent from a server before migration 521. */
+  hospital_count?: number
+  rehab_count?: number
+  bed_hold_type_not_recorded_count?: number
   server_now?: string
 }
 
@@ -80,11 +84,19 @@ export function rosterSuggestion(roster: RosterCensus | null | undefined, key: R
 /** The total is never shown without its components. */
 export function formatRosterCensusBreakdown(roster: RosterCensus): string {
   const part = (count: number, singular: string) => `${count.toLocaleString('en-US')} ${singular}`
-  return `Roster: ${roster.roster_census_count.toLocaleString('en-US')} (${part(roster.in_house_count, 'in house')}, ${part(roster.hospital_hold_count, 'hospital')}, ${part(roster.loa_count, 'leave')})`
+  return `Roster: ${roster.roster_census_count.toLocaleString('en-US')} (${part(roster.in_house_count, 'in house')}, ${part(roster.hospital_hold_count, 'hospital or rehab')}, ${part(roster.loa_count, 'leave')})`
 }
 
+/**
+ * COL-755: Monday keeps one figure for hospital and rehab together (the Front
+ * Office and workbook contract); the roster line shows the split beside it.
+ */
 export function formatRosterHospital(roster: RosterCensus): string {
-  return `Roster: ${roster.hospital_hold_count.toLocaleString('en-US')} at hospital`
+  const total = `Roster: ${roster.hospital_hold_count.toLocaleString('en-US')} at hospital or rehab`
+  if (roster.hospital_count === undefined || roster.rehab_count === undefined) return total
+  const parts = [`${roster.hospital_count.toLocaleString('en-US')} hospital`, `${roster.rehab_count.toLocaleString('en-US')} rehab`]
+  if (roster.bed_hold_type_not_recorded_count) parts.push(`${roster.bed_hold_type_not_recorded_count.toLocaleString('en-US')} type not recorded`)
+  return `${total} (${parts.join(', ')})`
 }
 
 /** Neutral text, no staleness colour, no invented day threshold. */

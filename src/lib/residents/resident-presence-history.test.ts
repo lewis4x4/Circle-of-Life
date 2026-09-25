@@ -51,7 +51,10 @@ describe("COL-599: presence says since when and who", () => {
 
   it("lists spans newest first with an unattributed actor stated as such", () => {
     const lines = presenceHistoryLines([OUT, BEFORE]);
-    expect(lines[0]).toMatchObject({ statusLabel: "Bed Hold — Hospital", current: true });
+    expect(lines[0]).toMatchObject({ statusLabel: "Bed Hold — Hospital or rehab", current: true });
+    // COL-755: a span that recorded its type names it; a hold span without one says so.
+    expect(presenceHistoryLines([{ ...OUT, bedHoldStayType: "rehab" }])[0].statusLabel).toBe("Bed Hold — Rehab");
+    expect(presenceHistoryLines([{ ...OUT, bedHoldStayType: null }])[0].statusLabel).toBe("Bed Hold — Hospital or rehab (type not recorded)");
     expect(lines[0].spanLabel).toMatch(/→ now$/);
     expect(lines[1]).toMatchObject({ statusLabel: "In-house", current: false, recordedByLabel: "Recorded by: not attributed" });
   });

@@ -1,5 +1,6 @@
 import { legacyOvertimeToMinutes, formatOvertimeMinutes } from './duration'
 import type { RosterConfirmations } from './roster-census'
+import type { PrefillConfirmations } from './prefill'
 
 /**
  * Three different time frames share this one report, so every section declares
@@ -43,7 +44,7 @@ export const sectionMetrics = (section: SectionKey) => METRICS.filter(metric => 
 export const metricSection = (key: MetricKey): StandUpSection => SECTIONS.find(section => section.key === METRICS.find(metric => metric.key === key)!.section)!
 export const METRIC_KEYS: MetricKey[] = METRICS.map(metric => metric.key)
 export type StandUpValues = Record<MetricKey, number | null>
-export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; /** COL-298: the save carried no figures, so no report row exists. */ not_started?: boolean; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; /** COL-797: who made the last submission. */ last_submitted_by?: string | null; field_dispositions?: Record<string, string>; roster_confirmations?: RosterConfirmations }
+export type StandUpReport = { id: string; facility_id: string; week_start: string; version: number; revision_id: string; values: StandUpValues; status: 'draft' | 'ready'; updated_at: string; /** COL-298: the save carried no figures, so no report row exists. */ not_started?: boolean; source_as_of?: string | null; overtime_minutes?: number | null; overtime_issue?: boolean; entry_origin?: 'imported' | 'manual' | 'recovery' | 'initialized'; updated_by?: string | null; updated_by_name?: string | null; first_submitted_at?: string | null; last_submitted_at?: string | null; last_submitted_revision_id?: string | null; /** COL-797: who made the last submission. */ last_submitted_by?: string | null; field_dispositions?: Record<string, string>; roster_confirmations?: RosterConfirmations; /** COL-753: what Haven computed for each other figure at save time. */ prefill_confirmations?: PrefillConfirmations }
 /** Shared vocabulary: docs/specs/26-stand-up-field-state-vocabulary.md. One token per metric per report. */
 export const FIELD_STATES = ['provided', 'not_provided', 'held_unit_unconfirmed', 'needs_duration_review', 'source_held', 'no_report'] as const
 export type FieldState = typeof FIELD_STATES[number]
@@ -85,6 +86,28 @@ export function validateValues(input: unknown): string[] {
  */
 export const STAND_UP_DEADLINE_MINUTES = 8 * 60 + 45
 export const STAND_UP_CALL_MINUTES = 9 * 60 + 15
+/**
+ * COL-805: Monday's entry deadline and call come from the meeting schedule
+ * (`public.stand_up_meeting_schedule`, returned with the workspace). The two
+ * constants above are only the seeded values, used until the schedule is read.
+ */
+export type MondayTimes = { dueMinutes: number; callMinutes: number }
+export const DEFAULT_MONDAY_TIMES: MondayTimes = { dueMinutes: STAND_UP_DEADLINE_MINUTES, callMinutes: STAND_UP_CALL_MINUTES }
+const clockMinutes = (value: string | undefined): number | null => {
+  const match = /^(\d{2}):(\d{2})$/.exec(value ?? '')
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null
+}
+/** Monday's times from the schedule the server returned; the seeded times when it has no Monday row. */
+export function mondayTimesFromSchedule(schedule?: readonly { meeting_day: string; entry_due_local: string; call_local: string }[] | null): MondayTimes {
+  const monday = schedule?.find(entry => entry.meeting_day === 'monday')
+  const due = clockMinutes(monday?.entry_due_local); const call = clockMinutes(monday?.call_local)
+  return due === null || call === null ? DEFAULT_MONDAY_TIMES : { dueMinutes: due, callMinutes: call }
+}
+/** "8:45 a.m." for a minutes-after-midnight wall-clock time. */
+export function wallClockMinutes(minutes: number): string {
+  const hour = Math.floor(minutes / 60); const minute = minutes % 60
+  return `${hour % 12 === 0 ? 12 : hour % 12}:${String(minute).padStart(2, '0')} ${hour < 12 ? 'a.m.' : 'p.m.'}`
+}
 /** Sunday 12:00 a.m. Eastern. Null on a facility means this constant. */
 export const STAND_UP_DEFAULT_ENTRY_OPEN_LEAD_MINUTES = 1965
 /** Monday 7:45 a.m. Eastern: the window never opens after the report is nearly due. */
@@ -147,19 +170,20 @@ const mondayOf = (day: string): string => {
  * back from Monday 8:45 a.m. in calendar terms, so 1,965 lands on Sunday 12:00
  * a.m. in both standard and daylight time.
  */
-export function standUpEntryOpensAt(meetingMonday: string, leadMinutes?: number | null): Date {
-  const fromMidnight = STAND_UP_DEADLINE_MINUTES - entryOpenLeadMinutes(leadMinutes)
+export function standUpEntryOpensAt(meetingMonday: string, leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): Date {
+  const fromMidnight = times.dueMinutes - entryOpenLeadMinutes(leadMinutes)
   const days = Math.floor(fromMidnight / 1440)
   return easternInstant(shiftDay(meetingMonday, days), fromMidnight - days * 1440)
 }
 
-export function getStandUpEntryWindow(input: { meetingMonday: string; leadMinutes?: number | null; now: Date }): StandUpEntryWindow {
+export function getStandUpEntryWindow(input: { meetingMonday: string; leadMinutes?: number | null; now: Date; times?: MondayTimes }): StandUpEntryWindow {
+  const times = input.times ?? DEFAULT_MONDAY_TIMES
   const leadMinutes = entryOpenLeadMinutes(input.leadMinutes)
-  const opensAt = standUpEntryOpensAt(input.meetingMonday, leadMinutes)
-  const deadlineAt = easternInstant(input.meetingMonday, STAND_UP_DEADLINE_MINUTES)
+  const opensAt = standUpEntryOpensAt(input.meetingMonday, leadMinutes, times)
+  const deadlineAt = easternInstant(input.meetingMonday, times.dueMinutes)
   return {
     opensAt, deadlineAt, leadMinutes,
-    callAt: easternInstant(input.meetingMonday, STAND_UP_CALL_MINUTES),
+    callAt: easternInstant(input.meetingMonday, times.callMinutes),
     staffingPeriodStart: easternInstant(shiftDay(input.meetingMonday, -7), 0),
     // Exclusive: the payroll week runs through the Sunday 11:59 p.m. before this meeting.
     staffingPeriodEnd: easternInstant(input.meetingMonday, 0),
@@ -172,14 +196,14 @@ export function getStandUpEntryWindow(input: { meetingMonday: string; leadMinute
  * window has opened. With the default lead that is the upcoming Monday from
  * Sunday 12:00 a.m. Eastern, which is the behaviour Haven has always had.
  */
-export function standUpOpenWeek(input: { now?: Date; leadMinutes?: number | null } = {}): string {
+export function standUpOpenWeek(input: { now?: Date; leadMinutes?: number | null; times?: MondayTimes } = {}): string {
   const now = input.now ?? new Date()
   const monday = mondayOf(easternDay(now))
   // A lead of at most 3,405 minutes reaches back two days, so the open week is
   // always the upcoming Monday, this one, or the previous one.
   const previous = shiftDay(monday, -7)
   for (const candidate of [shiftDay(monday, 7), monday]) {
-    if (now >= standUpEntryOpensAt(candidate, input.leadMinutes)) return candidate
+    if (now >= standUpEntryOpensAt(candidate, input.leadMinutes, input.times)) return candidate
   }
   return previous
 }
@@ -187,21 +211,25 @@ export function standUpOpenWeek(input: { now?: Date; leadMinutes?: number | null
 /** The organization-default open week. Facility overrides use standUpOpenWeek. */
 export function reportingWeek(now = new Date()): string { return standUpOpenWeek({ now }) }
 
-/** "Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern" */
-export function entryWindowLine(leadMinutes?: number | null): string {
-  return `Opens ${entryOpenLabel(leadMinutes)} · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern`
+/** "Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern", from the schedule. */
+export function entryWindowLine(leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
+  return `Opens ${entryOpenLabel(leadMinutes, times)} · Due Monday ${wallClockMinutes(times.dueMinutes)} · Call ${wallClockMinutes(times.callMinutes)} Eastern`
 }
-/** The weekday-and-time name of an open, matching the management choices. */
-export function entryOpenLabel(leadMinutes?: number | null): string {
+/**
+ * The weekday-and-time name of an open. The management choices are named for
+ * the seeded 8:45 a.m. deadline; against any other deadline the name is
+ * worked out from the actual time, so it is never stale.
+ */
+export function entryOpenLabel(leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
   const lead = entryOpenLeadMinutes(leadMinutes)
-  const choice = STAND_UP_ENTRY_OPEN_CHOICES.find(item => item.minutes === lead)
+  const choice = times.dueMinutes === STAND_UP_DEADLINE_MINUTES ? STAND_UP_ENTRY_OPEN_CHOICES.find(item => item.minutes === lead) : undefined
   if (choice) return choice.label
-  const opens = standUpEntryOpensAt('2026-09-21', lead)
+  const opens = standUpEntryOpensAt('2026-09-21', lead, times)
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', hour: 'numeric', minute: '2-digit', hour12: true }).format(opens).replace(' AM', ' a.m.').replace(' PM', ' p.m.').replace(' at ', ' ')
 }
 /** "Sunday, September 20 at 12:00 a.m. Eastern" for the before-open line. */
-export function entryOpensStamp(meetingMonday: string, leadMinutes?: number | null): string {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(standUpEntryOpensAt(meetingMonday, leadMinutes))
+export function entryOpensStamp(meetingMonday: string, leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(standUpEntryOpensAt(meetingMonday, leadMinutes, times))
   const part = (type: string) => parts.find(item => item.type === type)?.value ?? ''
   return `${part('weekday')}, ${part('month')} ${part('day')} at ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase() === 'am' ? 'a.m.' : 'p.m.'} Eastern`
 }
@@ -315,21 +343,21 @@ export function easternStamp(value: string): string {
   const part = (type: string) => parts.find(item => item.type === type)?.value ?? ''
   return `${part('month')} ${part('day')} at ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase() === 'am' ? 'a.m.' : 'p.m.'} Eastern`
 }
-export function deadlinePassed(week: string, now: Date): boolean {
+export function deadlinePassed(week: string, now: Date, times: MondayTimes = DEFAULT_MONDAY_TIMES): boolean {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now)
   const get = (key: string) => parts.find(part => part.type === key)!.value
   const today = `${get('year')}-${get('month')}-${get('day')}`
-  return today > week || (today === week && `${get('hour')}:${get('minute')}` >= '08:45')
+  return today > week || (today === week && Number(get('hour')) * 60 + Number(get('minute')) >= times.dueMinutes)
 }
 
 /** Imported history cannot establish when an administrator submitted a report. */
-export function reportDeadlineState(report: StandUpReport | undefined, week: string, currentWeek: string, now: Date): 'past_target' | 'timing_unknown' | 'none' {
+export function reportDeadlineState(report: StandUpReport | undefined, week: string, currentWeek: string, now: Date, times: MondayTimes = DEFAULT_MONDAY_TIMES): 'past_target' | 'timing_unknown' | 'none' {
   if (week !== currentWeek) return 'none'
-  if (!report) return deadlinePassed(week, now) ? 'past_target' : 'none'
+  if (!report) return deadlinePassed(week, now, times) ? 'past_target' : 'none'
   const capturedSubmission = !!(report.first_submitted_at || report.last_submitted_at)
   if (report.status === 'ready' && capturedSubmission) return 'none'
-  if (report.status !== 'ready' && (report.entry_origin === 'initialized' || derivedValues(report.values).completed_fields === 0)) return deadlinePassed(week, now) ? 'past_target' : 'none'
+  if (report.status !== 'ready' && (report.entry_origin === 'initialized' || derivedValues(report.values).completed_fields === 0)) return deadlinePassed(week, now, times) ? 'past_target' : 'none'
   if (!capturedSubmission && (!report.entry_origin || report.entry_origin === 'imported')) return 'timing_unknown'
   const tracked = capturedSubmission || report.entry_origin === 'manual' || report.entry_origin === 'recovery'
-  return tracked && report.status !== 'ready' && deadlinePassed(week, now) ? 'past_target' : 'none'
+  return tracked && report.status !== 'ready' && deadlinePassed(week, now, times) ? 'past_target' : 'none'
 }

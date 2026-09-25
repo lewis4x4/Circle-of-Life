@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { throwIfQueryError } from "@/lib/supabase/query-error";
 import { formatLoadResidentsFullName } from "@/lib/residents/load-residents-display-copy";
-import { mapResidencyStatus, type ResidencyStatus } from "@/lib/residents/presence";
+import { isBedHoldStayType, mapResidencyStatus, type BedHoldStayType, type ResidencyStatus } from "@/lib/residents/presence";
 import { parseDocumentedAcuityLevel } from "@/lib/residents/resident-acuity-display";
 import { RESIDENT_NO_BED_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
@@ -35,6 +35,8 @@ export type ResidentRow = {
    * has not changed since that column existed.
    */
   statusSinceIso?: string | null;
+  /** COL-755: hospital or rehab for a bed-hold stay; null when not recorded or not on a stay. */
+  bedHoldStayType?: BedHoldStayType | null;
 };
 
 type SupabaseUnitJoin = {
@@ -66,6 +68,7 @@ type SupabaseResidentJoined = {
   updated_at: string | null;
   deleted_at: string | null;
   status_effective_at?: string | null;
+  bed_hold_stay_type?: string | null;
   /** The bed the resident record points at (`residents.bed_id`). */
   bed_by_id: SupabaseBedJoin | null;
   /** Beds whose `current_resident_id` points back at the resident. */
@@ -87,7 +90,7 @@ export async function fetchResidentsFromSupabase(
   let residentsQuery = supabase
     .from("residents" as never)
     .select(
-      `id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at, status_effective_at,
+      `id, first_name, last_name, facility_id, status, acuity_level, updated_at, deleted_at, status_effective_at, bed_hold_stay_type,
        bed_by_id: beds!residents_bed_id_fkey (
          id, bed_label, room_id,
          rooms ( id, room_number, unit_id, units ( id, name ) )
@@ -143,6 +146,7 @@ export async function fetchResidentsFromSupabase(
       careSummary: "",
       updatedAtIso: resident.updated_at ?? null,
       statusSinceIso: resident.status_effective_at ?? null,
+      bedHoldStayType: status === "hospital" && isBedHoldStayType(resident.bed_hold_stay_type) ? resident.bed_hold_stay_type : null,
     } satisfies ResidentRow;
   });
 }

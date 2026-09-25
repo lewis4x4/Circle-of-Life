@@ -272,7 +272,7 @@ export function OverviewTab({
       </div>
 
       <RecordDetailSection title="Data health">
-        <FacilityDataHealthPanel health={dataHealth.data} error={dataHealth.error} />
+        <FacilityDataHealthPanel health={dataHealth.data} error={dataHealth.error} facilityId={facilityId} />
       </RecordDetailSection>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

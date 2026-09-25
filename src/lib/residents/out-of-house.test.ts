@@ -12,16 +12,18 @@ describe("out of house", () => {
       [
         resident({ id: "a", name: "Test Resident A", status: "active" }),
         resident({ id: "b", name: "Test Resident B", status: "loa", room: "102-B" }),
-        resident({ id: "c", name: "Test Resident C", status: "hospital" }),
+        resident({ id: "c", name: "Test Resident C", status: "hospital", bedHoldStayType: "rehab" }),
+        resident({ id: "d", name: "Test Resident D", status: "hospital", bedHoldStayType: null }),
       ],
       [
         { resident_id: "b", effective_from: "2026-09-10T14:00:00Z" },
         { resident_id: "c", effective_from: "2026-09-12T09:00:00Z" },
       ],
     );
-    expect(rows.map((row) => row.id)).toEqual(["c", "b"]);
-    expect(rows[0]).toMatchObject({ label: "Bed Hold — Hospital", since: "2026-09-12T09:00:00Z", room: "101-A" });
-    expect(rows[1]).toMatchObject({ label: "On leave / vacation", since: "2026-09-10T14:00:00Z" });
+    expect(rows.map((row) => row.id)).toEqual(["c", "d", "b"]);
+    expect(rows[0]).toMatchObject({ label: "Bed Hold — Rehab", since: "2026-09-12T09:00:00Z", room: "101-A" });
+    expect(rows[1]).toMatchObject({ label: "Bed Hold — Hospital or rehab (type not recorded)", since: null });
+    expect(rows[2]).toMatchObject({ label: "On leave / vacation", since: "2026-09-10T14:00:00Z" });
   });
   it("sorts hospital first, then leave, then the longest away, with unknown dates last", () => {
     const rows = sortOutOfHouse([

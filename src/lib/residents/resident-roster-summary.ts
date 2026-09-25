@@ -75,7 +75,12 @@ export function highAcuityFigure(coverage: AcuityCoverage): SummaryFigure {
 export type PresenceBreakdown = {
   total: number;
   inHouse: number;
+  /** COL-755: bed-hold stays recorded as hospital. */
   hospital: number;
+  /** COL-755: bed-hold stays recorded as rehab. */
+  rehab: number;
+  /** Bed-hold stays whose type was never recorded (before COL-755); never guessed. */
+  holdTypeNotRecorded: number;
   onLeave: number;
 };
 
@@ -83,7 +88,9 @@ export function presenceBreakdown(rows: ResidentRow[]): PresenceBreakdown {
   return {
     total: rows.length,
     inHouse: rows.filter((row) => row.status === "active").length,
-    hospital: rows.filter((row) => row.status === "hospital").length,
+    hospital: rows.filter((row) => row.status === "hospital" && row.bedHoldStayType === "hospital").length,
+    rehab: rows.filter((row) => row.status === "hospital" && row.bedHoldStayType === "rehab").length,
+    holdTypeNotRecorded: rows.filter((row) => row.status === "hospital" && !row.bedHoldStayType).length,
     onLeave: rows.filter((row) => row.status === "loa").length,
   };
 }
@@ -92,9 +99,14 @@ function plural(n: number, singular: string, pluralForm = `${singular}s`): strin
   return `${n} ${n === 1 ? singular : pluralForm}`;
 }
 
-/** "25 residents · 25 in-house · 0 hospital · 0 on leave" — facility-wide, not filtered. */
+/**
+ * "25 residents · 23 in-house · 1 hospital · 1 rehab · 0 on leave" — facility-wide,
+ * not filtered. Hospital and rehab are counted apart (COL-755); a stay whose
+ * type was never recorded is named as such rather than folded into either.
+ */
 export function presenceLine(breakdown: PresenceBreakdown): string {
-  return `${plural(breakdown.total, "resident")} · ${breakdown.inHouse} in-house · ${breakdown.hospital} hospital · ${breakdown.onLeave} on leave`;
+  const unrecorded = breakdown.holdTypeNotRecorded > 0 ? ` · ${breakdown.holdTypeNotRecorded} hospital or rehab, type not recorded` : "";
+  return `${plural(breakdown.total, "resident")} · ${breakdown.inHouse} in-house · ${breakdown.hospital} hospital · ${breakdown.rehab} rehab${unrecorded} · ${breakdown.onLeave} on leave`;
 }
 
 /** Row count beside the table. States the filtered population against the facility total. */

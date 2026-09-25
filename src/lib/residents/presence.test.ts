@@ -32,7 +32,7 @@ describe("resident presence vocabulary", () => {
 
   it("exposes the owner-approved COL labels (HANDOFF_v2 Option A relabel)", () => {
     expect(presenceLabel("active")).toBe("In-house");
-    expect(presenceLabel("hospital")).toBe("Bed Hold — Hospital");
+    expect(presenceLabel("hospital")).toBe("Bed Hold — Hospital or rehab");
     expect(presenceLabel("loa")).toBe("On leave / vacation");
   });
 
@@ -68,5 +68,35 @@ describe("resident presence vocabulary", () => {
     expect(lifecycleStatusLabel("pending_admission")).toBe("Pending admission");
     expect(lifecycleStatusLabel("inquiry")).toBe("Inquiry");
     expect(lifecycleStatusLabel(null)).toBe("Status unknown");
+  });
+});
+
+describe("hospital and rehab (COL-755)", () => {
+  it("names a bed hold by its recorded type and never guesses an unrecorded one", async () => {
+    const { bedHoldLabel, presenceLabel: label } = await import("./presence");
+    expect(bedHoldLabel("hospital")).toBe("Bed Hold — Hospital");
+    expect(bedHoldLabel("rehab")).toBe("Bed Hold — Rehab");
+    expect(bedHoldLabel(null)).toBe("Bed Hold — Hospital or rehab (type not recorded)");
+    expect(label("hospital", "rehab")).toBe("Bed Hold — Rehab");
+    expect(label("active", null)).toBe("In-house");
+  });
+
+  it("offers hospital and rehab as two choices of the one bed-hold status", async () => {
+    const { PRESENCE_CHOICES } = await import("./presence");
+    expect(PRESENCE_CHOICES.map((choice) => [choice.key, choice.dbValue, choice.stayType])).toEqual([
+      ["active", "active", undefined],
+      ["hospital", "hospital_hold", "hospital"],
+      ["rehab", "hospital_hold", "rehab"],
+      ["loa", "loa", undefined],
+    ]);
+  });
+
+  it("dates hospital to rehab as a movement, and naming an unrecorded stay as a correction", async () => {
+    const { presenceChange } = await import("./presence");
+    expect(presenceChange("hospital", "hospital", "rehab")).toBe("movement");
+    expect(presenceChange("hospital", null, "rehab")).toBe("record_type");
+    expect(presenceChange("hospital", null, "active")).toBe("movement");
+    expect(presenceChange("active", undefined, "hospital")).toBe("movement");
+    expect(presenceChange("hospital", "rehab", "rehab")).toBe("none");
   });
 });

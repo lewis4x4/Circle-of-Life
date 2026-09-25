@@ -7,6 +7,8 @@ import { allowRouteLeave } from '@/components/layout/navigation-pending';
 import { StandUpRequestError } from './transport';
 const mocks = vi.hoisted(() => ({ request: vi.fn(), outOfHouse: vi.fn(), auth: { loading: false, user: { id: 'u' } as { id: string } | null, organizationId: 'org', appRole: 'org_admin' } }));
 vi.mock('@/contexts/haven-auth-context', () => ({ useHavenAuth: () => mocks.auth }));
+// Census chips and notices read through the browser client; nothing is open in these fixtures.
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ rpc: async () => ({ data: [], error: null }) }) }));
 vi.mock('./transport', async importOriginal => ({ ...(await importOriginal<typeof import('./transport')>()), standUpRequest: mocks.request }));
 vi.mock('@/lib/residents/out-of-house', async importOriginal => ({ ...(await importOriginal<typeof import('@/lib/residents/out-of-house')>()), fetchOutOfHouse: mocks.outOfHouse }));
 const workspace = { facilities: [{ id: 'a', name: 'Homewood' }, { id: 'b', name: 'Oakridge' }], reports: [] as StandUpReport[], current_week: '2026-09-14', can_import: false, server_now: '2026-09-14T12:30:00Z' };
@@ -393,8 +395,8 @@ describe('Stand Up report meaning', () => {
     mocks.request.mockResolvedValueOnce({ ...workspace, reports: [report({ id: 'prior', week_start: '2026-09-07', values: full() })] });
     await start(); await choose();
     const staffing = document.getElementById('stand-up-section-staffing') as HTMLElement;
-    // Beside the input: the label and the previous figure, and nothing else.
-    expect(within(staffing).getByLabelText('Callouts last week').closest('label')).toHaveTextContent(/^Callouts last weekPrevious report: 1$/);
+    // Beside the input: the label, Haven's own figure (COL-753) and the previous figure, and nothing else.
+    expect(within(staffing).getByLabelText('Callouts last week').closest('div')).toHaveTextContent(/^Callouts last weekHaven’s figures unavailable: Unexpected operationPrevious report: 1$/);
     // The definition is one disclosure away, not under the input.
     expect(within(staffing).getByText('What these figures count · 2 Haven cannot check')).toBeInTheDocument();
     expect(within(staffing).getByText(/^Scheduled shifts missed to a callout/).closest('details')).not.toBeNull();
@@ -655,8 +657,8 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
   it('suggests the census with its components and the roster as-of, and Use roster saves roster_confirmed', async () => {
     withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed() } }));
     await start(); await choose();
-    expect(await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)')).toBeInTheDocument();
-    expect(screen.getByText('Roster: 1 at hospital')).toBeInTheDocument();
+    expect(await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)')).toBeInTheDocument();
+    expect(screen.getByText('Roster: 1 at hospital or rehab')).toBeInTheDocument();
     expect(screen.getAllByText('Roster last changed Sep 14, 7:14 a.m.')).toHaveLength(2);
     expect(screen.getByLabelText('Current census')).toHaveValue(null);
     fireEvent.click(screen.getByRole('button', { name: 'Use roster for Current census' }));
@@ -670,7 +672,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
   });
   it('blocks a differing figure until a reason is chosen, then saves it as overridden', async () => {
     withRoster(undefined, payload => report({ values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'overridden', confirmed: 35, override_reason: 'roster_not_current' }) } }));
-    await start(); await choose(); await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)');
+    await start(); await choose(); await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)');
     vi.useFakeTimers();
     changeCensus('35');
     const select = screen.getByLabelText('Why is this different?');
@@ -744,7 +746,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').every(call => (call[1] as { facility_id: string }).facility_id === 'a')).toBe(true);
     const rosterCalls = mocks.request.mock.calls.filter(call => call[0] === 'roster').length;
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-14' } });
-    await screen.findByText('Roster: 34 (32 in house, 1 hospital, 1 leave)');
+    await screen.findByText('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)');
     expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').length).toBe(rosterCalls + 1);
   });
   it('marks an override on the all-facilities overview and says nothing for a confirmed figure', async () => {
@@ -824,5 +826,97 @@ describe('Stand Up changes after submission (COL-797)', () => {
     await within(panel).findByText(/Current census: 30 to 31 · Discharge after the call/);
     expect(within(panel).getByText(/Status: Submitted to Draft/)).toBeInTheDocument();
     expect(within(panel).getAllByText(/Sep 14, 10:05 AM Eastern · Demo Administrator/)).toHaveLength(2);
+  });
+});
+
+describe('Monday arrives prefilled from Haven (COL-753)', () => {
+  const prefill = {
+    facility_id: 'a', week_start: '2026-09-14', computed_at: '2026-09-14T12:00:00Z',
+    fields: {
+      monthly_rent_roll_cents: { value: 11710816, source: 'Invoices in Haven: sent with a balance, plus drafts not yet sent' },
+      current_total_census: { value: 34, source: 'Resident roster' }, hospital_and_rehab_total: { value: 1, source: 'Resident roster' },
+      sp_female_beds_open: { value: 1, source: 'Beds in Haven' }, sp_male_beds_open: { value: 0, source: 'Beds in Haven' },
+      sp_flexible_beds_open: { value: 2, source: 'Beds in Haven' }, private_beds_open: { value: 3, source: 'Beds in Haven' },
+      admissions_expected: { value: 2, source: 'Admission cases' }, expected_discharges: { value: 0, source: 'Residents' },
+      callouts_last_week: { value: 4, source: 'Attendance records' }, terminations_last_week: { value: 1, source: 'Staff records' },
+      current_open_positions: { value: null, source: null, note: 'Haven does not record how many positions each facility is budgeted for' },
+      overtime_reported: { value: null, source: null, note: 'Haven has no approved time source to count overtime from' },
+      tours_expected: { value: 5, source: 'Tour records' }, provider_activities_expected: { value: 1, source: 'Outreach calendar' }, outreach_engagements: { value: 2, source: 'Outreach calendar' },
+    },
+  };
+  const roster = { facility_id: 'a', in_house_count: 33, hospital_hold_count: 1, loa_count: 0, roster_census_count: 34, resident_count_in_haven: 40, roster_as_of: '2026-09-13T15:00:00Z', hospital_count: 1, rehab_count: 0, bed_hold_type_not_recorded_count: 0 };
+  beforeEach(() => {
+    mocks.request.mockImplementation(async (action: string) => {
+      if (action === 'workspace') return workspace;
+      if (action === 'prefill') return prefill;
+      if (action === 'roster') return roster;
+      throw new Error('Unexpected operation');
+    });
+  });
+
+  it('opens an unstarted report with every computable figure, its source, and blanks where Haven has none', async () => {
+    await start(); await choose();
+    await waitFor(() => expect(screen.getByLabelText('Monthly rent roll ($)')).toHaveValue(117108.16));
+    expect(screen.getByLabelText('Current census')).toHaveValue(34);
+    expect(screen.getByLabelText('Callouts last week')).toHaveValue(4);
+    // Haven cannot count open positions or overtime: blank with the reason, never 0.
+    expect(screen.getByLabelText('Open positions last week')).toHaveValue(null);
+    expect(screen.getByText('Haven cannot compute this: Haven does not record how many positions each facility is budgeted for')).toBeInTheDocument();
+    expect(screen.getByText('Haven: $117,108.16 · Invoices in Haven: sent with a balance, plus drafts not yet sent')).toBeInTheDocument();
+    expect(screen.getByText(/Prefilled from Haven\. Check each figure/)).toBeInTheDocument();
+    // Nothing is saved until the administrator saves or submits.
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save')).toBe(false);
+  });
+
+  it('asks why a figure differs from Haven before submitting, and sends only that reason', async () => {
+    await start(); await choose();
+    await waitFor(() => expect(screen.getByLabelText('Callouts last week')).toHaveValue(4));
+    fireEvent.change(screen.getByLabelText('Open positions last week'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Overtime hours'), { target: { value: '3' } }); fireEvent.change(screen.getByLabelText('Overtime minutes'), { target: { value: '0' } });
+    fireEvent.change(screen.getByLabelText('Callouts last week'), { target: { value: '6' } });
+    expect(screen.getByText('Callouts last week differs from Haven (4). Choose why it is different, or use Haven’s figure.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Homewood for September 14, 2026' }));
+    await screen.findByText(/Callouts last week differs from Haven \(4\)/, { selector: '[role="alert"]' });
+    expect(mocks.request.mock.calls.some(call => call[0] === 'save' && call[1].status === 'ready')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Back to figures' }));
+    fireEvent.change(screen.getByLabelText('Why is this different?'), { target: { value: 'haven_not_current' } });
+    mocks.request.mockImplementationOnce(async () => report({ status: 'ready', last_submitted_at: '2026-09-14T12:40:00Z' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Review and submit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Homewood for September 14, 2026' }));
+    await waitFor(() => expect(mocks.request.mock.calls.some(call => call[0] === 'save' && call[1].status === 'ready')).toBe(true));
+    const payload = mocks.request.mock.calls.find(call => call[0] === 'save' && call[1].status === 'ready')![1];
+    expect(payload.prefill).toEqual({ callouts_last_week: { override_reason: 'haven_not_current' } });
+    expect(payload.values).toMatchObject({ monthly_rent_roll_cents: 11710816, callouts_last_week: 6, current_open_positions: 2, current_total_census: 34 });
+  });
+
+  it('puts Haven’s figure back with one press', async () => {
+    await start(); await choose();
+    await waitFor(() => expect(screen.getByLabelText('Expected tours this week')).toHaveValue(5));
+    fireEvent.change(screen.getByLabelText('Expected tours this week'), { target: { value: '9' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use Haven’s figure for Expected tours this week' }));
+    expect(screen.getByLabelText('Expected tours this week')).toHaveValue(5);
+    expect(screen.queryByText(/Expected tours this week differs from Haven/)).not.toBeInTheDocument();
+  });
+
+  it('shows what a saved report recorded instead of recomputing Haven for a past meeting', async () => {
+    const past = report({ week_start: '2026-09-07', status: 'ready', last_submitted_at: '2026-09-07T12:40:00Z', values: { ...emptyValues(), callouts_last_week: 6 },
+      prefill_confirmations: { callouts_last_week: { source: 'overridden', haven_value: 4, confirmed: 6, override_reason: 'haven_not_current', haven_source: 'Attendance records', computed_at: '2026-09-07T12:00:00Z', confirmed_at: '2026-09-07T12:40:00Z' } } });
+    mocks.request.mockImplementation(async (action: string) => { if (action === 'workspace') return { ...workspace, reports: [past] }; if (action === 'roster') return roster; if (action === 'prefill') return prefill; throw new Error('Unexpected operation'); });
+    await start(); await choose();
+    fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
+    expect(await screen.findByText('Haven had 4 · override: Haven is not up to date')).toBeInTheDocument();
+  });
+});
+
+describe('Monday times come from the meeting schedule (COL-805)', () => {
+  it('states the scheduled deadline and call, not fixed ones', async () => {
+    mocks.request.mockImplementation(async (action: string) => {
+      if (action === 'workspace') return { ...workspace, schedule: [{ meeting_day: 'monday', weekday: 1, entry_due_local: '09:00', call_local: '09:30', time_zone: 'America/New_York', facility_override: false }] };
+      throw new Error('Unexpected operation');
+    });
+    await start();
+    expect(screen.getByText('Opens Sunday 12:15 a.m. · Due Monday 9:00 a.m. · Call 9:30 a.m. Eastern')).toBeInTheDocument();
+    expect(screen.getByText('0 of 2 submitted · Monday target: 9:00 a.m.')).toBeInTheDocument();
   });
 });

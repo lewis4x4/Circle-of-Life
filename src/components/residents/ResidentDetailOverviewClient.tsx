@@ -625,7 +625,7 @@ export function ResidentDetailOverviewClient({
         statusChips={
           <>
             {isPresenceStatus(detail.rawStatus) ? (
-              <ResidentPresenceControl residentId={detail.id} status={detail.status} onChanged={onAfterLog} />
+              <ResidentPresenceControl residentId={detail.id} status={detail.status} stayType={detail.bedHoldStayType} onChanged={onAfterLog} />
             ) : (
               <StatusPill tone="muted">{lifecycleStatusLabel(detail.rawStatus)}</StatusPill>
             )}

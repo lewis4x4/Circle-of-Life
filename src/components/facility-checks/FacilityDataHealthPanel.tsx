@@ -13,6 +13,7 @@ import {
   type FacilityDataHealth,
   type FacilityDataHealthError,
 } from "@/lib/facility-checks/data-health";
+import { CensusDisagreementChips } from "@/components/stand-up/CensusDisagreementChip";
 
 /**
  * Data Health — a read-only tier one panel on the facility overview.
@@ -24,9 +25,12 @@ import {
 export function FacilityDataHealthPanel({
   health,
   error,
+  facilityId,
 }: {
   health: FacilityDataHealth | null;
   error?: FacilityDataHealthError | null;
+  /** COL-555: shows the census disagreement chip for this facility when there is one. */
+  facilityId?: string | null;
 }) {
   if (error || !health) {
     return (
@@ -75,6 +79,7 @@ export function FacilityDataHealthPanel({
         <p className="text-[13px] text-foreground" data-testid="data-health-census">
           {censusComparisonLine(health, formatStandUpWeek)}
         </p>
+        {facilityId ? <CensusDisagreementChips facilityId={facilityId} /> : null}
         <p className="max-w-prose text-xs text-muted-foreground">
           These two count different moments. A difference is worth a conversation, not a correction on its own.
         </p>

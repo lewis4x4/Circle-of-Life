@@ -190,8 +190,8 @@ export default function ExecutiveStandupPage() {
               </div>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Stand Up pack</h1>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
-                Live operating graph plus a frozen weekly standup pack. This replaces the current spreadsheet workflow with
-                governed metrics, draft generation, and board-ready exports.
+                Each facility&rsquo;s figures as its administrator submitted them on Monday&rsquo;s Stand Up, plus a frozen
+                weekly pack and board-ready exports. Average rent and uncollected AR are the only figures computed here.
               </p>
             </div>
 
@@ -290,7 +290,7 @@ export default function ExecutiveStandupPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Facility pressure board</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Ranked by live operating pressure. Total row is shown in the workbook tables below.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Ranked by the pressure in each facility&rsquo;s submitted Monday figures. Total row is shown in the workbook tables below.</p>
             </div>
             <Link href="/admin/facilities" className="text-sm font-medium text-primary hover:text-primary">
               Open facilities →

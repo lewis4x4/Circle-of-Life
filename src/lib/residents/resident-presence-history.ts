@@ -1,5 +1,5 @@
 import type { ResidentPresenceHistoryEntry } from "@/lib/residents/resident-detail-overview-load";
-import { isPresenceStatus, lifecycleStatusLabel, mapResidencyStatus, presenceLabel } from "@/lib/residents/presence";
+import { isPresenceStatus, lifecycleStatusLabel, mapResidencyStatus, presenceLabel, type BedHoldStayType } from "@/lib/residents/presence";
 
 /**
  * COL-599: presence said what, never since when or who.
@@ -36,8 +36,11 @@ const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
-export function presenceStatusLabel(rawStatus: string): string {
-  return isPresenceStatus(rawStatus) ? presenceLabel(mapResidencyStatus(rawStatus)) : lifecycleStatusLabel(rawStatus);
+/** COL-755: a bed-hold span names hospital or rehab when its type was recorded. */
+export function presenceStatusLabel(rawStatus: string, stayType?: BedHoldStayType | null): string {
+  if (!isPresenceStatus(rawStatus)) return lifecycleStatusLabel(rawStatus);
+  const status = mapResidencyStatus(rawStatus);
+  return presenceLabel(status, status === "hospital" ? stayType : undefined);
 }
 
 const utcDayFormatter = new Intl.DateTimeFormat("en-US", {
@@ -224,7 +227,7 @@ export function presenceHistoryLines(history: ResidentPresenceHistoryEntry[]): P
     const to = entry.effectiveTo == null ? "now" : (formatPresenceInstant(entry.effectiveTo, entry.effectiveToBasis) ?? "end not recorded");
     return {
       id: entry.id,
-      statusLabel: presenceStatusLabel(entry.status),
+      statusLabel: presenceStatusLabel(entry.status, entry.bedHoldStayType),
       spanLabel: `${from} → ${to}`,
       recordedByLabel: runAttribution(entry),
       reason: entry.reason ?? entry.lateEntryReason ?? null,

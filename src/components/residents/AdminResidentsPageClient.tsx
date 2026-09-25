@@ -55,7 +55,9 @@ import {
   UNOCCUPIED_BEDS_LABEL,
   unoccupiedBedsFigure,
 } from "@/lib/residents/resident-roster-summary";
-import { presenceLabel, presenceTone } from "@/lib/residents/presence";
+import { presenceLabel, presenceTone, type BedHoldStayType } from "@/lib/residents/presence";
+import { CensusDisagreementChips } from "@/components/stand-up/CensusDisagreementChip";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatRosterStatusSince } from "@/lib/residents/roster-display-copy";
 import {
   averageAcuity,
@@ -131,7 +133,7 @@ function groupLabelForRow(mode: ResidentRosterGroupBy, row: ResidentRow): string
     }
     return `Acuity ${row.acuity}`;
   }
-  if (mode === "status") return presenceLabel(row.status);
+  if (mode === "status") return presenceLabel(row.status, row.status === "hospital" ? row.bedHoldStayType ?? null : undefined);
   return "";
 }
 
@@ -252,7 +254,7 @@ function SummaryCell({
   );
 }
 
-function ResidentStatusCell({ status, sinceIso }: { status: ResidencyStatus; sinceIso?: string | null }) {
+function ResidentStatusCell({ status, sinceIso, stayType }: { status: ResidencyStatus; sinceIso?: string | null; stayType?: BedHoldStayType | null }) {
   // Show every presence state explicitly, including In-house. A Status column
   // full of em-dashes reads as "no data" when in fact everyone is in-house.
   // In-house uses the muted tone so away states (hospital / leave) still draw
@@ -261,7 +263,7 @@ function ResidentStatusCell({ status, sinceIso }: { status: ResidencyStatus; sin
   const since = status !== "active" && sinceIso ? formatRosterStatusSince(sinceIso) : null;
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
-      <StatusPill tone={presenceTone(status)}>{presenceLabel(status)}</StatusPill>
+      <StatusPill tone={presenceTone(status)}>{presenceLabel(status, status === "hospital" ? stayType ?? null : undefined)}</StatusPill>
       {since ? <span className="text-[11px] text-muted-foreground">{since}</span> : null}
     </span>
   );
@@ -720,7 +722,7 @@ export function AdminResidentsPageClient({
       </div>
 
       <div role="cell" className="flex-1">
-        <ResidentStatusCell status={resident.status} sinceIso={resident.statusSinceIso} />
+        <ResidentStatusCell status={resident.status} sinceIso={resident.statusSinceIso} stayType={resident.bedHoldStayType} />
       </div>
 
       <div role="cell" className="hidden flex-1 items-center justify-end gap-2 lg:flex">
@@ -788,6 +790,8 @@ export function AdminResidentsPageClient({
           <span className="font-medium">{presenceLine(facilityPresence)}</span>
           <span className="text-muted-foreground"> · facility-wide, not affected by filters</span>
         </p>
+        {/* COL-555: when this week's Stand Up disagrees with the roster, the same chip as everywhere else. */}
+        {isValidFacilityIdForQuery(selectedFacilityId) ? <CensusDisagreementChips facilityId={selectedFacilityId} refreshKey={rows.length} /> : null}
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)] ring-1 ring-border/60">
           <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-3">
             <SummaryCell

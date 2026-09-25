@@ -55,7 +55,7 @@ export function buildOutOfHouse(residents: ResidentRow[], history: HistoryRow[])
         name: resident.name,
         room: resident.room,
         status: resident.status,
-        label: presenceLabel(resident.status),
+        label: presenceLabel(resident.status, resident.status === "hospital" ? resident.bedHoldStayType ?? null : undefined),
         since: since.get(resident.id) ?? null,
       })),
   );

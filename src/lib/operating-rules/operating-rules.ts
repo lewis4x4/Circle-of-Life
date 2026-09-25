@@ -24,6 +24,9 @@ export const OPERATING_RULE_KEYS = [
   "survey_binder.due_window_days",
   "compliance.score_alert_below_pct",
   "resident_movement.backdate_window_days",
+  "stand_up.census_reason_window_days",
+  "stand_up.census_notice_lead_minutes",
+  "stand_up.census_notice_roles",
 ] as const;
 
 export type OperatingRuleKey = (typeof OPERATING_RULE_KEYS)[number];
@@ -87,6 +90,26 @@ export function parseDueWindowDays(value: unknown): number | null {
  */
 export function parseBackdateWindowDays(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 365 ? value : null;
+}
+
+/** COL-555: days a reason keeps a Stand Up census disagreement explained (0–60). */
+export function parseCensusReasonWindowDays(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 60 ? value : null;
+}
+
+/** COL-751: minutes before the Stand Up entry deadline that an open census disagreement notifies (0–1440). */
+export function parseCensusNoticeLeadMinutes(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 1440 ? value : null;
+}
+
+/** The login roles a census notice may go to. The database trigger holds the same list. */
+export const CENSUS_NOTICE_ROLE_CHOICES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant"] as const;
+export type CensusNoticeRole = (typeof CENSUS_NOTICE_ROLE_CHOICES)[number];
+
+/** COL-751: who receives census notices; null when the value is not a non-empty list of allowed roles. */
+export function parseCensusNoticeRoles(value: unknown): CensusNoticeRole[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  return value.every((role) => (CENSUS_NOTICE_ROLE_CHOICES as readonly unknown[]).includes(role)) ? (value as CensusNoticeRole[]) : null;
 }
 
 /**

@@ -1,11 +1,8 @@
-import { writeFileSync } from "node:fs";
-import { performance } from "node:perf_hooks";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Database } from "@/types/database";
-import { addFacilityCalendarDays, facilityDatetimeLocalToUtcIso } from "@/lib/facility-wall-clock";
-import { fetchExecutiveStandupLive, standupCalendarWindow } from "./standup";
+import { STANDUP_MONDAY_NOT_SUBMITTED_NOTE, fetchExecutiveStandupLive } from "./standup";
 
 type Row = Record<string, unknown>;
 type Tables = Record<string, Row[] | null>;
@@ -13,11 +10,14 @@ const organizationId = "00000000-0000-4000-8000-000000000099";
 const facilityId = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
 
 // Model the loader's read-only query contract without requiring hosted data.
-function client(tables: Tables, failedTable?: string) {
+function client(tables: Tables, failedTable?: string, submitted: { data: unknown; error: { message: string; code?: string } | null } = { data: [], error: null }) {
   const queries: Array<{ table: string; operations: unknown[][] }> = [];
+  const rpcCalls: Array<[string, Record<string, unknown>]> = [];
   return {
     queries,
+    rpcCalls,
     supabase: {
+      rpc(name: string, args: Record<string, unknown>) { rpcCalls.push([name, args]); return Promise.resolve(submitted); },
       from(table: string) {
         const operations: unknown[][] = [];
         queries.push({ table, operations });
@@ -39,152 +39,91 @@ function client(tables: Tables, failedTable?: string) {
   };
 }
 
-function fixture(now: Date, repeats = 1): Tables {
-  const w = standupCalendarWindow(now);
-  const midnight = (day: string) => facilityDatetimeLocalToUtcIso(`${day}T00:00`);
-  const prevStart = midnight(w.completedLastWeekStart);
-  const prevEnd = midnight(w.weekOf);
-  const nextWeek = midnight(addFacilityCalendarDays(w.thisWeekEnd, 1));
-  const timestamps = [new Date(Date.parse(prevStart) - 1).toISOString(), prevStart,
-    new Date(Date.parse(prevEnd) - 1).toISOString(), prevEnd,
-    new Date(Date.parse(nextWeek) - 1).toISOString(), nextWeek];
-  const tables: Tables = { facilities: [] };
-  for (let f = 1; f <= 5; f++) {
-    tables.facilities!.push({ id: facilityId(f), name: `Facility ${f}`, total_licensed_beds: f * 10, organization_id: organizationId, deleted_at: null });
-    const add = (table: string, row: Row) => {
-      (tables[table] ??= []).push({ facility_id: facilityId(f), organization_id: organizationId, deleted_at: null, ...row });
-    };
-    for (let repeat = 0; repeat < repeats; repeat++) {
-      timestamps.forEach((stamp, i) => {
-        add("invoices", { balance_due: [100, -20, null, 300, 0, 51][i], due_date: i % 2 ? w.todayIso : w.completedLastWeekStart, total: 1000 + i, period_start: i % 2 ? `${w.monthYm}-01` : null, status: i === 5 ? "paid" : "sent" });
-        add("residents", { status: ["active", "hospital_hold", "loa", "discharged", null, "active"][i], monthly_total_rate: [1000, null, 2000, 0, -1, 4000][i], discharge_target_date: i % 2 ? w.weekOf : null });
-        add("staff", { termination_date: i % 2 ? w.completedLastWeekStart : null });
-        add("time_records", { clock_in: stamp, overtime_hours: i + 0.125 });
-        add("staff_attendance_events", { occurred_at: stamp, event_type: i === 2 ? "late_callout" : "callout" });
-        add("staff_requisitions", { status: ["draft", "open", "interviewing", "offered", "filled", "cancelled"][i] });
-        add("admission_cases", { status: i === 1 ? "cancelled" : "pending", target_move_in_date: i % 2 ? w.weekOf : null });
-        add("referral_leads", { status: i === 3 ? "lost" : "new", tour_scheduled_for: stamp });
-        add("referral_outreach_activities", { status: i === 5 ? "cancelled" : "planned", activity_type: i % 2 ? "home_health_provider" : "community_event", scheduled_for: stamp, performed_for_week: i === 0 ? w.weekOf : null });
-        if (f !== 5) add("beds", { status: i === 5 ? "occupied" : null, current_resident_id: i === 4 ? "resident" : null, is_temporarily_blocked: i === 3, standup_availability_class: ["private", "sp_female", "sp_male", "sp_flexible", null, "private"][i] });
-      });
-    }
-  }
-  return tables;
-}
-
-function summary(result: Awaited<ReturnType<typeof fetchExecutiveStandupLive>>) {
-  return result.facilities.map((f) => ({ name: f.facilityName, score: f.pressureScore, concern: f.topConcern,
-    metrics: Object.fromEntries(Object.entries(f.metrics).map(([key, metric]) => [key, `${metric.valueNumeric} (${metric.confidenceBand})`])),
-  }));
-}
+const facility = (i: number, name = `Facility ${i}`) => ({ id: facilityId(i), name, total_licensed_beds: 40, organization_id: organizationId, deleted_at: null });
+const mondayValues = (patch: Record<string, number | null> = {}) => ({
+  monthly_rent_roll_cents: 11_710_816, current_total_census: 34, hospital_and_rehab_total: 1,
+  sp_female_beds_open: 1, sp_male_beds_open: 0, sp_flexible_beds_open: 2, private_beds_open: 3,
+  admissions_expected: 2, expected_discharges: 0, callouts_last_week: 4, terminations_last_week: 1,
+  current_open_positions: 3, overtime_reported: 17.15, tours_expected: 5, provider_activities_expected: 1, outreach_engagements: 2, ...patch,
+});
+const submission = (i: number, patch: Record<string, number | null> = {}) => ({
+  facility_id: facilityId(i), week_start: "2026-09-21", revision_id: `rev-${i}`, submitted_at: "2026-09-21T12:40:00Z", values: mondayValues(patch),
+});
 
 afterEach(() => vi.useRealTimers());
 
-describe("live standup behavior", () => {
-  it.each(["2026-09-05T16:00:00Z", "2026-03-09T16:00:00Z", "2026-11-02T17:00:00Z"])("preserves metrics and inclusive/exclusive week boundaries at %s", async (iso) => {
-    const now = new Date(iso);
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(now);
-    const mock = client(fixture(now));
-    const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
-    expect(summary(result)).toMatchSnapshot();
-    for (const facility of result.facilities.filter((f) => f.facilityId)) {
-      expect(facility.metrics.callouts_last_week.valueNumeric).toBe(2);
-      expect(facility.metrics.overtime_hours.valueNumeric).toBe(3.25);
-      expect(facility.metrics.tours_expected.valueNumeric).toBe(1);
-    }
-    expect(mock.queries).toHaveLength(11);
-    for (const query of mock.queries) {
-      expect(query.operations).toContainEqual(["eq", "organization_id", organizationId]);
-      expect(query.operations).toContainEqual(["is", "deleted_at", null]);
-      if (query.table !== "facilities") expect(query.operations).toContainEqual(["in", "facility_id", [1, 2, 3, 4, 5].map(facilityId)]);
-    }
-  });
-
-  it("counts drafts in Current AR by ruling and names them (COL-665)", async () => {
-    const now = new Date("2026-09-22T16:00:00Z");
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(now);
-    // Homewood on 2026-09-22: $16,968.00 sent and overdue, 57 drafts carrying $117,108.16.
-    const invoice = (status: string, balance: number) => ({ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status, balance_due: balance, due_date: "2026-05-15", total: balance, period_start: null });
+describe("Executive Stand Up reads Monday's submitted figures (COL-753)", () => {
+  it("takes every Monday figure from the latest submission, never from a second computation", async () => {
+    // Invoices and residents that would compute different figures are ignored for Monday's figures.
     const tables: Tables = {
-      facilities: [{ id: facilityId(1), name: "Homewood", total_licensed_beds: 40, organization_id: organizationId, deleted_at: null }],
-      invoices: [
-        invoice("overdue", 1_696_800),
-        invoice("paid", 0),
-        ...Array.from({ length: 56 }, () => invoice("draft", 205_452)),
-        invoice("draft", 205_504),
-      ],
+      facilities: [facility(1, "Homewood")],
+      invoices: [{ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "draft", balance_due: 999, due_date: "2026-05-15", total: 999, period_start: null }],
+      residents: [{ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "active", monthly_total_rate: 5000 }],
     };
-    const mock = client(tables);
+    const mock = client(tables, undefined, { data: [submission(1)], error: null });
     const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
-    const [homewood, totals] = result.facilities;
-    expect(homewood.metrics.current_ar_cents.valueNumeric).toBe(1_696_800 + 11_710_816);
-    expect(homewood.metrics.current_ar_cents.overrideNote).toBe("Includes $117,108 in 57 drafts not yet sent.");
-    expect(totals.metrics.current_ar_cents.overrideNote).toBe("Includes $117,108 in 57 drafts not yet sent.");
-    expect(homewood.metrics.current_ar_cents.description).toMatch(/if every resident pays/);
-    const invoicesQuery = mock.queries.find((query) => query.table === "invoices")!;
-    expect(invoicesQuery.operations).toContainEqual(["in", "status", ["draft", "sent", "partial", "overdue"]]);
+    const homewood = result.facilities.find((f) => f.facilityId === facilityId(1))!;
+    expect(homewood.metrics.current_ar_cents.valueNumeric).toBe(11_710_816);
+    expect(homewood.metrics.current_total_census.valueNumeric).toBe(34);
+    expect(homewood.metrics.hospital_and_rehab_total.valueNumeric).toBe(1);
+    expect(homewood.metrics.callouts_last_week.valueNumeric).toBe(4);
+    expect(homewood.metrics.tours_expected.valueNumeric).toBe(5);
+    // Overtime is stored as the legacy hours.minutes notation: 17 h 15 min.
+    expect(homewood.metrics.overtime_hours.valueNumeric).toBe(17.25);
+    expect(homewood.metrics.total_beds_open.valueNumeric).toBe(6);
+    expect(homewood.metrics.current_ar_cents.sourceRefJson).toEqual([{ table: "stand_up_revisions", revision_id: "rev-1", week_start: "2026-09-21", field: "monthly_rent_roll_cents" }]);
+    expect(homewood.metrics.current_ar_cents.overrideNote).toBe("As submitted for the Monday Stand Up of 2026-09-21.");
+    expect(homewood.metrics.current_ar_cents.freshnessAt).toBe("2026-09-21T12:40:00Z");
+    // Figures Monday does not report are still Haven's own.
+    expect(homewood.metrics.average_rent_cents.valueNumeric).toBe(5000);
+    expect(homewood.metrics.uncollected_ar_total_cents.valueNumeric).toBe(999);
+    expect(mock.rpcCalls).toEqual([["stand_up_command", { p_action: "submitted_latest", p_payload: {} }]]);
+    expect(mock.queries.map((query) => query.table)).toEqual(["facilities", "invoices", "residents"]);
   });
 
-  it("preserves single-facility scope, totals, and missing-bed capacity fallback", async () => {
-    const now = new Date("2026-09-05T16:00:00Z");
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(now);
-    const mock = client(fixture(now));
+  it("shows a facility that has not submitted as blank with the reason, never 0, and marks totals partial (COL-649)", async () => {
+    const mock = client({ facilities: [facility(1), facility(2)] }, undefined, { data: [submission(1)], error: null });
+    const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
+    const missing = result.facilities.find((f) => f.facilityId === facilityId(2))!;
+    expect(missing.metrics.current_total_census.valueNumeric).toBeNull();
+    expect(missing.metrics.current_total_census.overrideNote).toBe(STANDUP_MONDAY_NOT_SUBMITTED_NOTE);
+    expect(missing.metrics.total_beds_open.valueNumeric).toBeNull();
+    expect(missing.topConcern).toBe("Not enough recorded to judge pressure");
+    const totals = result.facilities.find((f) => f.facilityName === "Totals")!;
+    expect(totals.metrics.current_total_census.valueNumeric).toBe(34);
+    expect(totals.metrics.current_total_census.confidenceBand).toBe("low");
+    expect(totals.metrics.current_total_census.overrideNote).toBe("1 of 2 facilities reporting.");
+  });
+
+  it("keeps a figure left blank on the submission blank", async () => {
+    const mock = client({ facilities: [facility(1)] }, undefined, { data: [submission(1, { current_open_positions: null, private_beds_open: null })], error: null });
+    const [row] = (await fetchExecutiveStandupLive(mock.supabase, organizationId, null)).facilities;
+    expect(row.metrics.current_open_positions.valueNumeric).toBeNull();
+    expect(row.metrics.current_open_positions.overrideNote).toBe("Not provided on the submitted Monday report.");
+    expect(row.metrics.total_beds_open.valueNumeric).toBeNull();
+  });
+
+  it("says who may read Monday reports instead of showing zeros to a role that cannot", async () => {
+    const mock = client({ facilities: [facility(1)] }, undefined, { data: null, error: { message: "Stand Up access denied", code: "42501" } });
+    const [row] = (await fetchExecutiveStandupLive(mock.supabase, organizationId, null)).facilities;
+    expect(row.metrics.current_ar_cents.valueNumeric).toBeNull();
+    expect(row.metrics.current_ar_cents.overrideNote).toBe("Only owners, org admins and administrators can read submitted Monday Stand Up reports.");
+  });
+
+  it("scopes a single facility, including the submission read", async () => {
+    const mock = client({ facilities: [facility(1), facility(5)] }, undefined, { data: [submission(5)], error: null });
     const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, facilityId(5));
-    expect(summary(result)).toMatchSnapshot();
     expect(result.facilities.map((f) => f.facilityId)).toEqual([facilityId(5), null]);
-    expect(result.facilities[0].metrics.total_beds_open.valueNumeric).toBe(46);
+    expect(mock.rpcCalls[0][1]).toEqual({ p_action: "submitted_latest", p_payload: { facility_id: facilityId(5) } });
     for (const query of mock.queries) expect(query.operations).toContainEqual(["eq", query.table === "facilities" ? "id" : "facility_id", facilityId(5)]);
   });
 
-  it("preserves null datasets and the no-facilities placeholder", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-09-05T16:00:00Z"));
-    expect(summary(await fetchExecutiveStandupLive(client({}).supabase, organizationId, null))).toMatchSnapshot();
-    const result = await fetchExecutiveStandupLive(client({ facilities: [{ id: facilityId(1), name: "Empty facility", total_licensed_beds: 10, organization_id: organizationId, deleted_at: null }] }).supabase, organizationId, null);
-    // COL-649: an empty roster is not "Census 0 · high" or "10 beds open".
-    const empty = result.facilities[0];
-    expect(empty.metrics.current_total_census.valueNumeric).toBeNull();
-    expect(empty.metrics.current_total_census.confidenceBand).toBe("low");
-    expect(empty.metrics.total_beds_open.valueNumeric).toBeNull();
-    expect(empty.metrics.overtime_hours.valueNumeric).toBeNull();
-    expect(empty.topConcern).toBe("Not enough recorded to judge pressure");
-    expect(empty.metrics.average_rent_cents.valueNumeric).toBeNull();
+  it("preserves the no-facilities placeholder", async () => {
+    const result = await fetchExecutiveStandupLive(client({}).supabase, organizationId, null);
+    expect(result.facilities.map((f) => f.facilityName)).toEqual(["No facilities in scope", "Totals"]);
   });
 
-  it("marks a total over some facilities as partial, never high confidence (COL-649)", async () => {
-    const now = new Date("2026-09-05T16:00:00Z");
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(now);
-    const tables = fixture(now);
-    // Facility 2 has no residents on the roster.
-    tables.residents = (tables.residents ?? []).filter((row) => row.facility_id !== facilityId(2));
-    const result = await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
-    const totals = result.facilities.find((f) => f.facilityName === "Totals")!;
-    expect(totals.metrics.current_total_census.confidenceBand).toBe("low");
-    expect(totals.metrics.current_total_census.overrideNote).toBe("4 of 5 facilities reporting.");
-    const empty = result.facilities.find((f) => f.facilityId === facilityId(2))!;
-    expect(empty.metrics.current_total_census.valueNumeric).toBeNull();
-    expect(empty.topConcern).toBe("Not enough recorded to judge pressure");
-  });
-
-  it.each(["facilities", "invoices", "residents", "staff", "time_records", "beds", "staff_attendance_events", "staff_requisitions", "admission_cases", "referral_outreach_activities", "referral_leads"])("continues to reject %s query errors", async (table) => {
+  it.each(["facilities", "invoices", "residents"])("continues to reject %s query errors", async (table) => {
     await expect(fetchExecutiveStandupLive(client({}, table).supabase, organizationId, null)).rejects.toThrow(`failed ${table}`);
-  });
-
-  it.skipIf(!process.env.HAVEN_PERF_BENCH)("measures synthetic five-facility processing", async () => {
-    const now = new Date("2026-09-05T16:00:00Z");
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(now);
-    const tables = fixture(now, 100);
-    const times: number[] = [];
-    for (let i = 0; i < 6; i++) {
-      const start = performance.now();
-      await fetchExecutiveStandupLive(client(tables).supabase, organizationId, null);
-      if (i > 0) times.push(performance.now() - start);
-    }
-    writeFileSync(`${process.env.HAVEN_PERF_BENCH}/standup.json`, JSON.stringify({ benchmark: "standup-29400-rows", medianMs: times.sort((a, b) => a - b)[2] }));
   });
 });

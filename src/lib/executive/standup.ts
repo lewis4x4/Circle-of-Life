@@ -5,15 +5,15 @@ import type { Database } from "@/types/database";
 import {
   FACILITY_OPERATOR_TZ,
   addFacilityCalendarDays,
-  facilityDatetimeLocalToUtcIso,
   todayFacilityDateIso,
 } from "@/lib/facility-wall-clock";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
+import { legacyOvertimeToMinutes } from "@/lib/stand-up/duration";
+import { FIELD_DEFINITIONS } from "@/lib/stand-up/field-definitions";
+import type { MetricKey } from "@/lib/stand-up/model";
 import {
   CURRENT_AR_DEFINITION_COPY,
   CURRENT_AR_INVOICE_STATUSES,
-  currentArNotYetSentNote,
-  isNotYetSentStatus,
 } from "@/lib/billing/receivables";
 
 export type StandupSourceMode = "auto" | "manual" | "hybrid" | "forecast";
@@ -183,49 +183,12 @@ type ResidentMini = {
   monthly_total_rate?: number | null;
 };
 
-type StaffMini = {
-  facility_id: string;
-  termination_date: string | null;
-};
 
-type TimeRecordMini = {
-  facility_id: string;
-  overtime_hours: number | null;
-  clock_in: string;
-};
 
-type BedMini = {
-  facility_id: string;
-  status: string | null;
-  current_resident_id: string | null;
-  standup_availability_class: "private" | "sp_female" | "sp_male" | "sp_flexible" | null;
-  is_temporarily_blocked: boolean | null;
-};
 
-type AttendanceEventMini = {
-  facility_id: string;
-  event_type: "callout" | "late_callout" | "no_show" | "left_early" | "attendance_note";
-  occurred_at: string;
-};
 
-type RequisitionMini = {
-  facility_id: string;
-  status: "draft" | "open" | "interviewing" | "offered" | "filled" | "cancelled";
-};
 
-type AdmissionCaseMini = {
-  facility_id: string;
-  status: string;
-  target_move_in_date: string | null;
-};
 
-type OutreachActivityMini = {
-  facility_id: string;
-  activity_type: "home_health_provider" | "provider_visit" | "facility_outreach" | "community_event" | "digital_outreach";
-  status: "planned" | "completed" | "cancelled";
-  scheduled_for: string | null;
-  performed_for_week: string | null;
-};
 
 type SnapshotMini = {
   id: string;
@@ -476,19 +439,6 @@ function standupWeekMondayIso(now: Date): string {
   return addFacilityCalendarDays(today, offset);
 }
 
-function facilityDayStartUtc(dateIso: string): string {
-  return facilityDatetimeLocalToUtcIso(`${dateIso}T00:00`);
-}
-
-function facilityDayAfterStartUtc(dateIso: string): string {
-  return facilityDatetimeLocalToUtcIso(`${addFacilityCalendarDays(dateIso, 1)}T00:00`);
-}
-
-function facilityDateRangePredicate(startIso: string, endIso: string): (value: string) => boolean {
-  const startUtc = facilityDayStartUtc(startIso);
-  const endUtc = facilityDayAfterStartUtc(endIso);
-  return (value) => value >= startUtc && value < endUtc;
-}
 
 function groupByFacility<T extends { facility_id: string }>(rows: T[]): Map<string, T[]> {
   const groups = new Map<string, T[]>();
@@ -1173,6 +1123,90 @@ export async function fetchStandupSnapshotDetail(
   };
 }
 
+/**
+ * COL-753: the figures Monday's Stand Up reports come from what each
+ * administrator submitted, never from a second computation. Haven computes
+ * Monday's figures once, as the form's prefill (`haven.stand_up_monday_prefill`),
+ * and the administrator verifies them; this pack then reads the submission.
+ * Only the figures Monday does not report (goal, average rent, uncollected AR)
+ * are computed here.
+ */
+export const MONDAY_SUBMITTED_METRIC_KEYS: Record<string, string> = {
+  current_ar_cents: "monthly_rent_roll_cents",
+  current_total_census: "current_total_census",
+  sp_female_beds_open: "sp_female_beds_open",
+  sp_male_beds_open: "sp_male_beds_open",
+  sp_flexible_beds_open: "sp_flexible_beds_open",
+  private_beds_open: "private_beds_open",
+  admissions_expected: "admissions_expected",
+  hospital_and_rehab_total: "hospital_and_rehab_total",
+  expected_discharges: "expected_discharges",
+  callouts_last_week: "callouts_last_week",
+  terminations_last_week: "terminations_last_week",
+  current_open_positions: "current_open_positions",
+  overtime_hours: "overtime_reported",
+  tours_expected: "tours_expected",
+  provider_activities_expected: "provider_activities_expected",
+  outreach_engagements: "outreach_engagements",
+};
+const MONDAY_BED_KEYS = ["sp_female_beds_open", "sp_male_beds_open", "sp_flexible_beds_open", "private_beds_open"] as const;
+
+// Each Monday figure is described by Monday's own definition, since that is what it now is.
+for (const definition of STANDUP_METRIC_DEFINITIONS) {
+  const mondayKey = MONDAY_SUBMITTED_METRIC_KEYS[definition.key] as MetricKey | undefined;
+  if (mondayKey) definition.description = `As submitted on Monday's Stand Up. ${FIELD_DEFINITIONS[mondayKey]}`;
+  else if (definition.key === "total_beds_open") definition.description = "As submitted on Monday's Stand Up: the four open-bed figures added together.";
+}
+
+export type MondaySubmission = {
+  facility_id: string;
+  week_start: string;
+  revision_id: string;
+  submitted_at: string;
+  values: Record<string, number | null>;
+};
+
+export const STANDUP_MONDAY_NOT_SUBMITTED_NOTE = "No Monday Stand Up has been submitted for this facility yet.";
+
+function submittedValue(submission: MondaySubmission, mondayKey: string): number | null {
+  const raw = submission.values[mondayKey];
+  if (typeof raw !== "number") return null;
+  if (mondayKey !== "overtime_reported") return raw;
+  try {
+    const minutes = legacyOvertimeToMinutes(raw);
+    return minutes === null ? null : Math.round((minutes / 60) * 100) / 100;
+  } catch {
+    return null;
+  }
+}
+
+function applyMondaySubmission(metrics: Record<string, StandupMetricRow>, submission: MondaySubmission | undefined, unreadable: string | null) {
+  for (const [key, mondayKey] of Object.entries(MONDAY_SUBMITTED_METRIC_KEYS)) {
+    const definition = STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === key)!;
+    if (!submission) {
+      metrics[key] = metricTemplate(definition, null, { overrideNote: unreadable ?? STANDUP_MONDAY_NOT_SUBMITTED_NOTE });
+      continue;
+    }
+    const value = submittedValue(submission, mondayKey);
+    metrics[key] = metricTemplate(definition, value, {
+      confidenceBand: value == null ? "low" : "high",
+      freshnessAt: submission.submitted_at,
+      sourceRefJson: [{ table: "stand_up_revisions", revision_id: submission.revision_id, week_start: submission.week_start, field: mondayKey }],
+      overrideNote: value == null ? "Not provided on the submitted Monday report." : `As submitted for the Monday Stand Up of ${submission.week_start}.`,
+    });
+  }
+  const totalDefinition = STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "total_beds_open")!;
+  const beds = submission ? MONDAY_BED_KEYS.map((key) => submittedValue(submission, key)) : [];
+  metrics.total_beds_open = submission && beds.every((value) => value != null)
+    ? metricTemplate(totalDefinition, sum(beds as number[]), {
+      confidenceBand: "high",
+      freshnessAt: submission.submitted_at,
+      sourceRefJson: [{ table: "stand_up_revisions", revision_id: submission.revision_id, week_start: submission.week_start, field: "four open-bed figures" }],
+      overrideNote: `The four open-bed figures as submitted for the Monday Stand Up of ${submission.week_start}.`,
+    })
+    : metricTemplate(totalDefinition, null, { overrideNote: submission ? "Not every open-bed figure was provided on the submitted Monday report." : unreadable ?? STANDUP_MONDAY_NOT_SUBMITTED_NOTE });
+}
+
 export async function fetchExecutiveStandupLive(
   supabase: SupabaseClient<Database>,
   organizationId: string,
@@ -1197,7 +1231,6 @@ export async function fetchExecutiveStandupLive(
   const {
     todayIso,
     weekOf,
-    thisWeekEnd,
     completedLastWeekStart,
     completedLastWeekEnd,
     monthYm,
@@ -1218,200 +1251,51 @@ export async function fetchExecutiveStandupLive(
     .is("deleted_at", null)
     .limit(5000);
 
-  let staffQ = supabase
-    .from("staff" as never)
-    .select("facility_id, termination_date")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let timeQ = supabase
-    .from("time_records" as never)
-    .select("facility_id, overtime_hours, clock_in")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let bedsQ = supabase
-    .from("beds" as never)
-    .select("facility_id, status, current_resident_id, standup_availability_class, is_temporarily_blocked")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let attendanceQ = supabase
-    .from("staff_attendance_events" as never)
-    .select("facility_id, event_type, occurred_at")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let requisitionsQ = supabase
-    .from("staff_requisitions" as never)
-    .select("facility_id, status")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let admissionCasesQ = supabase
-    .from("admission_cases" as never)
-    .select("facility_id, status, target_move_in_date")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let outreachQ = supabase
-    .from("referral_outreach_activities" as never)
-    .select("facility_id, activity_type, status, scheduled_for, performed_for_week")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
-  let referralToursQ = supabase
-    .from("referral_leads" as never)
-    .select("facility_id, status, tour_scheduled_for")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .limit(5000);
-
   if (facilityIds.length > 0 && !isValidFacilityIdForQuery(facilityId)) {
     invoicesQ = invoicesQ.in("facility_id", facilityIds);
     residentsQ = residentsQ.in("facility_id", facilityIds);
-    staffQ = staffQ.in("facility_id", facilityIds);
-    timeQ = timeQ.in("facility_id", facilityIds);
-    bedsQ = bedsQ.in("facility_id", facilityIds);
-    attendanceQ = attendanceQ.in("facility_id", facilityIds);
-    requisitionsQ = requisitionsQ.in("facility_id", facilityIds);
-    admissionCasesQ = admissionCasesQ.in("facility_id", facilityIds);
-    outreachQ = outreachQ.in("facility_id", facilityIds);
-    referralToursQ = referralToursQ.in("facility_id", facilityIds);
   } else if (isValidFacilityIdForQuery(facilityId)) {
     invoicesQ = invoicesQ.eq("facility_id", facilityId);
     residentsQ = residentsQ.eq("facility_id", facilityId);
-    staffQ = staffQ.eq("facility_id", facilityId);
-    timeQ = timeQ.eq("facility_id", facilityId);
-    bedsQ = bedsQ.eq("facility_id", facilityId);
-    attendanceQ = attendanceQ.eq("facility_id", facilityId);
-    requisitionsQ = requisitionsQ.eq("facility_id", facilityId);
-    admissionCasesQ = admissionCasesQ.eq("facility_id", facilityId);
-    outreachQ = outreachQ.eq("facility_id", facilityId);
-    referralToursQ = referralToursQ.eq("facility_id", facilityId);
   }
 
-  const [invoicesRes, residentsRes, staffRes, timeRes, bedsRes, attendanceRes, requisitionsRes, admissionCasesRes, outreachRes, referralToursRes] = await Promise.all([
+  const rpc = supabase.rpc.bind(supabase) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
+  const [invoicesRes, residentsRes, submittedRes] = await Promise.all([
     invoicesQ as unknown as Promise<{ data: InvoiceMini[] | null; error: { message: string } | null }>,
     residentsQ as unknown as Promise<{ data: ResidentMini[] | null; error: { message: string } | null }>,
-    staffQ as unknown as Promise<{ data: StaffMini[] | null; error: { message: string } | null }>,
-    timeQ as unknown as Promise<{ data: TimeRecordMini[] | null; error: { message: string } | null }>,
-    bedsQ as unknown as Promise<{ data: BedMini[] | null; error: { message: string } | null }>,
-    attendanceQ as unknown as Promise<{ data: AttendanceEventMini[] | null; error: { message: string } | null }>,
-    requisitionsQ as unknown as Promise<{ data: RequisitionMini[] | null; error: { message: string } | null }>,
-    admissionCasesQ as unknown as Promise<{ data: AdmissionCaseMini[] | null; error: { message: string } | null }>,
-    outreachQ as unknown as Promise<{ data: OutreachActivityMini[] | null; error: { message: string } | null }>,
-    referralToursQ as unknown as Promise<{ data: Array<{ facility_id: string; status: string; tour_scheduled_for: string | null }> | null; error: { message: string } | null }>,
+    rpc("stand_up_command", { p_action: "submitted_latest", p_payload: isValidFacilityIdForQuery(facilityId) ? { facility_id: facilityId } : {} }),
   ]);
 
-  for (const result of [invoicesRes, residentsRes, staffRes, timeRes, bedsRes, attendanceRes, requisitionsRes, admissionCasesRes, outreachRes, referralToursRes]) {
+  for (const result of [invoicesRes, residentsRes]) {
     if (result.error) throw new Error(result.error.message);
   }
+  // A reader without Monday Stand Up access sees why the figures are blank, not zeros.
+  const unreadable = submittedRes.error
+    ? submittedRes.error.code === "42501"
+      ? "Only owners, org admins and administrators can read submitted Monday Stand Up reports."
+      : `Monday Stand Up reports could not be read: ${submittedRes.error.message}`
+    : null;
+  const submissions = new Map<string, MondaySubmission>(
+    (Array.isArray(submittedRes.data) ? (submittedRes.data as MondaySubmission[]) : []).map((row) => [row.facility_id, row]),
+  );
 
   const invoiceRows = invoicesRes.data ?? [];
   const residentRows = residentsRes.data ?? [];
-  const staffRows = staffRes.data ?? [];
-  const timeRows = timeRes.data ?? [];
-  const bedRows = bedsRes.data ?? [];
-  const attendanceRows = attendanceRes.data ?? [];
-  const requisitionRows = requisitionsRes.data ?? [];
-  const admissionCaseRows = admissionCasesRes.data ?? [];
-  const outreachRows = outreachRes.data ?? [];
-  const referralTourRows = referralToursRes.data ?? [];
-
-  // These bounds are identical for every row in this load, including DST weeks.
-  const inCompletedLastWeek = facilityDateRangePredicate(completedLastWeekStart, completedLastWeekEnd);
-  const inThisWeek = facilityDateRangePredicate(weekOf, thisWeekEnd);
   const invoicesByFacility = groupByFacility(invoiceRows);
   const residentsByFacility = groupByFacility(residentRows);
-  const staffByFacility = groupByFacility(staffRows);
-  const timeByFacility = groupByFacility(timeRows);
-  const bedsByFacility = groupByFacility(bedRows);
-  const attendanceByFacility = groupByFacility(attendanceRows);
-  const requisitionsByFacility = groupByFacility(requisitionRows);
-  const admissionCasesByFacility = groupByFacility(admissionCaseRows);
-  const outreachByFacility = groupByFacility(outreachRows);
-  const toursByFacility = groupByFacility(referralTourRows);
 
   const liveFacilities = facilities.map<StandupFacilityLive>((facility) => {
     const metrics = initializeMetricMap();
     const facilityInvoices = invoicesByFacility.get(facility.id) ?? [];
     const facilityResidents = residentsByFacility.get(facility.id) ?? [];
-    const facilityStaff = staffByFacility.get(facility.id) ?? [];
-    const facilityTime = timeByFacility.get(facility.id) ?? [];
-    const facilityBeds = bedsByFacility.get(facility.id) ?? [];
-    const facilityAttendance = attendanceByFacility.get(facility.id) ?? [];
-    const facilityRequisitions = requisitionsByFacility.get(facility.id) ?? [];
-    const facilityAdmissionCases = admissionCasesByFacility.get(facility.id) ?? [];
-    const facilityOutreach = outreachByFacility.get(facility.id) ?? [];
-    const facilityTours = toursByFacility.get(facility.id) ?? [];
+    applyMondaySubmission(metrics, submissions.get(facility.id), unreadable);
 
-    const currentArCents = sum(facilityInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
-    const notYetSentInvoices = facilityInvoices.filter((row) => isNotYetSentStatus(row.status));
-    const notYetSentCents = sum(notYetSentInvoices.map((row) => Math.max(0, row.balance_due ?? 0)));
     const overdueArCents = sum(
       facilityInvoices
         .filter((row) => row.due_date && row.due_date < todayIso)
         .map((row) => Math.max(0, row.balance_due ?? 0)),
     );
     const currentTotalCensus = facilityResidents.filter((row) => ["active", "hospital_hold", "loa"].includes(row.status ?? "")).length;
-    // A roster with nobody on it is an unloaded roster, not a census of 0 at
-    // "high confidence" (COL-649). Census-derived cells stay empty until then.
-    const rosterLoaded = currentTotalCensus > 0;
-    const timeRecordsLastWeek = facilityTime.filter((row) => inCompletedLastWeek(row.clock_in));
-    const openBeds = facilityBeds.filter((row) => row.current_resident_id == null && !row.is_temporarily_blocked && (row.status ?? "available") === "available");
-    const totalBedsOpen = facilityBeds.length > 0 ? openBeds.length : Math.max(0, (facility.total_licensed_beds ?? 0) - currentTotalCensus);
-    const spFemaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_female").length;
-    const spMaleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_male").length;
-    const spFlexibleBedsOpen = openBeds.filter((row) => row.standup_availability_class === "sp_flexible").length;
-    const privateBedsOpen = openBeds.filter((row) => row.standup_availability_class === "private").length;
-    const hospitalAndRehab = facilityResidents.filter((row) => ["hospital_hold", "loa"].includes(row.status ?? "")).length;
-    const admissionsExpected = facilityAdmissionCases.filter((row) => {
-      if (!row.target_move_in_date || row.status === "cancelled") return false;
-      return row.target_move_in_date >= weekOf && row.target_move_in_date <= thisWeekEnd;
-    }).length;
-    const expectedDischarges = facilityResidents.filter((row) => {
-      if (!row.discharge_target_date) return false;
-      return row.discharge_target_date >= weekOf && row.discharge_target_date <= thisWeekEnd;
-    }).length;
-    // One definition of a callout across both Stand Up surfaces (COL-374): a
-    // scheduled shift that was not worked. `left_early` is a partial shift, not
-    // a missed one, and `attendance_note` is not an absence — neither counts.
-    // The facility form states the same rule in its field definitions.
-    const calloutsLastWeek = facilityAttendance.filter((row) => {
-      return inCompletedLastWeek(row.occurred_at)
-        && MISSED_SHIFT_EVENT_TYPES.includes(row.event_type);
-    }).length;
-    const terminationsLastWeek = facilityStaff.filter((row) => {
-      if (!row.termination_date) return false;
-      return row.termination_date >= completedLastWeekStart && row.termination_date <= completedLastWeekEnd;
-    }).length;
-    const currentOpenPositions = facilityRequisitions.filter((row) => ["open", "interviewing", "offered"].includes(row.status)).length;
-    const overtimeHours = Math.round(
-      timeRecordsLastWeek.reduce((acc, row) => acc + (row.overtime_hours ?? 0), 0) * 100,
-    ) / 100;
-    const toursExpected = facilityTours.filter((row) => {
-      if (!row.tour_scheduled_for || ["lost", "merged"].includes(row.status)) return false;
-      return inThisWeek(row.tour_scheduled_for);
-    }).length;
-    const providerActivitiesExpected = facilityOutreach.filter((row) => {
-      if (row.status === "cancelled" || row.activity_type !== "home_health_provider") return false;
-      return row.performed_for_week === weekOf
-        || (row.scheduled_for != null && inThisWeek(row.scheduled_for));
-    }).length;
-    const outreachEngagements = facilityOutreach.filter((row) => {
-      if (row.status === "cancelled" || row.activity_type === "home_health_provider") return false;
-      return row.performed_for_week === weekOf
-        || (row.scheduled_for != null && inThisWeek(row.scheduled_for));
-    }).length;
-
     const currentMonthInvoices = facilityInvoices.filter((row) => row.period_start?.startsWith(monthYm));
     const residentRateRows = facilityResidents
       .map((row) => row.monthly_total_rate)
@@ -1432,29 +1316,6 @@ export async function fetchExecutiveStandupLive(
           ? "medium"
           : "low";
 
-    metrics.current_ar_cents = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_ar_cents")!,
-      currentArCents,
-      {
-        sourceRefJson: [
-          {
-            table: "invoices",
-            mode: "open_balance",
-            statuses: [...CURRENT_AR_INVOICE_STATUSES],
-            not_yet_sent_count: notYetSentInvoices.length,
-            not_yet_sent_cents: notYetSentCents,
-          },
-        ],
-        overrideNote: currentArNotYetSentNote(notYetSentInvoices.length, formatCurrencyFromCents(notYetSentCents)),
-      },
-    );
-    metrics.current_total_census = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_total_census")!,
-      rosterLoaded ? currentTotalCensus : null,
-      rosterLoaded
-        ? { sourceRefJson: [{ table: "residents", statuses: ["active", "hospital_hold", "loa"] }] }
-        : { overrideNote: STANDUP_NO_ROSTER_NOTE },
-    );
     metrics.average_rent_cents = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "average_rent_cents")!,
       averageRentCents,
@@ -1474,95 +1335,10 @@ export async function fetchExecutiveStandupLive(
     );
     metrics.uncollected_ar_total_cents = metricTemplate(
       STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "uncollected_ar_total_cents")!,
-      overdueArCents,
-      { sourceRefJson: [{ table: "invoices", mode: "overdue_balance" }] },
-    );
-    metrics.total_beds_open = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "total_beds_open")!,
-      rosterLoaded ? totalBedsOpen : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: facilityBeds.length > 0 ? [{ table: "beds", field: "standup_availability_class" }] : [{ table: "facilities", field: "total_licensed_beds" }, { table: "residents", field: "status" }] },
-    );
-    metrics.sp_female_beds_open = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_female_beds_open")!,
-      rosterLoaded ? spFemaleBedsOpen : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
-    );
-    metrics.sp_male_beds_open = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_male_beds_open")!,
-      rosterLoaded ? spMaleBedsOpen : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
-    );
-    metrics.sp_flexible_beds_open = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "sp_flexible_beds_open")!,
-      rosterLoaded ? spFlexibleBedsOpen : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
-    );
-    metrics.private_beds_open = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "private_beds_open")!,
-      rosterLoaded ? privateBedsOpen : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : { sourceRefJson: [{ table: "beds", field: "standup_availability_class" }] },
-    );
-    metrics.hospital_and_rehab_total = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "hospital_and_rehab_total")!,
-      rosterLoaded ? hospitalAndRehab : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : {
-        confidenceBand: "medium",
-        sourceRefJson: [{ table: "residents", statuses: ["hospital_hold", "loa"] }],
-        overrideNote: "Counts hospital hold and LOA. Rehab-specific distinction still needs a dedicated status model.",
-      },
-    );
-    metrics.expected_discharges = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "expected_discharges")!,
-      rosterLoaded ? expectedDischarges : null,
-      !rosterLoaded ? { overrideNote: STANDUP_NO_ROSTER_NOTE } : {
-        confidenceBand: "medium",
-        sourceRefJson: [{ table: "residents", field: "discharge_target_date" }],
-        overrideNote: expectedDischarges > 0 ? "Derived from resident discharge target dates for the standup week." : "No discharge targets recorded for this week.",
-      },
-    );
-    metrics.admissions_expected = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "admissions_expected")!,
-      admissionsExpected,
-      {
-        confidenceBand: admissionsExpected > 0 ? "medium" : "low",
-        sourceRefJson: [{ table: "admission_cases", field: "target_move_in_date" }],
-        overrideNote: admissionsExpected > 0 ? "Derived from admission cases targeting move-in during the standup week." : "No admission cases target this standup week.",
-      },
-    );
-    metrics.callouts_last_week = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "callouts_last_week")!,
-      calloutsLastWeek,
-      { sourceRefJson: [{ table: "staff_attendance_events", event_types: MISSED_SHIFT_EVENT_TYPES }] },
-    );
-    metrics.terminations_last_week = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "terminations_last_week")!,
-      terminationsLastWeek,
-      { sourceRefJson: [{ table: "staff", field: "termination_date" }] },
-    );
-    metrics.current_open_positions = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "current_open_positions")!,
-      currentOpenPositions,
-      { sourceRefJson: [{ table: "staff_requisitions", open_statuses: ["open", "interviewing", "offered"] }] },
-    );
-    metrics.overtime_hours = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "overtime_hours")!,
-      timeRecordsLastWeek.length > 0 ? overtimeHours : null,
-      timeRecordsLastWeek.length === 0 ? { overrideNote: STANDUP_NO_TIME_RECORDS_NOTE } : { sourceRefJson: [{ table: "time_records", field: "overtime_hours" }] },
-    );
-    metrics.tours_expected = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "tours_expected")!,
-      toursExpected,
-      { sourceRefJson: [{ table: "referral_leads", field: "tour_scheduled_for" }] },
-    );
-    metrics.provider_activities_expected = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "provider_activities_expected")!,
-      providerActivitiesExpected,
-      { sourceRefJson: [{ table: "referral_outreach_activities", activity_type: "home_health_provider" }] },
-    );
-    metrics.outreach_engagements = metricTemplate(
-      STANDUP_METRIC_DEFINITIONS.find((metric) => metric.key === "outreach_engagements")!,
-      outreachEngagements,
-      { sourceRefJson: [{ table: "referral_outreach_activities", mode: "non_provider" }] },
+      facilityInvoices.length > 0 ? overdueArCents : null,
+      facilityInvoices.length > 0
+        ? { sourceRefJson: [{ table: "invoices", mode: "overdue_balance" }] }
+        : { overrideNote: "Haven has no open invoices for this facility." },
     );
 
     const { score, topConcern } = computePressureScore(metrics);
@@ -1611,25 +1387,18 @@ export async function fetchExecutiveStandupLive(
     const partial = aggregateValue != null && numericValues.length < liveFacilities.length;
     totalMetrics[definition.key] = metricTemplate(definition, aggregateValue, {
       confidenceBand:
-        aggregateValue == null || partial ? "low" : definition.sourceMode === "auto" ? "high" : "medium",
+        aggregateValue == null || partial ? "low" : definition.key in MONDAY_SUBMITTED_METRIC_KEYS || definition.key === "total_beds_open" || definition.sourceMode === "auto" ? "high" : "medium",
       sourceRefJson:
         aggregateValue == null
           ? []
           : [{ mode: "facility_rollup", facility_count: numericValues.length, facilities_in_scope: liveFacilities.length }],
       overrideNote:
         aggregateValue == null
-          ? "Needs manual or future system capture."
+          ? "No facility has this figure yet."
           : partial
             ? `${numericValues.length} of ${liveFacilities.length} facilities reporting.`
             : null,
     });
-  }
-  if (totalMetrics.current_ar_cents.valueNumeric != null) {
-    const totalNotYetSent = invoiceRows.filter((row) => isNotYetSentStatus(row.status));
-    totalMetrics.current_ar_cents.overrideNote = currentArNotYetSentNote(
-      totalNotYetSent.length,
-      formatCurrencyFromCents(sum(totalNotYetSent.map((row) => Math.max(0, row.balance_due ?? 0)))),
-    );
   }
 
   const { score, topConcern } = computePressureScore(totalMetrics);

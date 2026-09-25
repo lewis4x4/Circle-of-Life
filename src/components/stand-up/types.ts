@@ -21,6 +21,8 @@ export type StandUpWorkspaceData = {
   /** COL-797: owner, org_admin or facility_admin may change a submitted week. */
   can_edit_submitted?: boolean;
   server_now?: string; actor_role?: string;
+  /** COL-805: the meeting schedule; Monday's row gives its entry deadline and call. */
+  schedule?: { meeting_day: string; weekday: number; entry_due_local: string; call_local: string; time_zone: string; facility_override: boolean }[];
   google_connection?: {
     state: 'unconfigured' | 'connected' | 'reconnect_required';
     last_success_at?: string | null; last_checked_at?: string | null;
