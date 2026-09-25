@@ -62,7 +62,7 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("void_document"), payload: z.object({ document_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict() }).strict(),
 ]);
-export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days"] as const;
+export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days", "score.reapply_days", "stalled.days", "plan.rates"] as const;
 export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
 export const checklistRuleSchema = z.array(z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(BENEFITS_STAGES), signature_status: z.enum(["not_required", "pending"]).default("not_required") }).strict()).max(60);
 export const screeningStandardSchema = z.object({ income_cents: z.number().int().min(1).max(99_999_999), assets_cents: z.number().int().min(1).max(9_999_999_999), label: z.string().trim().min(1).max(200), source: z.string().max(500).optional() }).strict();
@@ -87,6 +87,9 @@ export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("screening.admission_gate"), value: admissionGateSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("screening.recheck_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("runway.lead_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("score.reapply_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("stalled.days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("plan.rates"), value: z.array(z.object({ plan: z.string().trim().min(1).max(100), monthly_cents: z.number().int().min(1).max(99_999_999), facility_id: uuid.nullable().optional() }).strict()).max(100), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
 ]);
 export const SCREENING_COVERAGE = ["unknown", "none", "private_pay", "medicaid_mma", "application_pending", "smmc_ltc_enrolled"] as const;
 export const SCREENING_RESULTS = ["candidate", "not_qualified_now", "needs_answers", "already_enrolled"] as const;
@@ -126,6 +129,23 @@ export const dismissPromptSchema = z.object({ request_id: uuid, resident_id: uui
 export interface RunwayPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; runway_date: string; days_left: number; last_result: ScreeningResult; can_write: boolean }
 export interface LatePaymentPrompt { resident_id: string; resident_name: string; facility_id: string; facility_name: string; oldest_due: string; owed_cents: number; can_write: boolean }
 export interface MedicaidPrompts { as_of: string; late_signal: Array<{ facility_id: string; facility_name: string; live: boolean }>; runway: RunwayPrompt[]; late_payments: LatePaymentPrompt[] }
+export const BOARD_STEPS = ["intake_requested", "intake_emailed", "assessment_complete", "score", "form_3008_requested", "form_3008_returned", "app_requested", "app_returned", "cares_processing", "cares_appointment", "dcf_decision", "plan_enrolled", "plan_authorized"] as const;
+export type BoardStep = typeof BOARD_STEPS[number];
+export const CONTACT_AGENCIES = ["dcf", "elder_options", "elder_affairs", "cares", "plan", "other"] as const;
+export const boardCommandSchema = z.discriminatedUnion("action", [
+  z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("record_step"), payload: z.object({ step: z.enum(BOARD_STEPS).exclude(["score"]), occurred_on: date.optional(), outcome: z.string().trim().max(200).optional(), notes: z.string().trim().max(2000).optional() }).strict() }).strict(),
+  z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("record_score"), payload: z.object({ score: z.number().int().min(1).max(5), occurred_on: date.optional(), notes: z.string().trim().max(2000).optional() }).strict() }).strict(),
+  z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("set_caseworker"), payload: z.object({ contact_id: uuid.nullable() }).strict() }).strict(),
+]);
+export const contactSaveSchema = z.object({ id: uuid.optional(), name: z.string().trim().min(1).max(200), agency: z.enum(CONTACT_AGENCIES), phone: z.string().trim().max(50).optional(), email: z.string().trim().max(200).optional(), notes: z.string().trim().max(1000).optional(), active: z.boolean().optional() }).strict();
+export interface BoardRow {
+  case_id: string; revision: number; status: "open" | "waiting" | "closed"; resident_id: string; resident_name: string; next_action: string | null; due_date: string | null; assignee_name: string | null;
+  agency_score: number | null; reapply_on: string | null; caseworker_id: string | null; caseworker_name: string | null; caseworker_phone: string | null;
+  step_dates: Partial<Record<BoardStep, string>>; next_step: BoardStep | null; waiting_on: "us" | "agency"; days_since_last_step: number; stalled: boolean;
+  plan_rate_cents: number | null; revenue_not_collected_cents: number | null;
+}
+export interface BoardContact { id: string; name: string; agency: typeof CONTACT_AGENCIES[number]; phone: string | null }
+export interface MedicaidBoard { as_of: string; facility_id: string; facility_name: string; stalled_days: number; can_write: boolean; steps: Array<{ step: BoardStep; label: string }>; rows: BoardRow[]; needs_answers: Array<{ resident_id: string; resident_name: string }>; rechecks_due: number; contacts: BoardContact[] }
 export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }
 export interface BenefitsRuleRow { id: string; organization_id: string; rule_key: BenefitsRuleKey; value: unknown; effective_from: string; reason: string; created_by: string | null; created_at: string }
 export interface BenefitsRuleEntry { rule_key: BenefitsRuleKey; current: BenefitsRuleRow | null; value: unknown; scheduled: BenefitsRuleRow[]; history_count: number }

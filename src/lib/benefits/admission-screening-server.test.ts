@@ -111,3 +111,19 @@ describe("prompts API", () => {
     expect((await getMedicaidPrompts(new Request("http://localhost/api/admin/benefits/prompts"))).status).toBe(503);
   });
 });
+
+describe("board API", () => {
+  it("requires a facility, rejects the score step as a plain step and scores outside 1-5", async () => {
+    const { getMedicaidBoard, commandMedicaidBoard } = await import("./server");
+    expect((await getMedicaidBoard(new Request("http://localhost/api/admin/benefits/board"))).status).toBe(400);
+    expect((await commandMedicaidBoard(post({ request_id: requestId, expected_revision: 1, action: "record_step", payload: { step: "score" } }), caseId)).status).toBe(400);
+    expect((await commandMedicaidBoard(post({ request_id: requestId, expected_revision: 1, action: "record_score", payload: { score: 6 } }), caseId)).status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it("passes revision and request identity and surfaces a stale case as a conflict", async () => {
+    const { commandMedicaidBoard } = await import("./server");
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: "P0409" } });
+    expect((await commandMedicaidBoard(post({ request_id: requestId, expected_revision: 7, action: "record_step", payload: { step: "intake_requested", occurred_on: "2026-09-20" } }), caseId)).status).toBe(409);
+    expect(mocks.rpc).toHaveBeenCalledWith("benefits_board_command", { p_case_id: caseId, p_action: "record_step", p_payload: { step: "intake_requested", occurred_on: "2026-09-20" }, p_expected_revision: 7, p_request_id: requestId });
+  });
+});

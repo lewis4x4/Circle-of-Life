@@ -10,7 +10,7 @@ import {
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
   admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
-  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema,
+  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, BOARD_STEPS, CONTACT_AGENCIES,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -284,6 +284,45 @@ export async function dismissPrompt(request: Request) {
   const result = await rpc(auth.actor, "benefits_prompt_dismiss", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_days: parsed.data.days, p_reason: parsed.data.reason, p_request_id: parsed.data.request_id });
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ dismissal_id: uuid, until_on: z.string() }).safeParse(result.data);
+  return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
+}
+const boardStepEnum = z.enum(BOARD_STEPS);
+const boardSchema = z.object({
+  as_of: z.string(), facility_id: uuid, facility_name: z.string(), stalled_days: z.number().int(), can_write: z.boolean(),
+  steps: z.array(z.object({ step: boardStepEnum, label: z.string() })),
+  rows: z.array(z.object({
+    case_id: uuid, revision: z.number().int().positive(), status: z.enum(BENEFITS_STATUSES), resident_id: uuid, resident_name: z.string(), next_action: z.string().nullable(), due_date: z.string().nullable(), assignee_name: z.string().nullable(),
+    agency_score: z.number().int().min(1).max(5).nullable(), reapply_on: z.string().nullable(), caseworker_id: uuid.nullable(), caseworker_name: z.string().nullable(), caseworker_phone: z.string().nullable(),
+    step_dates: z.record(z.string(), z.string()), next_step: boardStepEnum.nullable(), waiting_on: z.enum(["us", "agency"]), days_since_last_step: z.number().int(), stalled: z.boolean(),
+    plan_rate_cents: z.number().int().nullable(), revenue_not_collected_cents: z.number().int().nullable(),
+  })),
+  needs_answers: z.array(z.object({ resident_id: uuid, resident_name: z.string() })), rechecks_due: z.number().int(),
+  contacts: z.array(z.object({ id: uuid, name: z.string(), agency: z.enum(CONTACT_AGENCIES), phone: z.string().nullable() })),
+});
+export async function getMedicaidBoard(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const query = z.object({ facility_id: uuid }).strict().safeParse(Object.fromEntries(new URL(request.url).searchParams));
+  if (!query.success) return benefitsFailure(400, "A facility id is required.");
+  const result = await rpc(auth.actor, "benefits_board", { p_facility_id: query.data.facility_id });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = boardSchema.safeParse(result.data);
+  return parsed.success && parsed.data.facility_id === query.data.facility_id ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+export async function commandMedicaidBoard(request: Request, caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = boardCommandSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(caseId).success || !parsed.success) return benefitsFailure(400, "Review the step and date.");
+  const result = await rpc(auth.actor, "benefits_board_command", { p_case_id: caseId, p_action: parsed.data.action, p_payload: parsed.data.payload, p_expected_revision: parsed.data.expected_revision, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = commandReply.safeParse(result.data);
+  return reply.success && reply.data.case_id === caseId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+export async function saveBenefitsContact(request: Request) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = contactSaveSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "A contact needs a name and an agency.");
+  const result = await rpc(auth.actor, "benefits_contact_save", { p_payload: parsed.data });
+  if (result.error) return rpcFailure(result.error);
+  const reply = z.object({ id: uuid, name: z.string() }).passthrough().safeParse(result.data);
   return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
 }
 /** Reading private financial evidence is recorded in the case history before any bytes leave the server. */
