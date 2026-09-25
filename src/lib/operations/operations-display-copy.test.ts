@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY,
+  OPERATIONS_NO_ACCESSIBLE_FACILITIES_COPY,
   OPERATIONS_NO_FACILITY_COPY,
   OPERATIONS_NO_MISSED_AT_COPY,
   formatOperationsAssetsCardDescription,
@@ -114,3 +116,16 @@ describe("formatOperationsVendorsCardDescription", () => {
     expect(formatOperationsVendorsCardDescription(4, null)).not.toContain("selected facility");
   });
 });
+
+describe("operations inaccessible facility copy", () => {
+  it("names inaccessible scope without saying the selected facility", () => {
+    expect(OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY).toBe(
+      "This facility is no longer accessible.",
+    );
+    expect(OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY.toLowerCase()).not.toContain(
+      "the selected facility",
+    );
+    expect(OPERATIONS_NO_ACCESSIBLE_FACILITIES_COPY).toBe("No accessible facilities.");
+  });
+});
+
