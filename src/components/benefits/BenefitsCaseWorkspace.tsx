@@ -31,6 +31,7 @@ import {
 import { programChoices, statusChoices } from "./BenefitsQueue";
 import { BenefitsDocuments } from "./BenefitsDocuments";
 import { BenefitsCollectionRequests } from "./BenefitsCollectionRequests";
+import { DocumentFreshness } from "./DocumentFreshness";
 import { BenefitsSubmissions } from "./BenefitsSubmissions";
 import { benefitsScreeningReview } from "@/lib/benefits/screening";
 import { todayFacilityDateIso } from "@/lib/facility-wall-clock";
@@ -601,6 +602,7 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
             canReview={permissions.can_review && item.status !== "closed"}
             command={command}
           />
+          <DocumentFreshness detail={detail} onChanged={refresh} />
           <BenefitsCollectionRequests detail={detail} onChanged={refresh} />
           <RequirementForm
             assignees={assignees}

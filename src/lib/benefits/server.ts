@@ -10,7 +10,7 @@ import {
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
   admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
-  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, BOARD_STEPS, CONTACT_AGENCIES,
+  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, freshnessReopenSchema, BOARD_STEPS, CONTACT_AGENCIES,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -297,6 +297,7 @@ const boardSchema = z.object({
     plan_rate_cents: z.number().int().nullable(), revenue_not_collected_cents: z.number().int().nullable(),
     phase: z.enum(["working", "awaiting_first_payment", "renewal"]).optional(), phase_days: z.number().int().nullable().optional(),
     first_payment_on: z.string().nullable().optional(), renewal_date: z.string().nullable().optional(),
+    documents_expiring: z.number().int().min(0).optional(),
   })),
   needs_answers: z.array(z.object({ resident_id: uuid, resident_name: z.string() })), rechecks_due: z.number().int(),
   contacts: z.array(z.object({ id: uuid, name: z.string(), agency: z.enum(CONTACT_AGENCIES), phone: z.string().nullable() })),
@@ -315,6 +316,29 @@ export async function commandMedicaidBoard(request: Request, caseId: string) {
   const parsed = boardCommandSchema.safeParse(await readBody(request));
   if (!uuid.safeParse(caseId).success || !parsed.success) return benefitsFailure(400, "Review the step and date.");
   const result = await rpc(auth.actor, "benefits_board_command", { p_case_id: caseId, p_action: parsed.data.action, p_payload: parsed.data.payload, p_expected_revision: parsed.data.expected_revision, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = commandReply.safeParse(result.data);
+  return reply.success && reply.data.case_id === caseId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+const freshnessSchema = z.object({
+  as_of: z.string(), case_id: uuid, revision: z.number().int().positive(), can_write: z.boolean(), family_can_collect: z.boolean(),
+  items: z.array(z.object({ requirement_id: uuid, title: z.string(), signature_status: z.string(), accepted_on: z.string(), valid_days: z.number().int(), expires_on: z.string(), days_left: z.number().int(), freshness: z.enum(["fresh", "expiring", "expired"]) })),
+});
+/** COL-768: accepted documents with a good-for period on one case. */
+export async function getDocumentFreshness(caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  if (!uuid.safeParse(caseId).success) return benefitsFailure(400, "Unknown case.");
+  const result = await rpc(auth.actor, "benefits_document_freshness", { p_case_id: caseId });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = freshnessSchema.safeParse(result.data);
+  return parsed.success && parsed.data.case_id === caseId ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+/** COL-768: reopen an expiring or expired document for the facility administrator to gather a current copy. */
+export async function reopenDocumentFreshness(request: Request, caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = freshnessReopenSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(caseId).success || !parsed.success) return benefitsFailure(400, "Choose the document to reopen.");
+  const result = await rpc(auth.actor, "benefits_freshness_reopen", { p_case_id: caseId, p_requirement_id: parsed.data.requirement_id, p_expected_revision: parsed.data.expected_revision, p_request_id: parsed.data.request_id });
   if (result.error) return rpcFailure(result.error);
   const reply = commandReply.safeParse(result.data);
   return reply.success && reply.data.case_id === caseId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();

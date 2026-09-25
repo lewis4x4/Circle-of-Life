@@ -154,6 +154,7 @@ function RowBadges({ row }: { row: BoardRow }) {
     <div className="flex flex-wrap gap-1">
       {phase ? <StatusPill tone={row.phase === "renewal" ? "warning" : "info"}>{phase}</StatusPill>
         : <StatusPill tone={row.waiting_on === "us" ? "info" : "muted"}>{row.waiting_on === "us" ? "Waiting on us" : "Waiting on agency"}</StatusPill>}
+      {(row.documents_expiring ?? 0) > 0 && <StatusPill tone="warning">{row.documents_expiring === 1 ? "Document expiring" : `${row.documents_expiring} documents expiring`}</StatusPill>}
       {row.stalled && <StatusPill tone="warning">{`No step in ${row.days_since_last_step} days`}</StatusPill>}
       {row.agency_score != null && row.agency_score < 5 && row.reapply_on && <StatusPill tone="warning">{`Score ${row.agency_score}: reapply ${boardDate(row.reapply_on)}`}</StatusPill>}
     </div>
