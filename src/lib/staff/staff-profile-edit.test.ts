@@ -142,6 +142,18 @@ describe("buildStaffProfileSectionPatch", () => {
     }
   });
 
+  it("writes the position on the employment patch", () => {
+    const draft = baseDraft({ staff_role: "medication_tech" });
+    const res = buildStaffProfileSectionPatch("employment", draft, updatedBy, "active");
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.patch.staff_role).toBe("medication_tech");
+  });
+
+  it("requires a position on the employment section", () => {
+    const res = buildStaffProfileSectionPatch("employment", baseDraft({ staff_role: " " }), updatedBy, "active");
+    expect(res).toEqual({ ok: false, error: "Position is required." });
+  });
+
   it("writes compensation rates as integer cents", () => {
     const draft = baseDraft({ hourly_rate_dollars: "22.75", overtime_rate_dollars: "" });
     const res = buildStaffProfileSectionPatch("compensation", draft, updatedBy, "active");

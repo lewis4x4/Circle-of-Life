@@ -94,6 +94,7 @@ export type StaffProfileDraft = {
   city: string;
   state: string;
   zip: string;
+  staff_role: string;
   hire_date: string;
   employment_status: string;
   termination_date: string;
@@ -187,6 +188,7 @@ export function staffProfileDraftFromRow(row: StaffProfileRow): StaffProfileDraf
     city: row.city ?? "",
     state: row.state ?? "",
     zip: row.zip ?? "",
+    staff_role: row.staff_role ?? "",
     hire_date: row.hire_date ?? "",
     employment_status: row.employment_status ?? "active",
     termination_date: row.termination_date ?? "",
@@ -280,6 +282,10 @@ export function buildStaffProfileSectionPatch(
     if (!hire) {
       return { ok: false, error: "Hire date is required." };
     }
+    const position = draft.staff_role.trim();
+    if (!position) {
+      return { ok: false, error: "Position is required." };
+    }
     const status = draft.employment_status.trim() || currentStatus;
     const commandError = employmentStatusCommandError(currentStatus, status);
     if (commandError) {
@@ -294,6 +300,7 @@ export function buildStaffProfileSectionPatch(
       ok: true,
       patch: {
         ...base,
+        staff_role: position,
         hire_date: hire,
         employment_status: status,
         termination_date: optionalTextToNull(draft.termination_date),

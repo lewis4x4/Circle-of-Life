@@ -27,6 +27,7 @@ import {
   formatStaffDetailTerminationDate,
 } from "@/lib/staff/staff-detail-display-copy";
 import { enumLabel } from "@/lib/display/enum-label";
+import { staffPositionOptions } from "@/lib/staff/staff-positions";
 
 const FIELD_LABEL = "text-xs font-medium text-muted-foreground";
 
@@ -165,6 +166,7 @@ export function StaffProfileSections({
   const addrRest = [cityState, staff.zip].filter(Boolean).join(" ");
 
   const employmentOptions = staffProfileEmploymentStatusOptions(staff.employment_status);
+  const positionOptions = staffPositionOptions(staff.staff_role);
 
   const sectionProps = {
     staff,
@@ -386,6 +388,7 @@ export function StaffProfileSections({
         title="Employment"
         view={
           <div className="space-y-4 text-sm">
+            <DetailRow label="Position" value={enumLabel(staff.staff_role, { case: "title" })} />
             <DetailRow label="Hire date" value={formatStaffDetailHireDate(staff.hire_date)} />
             <DetailRow label="Status" value={enumLabel(staff.employment_status)} />
             {staff.termination_date ? (
@@ -404,6 +407,23 @@ export function StaffProfileSections({
         }
         edit={
           <div className="space-y-4 max-w-xl">
+            <div className="space-y-1.5">
+              <label htmlFor="staff-profile-position" className={FIELD_LABEL}>Position</label>
+              <select id="staff-profile-position"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={draft.staff_role}
+                onChange={(e) => setDraft((d) => ({ ...d, staff_role: e.target.value }))}
+              >
+                {positionOptions.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Job position on the roster. Login access is set in User Management.
+              </p>
+            </div>
             <div className="space-y-1.5">
               <label className={FIELD_LABEL} htmlFor="staff-profile-hire-date">
                 Hire date (ET)
