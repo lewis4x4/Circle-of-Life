@@ -35,7 +35,7 @@ const CustomShiftDialog = dynamic(() => import("@/components/schedules/CustomShi
 type ScheduleRow = Database["public"]["Tables"]["schedules"]["Row"];
 type RoleAssignment = { role_at_facility: string | null; start_date: string; end_date: string | null };
 type StaffRow = { id: string; facility_id: string; first_name: string; last_name: string; staff_role: string; employment_status: string; role_assignments?: RoleAssignment[] };
-type CellBlock = { label: string; start: string | null; end: string | null; color: string | null; hours: number | null; timeZone: string; roundingCoverage: boolean };
+type CellBlock = { label: string; start: string | null; end: string | null; color: string | null; hours: number | null; timeZone: string; roundingCoverage: boolean; incomplete?: boolean };
 
 export default function ScheduleWeekEditor() {
   const params = useParams();
@@ -167,7 +167,7 @@ export default function ScheduleWeekEditor() {
     const preset = value && value !== "custom" ? choicesFor(person, date).find((item) => item.id === value) : null;
     if (value && value !== "custom" && !preset) return;
     const unchanged = value === "custom"
-      ? existing.length === blocks.length && existing.every((row, index) => !row.schedule_preset_id && row.shift_type === "custom"
+      ? blocks.length > 0 && existing.length === blocks.length && existing.every((row, index) => !row.schedule_preset_id && row.shift_type === "custom"
         && row.custom_start_time?.slice(0, 5) === blocks[index].start && row.custom_end_time?.slice(0, 5) === blocks[index].end
         && (row.schedule_rounding_coverage ?? false) === roundingCoverage)
       : value === null ? existing.length === 0
@@ -195,15 +195,14 @@ export default function ScheduleWeekEditor() {
     });
   }
 
-  function cycleCell(person: StaffRow, date: string, trigger: HTMLButtonElement) {
+  function cycleCell(person: StaffRow, date: string) {
     if (!editable || busy || protectedCell(person.id, date) || person.employment_status !== "active" || !roleFor(person, date)) return;
     const next = nextScheduleCellValue(cellValue(person.id, date), choicesFor(person, date));
-    if (next === "custom") openCustomEditor(person, date, trigger);
-    else setCellChange(person, date, next);
+    setCellChange(person, date, next);
   }
 
   async function mutate(action: "save" | "copy" | "publish" | "remove", assignmentId?: string) {
-    if (!schedule || !editable || busy) return;
+    if (!schedule || !editable || busy || (action === "save" && invalidChanges)) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -234,6 +233,8 @@ export default function ScheduleWeekEditor() {
     });
     const preset = presets.find((item) => item.id === change.preset_id);
     const blocks = preset?.blocks ?? change.custom_blocks ?? (change.custom_start_time && change.custom_end_time ? [{ start: change.custom_start_time, end: change.custom_end_time }] : []);
+    // A selected Custom cell is a draft choice until the operator explicitly edits its times.
+    if (change.custom_blocks?.length === 0) return [{ label: "Custom", start: null, end: null, color: null, hours: null, timeZone, roundingCoverage: false, incomplete: true }];
     return blocks.map((block) => ({ label: preset?.label ?? "Custom", start: block.start, end: block.end,
       color: preset?.color ?? null, hours: scheduledHours(date, block.start, block.end, timeZone), timeZone,
       roundingCoverage: preset?.rounding_coverage ?? change.custom_rounding_coverage ?? false }));
@@ -293,16 +294,16 @@ export default function ScheduleWeekEditor() {
         <p className="text-sm text-muted-foreground">{editable ? "Click a cell to cycle through this person’s facility role options → Custom → Off. Save changes before publishing." : schedule.status === "published" ? "Published shifts are visible to assigned staff." : "Review the schedule below."}</p>
         <Input aria-label="Find a person on the schedule" placeholder="Find a person…" value={search} onChange={(event) => setSearch(event.target.value)} className="w-full sm:w-56" />
       </div>
-      {presets.length === 0 && <p className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">No preset shifts are configured for this facility. Click a cell to enter Custom times, or use Manage shift options to create role-specific choices.</p>}
-      {invalidChanges && <p role="alert" className="text-sm text-destructive">A selected block contains a time that does not occur on that date in this facility’s time zone. Choose different Custom times before saving.</p>}
+      {presets.length === 0 && <p className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">No preset shifts are configured for this facility. Click a cell to select Custom, then Edit times, or use Manage shift options to create role-specific choices.</p>}
+      {invalidChanges && <p role="alert" className="text-sm text-destructive">Complete each Custom cell with valid times using Edit times before saving, or click the cell again to choose Off.</p>}
       {pendingCount > 0 && <div className="flex items-center gap-3 text-sm" role="status"><span>{pendingCount} unsaved cell {pendingCount === 1 ? "change" : "changes"}.</span><Button size="sm" variant="ghost" disabled={busy} onClick={() => setChanges({})}>Discard changes</Button></div>}
       {visiblePeople.length === 0 ? <AdminEmptyState title={search ? "No matching people" : "No active staff in this facility"} description={search ? "Try another name or clear the search." : "Add staff to People before planning their shifts."} /> : <HorizontalScroll label="Seven-day employee schedule" className="overflow-hidden rounded-xl border border-border bg-card" viewportClassName="rounded-xl">
         <table className="w-full min-w-[1040px] border-collapse text-sm"><caption className="sr-only">Seven-day employee schedule. Hours use the facility time zone and do not deduct unrecorded meals.</caption>
           <thead><tr className="border-b border-border text-left"><th scope="col" className="sticky left-0 z-10 min-w-48 bg-card p-4 font-medium">Person</th>{days.map((date) => <th scope="col" key={date} className="min-w-28 p-3 text-center font-medium">{formatDate(date)}</th>)}<th scope="col" className="p-4 text-right font-medium">Hours</th></tr></thead>
           <tbody>{visiblePeople.map((person) => <tr key={person.id} className="border-b border-border/60 last:border-b-0">
             <th scope="row" className="sticky left-0 z-10 bg-card p-4 text-left font-medium"><Link href={`/admin/staff/${person.id}`} className="hover:underline">{formatScheduleAssignmentStaffLabel(person)}</Link><span className="mt-1 block text-xs font-normal text-muted-foreground">{[...new Set(days.map((date) => roleFor(person, date)).filter(Boolean))].map((role) => enumLabel(role)).join(" / ") || enumLabel(person.staff_role)}{person.employment_status !== "active" ? " · Inactive" : ""}</span></th>
-            {days.map((date) => { const key = scheduleCellKey(person.id, date); const shifts = effectiveCell(person.id, date); const multiple = protectedCell(person.id, date); const role = roleFor(person, date); const color = shifts[0]?.color; return <td key={date} className="p-1.5"><button type="button" onClick={(event) => cycleCell(person, date, event.currentTarget)} disabled={!editable || busy || multiple || !role || person.employment_status !== "active"} aria-label={`${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}: ${shifts.map((shift) => `${shift.label} ${formatScheduleTimes(shift.start, shift.end)}`).join(", ") || "Off"}. ${multiple ? "Review multiple assignments below." : "Cycle shift."}`} style={color ? presetColorStyle(color) : undefined} className={`min-h-16 w-full rounded-lg border px-2 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default ${changes[key] ? "border-primary bg-primary/10" : shifts.length ? "border-border bg-muted/50" : "border-transparent text-muted-foreground hover:border-border"}`}>
-              {shifts.length ? shifts.map((shift, index) => <span key={index} className="block"><span className="font-semibold">{shift.label}</span><span className={`mt-1 block text-[11px] ${color ? "" : "text-muted-foreground"}`}>{formatScheduleTimes(shift.start, shift.end)}{shift.timeZone !== timeZone ? ` · ${shift.timeZone}` : ""}</span></span>) : <span>{role ? "Off" : "Not assigned here"}</span>}
+            {days.map((date) => { const key = scheduleCellKey(person.id, date); const shifts = effectiveCell(person.id, date); const multiple = protectedCell(person.id, date); const role = roleFor(person, date); const color = shifts[0]?.color; return <td key={date} className="p-1.5"><button type="button" onClick={() => cycleCell(person, date)} disabled={!editable || busy || multiple || !role || person.employment_status !== "active"} aria-label={`${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}: ${shifts.map((shift) => `${shift.label} ${(shift.incomplete ? "Choose times" : formatScheduleTimes(shift.start, shift.end))}`).join(", ") || "Off"}. ${multiple ? "Review multiple assignments below." : "Cycle shift."}`} style={color ? presetColorStyle(color) : undefined} className={`min-h-16 w-full rounded-lg border px-2 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default ${changes[key] ? "border-primary bg-primary/10" : shifts.length ? "border-border bg-muted/50" : "border-transparent text-muted-foreground hover:border-border"}`}>
+              {shifts.length ? shifts.map((shift, index) => <span key={index} className="block"><span className="font-semibold">{shift.label}</span><span className={`mt-1 block text-[11px] ${color ? "" : "text-muted-foreground"}`}>{(shift.incomplete ? "Choose times" : formatScheduleTimes(shift.start, shift.end))}{shift.timeZone !== timeZone ? ` · ${shift.timeZone}` : ""}</span></span>) : <span>{role ? "Off" : "Not assigned here"}</span>}
             </button>{editable && !multiple && role && person.employment_status === "active" && cellValue(person.id, date) === "custom" && <Button type="button" variant="ghost" size="sm" className="mt-1 h-7 w-full text-xs schedule-screen-only" disabled={busy} aria-label={`Edit custom times for ${formatScheduleAssignmentStaffLabel(person)}, ${formatDate(date)}`} onClick={(event) => openCustomEditor(person, date, event.currentTarget)}>Edit times</Button>}</td>; })}
             <td className="p-4 text-right font-medium tabular-nums">{personHours(person.id)}</td>
           </tr>)}</tbody>

@@ -1,0 +1,15 @@
+{
+  "score": 97,
+  "verdict": "pass",
+  "category_match": true,
+  "differences": [
+    "The intentional unsaved Custom choice shows Choose times and a separate Edit times control."
+  ],
+  "suggestions": [],
+  "reasoning": "The nonblocking Custom cell and explicit Edit times control match the existing schedule layout. Desktop and mobile screenshots are legible, the grid stays contained, and all browser interaction groups have zero axe violations, page errors or external requests.",
+  "threshold": 90,
+  "threshold_pass": true,
+  "next_actions": [],
+  "reference": "docs/workforce/shift-options-evidence/schedule-DEMO.png",
+  "generated_screenshot": "/Users/brianlewis/.hermes/tmp/agent-runs/col-820-821-browser-20260924/proof/custom-cell-desktop.png"
+}

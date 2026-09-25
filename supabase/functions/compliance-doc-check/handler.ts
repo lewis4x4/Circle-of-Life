@@ -54,7 +54,8 @@ export type ComplianceFlag =
   /** The vault row's facility is not one the question can name — criteria are stale. */
   | "FACILITY_NOT_IN_QUESTION_SET"
   /** The document kind is not settled enough to gate the wording checks on. */
-  | "DOC_TYPE_UNCERTAIN";
+  | "DOC_TYPE_UNCERTAIN"
+  | "EPI_PERIOD_UNCERTAIN";
 
 export type ComplianceTriage = {
   route: ComplianceRoute;
@@ -98,13 +99,28 @@ function partyVerdict(probability: number): PartyVerdict {
   return "uncertain";
 }
 
+/** Literal reader facts; never a model verdict about adequacy. */
+export type EpiFacts =
+  | { status: "stated"; value: number; unit: "days" | "months" }
+  | { status: "not_stated" | "not_applicable" | "unknown" };
+
+export function compareEpiPeriod(facts?: EpiFacts): string {
+  if (!facts) return "unknown";
+  if (facts.status === "not_stated" || facts.status === "not_applicable") return facts.status;
+  if (facts.status !== "stated" || facts.unit !== "days" ||
+    !Number.isSafeInteger(facts.value) || facts.value <= 0) return "unknown";
+  // A month has no fixed day count. Ambiguous units require human review.
+  return facts.value >= 180 ? "at_least_180" : "under_180";
+}
+
 export function triageDocument(
   response: SystemOneResponse,
   vaultFacilityName: string | null,
+  epiFacts?: EpiFacts,
 ): ComplianceTriage {
   const docType = requireChoice(response, "doc_type");
   const facility = requireChoice(response, "facility_named");
-  const epi = requireChoice(response, "epi_period");
+  const epi = compareEpiPeriod(epiFacts);
   const berkadia = requireNoul(response, "names_berkadia");
   const hud = requireNoul(response, "names_hud_secretary");
   const isaoa = requireNoul(response, "isaoa_atima_present");
@@ -139,8 +155,9 @@ export function triageDocument(
 
   // A stated shortfall is a defect on any document that states it. A missing
   // period is only a defect on the endorsement whose job is to state one.
-  if (epi.choice === "under_180") flags.push("EPI_UNDER_180_DAYS");
-  if (epi.choice === "not_stated" && docType.choice === "epi_endorsement") {
+  if (epi === "unknown") uncertainties.push("EPI_PERIOD_UNCERTAIN");
+  if (epi === "under_180") flags.push("EPI_UNDER_180_DAYS");
+  if (epi === "not_stated" && docType.choice === "epi_endorsement") {
     flags.push("EPI_PERIOD_NOT_STATED");
   }
 
@@ -190,7 +207,7 @@ export function triageDocument(
     names_berkadia: berkadia,
     names_hud_secretary: hud,
     isaoa_atima_present: isaoa,
-    epi_period: epi.choice,
+    epi_period: epi,
     is_draft: isDraft,
     carrier_and_policy_identified: carrier,
     readiness: readiness.score,

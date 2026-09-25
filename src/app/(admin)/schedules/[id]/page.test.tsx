@@ -53,6 +53,22 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("weekly schedule editing", () => {
+  it("reaches Off through four ordinary cell clicks without opening a dialog", async () => {
+    render(<SchedulePage />);
+    const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });
+    cell.focus();
+    for (const label of ["Day", "Night", "Custom", "Off"]) {
+      fireEvent.click(cell);
+      expect(cell).toHaveAccessibleName(new RegExp(label));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(cell).toHaveFocus();
+      if (label === "Custom") expect(screen.getByRole("button", { name: "Save 1 changes" })).toBeDisabled();
+    }
+    expect(screen.queryByText(/unsaved cell change/)).not.toBeInTheDocument();
+    expect(allowRouteLeave("/admin/staff", true)).toBe(true);
+    expect(state.rpc).not.toHaveBeenCalled();
+  });
+
   it("exposes the wide grid as a named keyboard-scrollable region on narrow screens", async () => {
     vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(1040);
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
@@ -113,13 +129,14 @@ describe("weekly schedule editing", () => {
     expect(confirm).toHaveBeenCalledTimes(2);
   });
 
-  it("protects an unapplied Custom edit even with no pending grid cell and releases it on Cancel", async () => {
+  it("protects a Custom choice and its unapplied edit until the cell is discarded", async () => {
     state.presets = [];
     const confirm = vi.fn().mockReturnValue(false); vi.stubGlobal("confirm", confirm);
     render(<SchedulePage />);
     fireEvent.click(await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "09:00" } });
-    expect(screen.queryByText("1 unsaved cell change.")).not.toBeInTheDocument();
+    expect(screen.getByText("1 unsaved cell change.")).toBeInTheDocument();
     expect(allowRouteLeave("/admin/staff", true)).toBe(false);
     expect(confirm).not.toHaveBeenCalled();
     expect(allowRouteLeave("/admin/staff")).toBe(false);
@@ -129,6 +146,8 @@ describe("weekly schedule editing", () => {
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(allowRouteLeave("/admin/staff", true)).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
     expect(allowRouteLeave("/admin/staff")).toBe(true);
     expect(confirm).toHaveBeenCalledTimes(2);
   });
@@ -138,6 +157,7 @@ describe("weekly schedule editing", () => {
     vi.stubGlobal("confirm", vi.fn().mockReturnValue(true));
     render(<SchedulePage />);
     fireEvent.click(await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "09:00" } });
     act(() => { useFacilityStore.getState().setSelectedFacility("22222222-2222-4222-8222-222222222222"); });
     act(() => { useFacilityStore.getState().setSelectedFacility(state.schedule.facility_id); });
@@ -183,18 +203,22 @@ describe("weekly schedule editing", () => {
     expect(screen.getByText("1 unsaved cell change.")).toBeInTheDocument();
     expect(screen.getByText("12.0 h")).toBeInTheDocument();
   });
-  it("opens Custom on the third click, cancels without changing Night, and saves overnight times", async () => {
+  it("selects Custom on the third click, cancels explicit editing, and saves overnight times", async () => {
     render(<SchedulePage />);
     const cell = await screen.findByRole("button", { name: /Test Person, Mon, Sep 28: Off/ });
     fireEvent.click(cell);
     fireEvent.click(cell);
     expect(cell).toHaveAccessibleName(/Night 6:00p–6:00a/);
     fireEvent.click(cell);
+    expect(cell).toHaveAccessibleName(/Custom Choose times/);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     expect(await screen.findByRole("dialog", { name: "Custom shift" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(cell).toHaveAccessibleName(/Night 6:00p–6:00a/);
-    fireEvent.click(cell);
+    expect(cell).toHaveAccessibleName(/Custom Choose times/);
+    await waitFor(() => expect(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ })).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "22:00" } });
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "22:00" } });
     expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
@@ -216,6 +240,7 @@ describe("weekly schedule editing", () => {
     fireEvent.click(cell);
     fireEvent.click(cell);
     fireEvent.click(cell);
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     expect(await screen.findByLabelText("Start time")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Apply times" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Set off" }));
@@ -256,6 +281,7 @@ describe("weekly schedule editing", () => {
     fireEvent.click(cell);
     fireEvent.click(cell);
     fireEvent.click(cell);
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "09:15" } });
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "16:45" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply times" }));
@@ -332,6 +358,7 @@ describe("weekly schedule editing", () => {
     for (let index = 1; index <= 3; index++) { fireEvent.click(cell); expect(cell).toHaveAccessibleName(new RegExp(`Choice ${index}`)); }
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(cell);
+    fireEvent.click(screen.getByRole("button", { name: /Edit custom times for Test Person, Mon, Sep 28/ }));
     fireEvent.change(await screen.findByLabelText("Start time"), { target: { value: "06:00" } });
     fireEvent.change(screen.getByLabelText("Finish time"), { target: { value: "13:00" } });
     fireEvent.click(screen.getByRole("button", { name: "Add another block" }));

@@ -15,18 +15,35 @@ try {
   page = await context.newPage(); page.on("pageerror", (error) => errors.push(error.message));
   await page.clock.install({ time: new Date("2026-09-28T14:12:00Z") });
   const state = () => page.request.get(`${origin}/__fixture/proof`).then((r) => r.json());
-  const shot = async (name) => { await page.screenshot({ path: path.join(output, name), fullPage: true }); axe.push(...(await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length }))); };
+  const shot = async (name) => { await page.screenshot({ path: path.join(output, name), fullPage: true, animations: "disabled" }); axe.push(...(await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations.map((v) => ({ screenshot: name, id: v.id, impact: v.impact, nodes: v.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) }))); };
   const weekUrl = `${origin}/admin/schedules/33333333-3333-4333-8333-333333333333`;
   await page.goto(weekUrl);
   const care = page.getByRole("button", { name: /^Casey Care, Mon, Sep 28:/ });
   await care.waitFor();
+  for (const label of ["Day", "Night", "Custom", "Off"]) {
+    await care.click();
+    assert((await care.getAttribute("aria-label")).includes(`: ${label}`));
+    assert.equal(await page.getByRole("dialog").count(), 0);
+    assert(await care.evaluate((cell) => cell === document.activeElement));
+    if (label === "Custom") {
+      assert(await page.getByRole("button", { name: "Save 1 changes", exact: true }).isDisabled());
+      await shot("custom-cell-desktop.png");
+    }
+  }
+  assert((await care.getAttribute("aria-label")).includes(": Off."));
+  assert.equal(await page.getByText("1 unsaved cell change.", { exact: true }).count(), 0);
+  assert.equal((await state()).writes, 0);
   await care.click(); await care.click(); await care.click();
+  const editTimes = page.getByRole("button", { name: /Edit custom times for Casey Care, Mon, Sep 28/ });
+  await editTimes.click();
   await page.getByRole("dialog", { name: "Custom shift", exact: true }).waitFor();
   assert.equal(await page.getByLabel("Start time", { exact: true }).inputValue(), "");
   assert(await page.getByRole("button", { name: "Apply times", exact: true }).isDisabled());
-  await page.getByRole("button", { name: "Set off", exact: true }).click();
-  assert((await care.getAttribute("aria-label")).includes(": Off."));
-  assert.equal((await state()).writes, 0);
+  await page.getByLabel("Start time", { exact: true }).fill("09:00");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  assert((await care.getAttribute("aria-label")).includes(": Custom Choose times"));
+  assert(await editTimes.evaluate((button) => button === document.activeElement));
+  await care.click();
   await care.click();
   await page.getByRole("button", { name: /^Riley Cook, Mon, Sep 28:/ }).click();
   await page.getByRole("button", { name: /^Alex Admin, Mon, Sep 28:/ }).click();
@@ -38,7 +55,7 @@ try {
   const cook = saved.assignments.filter((a) => a.staff_id.endsWith("2222"));
   assert.equal(cook.length, 2); assert.equal(cook.reduce((sum, a) => sum + Date.parse(a.schedule_ends_at) - Date.parse(a.schedule_starts_at), 0), 9 * 3600000);
   assert(cook.every((a) => a.schedule_rounding_coverage === false));
-  checks.push("Day/Night/Custom/Off requires no custom times for Off; job roles see appropriate choices; cook splits save as two blocks/nine hours and no automatic clinical coverage.");
+  checks.push("Four ordinary cell clicks reach Day/Night/Custom/Off without a dialog or times, retaining focus and clearing no-op changes. Explicit Custom editing cancels without changing the cell and restores focus. Job roles see appropriate choices; cook splits save as two blocks/nine hours and no automatic clinical coverage.");
   await shot("schedule-desktop.png");
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth));
