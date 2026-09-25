@@ -62,7 +62,7 @@ export const benefitsCommandSchema = z.discriminatedUnion("action", [
   z.object({ ...commandBase, action: z.literal("record_receipt"), payload: benefitsReceiptSchema }).strict(),
   z.object({ ...commandBase, action: z.literal("void_document"), payload: z.object({ document_id: uuid, reason: z.string().trim().min(1).max(2000) }).strict() }).strict(),
 ]);
-export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days", "score.reapply_days", "stalled.days", "plan.rates"] as const;
+export const BENEFITS_RULE_KEYS = ["checklist.smmc_ltc", "checklist.oss", "checklist.other", "screening.standard_individual", "family_collection.max_days", "renewal.warning_days", "screening.admission_gate", "screening.recheck_days", "runway.lead_days", "score.reapply_days", "stalled.days", "plan.rates", "document.valid_days"] as const;
 export type BenefitsRuleKey = typeof BENEFITS_RULE_KEYS[number];
 export const checklistRuleSchema = z.array(z.object({ title: z.string().trim().min(1).max(200), stage: z.enum(BENEFITS_STAGES), signature_status: z.enum(["not_required", "pending"]).default("not_required") }).strict()).max(60);
 export const screeningStandardSchema = z.object({ income_cents: z.number().int().min(1).max(99_999_999), assets_cents: z.number().int().min(1).max(9_999_999_999), label: z.string().trim().min(1).max(200), source: z.string().max(500).optional() }).strict();
@@ -77,6 +77,8 @@ export const admissionGateSchema = z.object({
   source: z.string().max(500).optional(),
 }).strict();
 export type AdmissionGate = z.infer<typeof admissionGateSchema>;
+/** COL-768: good-for periods. An accepted requirement whose title contains `match` expires `days` after acceptance. */
+export const documentValidDaysSchema = z.array(z.object({ match: z.string().trim().min(2).max(200), days: z.number().int().min(1).max(3650) }).strict()).max(60);
 export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("checklist.smmc_ltc"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("checklist.oss"), value: checklistRuleSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
@@ -89,6 +91,7 @@ export const benefitsRuleSetSchema = z.discriminatedUnion("rule_key", [
   z.object({ rule_key: z.literal("runway.lead_days"), value: dayWindowSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("score.reapply_days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("stalled.days"), value: dayWindowSchema.min(1), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
+  z.object({ rule_key: z.literal("document.valid_days"), value: documentValidDaysSchema, effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ rule_key: z.literal("plan.rates"), value: z.array(z.object({ plan: z.string().trim().min(1).max(100), monthly_cents: z.number().int().min(1).max(99_999_999), facility_id: uuid.nullable().optional() }).strict()).max(100), effective_from: date, reason: z.string().trim().min(1).max(2000) }).strict(),
 ]);
 export const SCREENING_COVERAGE = ["unknown", "none", "private_pay", "medicaid_mma", "application_pending", "smmc_ltc_enrolled"] as const;
@@ -154,7 +157,13 @@ export interface BoardRow {
   plan_rate_cents: number | null; revenue_not_collected_cents: number | null;
   /** COL-774: working → awaiting_first_payment (authorized, no plan payment yet) → off the board → renewal (paid, renewal within the warning window). */
   phase?: "working" | "awaiting_first_payment" | "renewal"; phase_days?: number | null; first_payment_on?: string | null; renewal_date?: string | null;
+  /** COL-768: accepted documents past or within 14 days of their good-for period. */
+  documents_expiring?: number;
 }
+export type DocumentFreshnessState = "fresh" | "expiring" | "expired";
+export interface DocumentFreshnessItem { requirement_id: string; title: string; signature_status: string; accepted_on: string; valid_days: number; expires_on: string; days_left: number; freshness: DocumentFreshnessState }
+export interface DocumentFreshness { as_of: string; case_id: string; revision: number; can_write: boolean; family_can_collect: boolean; items: DocumentFreshnessItem[] }
+export const freshnessReopenSchema = z.object({ request_id: uuid, requirement_id: uuid, expected_revision: z.number().int().min(1) }).strict();
 export interface BoardContact { id: string; name: string; agency: typeof CONTACT_AGENCIES[number]; phone: string | null }
 export interface MedicaidBoard { as_of: string; facility_id: string; facility_name: string; stalled_days: number; can_write: boolean; steps: Array<{ step: BoardStep; label: string }>; rows: BoardRow[]; needs_answers: Array<{ resident_id: string; resident_name: string }>; rechecks_due: number; contacts: BoardContact[] }
 export interface AdmissionScreeningReply { screening_id: string; result: ScreeningResult; reasons: string[]; case_id: string | null; recheck_id: string | null; recheck_due_on: string | null }

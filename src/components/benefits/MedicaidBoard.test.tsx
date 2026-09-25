@@ -82,6 +82,11 @@ describe("Medicaid board", () => {
     expect(within(table).getByText("Approved — awaiting first payment (4 days)")).toBeTruthy();
     expect(within(table).queryByText("Waiting on agency")).toBeNull();
   });
+  it("badges a row with expiring documents (COL-768)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => json(board({ rows: [{ ...row, documents_expiring: 2 }] }))));
+    render(<MedicaidBoard />);
+    expect(within(await screen.findByRole("table")).getByText("2 documents expiring")).toBeTruthy();
+  });
   it("asks for a facility when viewing all facilities", async () => {
     store.selectedFacilityId = null;
     vi.stubGlobal("fetch", vi.fn());

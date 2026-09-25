@@ -24,6 +24,7 @@ const RULE_LABELS: Record<BenefitsRuleKey, { title: string; help: string }> = {
   "runway.lead_days": { title: "Start Medicaid before private pay runs out (days)", help: "Jessica is prompted this many days before a resident's recorded private-pay months run out." },
   "score.reapply_days": { title: "Reapply after a score below 5 (days)", help: "Only a score of 5 moves forward. A lower score sets the reapply date this many days after the score." },
   "stalled.days": { title: "Flag a board step as stalled after (days)", help: "The Medicaid board flags a case when its last step is older than this." },
+  "document.valid_days": { title: "How long documents stay good (days)", help: "An accepted document whose name contains the text expires this many days after it was accepted; the board and the case flag it 14 days ahead. Documents not listed never expire. One per line: name contains | days." },
   "plan.rates": { title: "Monthly plan rates", help: "Used for dollars not yet collected on the Medicaid board. One per line: Plan | monthly dollars | facility id (optional, overrides the plan's default)." },
 };
 const QUESTION_SHORT: Record<ScreeningQuestion, string> = {
@@ -67,6 +68,18 @@ export function parsePlanRates(text: string) {
     return { plan, monthly_cents: cents, ...(facility ? { facility_id: facility } : {}) };
   });
 }
+export function parseValidDays(text: string) {
+  return text.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+    const [match = "", daysText = ""] = line.split("|").map((part) => part.trim());
+    const days = Number(daysText);
+    if (match.length < 2) throw new Error("Every line needs the text a document name contains.");
+    if (!Number.isInteger(days) || days < 1 || days > 3650) throw new Error(`"${match}" needs a whole number of days from 1 to 3650.`);
+    return { match, days };
+  });
+}
+export function validDaysText(value: unknown) {
+  return Array.isArray(value) ? (value as Array<{ match: string; days: number }>).map((r) => `${r.match} | ${r.days}`).join("\n") : "";
+}
 export function planRatesText(value: unknown) {
   return Array.isArray(value) ? (value as Array<{ plan: string; monthly_cents: number; facility_id?: string | null }>).map((r) => `${r.plan} | ${(r.monthly_cents / 100).toFixed(2)}${r.facility_id ? ` | ${r.facility_id}` : ""}`).join("\n") : "";
 }
@@ -82,6 +95,9 @@ export function describeRule(entry: BenefitsRuleEntry) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return "Not recorded";
     const list = Array.isArray(value.disqualify) ? (value.disqualify as ScreeningQuestion[]).map((q) => QUESTION_SHORT[q] ?? q).join(", ") : "";
     return `Stops on: ${list} · Income limit $${dollars(value.income_limit_cents)} · Asset limit $${dollars(value.assets_limit_cents)}`;
+  }
+  if (entry.rule_key === "document.valid_days") {
+    return Array.isArray(value) && value.length ? (value as Array<{ match: string; days: number }>).map((r) => `${r.match}: ${r.days} days`).join(" · ") : "No document expires";
   }
   if (entry.rule_key === "plan.rates") {
     return Array.isArray(value) && value.length ? (value as Array<{ plan: string; monthly_cents: number; facility_id?: string | null }>).map((r) => `${r.plan} $${dollars(r.monthly_cents)}${r.facility_id ? " (one facility)" : ""}`).join(" · ") : "No rates recorded";
@@ -103,6 +119,7 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
   const [source, setSource] = useState(() => (typeof current.source === "string" ? current.source : ""));
   const [days, setDays] = useState(() => (typeof entry.value === "number" ? String(entry.value) : ""));
   const [ratesText, setRatesText] = useState(() => planRatesText(entry.value));
+  const [validText, setValidText] = useState(() => validDaysText(entry.value));
   const [disqualify, setDisqualify] = useState<ScreeningQuestion[]>(() => (Array.isArray(current.disqualify) ? (current.disqualify as ScreeningQuestion[]) : []));
   const [gateIncome, setGateIncome] = useState(() => dollars(current.income_limit_cents));
   const [gateAssets, setGateAssets] = useState(() => dollars(current.assets_limit_cents));
@@ -114,6 +131,7 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
       let value: unknown;
       if (entry.rule_key.startsWith("checklist.")) value = parseChecklist(text);
       else if (entry.rule_key === "plan.rates") value = parsePlanRates(ratesText);
+      else if (entry.rule_key === "document.valid_days") value = parseValidDays(validText);
       else if (entry.rule_key === "screening.standard_individual") {
         const toCents = (s: string) => Math.round(Number(s) * 100);
         if (!Number.isFinite(toCents(income)) || !Number.isFinite(toCents(assets)) || toCents(income) <= 0 || toCents(assets) <= 0) throw new Error("Enter positive dollar amounts for income and assets.");
@@ -166,6 +184,12 @@ function RuleEditor({ entry, onSaved }: { entry: BenefitsRuleEntry; onSaved: () 
             <div className="space-y-2 sm:col-span-2">
               <FormLabel htmlFor={`${id}-rates`} required>Rates</FormLabel>
               <textarea id={`${id}-rates`} className={`${fieldClass} min-h-28`} value={ratesText} onChange={(event) => setRatesText(event.target.value)} />
+            </div>
+          )}
+          {entry.rule_key === "document.valid_days" && (
+            <div className="space-y-2 sm:col-span-2">
+              <FormLabel htmlFor={`${id}-valid`} required>Good-for periods</FormLabel>
+              <textarea id={`${id}-valid`} className={`${fieldClass} min-h-28`} value={validText} onChange={(event) => setValidText(event.target.value)} placeholder="bank statement | 90" />
             </div>
           )}
           {entry.rule_key.startsWith("checklist.") && (
