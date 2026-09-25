@@ -47,7 +47,6 @@ export type AdmissionCaseWorkflowContext = {
   physician_orders_received_at: string | null;
   bed_id: string | null;
   target_move_in_date: string | null;
-  anticipated_payer_source?: Database["public"]["Enums"]["anticipated_payer_source"] | null;
 };
 
 export type Form1823State = {
@@ -101,7 +100,7 @@ export async function emitWorkflowEvent(admin: AdminClient, event: WorkflowEvent
 export async function loadAdmissionCaseWorkflowContext(admin: AdminClient, admissionCaseId: string) {
   const { data, error } = await admin
     .from("admission_cases")
-    .select("id, organization_id, facility_id, resident_id, referral_lead_id, status, financial_clearance_at, physician_orders_received_at, bed_id, target_move_in_date, anticipated_payer_source")
+    .select("id, organization_id, facility_id, resident_id, referral_lead_id, status, financial_clearance_at, physician_orders_received_at, bed_id, target_move_in_date")
     .eq("id", admissionCaseId)
     .is("deleted_at", null)
     .maybeSingle();

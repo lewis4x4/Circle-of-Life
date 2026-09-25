@@ -174,8 +174,9 @@ export default function AdminAdmissionCaseDetailPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  // COL-575: set when move-in was refused for the Medicaid preliminary review; offers the Facility Executive override.
+  // COL-575: the arrival readiness names the Medicaid preliminary review while it blocks approval; offers the Facility Executive override.
   const [medicaidGateBlock, setMedicaidGateBlock] = useState<string | null>(null);
+  const [arrivalRefresh, setArrivalRefresh] = useState(0);
   const [medicaidOverrideDraft, setMedicaidOverrideDraft] = useState("");
   const [targetMoveInDraft, setTargetMoveInDraft] = useState("");
   const [bedDraft, setBedDraft] = useState("");
@@ -330,7 +331,6 @@ export default function AdminAdmissionCaseDetailPage() {
     setActionLoading(successMessage);
     setActionError(null);
     setActionMessage(null);
-    setMedicaidGateBlock(null);
     try {
       const response = await fetch(`/api/admin/workflows/admission-cases/${row.id}`, {
         method: "PATCH",
@@ -338,16 +338,10 @@ export default function AdminAdmissionCaseDetailPage() {
         body: JSON.stringify(patch),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const medicaidBlock = Array.isArray(result?.blocked_by)
-          ? result.blocked_by.find((item: unknown) => typeof item === "string" && item.startsWith("Medicaid preliminary review"))
-          : undefined;
-        if (medicaidBlock) setMedicaidGateBlock(medicaidBlock);
-        throw new Error(result?.error || "Could not update admission case.");
-      }
+      if (!response.ok) throw new Error(result?.error || "Could not update admission case.");
       setActionMessage(successMessage);
-      setMedicaidOverrideDraft("");
       await load();
+      setArrivalRefresh((n) => n + 1);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not update admission case.");
     } finally {
@@ -854,40 +848,47 @@ export default function AdminAdmissionCaseDetailPage() {
                       {actionLoading === "Case advanced to bed reserved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to bed reserved"}
                     </Button>
                   </div>
-                  {row.medicaid_gate_override_reason ? (
-                    <p className="text-sm text-muted-foreground">
-                      Medicaid move-in review overridden by a Facility Executive: {row.medicaid_gate_override_reason}
-                    </p>
-                  ) : null}
-                  {medicaidGateBlock && row.status !== "move_in" ? (
-                    <div className="rounded-[8px] border border-warning/30 bg-warning/10 p-4 space-y-2">
-                      <p className="text-sm text-foreground">
-                        This resident is expected to rely on Medicaid, and the Medicaid questions do not show them as likely to qualify. Answer the questions above, or a Facility Executive can record why move-in should go ahead anyway.
-                      </p>
-                      <label className="block text-sm font-medium text-foreground" htmlFor="medicaid-gate-override">Reason for the override</label>
-                      <textarea
-                        id="medicaid-gate-override"
-                        className="w-full rounded-md border border-border bg-background p-2 text-sm"
-                        rows={3}
-                        maxLength={2000}
-                        value={medicaidOverrideDraft}
-                        onChange={(event) => setMedicaidOverrideDraft(event.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={!medicaidOverrideDraft.trim() || !!actionLoading}
-                        onClick={() => void updateCase({ status: "move_in", medicaid_gate_override_reason: medicaidOverrideDraft.trim() }, "Case advanced to move-in with a Medicaid override.")}
-                      >
-                        {actionLoading === "Case advanced to move-in with a Medicaid override." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Override and advance to move-in"}
-                      </Button>
-                    </div>
-                  ) : null}
                 </div>
                 {/* COL-333: move-in is the confirmed arrival, after an administrator approves the readiness. */}
                 <div className="mt-5">
-                  <AdmissionArrivalPanel caseId={row.id} facilityId={row.facility_id} residentId={row.resident_id} onChanged={() => void load()} />
+                  <AdmissionArrivalPanel
+                    caseId={row.id}
+                    facilityId={row.facility_id}
+                    residentId={row.resident_id}
+                    onChanged={() => void load()}
+                    refreshKey={arrivalRefresh}
+                    onStatus={(arrival) => setMedicaidGateBlock(arrival.blocked_by.find((item) => item.startsWith("Medicaid preliminary review")) ?? null)}
+                  />
                 </div>
+                {row.medicaid_gate_override_reason ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Medicaid review overridden by a Facility Executive: {row.medicaid_gate_override_reason}
+                  </p>
+                ) : null}
+                {medicaidGateBlock && !row.medicaid_gate_override_reason ? (
+                  <div className="mt-3 rounded-[8px] border border-warning/30 bg-warning/10 p-4 space-y-2">
+                    <p className="text-sm text-foreground">
+                      This resident is expected to rely on Medicaid, and the Medicaid questions do not show them as likely to qualify, so the arrival cannot be approved yet. Answer the questions above, or a Facility Executive can record why the arrival should go ahead anyway.
+                    </p>
+                    <label className="block text-sm font-medium text-foreground" htmlFor="medicaid-gate-override">Reason for the override</label>
+                    <textarea
+                      id="medicaid-gate-override"
+                      className="w-full rounded-md border border-border bg-background p-2 text-sm"
+                      rows={3}
+                      maxLength={2000}
+                      value={medicaidOverrideDraft}
+                      onChange={(event) => setMedicaidOverrideDraft(event.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!medicaidOverrideDraft.trim() || !!actionLoading}
+                      onClick={() => void updateCase({ medicaid_gate_override_reason: medicaidOverrideDraft.trim() }, "Medicaid review overridden.").then(() => setMedicaidOverrideDraft(""))}
+                    >
+                      {actionLoading === "Medicaid review overridden." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Record the override"}
+                    </Button>
+                  </div>
+                ) : null}
                 <div className="mt-5 rounded-[8px] border border-info/20 bg-info/10 p-4 space-y-3">
                   <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Downstream onboarding work</p>
                   {row.status !== "move_in" ? (

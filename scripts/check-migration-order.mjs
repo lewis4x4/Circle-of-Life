@@ -17,7 +17,12 @@ import { fileURLToPath } from "node:url";
  */
 export const ALLOWED_GAPS = {
   // Temporary gaps: the stacked Medicaid chain (#896-#905) is applied on both hosts but not merged. Delete each entry when its file lands on main.
-  528: "claimed by open PR #898 (COL-575, 528_admission_medicaid_move_in_gate.sql); already applied to production and staging",
+  // Temporary gaps: claimed by open PRs ahead of #898's 550, already applied on both hosts. Delete each when its file lands.
+  545: "claimed by open PR #913 (545_document_intake.sql)",
+  546: "claimed by open PR #913 (546_document_intake_schedules.sql)",
+  547: "claimed by open PR #913 (547_document_intake_facility_enablement.sql)",
+  548: "claimed by open PR #913 (548_document_intake_facility_mailboxes.sql)",
+  549: "claimed by open PR #914 (549_stand_up_thursday_clinical_notes_to_recruiters.sql)",
   529: "claimed by open PR #899 (COL-774, 529_benefits_board_first_payment_and_renewal.sql); already applied to production and staging",
   530: "claimed by open PR #900 (COL-768, 530_benefits_document_freshness.sql); already applied to production and staging",
   531: "claimed by open PR #903 (COL-775, 531_benefits_owner_summary.sql); already applied to production and staging",
