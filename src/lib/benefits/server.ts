@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireCurrentApiActor, revalidateCurrentApiActor, type CurrentApiActor, type CurrentApiActorResult } from "@/lib/auth/current-api-actor";
+import { screeningSheetFactsSchema } from "@/lib/benefits/screening-sheet";
 import { databaseUuidSchema as uuid } from "@/lib/operations/database-uuid";
 import { validateResidentIntakeBytes } from "@/lib/resident-intake/source-bytes";
 import {
@@ -361,6 +362,15 @@ export async function getMedicaidSummary() {
   if (result.error) return rpcFailure(result.error);
   const parsed = summarySchema.safeParse(result.data);
   return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+/** COL-770: facts for the DOEA 701S sheet; opening it is recorded in the case history. */
+export async function getScreeningSheet(caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  if (!uuid.safeParse(caseId).success) return benefitsFailure(400, "Unknown case.");
+  const result = await rpc(auth.actor, "benefits_screening_sheet", { p_case_id: caseId });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = screeningSheetFactsSchema.safeParse(result.data);
+  return parsed.success && parsed.data.case_id === caseId ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
 }
 export async function saveBenefitsContact(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;

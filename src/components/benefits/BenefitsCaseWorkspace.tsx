@@ -294,6 +294,17 @@ export function BenefitsCaseWorkspace({ id }: { id: string }) {
               Admission
             </Link>
           )}
+          {item.program === "smmc_ltc" && (
+            <Link
+              className={buttonVariants({
+                variant: "outline",
+                className: "min-h-11",
+              })}
+              href={`/admin/benefits/${item.id}/701s`}
+            >
+              701S screening sheet
+            </Link>
+          )}
           <Button
             className="min-h-11"
             variant="outline"
