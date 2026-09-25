@@ -47,7 +47,7 @@ test "$(cat supabase/.temp/project-ref)" = "manfqmasfqppukpobpld" || { echo "WRO
 - **The kiosk is at the real front door.** Any real visitor who signs in on it during the window is test data and is wiped. Keep the paper visitor log in use until Oct 1.
 - **Punches are not payroll.** Punches made in the window are wiped. Do not build a Homewood payroll packet in the window (the wipe stops if one exists), and keep uPunch or paper for this week's hours.
 - **Test incidents are not reports.** Do not mark a test incident's AHCA obligation submitted (the wipe stops if one is).
-- **Chart a check needs the floor capture fix.** On 2026-09-25 the floor tablet's Chart a check could not save a Smart Rounding check: the database requires where the resident was, how they presented and at least one meal, mood or medication chip, and the tablet sent none of them. The fix is its own pull request (Linear COL-861). Until it is deployed, that checklist item fails with "Where the resident was and how they presented are required on every check"; every other item can be tested.
+- **Chart a check asks for more now.** Since 2026-09-25 (COL-861, PR #917) the floor Chart a check also asks what the resident is doing and for at least one meal, mood or medication chip; Save stays off until one is picked. Before that fix no Smart Rounding check could be saved from a tablet. If a tablet is offline when the first check after an unlock opens, the choices cannot load and Save is blocked; open any check while online first.
 
 ## Sept 30, evening: close the window
 
