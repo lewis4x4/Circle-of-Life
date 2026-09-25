@@ -28,13 +28,13 @@ State **mission alignment** (`pass` | `risk` | `fail`) with one sentence in ever
 | Agent registry / playbooks | `agents/registry.yaml`, `agents/playbooks/` |
 | Gate runner runbook | `docs/agent-gates-runbook.md` |
 | Frontend route contract | `docs/specs/FRONTEND-CONTRACT.md` |
-| Document intake (Jev, intake address, incoming email) | `docs/specs/DOCUMENT-INTAKE-DECISION.md`; deferred work → Linear COL-817, label `intake-deferred` |
+| Document intake (Jev, intake address, incoming email) | `docs/specs/41-document-intake.md`, `docs/specs/DOCUMENT-INTAKE-DECISION.md`; Linear COL-771 |
 
 ## Document intake (every session)
 
-Anything that touches **Jev**, the **company intake address** (`docs@circleoflifecommunities.com`), or **incoming email/scans/photos** follows `docs/specs/DOCUMENT-INTAKE-DECISION.md`. No purpose-specific or per-facility inboxes, no forwarding hop, no receiver built outside the shared engine (Cornerstone COL-806 first, Haven COL-771 after Homewood settles). In Haven, resident documents are Claude-only (never Jev) and never filed automatically.
+Anything that touches **Jev**, the **company intake address** (`docs@circleoflifecommunities.com`), or **incoming email/scans/photos** follows `docs/specs/DOCUMENT-INTAKE-DECISION.md` and `docs/specs/41-document-intake.md`. Haven's intake is **Document Intake** (`/admin/document-intake`, migration 545, COL-771): starts at Homewood on 2026-10-01. No purpose-specific or per-facility inboxes, no forwarding hop, no second intake queue. Nothing is ever filed without a person's approval; Jev on PHI only when `ai_invocation_policies.routing_json.document_intake.jev_phi_enabled` is set.
 
-If your work needs intake that does not exist yet, **do not build it** — add a child issue under Linear **COL-817** with the label **`intake-deferred`**: module and repo; document type (Obligations Register row); who sends it and whether it carries resident health information; where it files and what done looks like; the current workaround. Name those issue IDs in your segment handoff.
+If your work needs a document type Document Intake cannot file yet, add a row to `document_intake_catalog` (and a destination adapter if the record type is new) rather than building another upload path; track it under Linear **COL-771**.
 
 ## Commands
 

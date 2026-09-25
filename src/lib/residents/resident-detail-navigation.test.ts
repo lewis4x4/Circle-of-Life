@@ -16,6 +16,7 @@ describe("resident detail navigation", () => {
       medicationsHref: "/admin/residents/resident-123/medications",
       vitalsHref: "/admin/residents/resident-123/vitals",
       timelineHref: "/admin/residents/resident-123/timeline",
+      documentsHref: "/admin/residents/resident-123/documents",
       billingHref: "/admin/residents/resident-123/billing",
     });
   });
@@ -27,6 +28,7 @@ describe("resident detail navigation", () => {
     ["medications", "medications"],
     ["vitals", "vitals"],
     ["timeline", "timeline"],
+    ["documents", "documents"],
     ["billing", "billing"],
     ["unknown", "overview"],
   ] as const)("maps the %s route segment to the %s tab", (segment, tab) => {

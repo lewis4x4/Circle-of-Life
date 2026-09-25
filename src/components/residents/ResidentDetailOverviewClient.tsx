@@ -114,6 +114,7 @@ function residentHrefSet(id: string, workspace: ResidentOverviewWorkspace): Resi
       medicationsHref: `${canonical}/medications`,
       vitalsHref: `${canonical}/vitals`,
       timelineHref: `${canonical}/timeline`,
+      documentsHref: `${canonical}/documents`,
       billingHref: `${canonical}/billing`,
     };
   }
@@ -127,6 +128,7 @@ function residentHrefSet(id: string, workspace: ResidentOverviewWorkspace): Resi
     medicationsHref: `${canonical}/medications`,
     vitalsHref: `${canonical}/vitals`,
     timelineHref: `${canonical}/timeline`,
+    documentsHref: `${canonical}/documents`,
     billingHref: `${canonical}/billing`,
   };
 }

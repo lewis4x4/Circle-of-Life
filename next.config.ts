@@ -72,6 +72,10 @@ if (isProd) {
   });
 }
 
+// No scripts, frames, fetches or forms; images and inline styles only so a
+// browser's own PDF/image viewer can draw the bytes.
+const DOCUMENT_BYTES_CSP = "default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'";
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   // sharp is a native addon, so the server build must require it at runtime
@@ -114,6 +118,19 @@ const nextConfig: NextConfig = {
       // Shared floor tablets and the front-door kiosk: no page is ever cached.
       // See src/lib/routing/shared-device-headers.ts.
       ...SHARED_DEVICE_NO_STORE_HEADERS,
+      // Document originals (Document Intake, COL-771; resident documents) are
+      // served as bytes only: nothing they contain may load, run or connect.
+      // Listed after the site-wide entry so this Content-Security-Policy wins.
+      ...[
+        "/api/admin/document-intake/items/:itemId/source",
+        "/api/admin/residents/:id/documents/:documentId/download",
+      ].map((source) => ({
+        source,
+        headers: [
+          { key: "Content-Security-Policy", value: DOCUMENT_BYTES_CSP },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      })),
     ];
   },
 };
