@@ -22,7 +22,7 @@
 import type { SystemOneQuestion } from "./typesafe-client.ts";
 
 /** Bump when any wording or threshold below changes. Recorded on every row. */
-export const QUESTIONS_VERSION = "compliance-doc-check-v2";
+export const QUESTIONS_VERSION = "compliance-doc-check-v3";
 
 export const COMPLIANCE_QUESTIONS: Record<string, SystemOneQuestion> = {
   doc_type: {
@@ -88,21 +88,6 @@ export const COMPLIANCE_QUESTIONS: Record<string, SystemOneQuestion> = {
     criteria: {
       true: "'Its successors and/or assigns' and/or 'as their interests may appear' — spelled out or abbreviated ISAOA, ATIMA — attaches to the named mortgagee",
       false: "The mortgagee is named with no successors-and-assigns language attached",
-    },
-  },
-
-  epi_period: {
-    type: "choice",
-    instructions:
-      "What extended period of indemnity does this document state — the period business income coverage continues after the property is restored and operations resume?",
-    criteria: {
-      at_least_180:
-        "An extended period of indemnity of 180 days or more is stated explicitly, in days or in months",
-      under_180: "An extended period of indemnity is stated explicitly and is shorter than 180 days",
-      not_stated:
-        "The document concerns business income or time element coverage but states no extended period of indemnity",
-      not_applicable:
-        "This document does not concern business income or time element coverage at all",
     },
   },
 
@@ -202,26 +187,11 @@ export const FACILITY_NAME_FRAGMENTS: Record<string, readonly string[]> = {
 };
 
 /**
- * Vault categories that must never be sent to the model.
- *
- * "Facility insurance documents" is not by itself a guarantee of anything. A
- * loss run is claim-level detail and can name a resident who fell; a resident
- * contract names residents outright. Both are live `document_category` values
- * on `facility_documents`, so a caller that simply walks the vault reaches them.
- *
- * This is a category refusal, not a heuristic over the text. Sniffing a document
- * for names and deciding it looks clean is de-identification by guesswork, and
- * the point of the subprocessor gate is that Haven does not do that. Widening
- * this list is safe; narrowing it is a decision that belongs with the BAA.
+ * A category alone never authorizes Jev. Kept fail-closed for legacy callers;
+ * only the authorized shared intake engine may establish sender/source/PHI proof.
  */
-export const CATEGORIES_WITHHELD_FROM_MODEL: ReadonlySet<string> = new Set([
-  "insurance_loss_run",
-  "resident_contracts_master",
-]);
-
-/** Whether a vault row's category may be sent to the model at all. */
-export function categoryMayBeSent(category: string | null | undefined): boolean {
-  return !category || !CATEGORIES_WITHHELD_FROM_MODEL.has(category);
+export function categoryMayBeSent(_category: string | null | undefined): boolean {
+  return false;
 }
 
 /** The facility key for a `facilities.name`, or null when it is not in the question set. */

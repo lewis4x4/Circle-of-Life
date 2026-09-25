@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-09-25T00:36:03.603Z",
+  "scope": "Actual UI/interval helpers with synthetic local persistence and mocked authentication; not hosted or staff/provider acceptance",
+  "checks": [
+    "Four ordinary cell clicks reach Day/Night/Custom/Off without a dialog or times, retaining focus and clearing no-op changes. Explicit Custom editing cancels without changing the cell and restores focus. Job roles see appropriate choices; cook splits save as two blocks/nine hours and no automatic clinical coverage.",
+    "Desktop/mobile grid fits and scrolls accessibly; publication locks cells; landscape print preserves saved blocks and colors.",
+    "Options begin with explicit empty hours/roles, support an added third care choice, and later rename/deactivation does not rewrite published snapshots.",
+    "My Schedule and kiosk/timecard/payroll comparison render the same saved split blocks; actual worked minutes and clock actions remain independent.",
+    "Swap review displays both saved cook blocks and their nine-hour total as one complete group."
+  ],
+  "page_errors": [],
+  "external_requests": [],
+  "axe_violations": [],
+  "production_mutations": false
+}
