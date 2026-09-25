@@ -5,6 +5,9 @@
 
 export const OPERATIONS_NO_FACILITY_COPY = "No facility posted";
 export const OPERATIONS_NO_MISSED_AT_COPY = "No time posted";
+export const OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY =
+  "This facility is no longer accessible.";
+export const OPERATIONS_NO_ACCESSIBLE_FACILITIES_COPY = "No accessible facilities.";
 
 const EM_DASH = "—";
 const LEGACY_UNKNOWN = "Unknown";

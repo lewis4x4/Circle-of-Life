@@ -6,6 +6,10 @@ import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { FacilityGateNotice } from "@/components/common/FacilityGate";
 import { fetchAdminFacilityOptions } from "@/lib/admin-facilities";
 import { isOperationsViewRole } from "@/lib/operations/constants";
+import {
+  OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY,
+  OPERATIONS_NO_ACCESSIBLE_FACILITIES_COPY,
+} from "@/lib/operations/operations-display-copy";
 import type { FacilityProfileReply } from "@/lib/operations/facility-profile";
 import { OperationsViewNav } from "@/components/operations/OperationsViewNav";
 import { CONTROL } from "../work/_components/work-inputs";
@@ -70,10 +74,10 @@ function PersonProfile({ actorName }: { actorName: string | null }) {
     {error ? <div role="alert" className="space-y-2">
       <p>Facility options are unavailable. Access has not been confirmed.</p>
       <button className={CONTROL} onClick={() => { setError(false); setFacilities(null); setAttempt(n => n + 1); }}>Retry facilities</button>
-    </div> : facilities === null ? <p role="status">Loading facilities…</p> : facilities.length === 0 ? <p>No accessible facilities.</p>
+    </div> : facilities === null ? <p role="status">Loading facilities…</p> : facilities.length === 0 ? <p>{OPERATIONS_NO_ACCESSIBLE_FACILITIES_COPY}</p>
       : !facilityId ? gate
       : accessible ? <ProfileScope key={facilityId} facilityId={facilityId} />
-      : <><p>The selected facility is no longer accessible.</p>{gate}</>}
+      : <><p>{OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY}</p>{gate}</>}
   </div>;
 }
 
