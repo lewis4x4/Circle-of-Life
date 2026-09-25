@@ -45,6 +45,10 @@ type TaskListRow = {
     id: string;
     shift_type: string | null;
     shift_date: string | null;
+    schedule_preset_name: string | null;
+    schedule_starts_at: string | null;
+    schedule_ends_at: string | null;
+    schedule_time_zone: string | null;
   } | null;
 };
 
@@ -80,7 +84,7 @@ export async function GET(request: Request) {
         *,
         residents(id, first_name, last_name, preferred_name, bed_id),
         staff!resident_observation_tasks_assigned_staff_id_fkey(id, first_name, last_name, preferred_name),
-        shift_assignments(id, shift_type, shift_date),
+        shift_assignments(id, shift_type, shift_date, schedule_preset_name, schedule_starts_at, schedule_ends_at, schedule_time_zone),
         resident_observation_assignments(staff_id, released_at)
       `, { count: "exact" })
       .eq("organization_id", context.organizationId)

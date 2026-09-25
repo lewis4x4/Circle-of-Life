@@ -8,23 +8,25 @@ import { CalendarDays, Loader2 } from "lucide-react";
 import { loadCaregiverFacilityContext } from "@/lib/caregiver/facility-context";
 import { getAppRoleFromClaims } from "@/lib/auth/app-role";
 import { getDashboardRouteForRole } from "@/lib/auth/dashboard-routing";
-import { facilityDateIsoDaysFromToday } from "@/lib/facility-wall-clock";
+import { addFacilityCalendarDays, todayFacilityDateIso } from "@/lib/facility-wall-clock";
 import { createClient, isBrowserSupabaseConfigured } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CaregiverSupportStrip } from "@/components/caregiver/CaregiverSupportStrip";
+import { assignmentLabel, type AssignmentSnapshot } from "@/lib/schedules/assignment-context";
 import { enumLabel } from "@/lib/display/enum-label";
 import { formatScheduleTimes } from "@/lib/schedules/week-grid";
 import { readAllPages } from "@/lib/supabase/read-all-pages";
 
-type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"];
+type AssignmentRow = Database["public"]["Tables"]["shift_assignments"]["Row"] & AssignmentSnapshot;
 
-export function getCaregiverScheduleWindow(now: Date = new Date()) {
+export function getCaregiverScheduleWindow(now: Date, timeZone: string) {
+  const today = todayFacilityDateIso(now, timeZone);
   return {
-    start: facilityDateIsoDaysFromToday(-1, now),
-    end: facilityDateIsoDaysFromToday(21, now),
+    start: addFacilityCalendarDays(today, -1, timeZone),
+    end: addFacilityCalendarDays(today, 21, timeZone),
   };
 }
 
@@ -35,7 +37,8 @@ export default function CaregiverSchedulesPage() {
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const [facilityName, setFacilityName] = useState<string | null>(null);
   const [homeHref, setHomeHref] = useState("/caregiver");
-  const [scheduleWindow, setScheduleWindow] = useState(() => getCaregiverScheduleWindow());
+  const [scheduleWindow, setScheduleWindow] = useState<{ start: string; end: string } | null>(null);
+  const [facilityTimeZone, setFacilityTimeZone] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,6 +66,7 @@ export default function CaregiverSchedulesPage() {
         return;
       }
       setFacilityName(ctxRes.ctx.facilityName);
+      setFacilityTimeZone(ctxRes.ctx.timeZone);
 
       const st = await supabase
         .from("staff")
@@ -82,7 +86,7 @@ export default function CaregiverSchedulesPage() {
       }
 
       const staffId = (st.data as { id: string }).id;
-      const { start, end } = getCaregiverScheduleWindow();
+      const { start, end } = getCaregiverScheduleWindow(new Date(), ctxRes.ctx.timeZone);
       setScheduleWindow({ start, end });
 
       const q = await readAllPages((from, to) => supabase
@@ -96,7 +100,7 @@ export default function CaregiverSchedulesPage() {
         .lte("shift_date", end)
         .is("deleted_at", null)
         .order("shift_date", { ascending: true })
-        .order("shift_type", { ascending: true })
+        .order("custom_start_time", { ascending: true })
         .order("id")
         .range(from, to));
 
@@ -129,9 +133,9 @@ export default function CaregiverSchedulesPage() {
             My schedule
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            {facilityName
+            {scheduleWindow ? facilityName
               ? `Published shifts at ${facilityName} from ${formatDisplayDate(scheduleWindow.start)} through ${formatDisplayDate(scheduleWindow.end)}.`
-              : `Published shift assignments from ${formatDisplayDate(scheduleWindow.start)} through ${formatDisplayDate(scheduleWindow.end)}.`}
+              : `Published shift assignments from ${formatDisplayDate(scheduleWindow.start)} through ${formatDisplayDate(scheduleWindow.end)}.` : "Published work appears here after your facility schedule loads."}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -149,7 +153,7 @@ export default function CaregiverSchedulesPage() {
         </div>
       ) : null}
 
-      {!loading && !error && rows.length === 0 ? (
+      {!loading && !error && scheduleWindow && rows.length === 0 ? (
         <Card className="border-border bg-card text-card-foreground">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             No shift assignments from {formatDisplayDate(scheduleWindow.start)} through {formatDisplayDate(scheduleWindow.end)}. Scheduling
@@ -163,13 +167,14 @@ export default function CaregiverSchedulesPage() {
           {rows.map((r) => (
             <Card
               key={r.id}
+              style={r.schedule_preset_color ? { borderInlineStartColor: r.schedule_preset_color, borderInlineStartWidth: 4 } : undefined}
               className="border-border bg-card text-card-foreground transition-colors duration-[var(--motion-duration-micro)] ease-[var(--motion-ease)] hover:bg-muted/40"
             >
               <CardContent className="flex min-h-[44px] flex-wrap items-center justify-between gap-2 p-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{formatShiftDate(r.shift_date)}</p>
-                  <p className="text-xs capitalize text-muted-foreground">
-                    {enumLabel(String(r.shift_type))} · {formatScheduleTimes(r.custom_start_time, r.custom_end_time)} Eastern
+                  <p className="text-xs text-muted-foreground">
+                    {assignmentLabel(r)} · {formatScheduleTimes(r.custom_start_time, r.custom_end_time)} · {r.schedule_time_zone || facilityTimeZone || "Time zone unavailable"}{r.schedule_block_count && r.schedule_block_count > 1 ? ` · Block ${(r.schedule_block_index ?? 0) + 1} of ${r.schedule_block_count}` : ""}
                   </p>
                 </div>
                 <Badge variant="outline" className="border-border capitalize text-foreground">

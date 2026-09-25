@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   ownStaff: [{ id: "staff-me", first_name: "Pat", last_name: "Doe" }] as unknown[],
   swaps: [] as unknown[],
   orFilters: [] as string[],
+  rpc: vi.fn(),
 }));
 
 vi.mock("@/contexts/haven-auth-context", () => ({
@@ -15,7 +16,7 @@ vi.mock("@/contexts/haven-auth-context", () => ({
 }));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
-    rpc: vi.fn(async () => ({ error: null })),
+    rpc: mocks.rpc,
     from: (table: string) => {
       let byUser = false;
       const query: Record<string, unknown> = {};
@@ -58,9 +59,25 @@ beforeEach(() => {
   mocks.ownStaff = [{ id: "staff-me", first_name: "Pat", last_name: "Doe" }];
   mocks.swaps = [SWAP];
   mocks.orFilters.length = 0;
+  mocks.rpc.mockReset(); mocks.rpc.mockResolvedValue({ error: null });
 });
 
 describe("floor app shift swaps (COL-661 A2)", () => {
+  it("shows both saved split blocks and confirms the complete current hash", async () => {
+    const base = { group_id: "group", block_count: 2, service_date: "2026-09-28", label: "Cook", time_zone: "America/New_York", color: "#008000", staff_role: "dietary_staff" };
+    mocks.swaps = [{ ...SWAP, swap_scope: "group", group_context_hash: "reviewed-hash", requesting_context_hash: "old-hash", requesting_confirmed_at: "2026-09-23T12:00:00Z", covering_group_snapshot: [], requesting_group_snapshot: [
+      { ...base, assignment_id: "am", block_index: 0, starts_at: "2026-09-28T10:00:00Z", ends_at: "2026-09-28T17:00:00Z" },
+      { ...base, assignment_id: "pm", block_index: 1, starts_at: "2026-09-28T20:00:00Z", ends_at: "2026-09-28T22:00:00Z" },
+    ] }];
+    render(<MyShiftSwaps />);
+    const confirm = await screen.findByRole("button", { name: "Confirm every block in this group" });
+    expect(screen.getByText(/6:00 AM–1:00 PM/)).toBeInTheDocument();
+    expect(screen.getByText(/4:00 PM–6:00 PM/)).toBeInTheDocument();
+    expect(screen.getByText(/Requested work.*9.0 scheduled hours/)).toBeInTheDocument();
+    fireEvent.click(confirm);
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith("confirm_shift_swap_group", { p_id: "swap-1", p_expected_context_hash: "reviewed-hash" }));
+  });
+
   it("asks only for swaps the signed-in person requests or covers, with no export or approval", async () => {
     render(<MyShiftSwaps />);
     expect(await screen.findByText(/You →/)).toBeInTheDocument();

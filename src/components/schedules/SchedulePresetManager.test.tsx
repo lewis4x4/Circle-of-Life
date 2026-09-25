@@ -1,0 +1,51 @@
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SchedulePresetManager } from "./SchedulePresetManager";
+const state = vi.hoisted(() => ({ facility: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", role: "manager", load: vi.fn(), save: vi.fn(), facilityGuard: vi.fn(() => vi.fn()), routeGuard: vi.fn(() => vi.fn()) }));
+vi.mock("@/contexts/haven-auth-context", () => ({ useHavenAuth: () => ({ appRole: state.role, user: { id: "user" }, loading: false }) }));
+vi.mock("@/components/common/FacilityGate", () => ({ FacilityGate: ({ children }: { children: React.ReactNode }) => children, useFacilityGateScope: () => ({ facilityId: state.facility }) }));
+vi.mock("@/hooks/useFacilityStore", () => ({ useFacilityStore: (selector: (value: unknown) => unknown) => selector({ availableFacilities: [{ id: state.facility, name: "Test facility" }], registerFacilityChangeGuard: state.facilityGuard }) }));
+vi.mock("@/components/layout/navigation-pending", () => ({ registerRouteLeaveGuard: state.routeGuard }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
+vi.mock("@/lib/schedules/presets", async (original) => ({ ...await original<typeof import("@/lib/schedules/presets")>(), loadSchedulePresets: state.load, saveSchedulePreset: state.save }));
+const preset = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", facility_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", organization_id: "org", label: "Kitchen split", color: "#226655", allowed_staff_roles: ["cook"], rounding_coverage: true, sort_order: 2, active: true, blocks: [{ start: "06:00", end: "13:00" }, { start: "16:00", end: "18:00" }], version: 4, roster_shift_type: "custom" };
+beforeEach(() => { vi.clearAllMocks(); state.role = "manager"; state.facility = preset.facility_id; state.load.mockResolvedValue([preset]); state.save.mockResolvedValue(preset); });
+describe("shift option management", () => {
+  it("starts new options with no guessed hours or roles and saves ordered split blocks", async () => {
+    render(<SchedulePresetManager />);
+    await screen.findByText(/9.00 planned hours/);
+    fireEvent.click(screen.getByRole("button", { name: "New shift option" }));
+    const form = screen.getByRole("form", { name: "Shift option editor" });
+    expect(within(form).getByLabelText("Block 1 start")).toHaveValue("");
+    expect(within(form).getByLabelText("Cook")).not.toBeChecked();
+    expect(within(form).getByLabelText("Use for resident check coverage")).not.toBeChecked();
+    expect(within(form).getByRole("button", { name: "Save shift option" })).toBeDisabled();
+    fireEvent.change(within(form).getByLabelText("Label"), { target: { value: "Kitchen split" } });
+    fireEvent.change(within(form).getByLabelText("Block 1 start"), { target: { value: "06:00" } });
+    fireEvent.change(within(form).getByLabelText("Block 1 finish"), { target: { value: "13:00" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Add work block" }));
+    fireEvent.change(within(form).getByLabelText("Block 2 start"), { target: { value: "16:00" } });
+    fireEvent.change(within(form).getByLabelText("Block 2 finish"), { target: { value: "18:00" } });
+    fireEvent.click(within(form).getByLabelText("Cook"));
+    expect(state.facilityGuard).toHaveBeenCalled(); expect(state.routeGuard).toHaveBeenCalled();
+    fireEvent.click(within(form).getByRole("button", { name: "Save shift option" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ facilityId: preset.facility_id, presetId: null, expectedVersion: 0, roundingCoverage: false, blocks: preset.blocks, allowedStaffRoles: ["cook"] })));
+  });
+  it("preserves version on deactivate/reactivate and retains edits after conflict", async () => {
+    state.save.mockRejectedValue(new Error("Shift option changed. Reload before saving."));
+    render(<SchedulePresetManager />);
+    fireEvent.click(await screen.findByRole("button", { name: "Edit Kitchen split" }));
+    expect(screen.getByLabelText("Use for resident check coverage")).toBeChecked();
+    fireEvent.click(screen.getByLabelText(/Active — available/));
+    fireEvent.click(screen.getByRole("button", { name: "Save shift option" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Reload before saving");
+    expect(state.save).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ expectedVersion: 4, roundingCoverage: true, active: false }));
+    expect(screen.getByLabelText(/Active — available/)).not.toBeChecked();
+  });
+  it("does not retain another facility's options when the scope changes", async () => {
+    const { rerender } = render(<SchedulePresetManager />); await screen.findByRole("button", { name: "Edit Kitchen split" });
+    state.facility = "cccccccc-cccc-4ccc-8ccc-cccccccccccc"; state.load.mockReturnValue(new Promise(() => {})); rerender(<SchedulePresetManager />);
+    expect(screen.queryByRole("button", { name: "Edit Kitchen split" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading shift options");
+  });
+});

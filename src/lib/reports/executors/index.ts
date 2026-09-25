@@ -1,3 +1,5 @@
+import { ASSIGNMENT_SNAPSHOT_SELECT, assignmentIntervalSpan, assignmentLabel, type AssignmentSnapshot } from "@/lib/schedules/assignment-context";
+import { readAllPages } from "@/lib/supabase/read-all-pages";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { fetchExecutiveKpiSnapshot } from "@/lib/exec-kpi-snapshot";
@@ -219,18 +221,17 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
   const facilityScoped = isValidFacilityIdForQuery(facilityId);
   const start = isoDateDaysAgo(14);
 
-  let q = supabase
-    .from("shift_assignments")
-    .select("id, shift_type, shift_date, staff_id")
-    .eq("organization_id", organizationId)
-    .is("deleted_at", null)
-    .gte("shift_date", start);
-
-  if (facilityScoped) q = q.eq("facility_id", facilityId!);
-
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  const rows = data ?? [];
+  type Assignment = AssignmentSnapshot & { id: string; shift_type: string; shift_date: string; staff_id: string; facility_id: string; custom_start_time: string | null; custom_end_time: string | null };
+  const result = await readAllPages<Assignment>(async (from, to) => {
+    let q = supabase.from("shift_assignments")
+      .select(`id, shift_type, shift_date, staff_id, facility_id, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}, schedules!inner(status, deleted_at)`, { count: "exact" })
+      .eq("organization_id", organizationId).eq("schedules.status", "published").is("schedules.deleted_at", null)
+      .is("deleted_at", null).gte("shift_date", start).lte("shift_date", isoDateDaysAgo(0)).order("shift_date").order("id");
+    if (facilityScoped) q = q.eq("facility_id", facilityId!);
+    const page = await q.range(from, to);
+    return { data: page.data as unknown as Assignment[] | null, error: page.error, count: page.count };
+  });
+  const rows = result.data;
 
   // Resolve staff names in one batch query
   const staffIds = [...new Set(rows.map((r) => r.staff_id).filter(Boolean))];
@@ -247,33 +248,26 @@ async function runStaffingCoverageByShift(params: ExecuteParams): Promise<Report
     }
   }
 
-  let dayCt = 0;
-  let eveCt = 0;
-  let nightCt = 0;
-  for (const r of rows) {
-    if (r.shift_type === "day") dayCt += 1;
-    else if (r.shift_type === "evening") eveCt += 1;
-    else if (r.shift_type === "night") nightCt += 1;
-  }
-
-  const shiftAssignmentRowCount = rows.length;
-
+  const groups = new Set(rows.map((row) => row.schedule_group_id || row.id));
+  const spans = rows.map((row) => assignmentIntervalSpan(row));
   return {
-    // Metric keys — scanner false positive, see .gitleaksignore.
     summary: [
-      { metricKey: "shiftAssignmentsScheduled14d", value: shiftAssignmentRowCount },
-      { metricKey: "coverageDayShifts14d", value: dayCt },
-      { metricKey: "coverageEveningShifts14d", value: eveCt },
-      { metricKey: "coverageNightShifts14d", value: nightCt },
+      { metricKey: "shiftAssignmentsScheduled14d", value: groups.size },
+      { metricKey: "scheduledWorkBlocks14d", value: rows.length },
+      { metricKey: "scheduledWorkHours14d", value: spans.some((span) => !span) ? null : Math.round(spans.reduce((sum, span) => sum + (span!.end.getTime() - span!.start.getTime()) / 3600000, 0) * 100) / 100 },
     ],
-    rows: rows.slice(0, 500).map((r) => ({
+    rows: rows.map((r) => ({
       shift_date: r.shift_date,
-      shift_type: r.shift_type,
+      shift_name: assignmentLabel(r),
+      shift_option_id: r.schedule_preset_id ?? null,
+      shift_option_version: r.schedule_preset_version ?? null,
+      role: r.schedule_role_snapshot ?? null,
+      start: r.custom_start_time,
+      end: r.custom_end_time,
+      time_zone: r.schedule_time_zone ?? "America/New_York",
       staff_member: formatReportStaffMemberFromMap(r.staff_id, nameById),
     })),
-    footnotes: [
-      "Counts scheduled shift assignments in the published schedule for the next two weeks (including today).",
-    ],
+    footnotes: ["Published schedule assignments from the last 14 days through today. Split blocks are counted separately; scheduled hours exclude gaps and are not paid hours."],
   };
 }
 

@@ -7,6 +7,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CaregiverFacilityContext } from "@/lib/caregiver/facility-context";
+import { formatAssignmentInterval } from "@/lib/schedules/assignment-context";
 import { currentShiftFor } from "@/lib/caregiver/shift";
 import type { Database } from "@/types/database";
 
@@ -25,6 +26,8 @@ export type HandoffNote = {
 };
 
 type NoteRow = {
+  schedule_preset_name?: string | null;
+  schedule_starts_at?: string | null; schedule_ends_at?: string | null; schedule_time_zone?: string | null;
   id: string;
   note: string;
   priority: string;
@@ -38,7 +41,7 @@ type NoteRow = {
 export async function fetchHandoffNotes(supabase: Client, facilityId: string): Promise<HandoffNote[]> {
   const result = await supabase
     .from("shift_handoff_notes" as never)
-    .select("id, note, priority, created_at, shift, acknowledged_at, created_by, resident_id")
+    .select("id, note, priority, created_at, shift, acknowledged_at, created_by, resident_id, schedule_preset_name, schedule_starts_at, schedule_ends_at, schedule_time_zone")
     .eq("facility_id", facilityId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
@@ -57,7 +60,8 @@ export async function fetchHandoffNotes(supabase: Client, facilityId: string): P
     note: row.note,
     priority: row.priority,
     createdAt: row.created_at,
-    shift: row.shift,
+    shift: row.schedule_preset_name && row.schedule_starts_at && row.schedule_ends_at && row.schedule_time_zone
+      ? formatAssignmentInterval({ label: row.schedule_preset_name, starts_at: row.schedule_starts_at, ends_at: row.schedule_ends_at, time_zone: row.schedule_time_zone }) : row.shift,
     acknowledgedAt: row.acknowledged_at,
     createdBy: row.created_by,
     authorName: row.created_by ? (names.get(row.created_by) ?? null) : null,

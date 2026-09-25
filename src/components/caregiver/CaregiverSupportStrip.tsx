@@ -22,10 +22,10 @@ export function CaregiverSupportStrip({
   description: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.03] px-4 py-4  shadow-inner">
+    <div className="rounded-[1.5rem] border border-border bg-card px-4 py-4  shadow-inner">
       <div className="mb-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Shift support</p>
-        <h2 className="mt-1 text-base font-medium text-white">{title}</h2>
+        <h2 className="mt-1 text-base font-medium text-foreground">{title}</h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -38,8 +38,8 @@ export function CaregiverSupportStrip({
               className={cn(
                 "rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors",
                 isActive
-                  ? "border-primary/40 bg-primary/15 text-primary"
-                  : "border-white/10 bg-black/30 text-muted-foreground hover:border-white/20 hover:text-zinc-200",
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-foreground hover:bg-muted",
               )}
             >
               {item.label}

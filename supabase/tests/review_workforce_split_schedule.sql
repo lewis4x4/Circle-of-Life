@@ -1,5 +1,5 @@
 -- Disposable replay only. All fixtures and auth overrides roll back.
--- COL-795 (migration 514): one grid cell carries the cook split as two custom blocks.
+-- COL-795 cached514 payloads remain compatible through516, with explicit managed groups.
 BEGIN;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 CREATE TEMP TABLE split_fixture AS
@@ -53,7 +53,7 @@ DO $$ DECLARE f record; split jsonb; first_id uuid; second_id uuid; v timestampt
  PERFORM pg_temp.split_expect_error(format('SELECT public.schedule_bulk_upsert(%L,%L,%L)',f.week,v,jsonb_build_array(split||jsonb_build_object('custom_blocks',jsonb_build_array(jsonb_build_object('start_time','06:00','end_time','13:00'),jsonb_build_object('start_time','12:00','end_time','18:00'))))),'overlapping shifts');
  IF EXISTS (SELECT 1 FROM public.shift_assignments WHERE schedule_id=f.week AND deleted_at IS NULL) OR (SELECT updated_at FROM public.schedules WHERE id=f.week) IS DISTINCT FROM v THEN RAISE EXCEPTION 'Invalid split left a change'; END IF;
 
- -- One cell saves both blocks as plain custom assignments.
+ -- One legacy cell saves both exact time blocks as one explicit managed group.
  PERFORM public.schedule_bulk_upsert(f.week,v,jsonb_build_array(split));
  IF (SELECT array_agg(custom_start_time::text||'-'||custom_end_time::text ORDER BY custom_start_time) FROM public.shift_assignments WHERE schedule_id=f.week AND staff_id=f.cook AND deleted_at IS NULL AND shift_type='custom' AND shift_definition_id IS NULL)
    IS DISTINCT FROM ARRAY['06:00:00-13:00:00','16:00:00-18:00:00'] THEN RAISE EXCEPTION 'Cook split was not saved as two blocks'; END IF;
@@ -90,6 +90,7 @@ DO $$ DECLARE f record; split jsonb; first_id uuid; second_id uuid; v timestampt
  -- Cells with several non-split assignments stay blocked.
  PERFORM public.edit_draft_schedule(f.week,'add',gen_random_uuid(),f.aide,'2092-01-02','06:00','10:00');
  PERFORM public.edit_draft_schedule(f.week,'add',gen_random_uuid(),f.aide,'2092-01-02','11:00','12:00');
+ PERFORM pg_temp.split_expect_error(format('SELECT public.schedule_bulk_upsert(%L,(SELECT updated_at FROM public.schedules WHERE id=%L),%L)',f.week,f.week,jsonb_build_array(jsonb_build_object('staff_id',f.aide,'shift_date','2092-01-02','shift_definition_id',NULL))),'Multiple assignments in this cell');
  PERFORM public.edit_draft_schedule(f.week,'add',gen_random_uuid(),f.aide,'2092-01-02','13:00','14:00');
  PERFORM pg_temp.split_expect_error(format('SELECT public.schedule_bulk_upsert(%L,(SELECT updated_at FROM public.schedules WHERE id=%L),%L)',f.week,f.week,jsonb_build_array(jsonb_build_object('staff_id',f.aide,'shift_date','2092-01-02','shift_definition_id',NULL))),'Multiple assignments in this cell');
 END $$;

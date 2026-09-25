@@ -60,6 +60,8 @@ Claude Code executes migrations and builds features in this exact sequence. Do n
 
 For frontend stack, route naming, and Phase 1 UI scope locks, use `FRONTEND-CONTRACT.md` as the canonical source.
 
+For every document any party sends in (email, scan, photo) across all modules, use `DOCUMENT-INTAKE-DECISION.md` (2026-09-24): one intake address per company, obligations register, first-hop sender authentication, no purpose-specific inboxes.
+
 ### Phase 1: Foundation & Core Operations (Weeks 1-12)
 
 | Order | Spec File | Module | Weeks | What It Creates |

@@ -1,8 +1,8 @@
 {
-  "totalBytes": 23591889,
+  "totalBytes": 21434395,
   "entries": {
-    "chunks": 23590389,
-    "static_extras": 1500
+    "chunks": 21432907,
+    "static_extras": 1488
   },
-  "recorded": "2026-09-24T19:56:40.267Z"
+  "recorded": "2026-09-23T17:00:50.891Z"
 }

@@ -6,20 +6,22 @@ CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SEL
 CREATE FUNCTION pg_temp.closeout_assert(ok boolean,msg text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION '25A closeout: %',msg; END IF; END $$;
 CREATE TEMP TABLE closeout_fixture AS SELECT f.organization_id org,f.id fac,r.id resident,
  gen_random_uuid() owner,gen_random_uuid() owner_session,gen_random_uuid() proposer,gen_random_uuid() proposer_session,
- gen_random_uuid() aide,gen_random_uuid() aide_session,gen_random_uuid() aide_staff,gen_random_uuid() task
+ gen_random_uuid() aide,gen_random_uuid() aide_session,gen_random_uuid() aide_staff,gen_random_uuid() relief,gen_random_uuid() relief_staff,gen_random_uuid() task
  FROM public.facilities f JOIN public.residents r ON r.facility_id=f.id AND r.deleted_at IS NULL
  WHERE f.deleted_at IS NULL AND r.status='active' AND NOT EXISTS(SELECT 1 FROM public.resident_monitoring_orders mo WHERE mo.resident_id=r.id AND mo.status='active' AND mo.deleted_at IS NULL) AND EXISTS(SELECT 1 FROM public.facility_cadence_versions v WHERE v.facility_id=f.id AND v.status='active') LIMIT 1;
 INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
- SELECT owner,owner||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture UNION ALL SELECT proposer,proposer||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture UNION ALL SELECT aide,aide||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture;
+ SELECT owner,owner||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture UNION ALL SELECT proposer,proposer||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture UNION ALL SELECT aide,aide||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture UNION ALL SELECT relief,relief||'@closeout.invalid','{}'::jsonb,'{}'::jsonb FROM closeout_fixture;
 INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
  SELECT owner,org,owner||'@closeout.invalid','Synthetic owner','owner'::public.app_role,true FROM closeout_fixture
  UNION ALL SELECT proposer,org,proposer||'@closeout.invalid','Synthetic proposer','facility_admin'::public.app_role,true FROM closeout_fixture
- UNION ALL SELECT aide,org,aide||'@closeout.invalid','Synthetic observer','med_tech'::public.app_role,true FROM closeout_fixture;
+ UNION ALL SELECT aide,org,aide||'@closeout.invalid','Synthetic observer','med_tech'::public.app_role,true FROM closeout_fixture
+ UNION ALL SELECT relief,org,relief||'@closeout.invalid','Synthetic relief observer','med_tech'::public.app_role,true FROM closeout_fixture;
 INSERT INTO auth.sessions(id,user_id) SELECT owner_session,owner FROM closeout_fixture UNION ALL SELECT proposer_session,proposer FROM closeout_fixture UNION ALL SELECT aide_session,aide FROM closeout_fixture;
 INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
- SELECT owner,fac,org FROM closeout_fixture UNION ALL SELECT proposer,fac,org FROM closeout_fixture UNION ALL SELECT aide,fac,org FROM closeout_fixture;
+ SELECT owner,fac,org FROM closeout_fixture UNION ALL SELECT proposer,fac,org FROM closeout_fixture UNION ALL SELECT aide,fac,org FROM closeout_fixture UNION ALL SELECT relief,fac,org FROM closeout_fixture;
 INSERT INTO public.staff(id,user_id,facility_id,organization_id,first_name,last_name,staff_role,employment_status,hire_date)
- SELECT aide_staff,aide,fac,org,'Synthetic','Observer','resident_aide'::public.staff_role,'active'::public.employment_status,current_date FROM closeout_fixture;
+ SELECT aide_staff,aide,fac,org,'Synthetic','Observer','resident_aide'::public.staff_role,'active'::public.employment_status,current_date FROM closeout_fixture
+ UNION ALL SELECT relief_staff,relief,fac,org,'Synthetic','Relief observer','resident_aide'::public.staff_role,'active'::public.employment_status,current_date FROM closeout_fixture;
 CREATE FUNCTION pg_temp.closeout_signin(which_actor text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp,pg_catalog AS $$
 DECLARE f record; actor uuid; session uuid;
 BEGIN SELECT * INTO f FROM closeout_fixture; actor:=CASE which_actor WHEN 'owner' THEN f.owner WHEN 'proposer' THEN f.proposer ELSE f.aide END;
@@ -135,41 +137,65 @@ BEGIN
  RAISE NOTICE 'PASS: explicit idempotent rescue, legacy chip bypass refusal, immutable completion replay';
 END $$;
 
--- Isolate this rollback-only roster fixture from the published demo week.
--- Only fixture retirement bypasses the publication guard; every tested write below uses it.
+-- Anchor after the configuration edits so every run straddles the actual
+-- next-day daytime boundary, including a Sunday-to-Monday schedule week change.
+ALTER TABLE closeout_fixture ADD COLUMN roster_anchor timestamptz;
+UPDATE closeout_fixture fixture SET roster_anchor=(
+ SELECT sw.ends_at_utc-interval '30 minutes'
+ FROM public.facilities facility
+ CROSS JOIN LATERAL public.facility_shift_window_at(facility.id,
+   (((now() AT TIME ZONE facility.timezone)::date+1)+time '12:00') AT TIME ZONE facility.timezone) sw
+ WHERE facility.id=fixture.fac);
+-- Isolate only the rollback fixture's two planned weeks from demo schedules.
+-- Every tested assignment and publication still uses the production guards.
 ALTER TABLE public.schedules DISABLE TRIGGER workforce_guard_schedule_row;
 UPDATE public.schedules SET deleted_at=now(),status='archived'
  WHERE facility_id=(SELECT fac FROM closeout_fixture) AND deleted_at IS NULL
- AND week_start_date BETWEEN date_trunc('week',now())::date-7 AND date_trunc('week',now())::date;
+ AND week_start_date IN (
+   SELECT date_trunc('week',sw.shift_service_date)::date
+   FROM closeout_fixture f CROSS JOIN (VALUES(interval '0 hours'),(interval '1 hour')) horizon(offset_by)
+   CROSS JOIN LATERAL public.facility_shift_window_at(f.fac,f.roster_anchor+horizon.offset_by) sw);
 ALTER TABLE public.schedules ENABLE TRIGGER workforce_guard_schedule_row;
-DO $$ DECLARE f record; sw record; sw_next record; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
+SELECT pg_temp.closeout_signin('owner');
+DO $$ DECLARE f record; sw record; sw_next record; planned_week record; facility_tz text; anchor_at timestamptz; sch uuid; ord uuid:=gen_random_uuid(); assignment uuid:=gen_random_uuid(); n integer; first_count integer; interval_minutes integer;
 BEGIN
  SELECT * INTO f FROM closeout_fixture;
- SELECT * INTO sw FROM public.facility_shift_window_at(f.fac,now());
+ SELECT timezone INTO facility_tz FROM public.facilities WHERE id=f.fac;
+ anchor_at:=f.roster_anchor;
+ SELECT * INTO sw FROM public.facility_shift_window_at(f.fac,anchor_at);
  INSERT INTO public.schedules(organization_id,facility_id,week_start_date)
  VALUES(f.org,f.fac,date_trunc('week',sw.shift_service_date)::date) ON CONFLICT DO NOTHING;
  SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',sw.shift_service_date)::date AND deleted_at IS NULL;
- INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
- VALUES(assignment,sch,f.aide_staff,f.fac,f.org,sw.shift_service_date,sw.roster_shift_type,ARRAY[f.resident]);
- -- The generation horizon below is an hour wide, so for the hour before every
- -- shift change it lands in the next shift. Staffing only the current shift
- -- made this assertion pass by clock luck and fail twice a day; roster the
- -- shift the horizon actually reaches as well.
- SELECT * INTO sw_next FROM public.facility_shift_window_at(f.fac,now()+interval '1 hour');
+ INSERT INTO public.shift_assignments(id,schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids,custom_start_time,custom_end_time,schedule_rounding_coverage)
+ VALUES(assignment,sch,f.aide_staff,f.fac,f.org,sw.shift_service_date,sw.roster_shift_type,ARRAY[f.resident],(sw.starts_at_utc AT TIME ZONE facility_tz)::time,(sw.ends_at_utc AT TIME ZONE facility_tz)::time,true);
+ -- Different authorized employees cover each side. Two unrelated rows for
+ -- one employee/date are not a managed split group and must remain refused.
+ SELECT * INTO sw_next FROM public.facility_shift_window_at(f.fac,anchor_at+interval '1 hour');
+ PERFORM pg_temp.closeout_assert(sw.shift_service_date=sw_next.shift_service_date AND sw.ends_at_utc=sw_next.starts_at_utc,'Controlled horizon must straddle adjacent shifts on the same service date');
  IF (sw_next.shift_service_date,sw_next.roster_shift_type) IS DISTINCT FROM (sw.shift_service_date,sw.roster_shift_type) THEN
   INSERT INTO public.schedules(organization_id,facility_id,week_start_date) VALUES(f.org,f.fac,date_trunc('week',sw_next.shift_service_date)::date) ON CONFLICT DO NOTHING;
   SELECT id INTO sch FROM public.schedules WHERE facility_id=f.fac AND week_start_date=date_trunc('week',sw_next.shift_service_date)::date AND deleted_at IS NULL;
-  INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids)
-  VALUES(sch,f.aide_staff,f.fac,f.org,sw_next.shift_service_date,sw_next.roster_shift_type,ARRAY[f.resident]);
+  INSERT INTO public.shift_assignments(schedule_id,staff_id,facility_id,organization_id,shift_date,shift_type,assigned_resident_ids,custom_start_time,custom_end_time,schedule_rounding_coverage)
+  VALUES(sch,f.relief_staff,f.fac,f.org,sw_next.shift_service_date,sw_next.roster_shift_type,ARRAY[f.resident],(sw_next.starts_at_utc AT TIME ZONE facility_tz)::time,(sw_next.ends_at_utc AT TIME ZONE facility_tz)::time,true);
  END IF;
+ -- Draft plans are not clinical ownership. Publish recorded work through the
+ -- actual owner command, rather than relying on the retired enum-only lookup.
+ PERFORM pg_temp.closeout_assert(NOT EXISTS(SELECT 1 FROM public.resolve_observation_task_assignees_for_instant(f.fac,anchor_at,ARRAY[f.resident]) a WHERE a.shift_assignment_id=assignment),'Draft roster must not own clinical checks');
+ PERFORM pg_temp.closeout_signin('owner');
+ FOR planned_week IN SELECT id,updated_at FROM public.schedules WHERE facility_id=f.fac AND deleted_at IS NULL AND status='draft' AND week_start_date IN(date_trunc('week',sw.shift_service_date)::date,date_trunc('week',sw_next.shift_service_date)::date) LOOP
+  PERFORM public.schedule_publish(planned_week.id,planned_week.updated_at);
+ END LOOP;
+ PERFORM pg_temp.closeout_signin('aide');
  SELECT monitoring_order_interval_presets[1] INTO interval_minutes FROM public.facility_observation_thresholds WHERE facility_id=f.fac;
  INSERT INTO public.resident_monitoring_orders(id,organization_id,facility_id,resident_id,interval_minutes,starts_at,ends_at,review_due_at,ordered_by_type,ordered_by_name,order_received_as,reason_category,reason_note,entered_by,status)
- VALUES(ord,f.org,f.fac,f.resident,interval_minutes,now(),now()+interval '1 hour',now()+interval '1 day','facility_admin','Synthetic order authority','verbal','other','Synthetic ownership probe',f.aide,'active');
- PERFORM public.generate_monitoring_order_tasks(f.fac,now()+interval '1 hour');
+ VALUES(ord,f.org,f.fac,f.resident,interval_minutes,anchor_at,anchor_at+interval '1 hour',anchor_at+interval '1 day','facility_admin','Synthetic order authority','verbal','other','Synthetic ownership probe',f.aide,'active');
+ PERFORM public.generate_monitoring_order_tasks(f.fac,anchor_at+interval '1 hour');
  SELECT count(*) INTO first_count FROM public.resident_observation_tasks WHERE monitoring_order_id=ord;
  PERFORM pg_temp.closeout_assert(first_count>0,'Monitoring Order produced no tasks');
  PERFORM pg_temp.closeout_assert(NOT EXISTS(SELECT 1 FROM public.resident_observation_tasks t WHERE t.monitoring_order_id=ord AND (t.assigned_staff_id IS NULL OR NOT EXISTS(SELECT 1 FROM public.resident_observation_assignments a WHERE a.task_id=t.id AND a.staff_id=t.assigned_staff_id AND a.released_at IS NULL))),'Order task has no usable roster assignment');
- n:=public.generate_monitoring_order_tasks(f.fac,now()+interval '1 hour');
+ PERFORM pg_temp.closeout_assert((SELECT count(DISTINCT assigned_staff_id)=2 FROM public.resident_observation_tasks WHERE monitoring_order_id=ord),'Boundary fixture must assign tasks to both current and relief observers');
+ PERFORM pg_temp.closeout_assert(NOT EXISTS(SELECT 1 FROM public.resident_observation_tasks WHERE monitoring_order_id=ord AND assigned_staff_id IS DISTINCT FROM CASE WHEN due_at<sw.ends_at_utc THEN f.aide_staff ELSE f.relief_staff END),'Monitoring task owner did not follow its actual due instant across the boundary');
+ n:=public.generate_monitoring_order_tasks(f.fac,anchor_at+interval '1 hour');
  PERFORM pg_temp.closeout_assert(n=0 AND (SELECT count(*) FROM public.resident_observation_tasks WHERE monitoring_order_id=ord)=first_count,'Order generation is not idempotent');
  -- Revoking a grant between reading the queue and the explicit claim refuses.
  UPDATE public.user_facility_access SET revoked_at=now() WHERE user_id=f.aide AND facility_id=f.fac;

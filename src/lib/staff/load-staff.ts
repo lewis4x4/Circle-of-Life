@@ -1,3 +1,4 @@
+import { ASSIGNMENT_SNAPSHOT_SELECT, type AssignmentSnapshot } from "@/lib/schedules/assignment-context";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { enumLabel } from "@/lib/display/enum-label";
@@ -144,7 +145,8 @@ type SupabaseCertRow = {
   deleted_at: string | null;
 };
 
-type SupabaseShiftRow = {
+type SupabaseShiftRow = AssignmentSnapshot & {
+  custom_start_time: string | null; custom_end_time: string | null;
   staff_id: string;
   shift_date: string;
   shift_type: string;
@@ -193,12 +195,13 @@ export async function fetchStaffFromSupabase(
   // on every load.
   let shiftsQuery = supabase
     .from("shift_assignments" as never)
-    .select("staff_id, shift_date, shift_type")
+    .select(`staff_id, shift_date, shift_type, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}, schedules!inner(status, deleted_at)` )
+    .eq("schedules.status", "published").is("schedules.deleted_at", null)
     .in("staff_id", staffIds)
     .gte("shift_date", today)
     .is("deleted_at", null)
     .in("status", ["assigned", "confirmed"])
-    .order("shift_date", { ascending: true });
+    .order("shift_date", { ascending: true }).order("custom_start_time", { ascending: true });
 
   if (isValidFacilityIdForQuery(selectedFacilityId)) {
     shiftsQuery = shiftsQuery.eq("facility_id", selectedFacilityId);

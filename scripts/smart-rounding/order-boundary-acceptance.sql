@@ -107,7 +107,6 @@ DECLARE
   v_admin CONSTANT uuid := '50990000-0000-4000-8000-000000000004';
   v_publisher CONSTANT uuid := '50990000-0000-4000-8000-000000000008';
   v_schedule uuid;
-  v_staff CONSTANT uuid := '50990000-0000-4000-8000-000000000006';
   v_source_cadence uuid;
   v_donor uuid;
 BEGIN
@@ -198,10 +197,19 @@ BEGIN
   INSERT INTO public.schedules (facility_id, organization_id, week_start_date, status)
   SELECT DISTINCT v_facility,v_org,date_trunc('week',d.day)::date,'draft'::public.schedule_status
   FROM generate_series(current_date-2,current_date+2,interval '1 day') AS d(day);
-  INSERT INTO public.staff (id, facility_id, organization_id, first_name, last_name, staff_role, hire_date, employment_status)
-    VALUES (v_staff, v_facility, v_org, 'Staff', 'Synthetic', 'resident_aide', current_date - 100, 'active');
+  -- Distinct people cover the clinical windows; unrelated multiple rows in
+  -- one employee/date cell are deliberately not an inferred managed group.
+  INSERT INTO auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
+    SELECT id,id::text||'@boundary.haven.test','{}','{}' FROM public.facility_shift_definitions WHERE facility_id=v_facility;
+  INSERT INTO public.user_profiles(id,organization_id,email,full_name,app_role,is_active)
+    SELECT id,v_org,id::text||'@boundary.haven.test','Synthetic Window Employee','med_tech',true FROM public.facility_shift_definitions WHERE facility_id=v_facility;
+  INSERT INTO public.user_facility_access(user_id,facility_id,organization_id)
+    SELECT id,v_facility,v_org FROM public.facility_shift_definitions WHERE facility_id=v_facility;
+  INSERT INTO public.staff (id, user_id, facility_id, organization_id, first_name, last_name, staff_role, hire_date, employment_status)
+    SELECT id,id,v_facility,v_org,'Staff',label,'resident_aide',current_date-100,'active'
+    FROM public.facility_shift_definitions WHERE facility_id=v_facility;
   INSERT INTO public.shift_assignments (schedule_id, staff_id, facility_id, organization_id, shift_date, shift_type, status, custom_start_time, custom_end_time, shift_definition_id)
-  SELECT w.id,v_staff,v_facility,v_org,d.day::date,t.roster_shift_type,'confirmed',t.starts_at_local,t.ends_at_local,t.id
+  SELECT w.id,t.id,v_facility,v_org,d.day::date,t.roster_shift_type,'confirmed',t.starts_at_local,t.ends_at_local,t.id
   FROM generate_series(current_date-2,current_date+2,interval '1 day') AS d(day)
   JOIN public.schedules w ON w.facility_id=v_facility AND w.week_start_date=date_trunc('week',d.day)::date
   CROSS JOIN public.facility_shift_definitions t

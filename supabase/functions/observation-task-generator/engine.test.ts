@@ -49,7 +49,7 @@ function windows() {
 /** The day shift is on the clock; the evening shift has not started. */
 function onClockResolver(args: Record<string, unknown>): Answer {
   const residents = args.p_resident_ids as string[];
-  const current = args.p_roster_shift_type === "day";
+  const current = args.p_at === windows()[0].due_at_utc;
   return {
     data: residents.map((resident_id) => ({
       resident_id,
@@ -63,6 +63,7 @@ function onClockResolver(args: Record<string, unknown>): Answer {
 
 function fakeAdmin(options: {
   facilities: string[];
+  windows?: ReturnType<typeof windows>;
   resolve?: (args: Record<string, unknown>) => Answer;
   writeCadence?: (args: Record<string, unknown>) => Answer;
   assignUnowned?: (args: Record<string, unknown>) => Answer;
@@ -90,13 +91,13 @@ function fakeAdmin(options: {
       calls.push({ name, args });
       switch (name) {
         case "facility_current_and_next_shift_observation_windows":
-          return Promise.resolve({ data: windows(), error: null });
+          return Promise.resolve({ data: options.windows ?? windows(), error: null });
         case "stand_down_ungenerated_observation_tasks":
         case "generate_monitoring_order_tasks":
           return Promise.resolve({ data: 0, error: null });
         case "observation_windows_under_monitoring_order":
           return Promise.resolve({ data: [], error: null });
-        case "resolve_observation_task_assignees":
+        case "resolve_observation_task_assignees_for_instant":
           return Promise.resolve((options.resolve ?? onClockResolver)(args));
         case "record_observation_staffing_gap":
           return Promise.resolve({ data: true, error: null });
@@ -330,4 +331,28 @@ Deno.test("the shift in progress inside its handoff grace waits for the relief: 
   assertEquals(calls.filter((call) => call.name === "resolve_observation_staffing_gap").length, 0);
   assertEquals(summary.staffing_gaps, []);
   assertEquals(summary.ok, true);
+});
+
+Deno.test("one clinical shift resolves each due instant independently, including a split-work gap", async () => {
+  const otherStaff = "30000000-0000-4000-8000-000000000002";
+  const taskWindows = ["2026-09-23T12:00:00.000Z", "2026-09-23T18:00:00.000Z", "2026-09-23T21:00:00.000Z"].map((due, index) => ({
+    ...windows()[0], window_key: `day_part_${index}`, due_at_utc: due,
+    window_opens_at_utc: due, window_closes_at_utc: due,
+  }));
+  const { admin, calls } = fakeAdmin({ facilities: [FACILITY_A], windows: taskWindows, resolve: (args) => ({
+    data: (args.p_resident_ids as string[]).map((resident_id) => ({ resident_id, shift_assignment_id: null,
+      staff_id: args.p_at === taskWindows[0].due_at_utc ? STAFF_ON_CLOCK : args.p_at === taskWindows[2].due_at_utc ? otherStaff : null,
+      assignment_source: args.p_at === taskWindows[1].due_at_utc ? "none_scheduled" : "shift_roster",
+    })), error: null,
+  }) });
+  const recorded = recordingLog();
+  const summary = await runObservationTaskGenerator({ admin, organizationId: ORG, facilityId: FACILITY_A, atIso: AT, log: recorded });
+  assertEquals(summary.ok, false, "A real split-work gap remains visible rather than claiming full staffing");
+  const resolverCalls = calls.filter((call) => call.name === "resolve_observation_task_assignees_for_instant");
+  assertEquals(resolverCalls.map((call) => call.args.p_at), taskWindows.map((window) => window.due_at_utc));
+  const rows = calls.filter((call) => call.name === "record_cadence_observation_tasks").flatMap((call) => call.args.p_rows as { due_at: string; assigned_staff_id: string | null }[]);
+  assertEquals(rows.filter((row) => row.due_at === taskWindows[0].due_at_utc).map((row) => row.assigned_staff_id), [STAFF_ON_CLOCK, STAFF_ON_CLOCK]);
+  assert(rows.filter((row) => row.due_at === taskWindows[1].due_at_utc).every((row) => row.assigned_staff_id === null));
+  assertEquals(rows.filter((row) => row.due_at === taskWindows[2].due_at_utc).map((row) => row.assigned_staff_id), [otherStaff, otherStaff]);
+  assertEquals(summary.staffing_gaps.length, 1);
 });

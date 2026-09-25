@@ -40,7 +40,14 @@ export type KioskStaffDisplay = {
   last_out_at?: string | null;
 };
 
+export type KioskPlannedBlock = {
+  label: string; color: string | null; starts_at: string; ends_at: string; time_zone: string;
+  block_index: number | null; block_count: number | null;
+};
+export type KioskPlannedContext = { status: "ready"; blocks: KioskPlannedBlock[] } | { status: "unavailable" };
+
 export type KioskIdentifyResponse = KioskStaffDisplay & {
+  planned_context?: KioskPlannedContext;
   first_name: string;
   state: KioskStaffState;
   next_actions: PunchType[];

@@ -26,10 +26,11 @@
  * task of any kind until the next tick.
  *
  * Every generated task gets an owner the floor can actually be, resolved by
- * `resolve_observation_task_assignees`: the resident split where one exists,
- * otherwise a staff member scheduled for that shift, chosen by a stable hash so
- * a re-run does not reshuffle the board. Where nobody is scheduled no assignee
- * is invented. The tasks are still generated, so the gap is counted rather than
+ * `resolve_observation_task_assignees_for_instant` at each task due time:
+ * the resident split where one exists, otherwise an eligible staff member
+ * whose saved work block covers that instant, chosen by a stable hash so
+ * a re-run does not reshuffle the board. Split gaps do not imply scheduled coverage. Where nobody is eligible,
+ * no assignee is invented. The tasks are still generated, so the gap is counted rather than
  * hidden, and the shift is raised as a visible defect through
  * `record_observation_staffing_gap` and reported here by facility, shift and
  * service date.

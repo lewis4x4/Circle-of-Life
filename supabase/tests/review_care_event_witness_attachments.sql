@@ -116,8 +116,8 @@ UPDATE wsched SET sched_a = COALESCE(
 
 INSERT INTO public.shift_assignments(schedule_id,organization_id,facility_id,staff_id,shift_date,shift_type,status,custom_start_time,custom_end_time)
   SELECT sched_a, org, facility, staff_a, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
-  UNION ALL SELECT sched_a, org, facility, staff_b, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
-  UNION ALL SELECT sched_a, org, facility, staff_c, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_a, org, facility, staff_b, ws.service_date, 'custom'::public.shift_type, 'assigned'::public.shift_assignment_status,time '17:00',time '20:00' FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
+  UNION ALL SELECT sched_a, org, facility, staff_c, ws.service_date, 'custom'::public.shift_type, 'assigned'::public.shift_assignment_status,time '17:00',time '20:00' FROM wf JOIN wshift ws ON ws.fac = wf.facility, wsched
   UNION ALL SELECT sched_b, org, facility_b, staff_far, ws.service_date, ws.shift_type, 'assigned'::public.shift_assignment_status,ws.starts_at,ws.ends_at FROM wf JOIN wshift ws ON ws.fac = wf.facility_b, wsched;
 
 -- The seed in 403 targets organization 00000000-...-001. Mirror it when the
@@ -151,8 +151,14 @@ CREATE FUNCTION pg_temp.must_fail(sql text, expected text) RETURNS void LANGUAGE
 END $$;
 
 GRANT SELECT ON wf TO authenticated, service_role;
+-- The synthetic administrator publishes both fixture facilities before witness-scope checks.
+INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SELECT admin_u,facility_b,org FROM wf;
 SELECT pg_temp.actor(admin_u,admin_s) FROM wf;
 UPDATE public.schedules SET status='published' WHERE id IN (SELECT sched_a FROM wsched UNION ALL SELECT sched_b FROM wsched);
+-- Historical witnesses include actual custom work, even after attendance closes.
+UPDATE public.shift_assignments SET status='completed' WHERE staff_id=(SELECT staff_c FROM wf);
+-- Restore the original admin scope before cross-facility witness assertions.
+UPDATE public.user_facility_access SET revoked_at=now() WHERE user_id=(SELECT admin_u FROM wf) AND facility_id=(SELECT facility_b FROM wf);
 
 -- ===========================================================================
 -- Witness statements

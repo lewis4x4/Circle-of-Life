@@ -69,9 +69,9 @@ export function ShiftEventsSummary({ facilityId, timeZone, shifts }: ShiftEvents
   }, [load]);
 
   return (
-    <section aria-label="This shift's events" className="rounded-lg border border-border bg-card p-4">
+    <section aria-label="Care window events" className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-base font-semibold text-foreground">This shift&apos;s events</h3>
+        <h3 className="text-base font-semibold text-foreground">Care window events</h3>
         {state.status === "success-empty" || state.status === "success-populated" ? (
           <span className="text-sm text-muted-foreground">{state.shiftWord} shift</span>
         ) : null}

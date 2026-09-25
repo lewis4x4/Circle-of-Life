@@ -137,33 +137,17 @@ async function windowsUnderMonitoringOrder(
   return covered;
 }
 
-/**
- * Who owns each resident's checks for the shift the windows belong to.
- *
- * The whole fallback chain lives in SQL, in
- * `resolve_observation_task_assignees`, for the same reason the window times do:
- * this file carries no configuration and no scheduling rule of its own, and the
- * chain has to be provable in the same replay that proves the policies. The
- * lookup matches `roster_shift_type`, not `shift_key`: the key is renameable
- * configuration and `shift_assignments.shift_type` is a fixed enum, so joining
- * the two directly would return nothing the moment an administrator renamed a
- * shift, and would read as "nobody was assigned" rather than as an error.
- *
- * Generating one shift ahead means these are always the incoming shift's rows,
- * which is what a shift change window needs: the check is owned by the staff
- * whose shift begins at that time, not by the shift going off duty.
- */
+/** Resolve each resident's owner at this task's actual due instant. Clinical
+ * cadence still defines every window; published work intervals choose owners. */
 async function assigneesByResident(
   admin: SupabaseClient,
   facilityId: string,
-  shiftServiceDate: string,
-  rosterShiftType: string,
+  dueAt: string,
   residentIds: string[],
 ): Promise<Map<string, ResolvedAssigneeRow>> {
-  const { data, error } = await admin.rpc("resolve_observation_task_assignees", {
+  const { data, error } = await admin.rpc("resolve_observation_task_assignees_for_instant", {
     p_facility_id: facilityId,
-    p_shift_service_date: shiftServiceDate,
-    p_roster_shift_type: rosterShiftType,
+    p_at: dueAt,
     p_resident_ids: residentIds,
   });
 
@@ -410,16 +394,14 @@ export async function runObservationTaskGenerator(options: {
         if (rows.length === 0) continue;
 
         const firstWindow = windows[0];
-        const assignees = await assigneesByResident(
-          admin,
-          facility.id,
-          firstWindow.shift_service_date,
-          firstWindow.roster_shift_type,
-          [...residentsWithWork],
-        );
-
+        const assignees = new Map<string, ResolvedAssigneeRow>();
+        for (const dueAt of new Set(rows.map((row) => row.due_at))) {
+          const residentsAtDue = [...new Set(rows.filter((row) => row.due_at === dueAt).map((row) => row.resident_id))];
+          const atDue = await assigneesByResident(admin, facility.id, dueAt, residentsAtDue);
+          for (const [residentId, resolved] of atDue) assignees.set(`${dueAt}:${residentId}`, resolved);
+        }
         for (const row of rows) {
-          const assignee = assignees.get(row.resident_id) ?? null;
+          const assignee = assignees.get(`${row.due_at}:${row.resident_id}`) ?? null;
           row.shift_assignment_id = assignee?.shift_assignment_id ?? null;
           row.assigned_staff_id = assignee?.staff_id ?? null;
         }
@@ -435,10 +417,10 @@ export async function runObservationTaskGenerator(options: {
         // progress inside its handoff grace, at a building that staffs from
         // punches. Its owners come from the clock. Counting it would report
         // every such building as unstaffed on every tick.
-        const unassigned = [...residentsWithWork].filter((residentId) => {
-          const assignee = assignees.get(residentId);
+        const unassigned = [...new Set(rows.filter((row) => {
+          const assignee = assignees.get(`${row.due_at}:${row.resident_id}`);
           return !assignee?.staff_id && assignee?.assignment_source !== "awaiting_clock_in";
-        });
+        }).map((row) => row.resident_id))];
         if (unassigned.length > 0) {
           if (!facilityIdsWithoutStaffing.includes(facility.id)) facilityIdsWithoutStaffing.push(facility.id);
           staffingGaps.push({
@@ -472,7 +454,7 @@ export async function runObservationTaskGenerator(options: {
               error_message: gapErr.message,
             });
           }
-        } else if ([...residentsWithWork].some((residentId) => assignees.get(residentId)?.assignment_source === "on_clock")) {
+        } else if ([...assignees.values()].some((assignee) => assignee.assignment_source === "on_clock")) {
           // Closing the alert records that ownership repair succeeded. Defer it
           // until every cadence write and the unowned assignment pass finish.
           staffedShiftsToResolve.push(firstWindow);

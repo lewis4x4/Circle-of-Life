@@ -15,16 +15,7 @@ import { fileURLToPath } from "node:url";
  * gap still fails. When a listed number later gains a real file, the check passes
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
-export const ALLOWED_GAPS = {
-  // Temporary gaps after merging main (COL-795 / PR #887 holds 514).
-  // Delete each entry when its PR merges and the file lands on main.
-  509: "claimed by open PR #883 (COL-793 staff duplicate roster cleanup, 509_staff_duplicate_roster_cleanup.sql)",
-  510: "claimed by open PR #876 (Workforce people across all facilities, 510_workforce_multi_facility_people.sql)",
-  511: "claimed by open PR #886 (COL-765 current-resident Medicaid sweep, 511_benefits_current_resident_sweep.sql)",
-  513: "claimed by open PR #888 (Workforce shift options, 513_facility_schedule_presets.sql)",
-  515: "claimed by open PR #889 (COL-766 Medicaid prompts, 515_benefits_medicaid_prompts.sql)",
-  516: "unused: referral tour records (PR #890) was applied hosted as 516, then renumbered to 518 before merge; no file will take 516",
-};
+export const ALLOWED_GAPS = {};
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;
 // Supabase CLI's default migration filename format is a 14-digit timestamp

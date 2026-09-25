@@ -157,6 +157,8 @@ export const METRIC_PRESENTATION: Record<string, MetricPresentation> = {
     groupOrder: 55,
     format: "integer",
   },
+  scheduledWorkBlocks14d: { label: "Scheduled work blocks", group: "Staffing coverage", groupOrder: 55, format: "integer" },
+  scheduledWorkHours14d: { label: "Scheduled hours", group: "Staffing coverage", groupOrder: 55, format: "decimal" },
   coverageDayShifts14d: {
     label: "Day shifts",
     group: "Staffing coverage",

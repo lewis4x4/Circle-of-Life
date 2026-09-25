@@ -1,3 +1,5 @@
+import { ASSIGNMENT_SNAPSHOT_SELECT, assignmentLabel, type AssignmentSnapshot } from "@/lib/schedules/assignment-context";
+import { formatScheduleTimes } from "@/lib/schedules/week-grid";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -86,6 +88,8 @@ type IncidentRow = {
 type ShiftAssignmentRow = {
   id: string;
   shift_type: string;
+  custom_start_time: string | null; custom_end_time: string | null;
+  schedule_preset_name?: string | null;
   status: string;
   staff: { first_name: string; last_name: string } | null;
 };
@@ -146,7 +150,8 @@ export async function fetchMorningHuddleData(
 
   const rosterQ = supabase
     .from("shift_assignments")
-    .select("id, shift_type, status, staff(first_name, last_name)")
+    .select(`id, shift_type, status, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}, staff(first_name, last_name), schedules!inner(status, deleted_at)`)
+    .eq("schedules.status", "published").is("schedules.deleted_at", null)
     .eq("facility_id", facilityId)
     .eq("shift_date", dateIso)
     .is("deleted_at", null)
@@ -255,7 +260,7 @@ export async function fetchMorningHuddleData(
     shiftRoster: (rosterRes.data ?? []).map((r) => ({
       id: r.id,
       staffName: formatMorningHuddleStaffName(r.staff),
-      shiftType: r.shift_type,
+      shiftType: `${assignmentLabel(r as AssignmentSnapshot & { shift_type: string })} · ${formatScheduleTimes(r.custom_start_time, r.custom_end_time)}`,
       status: r.status,
     })),
     openOceTasks: (oceRes.data ?? []).map((r) => ({
