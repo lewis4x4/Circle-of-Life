@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form-label";
 import { StatusPill } from "@/components/ui/status-pill";
 import { dollars } from "@/lib/benefits/admission-screening";
-import type { MedicaidPrompts as PromptsData, PromptKind } from "@/lib/benefits/contracts";
+import type { InfoPromptKind, MedicaidPrompts as PromptsData, PromptKind } from "@/lib/benefits/contracts";
 import { BenefitsRequestError, benefitsFetch, dateLabel, ErrorNotice, fieldClass, Panel } from "./benefits-ui";
 
 export function runwayWords(daysLeft: number) {
@@ -63,6 +63,38 @@ function PromptActions({ residentId, kind, onDone }: { residentId: string; kind:
   );
 }
 
+/** COL-769: informational prompts are only set aside (reason optional, still recorded); they never start a case. */
+function InfoPromptAside({ residentId, kind, onDone }: { residentId: string; kind: InfoPromptKind; onDone: () => Promise<void> }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [days, setDays] = useState("90");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const save = async () => {
+    if (!/^\d{1,3}$/.test(days) || Number(days) < 1 || Number(days) > 180) { setError("Set it aside for 1 to 180 days."); return; }
+    setBusy(true); setError(null);
+    try {
+      await benefitsFetch("/api/admin/benefits/prompts/dismiss", { method: "POST", body: JSON.stringify({ request_id: requestId, resident_id: residentId, kind, days: Number(days), ...(reason.trim() ? { reason: reason.trim() } : {}) }) });
+      setRequestId(crypto.randomUUID()); setOpen(false);
+      await onDone();
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to set the prompt aside."); } finally { setBusy(false); }
+  };
+  if (!open) return <Button variant="outline" className="min-h-11" onClick={() => setOpen(true)}>Set aside</Button>;
+  return (
+    <form className="grid gap-3 rounded-[var(--radius)] border border-border p-3 sm:grid-cols-[8rem_1fr_auto]" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+      <div className="space-y-2"><FormLabel htmlFor={`${id}-days`} required>For how many days</FormLabel><input id={`${id}-days`} className={fieldClass} inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value)} /></div>
+      <div className="space-y-2"><FormLabel htmlFor={`${id}-reason`}>Reason (optional)</FormLabel><input id={`${id}-reason`} className={fieldClass} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
+      <div className="flex items-end gap-2">
+        <Button type="submit" className="min-h-11" disabled={busy}>Set aside</Button>
+        <Button type="button" variant="outline" className="min-h-11" onClick={() => { setOpen(false); setError(null); }}>Cancel</Button>
+      </div>
+      <ErrorNotice error={error} />
+    </form>
+  );
+}
+
 /** Jessica's prompts: residents whose private pay is ending, and (once payments live in Haven) residents paying late. */
 export function MedicaidPromptsPanel() {
   const [data, setData] = useState<PromptsData | null>(null);
@@ -86,7 +118,7 @@ export function MedicaidPromptsPanel() {
       {!data && !error && <p role="status">Loading prompts…</p>}
       {data && (
         <>
-          {data.runway.length === 0 && data.late_payments.length === 0 && <p className="text-sm text-muted-foreground">No residents need a Medicaid case started right now.</p>}
+          {data.runway.length === 0 && data.late_payments.length === 0 && !data.over_income?.length && !data.property_lookback?.length && <p className="text-sm text-muted-foreground">No residents need a Medicaid case started right now.</p>}
           {data.runway.length > 0 && (
             <ul className="divide-y divide-border" aria-label="Private pay ending">
               {data.runway.map((p) => (
@@ -109,6 +141,33 @@ export function MedicaidPromptsPanel() {
                     <StatusPill tone="warning">{dollars(p.owed_cents)} owed</StatusPill>
                   </div>
                   {p.can_write && <PromptActions residentId={p.resident_id} kind="late_payments" onDone={load} />}
+                </li>
+              ))}
+            </ul>
+          )}
+          {data.over_income && data.over_income.length > 0 && (
+            <ul className="divide-y divide-border" aria-label="Over income">
+              {data.over_income!.map((p) => (
+                <li key={`o-${p.resident_id}`} className="space-y-2 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div><p className="font-medium">{p.resident_name}</p><p className="text-sm text-muted-foreground">{p.facility_name} · answers of {dateLabel(p.answered_at)}</p></div>
+                    <StatusPill tone="info">Over income — consider a Qualified Income Trust</StatusPill>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Informational only. The resident stays &ldquo;does not qualify now&rdquo;; nothing changes unless someone acts.</p>
+                  {p.can_write && <InfoPromptAside residentId={p.resident_id} kind="over_income" onDone={load} />}
+                </li>
+              ))}
+            </ul>
+          )}
+          {data.property_lookback && data.property_lookback.length > 0 && (
+            <ul className="divide-y divide-border" aria-label="Property status changed">
+              {data.property_lookback!.map((p) => (
+                <li key={`p-${p.resident_id}`} className="space-y-2 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div><p className="font-medium">{p.resident_name}</p><p className="text-sm text-muted-foreground">{p.facility_name} · changed {dateLabel(p.changed_at)}</p></div>
+                    <StatusPill tone="warning">Property status changed — check the transfer look-back before applying</StatusPill>
+                  </div>
+                  {p.can_write && <InfoPromptAside residentId={p.resident_id} kind="property_lookback" onDone={load} />}
                 </li>
               ))}
             </ul>

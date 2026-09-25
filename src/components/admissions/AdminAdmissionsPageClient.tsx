@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 import { createClient } from "@/lib/supabase/client";
+import { loadMedicaidStatuses, type MedicaidStatus } from "@/lib/benefits/medicaid-status";
 import { formatColLabel } from "@/lib/col-labels";
 import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import type { Database } from "@/types/database";
@@ -39,7 +40,6 @@ import {
   admissionsHubScopedEmptyNotice,
   admissionsHubScopeLabel,
   formatAdmissionsHubConferenceScheduledDate,
-  formatAdmissionsHubMedicaidStage,
   formatAdmissionsHubRelativeDate,
   formatAdmissionsHubResidentName,
   formatAdmissionsHubTargetMoveInDate,
@@ -65,11 +65,6 @@ export type AdminAdmissionsPageClientProps = {
 
 function formatStatus(s: string) {
   return formatColLabel(s);
-}
-
-function formatMedicaidStage(stage: string | null) {
-  if (!stage?.trim()) return formatAdmissionsHubMedicaidStage(stage);
-  return formatStatus(stage);
 }
 
 function hubMetric(value: number, ctx: AdmissionsHubMetricContext) {
@@ -445,6 +440,17 @@ export function AdminAdmissionsPageClient({
       .slice(0, 8);
   }, [admissions, onboardingState]);
 
+  // Medicaid status comes from the benefits workflow (COL-772); null = no Medicaid access, show nothing.
+  const [medicaid, setMedicaid] = useState<Map<string, MedicaidStatus> | null>(null);
+  const featuredResidentKey = featuredAdmissions.map((r) => r.resident_id ?? "").join(",");
+  useEffect(() => {
+    let active = true;
+    void loadMedicaidStatuses(supabase, featuredResidentKey.split(",").filter(Boolean)).then((map) => { if (active) setMedicaid(map); });
+    return () => { active = false; };
+    // supabase is a stable browser client; the key captures the residents shown.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featuredResidentKey]);
+
   const activeAdmissionCaseByLeadId = useMemo(() => {
     return Object.fromEntries(
       admissions
@@ -787,9 +793,11 @@ export function AdminAdmissionsPageClient({
                       <p className="mt-0.5 text-[12px] text-muted-foreground">
                         {formatAdmissionsHubTargetMoveInDate(r.target_move_in_date)} · {formatAdmissionsHubRelativeDate(r.updated_at)}
                       </p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        Medicaid stage: {formatMedicaidStage(r.medicaid_pipeline_stage)}
-                      </p>
+                      {r.resident_id && medicaid?.get(r.resident_id) ? (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Medicaid: {medicaid.get(r.resident_id)!.label}
+                        </p>
+                      ) : null}
                       <p
                         className={cn(
                           "mt-1 text-[11px]",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireCurrentApiActor, revalidateCurrentApiActor, type CurrentApiActor, type CurrentApiActorResult } from "@/lib/auth/current-api-actor";
+import { screeningSheetFactsSchema } from "@/lib/benefits/screening-sheet";
 import { databaseUuidSchema as uuid } from "@/lib/operations/database-uuid";
 import { validateResidentIntakeBytes } from "@/lib/resident-intake/source-bytes";
 import {
@@ -10,7 +11,7 @@ import {
   benefitsReceiptSchema, benefitsRequirementSchema, benefitsScreeningSchema, benefitsSubmissionSchema,
   createBenefitsCaseSchema, type BenefitsDetail, type BenefitsDocument, BENEFITS_RULE_KEYS, benefitsRuleSetSchema,
   admissionGateSchema, overrideAdmissionScreeningSchema, recordAdmissionScreeningSchema, SCREENING_COVERAGE, SCREENING_RESULTS, SCREENING_RESPONDENTS,
-  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, BOARD_STEPS, CONTACT_AGENCIES,
+  completeRecheckSchema, startSweepSchema, startPromptCaseSchema, dismissPromptSchema, boardCommandSchema, contactSaveSchema, freshnessReopenSchema, BOARD_STEPS, CONTACT_AGENCIES,
 } from "./contracts";
 
 export const BENEFITS_STAFF_ROLES = ["owner", "org_admin", "facility_admin", "manager", "admin_assistant", "coordinator", "med_tech"] as const;
@@ -260,6 +261,8 @@ const promptsSchema = z.object({
   late_signal: z.array(z.object({ facility_id: uuid, facility_name: z.string(), live: z.boolean() })),
   runway: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), runway_date: z.string(), days_left: z.number().int(), last_result: screeningResultSchema, can_write: z.boolean() })),
   late_payments: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), oldest_due: z.string(), owed_cents: z.number().int(), can_write: z.boolean() })),
+  over_income: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), answered_at: z.string(), can_write: z.boolean() })).default([]),
+  property_lookback: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), changed_at: z.string(), can_write: z.boolean() })).default([]),
 });
 export async function getMedicaidPrompts(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
@@ -281,7 +284,7 @@ export async function startPromptCase(request: Request) {
 export async function dismissPrompt(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const parsed = dismissPromptSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "Give the number of days and the reason.");
-  const result = await rpc(auth.actor, "benefits_prompt_dismiss", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_days: parsed.data.days, p_reason: parsed.data.reason, p_request_id: parsed.data.request_id });
+  const result = await rpc(auth.actor, "benefits_prompt_dismiss", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_days: parsed.data.days, p_reason: parsed.data.reason || null, p_request_id: parsed.data.request_id });
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ dismissal_id: uuid, until_on: z.string() }).safeParse(result.data);
   return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();
@@ -295,6 +298,9 @@ const boardSchema = z.object({
     agency_score: z.number().int().min(1).max(5).nullable(), reapply_on: z.string().nullable(), caseworker_id: uuid.nullable(), caseworker_name: z.string().nullable(), caseworker_phone: z.string().nullable(),
     step_dates: z.record(z.string(), z.string()), next_step: boardStepEnum.nullable(), waiting_on: z.enum(["us", "agency"]), days_since_last_step: z.number().int(), stalled: z.boolean(),
     plan_rate_cents: z.number().int().nullable(), revenue_not_collected_cents: z.number().int().nullable(),
+    phase: z.enum(["working", "awaiting_first_payment", "renewal"]).optional(), phase_days: z.number().int().nullable().optional(),
+    first_payment_on: z.string().nullable().optional(), renewal_date: z.string().nullable().optional(),
+    documents_expiring: z.number().int().min(0).optional(),
   })),
   needs_answers: z.array(z.object({ resident_id: uuid, resident_name: z.string() })), rechecks_due: z.number().int(),
   contacts: z.array(z.object({ id: uuid, name: z.string(), agency: z.enum(CONTACT_AGENCIES), phone: z.string().nullable() })),
@@ -316,6 +322,55 @@ export async function commandMedicaidBoard(request: Request, caseId: string) {
   if (result.error) return rpcFailure(result.error);
   const reply = commandReply.safeParse(result.data);
   return reply.success && reply.data.case_id === caseId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+const freshnessSchema = z.object({
+  as_of: z.string(), case_id: uuid, revision: z.number().int().positive(), can_write: z.boolean(), family_can_collect: z.boolean(),
+  items: z.array(z.object({ requirement_id: uuid, title: z.string(), signature_status: z.string(), accepted_on: z.string(), valid_days: z.number().int(), expires_on: z.string(), days_left: z.number().int(), freshness: z.enum(["fresh", "expiring", "expired"]) })),
+});
+/** COL-768: accepted documents with a good-for period on one case. */
+export async function getDocumentFreshness(caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  if (!uuid.safeParse(caseId).success) return benefitsFailure(400, "Unknown case.");
+  const result = await rpc(auth.actor, "benefits_document_freshness", { p_case_id: caseId });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = freshnessSchema.safeParse(result.data);
+  return parsed.success && parsed.data.case_id === caseId ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+/** COL-768: reopen an expiring or expired document for the facility administrator to gather a current copy. */
+export async function reopenDocumentFreshness(request: Request, caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const parsed = freshnessReopenSchema.safeParse(await readBody(request));
+  if (!uuid.safeParse(caseId).success || !parsed.success) return benefitsFailure(400, "Choose the document to reopen.");
+  const result = await rpc(auth.actor, "benefits_freshness_reopen", { p_case_id: caseId, p_requirement_id: parsed.data.requirement_id, p_expected_revision: parsed.data.expected_revision, p_request_id: parsed.data.request_id });
+  if (result.error) return rpcFailure(result.error);
+  const reply = commandReply.safeParse(result.data);
+  return reply.success && reply.data.case_id === caseId ? NextResponse.json(reply.data, { headers: noStore }) : benefitsFailure();
+}
+const summarySchema = z.object({
+  as_of: z.string(), month_start: z.string(), can_set_goals: z.boolean(), steps: z.array(z.object({ step: boardStepEnum, label: z.string() })),
+  facilities: z.array(z.object({
+    facility_id: uuid, facility_name: z.string(), licensed_beds: z.number().int(), census: z.number().int(), medicaid_residents: z.number().int(), goal_medicaid_residents: z.number().int().nullable(),
+    open_cases: z.number().int(), by_step: z.partialRecord(boardStepEnum, z.number().int()), awaiting_first_payment: z.number().int(), approved_this_month: z.number().int(),
+    revenue_not_collected_cents: z.number().int().nullable(), cases_without_rate: z.number().int(), medicaid_payments_this_month_cents: z.number().int().nullable(),
+    sweep_started_at: z.string().nullable(), sweep_answered: z.number().int(),
+  })),
+});
+/** COL-775: owner Medicaid summary per facility (aggregates only). */
+export async function getMedicaidSummary() {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  const result = await rpc(auth.actor, "benefits_summary", {});
+  if (result.error) return rpcFailure(result.error);
+  const parsed = summarySchema.safeParse(result.data);
+  return parsed.success ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
+}
+/** COL-770: facts for the DOEA 701S sheet; opening it is recorded in the case history. */
+export async function getScreeningSheet(caseId: string) {
+  const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
+  if (!uuid.safeParse(caseId).success) return benefitsFailure(400, "Unknown case.");
+  const result = await rpc(auth.actor, "benefits_screening_sheet", { p_case_id: caseId });
+  if (result.error) return rpcFailure(result.error);
+  const parsed = screeningSheetFactsSchema.safeParse(result.data);
+  return parsed.success && parsed.data.case_id === caseId ? NextResponse.json(parsed.data, { headers: noStore }) : benefitsFailure();
 }
 export async function saveBenefitsContact(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;

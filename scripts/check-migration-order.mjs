@@ -16,15 +16,6 @@ import { fileURLToPath } from "node:url";
  * and prints a notice naming the entry to delete, so cleanup never breaks main.
  */
 export const ALLOWED_GAPS = {
-  // Temporary gaps: the stacked Medicaid chain (#896-#905) is applied on both hosts but not merged. Delete each entry when its file lands on main.
-  526: "claimed by open PR #896 (COL-772, 526_benefits_admission_medicaid_status.sql); already applied to production and staging",
-  527: "claimed by open PR #897 (COL-773, 527_benefits_medicaid_log_import.sql); already applied to production and staging",
-  528: "claimed by open PR #898 (COL-575, 528_admission_medicaid_move_in_gate.sql); already applied to production and staging",
-  529: "claimed by open PR #899 (COL-774, 529_benefits_board_first_payment_and_renewal.sql); already applied to production and staging",
-  530: "claimed by open PR #900 (COL-768, 530_benefits_document_freshness.sql); already applied to production and staging",
-  531: "claimed by open PR #903 (COL-775, 531_benefits_owner_summary.sql); already applied to production and staging",
-  532: "claimed by open PR #904 (COL-769, 532_benefits_trust_and_lookback_prompts.sql); already applied to production and staging",
-  533: "claimed by open PR #905 (COL-770, 533_benefits_701s_screening_sheet.sql); already applied to production and staging",
   // Temporary gaps: document intake (#913) is applied on both hosts but not merged. Delete each entry when its file lands on main.
   545: "claimed by open PR #913 (545_document_intake.sql); already applied to production and staging",
   546: "claimed by open PR #913 (546_document_intake_schedules.sql); already applied to production and staging",

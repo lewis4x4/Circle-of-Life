@@ -1997,6 +1997,9 @@ export type Database = {
           id: string
           intake_program_type: string | null
           medicaid_pipeline_stage: string
+          medicaid_gate_override_at: string | null
+          medicaid_gate_override_by: string | null
+          medicaid_gate_override_reason: string | null
           notes: string | null
           organization_id: string
           anticipated_payer_other: string | null
@@ -2023,6 +2026,9 @@ export type Database = {
           id?: string
           intake_program_type?: string | null
           medicaid_pipeline_stage?: string
+          medicaid_gate_override_at?: string | null
+          medicaid_gate_override_by?: string | null
+          medicaid_gate_override_reason?: string | null
           notes?: string | null
           organization_id: string
           anticipated_payer_other?: string | null
@@ -2049,6 +2055,9 @@ export type Database = {
           id?: string
           intake_program_type?: string | null
           medicaid_pipeline_stage?: string
+          medicaid_gate_override_at?: string | null
+          medicaid_gate_override_by?: string | null
+          medicaid_gate_override_reason?: string | null
           notes?: string | null
           organization_id?: string
           anticipated_payer_other?: string | null

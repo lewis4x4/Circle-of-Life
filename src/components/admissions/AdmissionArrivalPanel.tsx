@@ -105,11 +105,17 @@ export function AdmissionArrivalPanel({
   facilityId,
   residentId,
   onChanged,
+  refreshKey,
+  onStatus,
 }: {
   caseId: string;
   facilityId: string | null;
   residentId: string | null;
   onChanged?: () => void;
+  /** Reload when the page changes something readiness depends on (e.g. a COL-575 Medicaid override). */
+  refreshKey?: number;
+  /** The page's view of each readiness read (COL-575 shows the Medicaid override beside this panel). */
+  onStatus?: (status: ArrivalStatus) => void;
 }) {
   const base = `/api/admin/workflows/admission-cases/${caseId}`;
   const [status, setStatus] = useState<ArrivalStatus | null>(null);
@@ -126,9 +132,13 @@ export function AdmissionArrivalPanel({
   const withdrawAttempt = useAttemptId(`haven:arrival-withdraw:${caseId}:${withdrawReason.trim()}`);
   const reverseAttempt = useAttemptId(`haven:arrival-reverse:${caseId}:${reverseReason.trim()}`);
 
+  const onStatusRef = useRef(onStatus);
+  useEffect(() => { onStatusRef.current = onStatus; });
   const load = useCallback(async () => {
     try {
-      setStatus((await send(`${base}/arrival-approval`, "GET")) as ArrivalStatus);
+      const next = (await send(`${base}/arrival-approval`, "GET")) as ArrivalStatus;
+      setStatus(next);
+      onStatusRef.current?.(next);
       setLoadError(null);
     } catch (cause) {
       setLoadError(cause instanceof Error ? cause.message : "The arrival status could not be read.");
@@ -136,7 +146,7 @@ export function AdmissionArrivalPanel({
   }, [base]);
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, refreshKey]);
 
   const act = async (work: () => Promise<string>, after?: () => void) => {
     setBusy(true);

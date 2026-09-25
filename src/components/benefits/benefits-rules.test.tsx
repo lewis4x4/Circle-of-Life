@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BenefitsCase, BenefitsRuleEntry } from "@/lib/benefits/contracts";
 import { caseFlags, daysUntil, renewalWarningDays } from "./BenefitsQueue";
-import { checklistText, describeRule, parseChecklist } from "./BenefitsRules";
+import { checklistText, describeRule, parseChecklist, parseValidDays, validDaysText, parseGoals, goalsTextOf } from "./BenefitsRules";
 import { screeningStandardFromRules } from "./BenefitsCaseWorkspace";
 
 const base: BenefitsCase = {
@@ -65,5 +65,31 @@ describe("operating rules editor", () => {
     expect(standard).toEqual({ income_cents: 1, assets_cents: 2, label: "L", source: "https://x", effective_from: "2026-01-01" });
     expect(screeningStandardFromRules({ can_manage: true, as_of: today, rules: [{ rule_key: "screening.standard_individual", value: null, current: null, scheduled: [], history_count: 0 }] })).toBeNull();
     expect(screeningStandardFromRules(null)).toBeNull();
+  });
+});
+
+describe("document good-for periods (COL-768)", () => {
+  it("round-trips lines and refuses a missing name or a bad day count", () => {
+    expect(parseValidDays("bank statement | 90\n\n  life insurance statement | 365 ")).toEqual([{ match: "bank statement", days: 90 }, { match: "life insurance statement", days: 365 }]);
+    expect(validDaysText([{ match: "bank statement", days: 90 }])).toBe("bank statement | 90");
+    expect(() => parseValidDays(" | 90")).toThrow(/text a document name contains/);
+    expect(() => parseValidDays("bank statement | 0")).toThrow(/whole number of days/);
+    expect(() => parseValidDays("bank statement | 12.5")).toThrow(/whole number of days/);
+  });
+  it("describes the rule, and an empty list as nothing expiring", () => {
+    const entry = (value: unknown) => ({ rule_key: "document.valid_days", current: null, value, scheduled: [], history_count: 0 }) as BenefitsRuleEntry;
+    expect(describeRule(entry([{ match: "bank statement", days: 90 }]))).toBe("bank statement: 90 days");
+    expect(describeRule(entry([]))).toBe("No document expires");
+  });
+});
+
+describe("summary goals (COL-775)", () => {
+  it("round-trips goals and refuses bad lines or duplicates", () => {
+    const f = "11111111-1111-4111-8111-111111111111";
+    expect(parseGoals(`${f} | 12`)).toEqual([{ facility_id: f, medicaid_residents: 12 }]);
+    expect(goalsTextOf([{ facility_id: f, medicaid_residents: 12 }])).toBe(`${f} | 12`);
+    expect(() => parseGoals("Homewood | 12")).toThrow(/facility id/);
+    expect(() => parseGoals(`${f} | -1`)).toThrow(/whole number/);
+    expect(() => parseGoals(`${f} | 1\n${f} | 2`)).toThrow(/One goal per facility/);
   });
 });

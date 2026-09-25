@@ -37,6 +37,7 @@ export default async function BenefitsPage({
             {v.label}
           </Link>
         ))}
+        <Link href="/admin/benefits/summary" className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm text-muted-foreground">Owner summary</Link>
       </nav>
       {view === "board" && <><MedicaidPromptsPanel /><MedicaidBoard /></>}
       {view === "cases" && <BenefitsQueue residentId={params.resident_id} admissionId={params.admission_case_id} />}
