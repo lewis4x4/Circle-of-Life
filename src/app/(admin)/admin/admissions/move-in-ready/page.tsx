@@ -22,6 +22,7 @@ import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
+import { ReferralConversionReconciliation } from "@/components/admissions/ReferralConversionReconciliation";
 
 type CaseRow = Pick<
   Database["public"]["Tables"]["admission_cases"]["Row"],
@@ -144,6 +145,8 @@ export default function AdminMoveInReadyPage() {
         </div>
       </div>
 
+      <ReferralConversionReconciliation facilityId={selectedFacilityId} />
+
       {loading ? (
         <AdminTableLoadingState />
       ) : error ? (
@@ -216,18 +219,17 @@ export default function AdminMoveInReadyPage() {
                       {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to bed reserved"}
                     </button>
                   ) : null}
+                  {/* COL-333: move-in is the confirmed arrival, after an administrator approves the readiness, on the admission. */}
                   {row.status !== "move_in" ? (
-                    <button
-                      type="button"
-                      disabled={actionLoading === row.id}
-                      onClick={() => void updateCase(row.id, { status: "move_in" }, "Case advanced to move-in.")}
-                      className="rounded-[var(--radius)] bg-success px-3 py-2 text-xs font-medium text-background transition-all duration-[var(--motion-duration-micro)] hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    <Link
+                      href={`/admin/admissions/${row.id}`}
+                      className="rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-all duration-[var(--motion-duration-micro)] hover:bg-muted"
                     >
-                      {actionLoading === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to move-in"}
-                    </button>
+                      Approve and confirm arrival
+                    </Link>
                   ) : (
                     <span className="rounded-[var(--radius)] bg-success/10 px-3 py-2 text-xs text-success">
-                      Move-in status already set. Continue downstream onboarding.
+                      Arrival confirmed. Continue downstream onboarding.
                     </span>
                   )}
                 </div>

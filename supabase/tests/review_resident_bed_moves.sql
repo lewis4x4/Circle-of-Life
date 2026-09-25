@@ -223,6 +223,9 @@ SELECT pg_temp.bm_denied('UPDATE residents SET bed_id=(SELECT id FROM bm_beds WH
 -- predates a readmission, and since COL-750 an arrival dated before the last
 -- recorded change is refused as an overlap.
 UPDATE resident_status_history SET effective_from=now()-interval '30 days' WHERE resident_id=(SELECT inactive FROM bm);
+-- COL-333 (538): the owner approves the current readiness before the arrival.
+SELECT admission_arrival_approve(admission,(SELECT id FROM bm_actors WHERE role='owner'),
+  admission_arrival_status(admission,(SELECT id FROM bm_actors WHERE role='owner'))->>'fingerprint',gen_random_uuid()) FROM bm;
 UPDATE beds SET is_temporarily_blocked=true WHERE id=(SELECT id FROM bm_beds WHERE label='arrival');
 SELECT pg_temp.bm_denied('SELECT confirm_admission_arrival_review(admission,(SELECT id FROM bm_actors WHERE role=''owner''),current_date-1) FROM bm','not available for assignment');
 UPDATE beds SET is_temporarily_blocked=false WHERE id=(SELECT id FROM bm_beds WHERE label='arrival');

@@ -83,4 +83,17 @@ describe("admission update error boundary", () => {
       { action: "update", admissionCaseId: "admission", facilityId: "facility" },
     );
   });
+
+  it("refuses move_in before any write: only the confirmed arrival records a move-in (COL-333)", async () => {
+    const response = await PATCH(
+      new Request("https://local.test/admission", { method: "PATCH", body: JSON.stringify({ status: "move_in" }) }) as never,
+      { params: Promise.resolve({ id: "admission" }) },
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Move-in is recorded by confirming the actual arrival, after an administrator approves it.",
+    });
+    expect(update).not.toHaveBeenCalled();
+    expect(workflow.emitWorkflowEvent).not.toHaveBeenCalled();
+  });
 });

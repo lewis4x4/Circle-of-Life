@@ -94,7 +94,6 @@ const RESIDENT_QUERY = "resident";
 
 type AdmissionOrigin = "inquiry" | "lead" | "direct" | "packet";
 
-const OPTIONAL_LEAD_NONE = "__none__";
 const OPTIONAL_PAYER_NONE = "__payer_none__";
 
 const GENDERS = [
@@ -1102,58 +1101,87 @@ function AdmissionsNewInner() {
         return;
       }
 
+      const payerSrc =
+        anticipatedPayerSource && ANTICIPATED_PAYER_OPTIONS.some((x) => x.value === anticipatedPayerSource)
+          ? (anticipatedPayerSource as AnticipatedPayerDb)
+          : null;
+      const payerOtherTxt =
+        payerSrc === "other" ? anticipatedPayerOther.trim() || null : null;
+
+      // COL-333: an intake from a referral is one server transaction (resident,
+      // case and referral together). The browser writes no resident and invents
+      // no gender. One request id per referral and intent is kept until the
+      // intake succeeds, so a retry after a lost response replays it.
+      if (origin === "lead") {
+        if (!referralLeadId) {
+          setError("Select a referral lead.");
+          return;
+        }
+        const intakeKey = `haven:referral-intake:${user.id}:${selectedFacilityId}:${referralLeadId}:${intent}`;
+        const intakeRequestId = sessionStorage.getItem(intakeKey) ?? crypto.randomUUID();
+        sessionStorage.setItem(intakeKey, intakeRequestId);
+        const intakePayload = {
+          request_id: intakeRequestId,
+          facility_id: selectedFacilityId,
+          referral_lead_id: referralLeadId,
+          intent,
+          bed_id: bedId || null,
+          target_move_in_date: intent === "draft" ? (targetMoveIn.trim() || null) : targetMoveIn.trim(),
+          notes: notes.trim() || null,
+          intake_program_type: intakeProgramType.trim() || null,
+          anticipated_payer_source: payerSrc,
+          anticipated_payer_other: payerOtherTxt,
+        };
+        const intakeResponse = await fetch("/api/admin/workflows/admission-intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(intakePayload),
+        });
+        const intake = (await intakeResponse.json().catch(() => ({}))) as {
+          resident_id?: string; admission_case_id?: string; outcome?: string; error?: string;
+        };
+        if (!intakeResponse.ok || !intake.admission_case_id || !intake.resident_id) {
+          setError(intake.error || "The intake was not started. Retry: the same request is safe to repeat.");
+          return;
+        }
+        if (medicaidStarted) {
+          const built = medicaidDraftPayload(medicaidDraft, { residentId: intake.resident_id, admissionCaseId: intake.admission_case_id, source: "admission" });
+          const medicaidKey = `${intakeKey}:medicaid`;
+          const medicaidRequestId = sessionStorage.getItem(medicaidKey) ?? crypto.randomUUID();
+          sessionStorage.setItem(medicaidKey, medicaidRequestId);
+          const saved = "payload" in built
+            ? await fetch("/api/admin/benefits/screenings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ request_id: medicaidRequestId, screening: built.payload }) }).catch(() => null)
+            : null;
+          if (saved?.ok) sessionStorage.removeItem(medicaidKey);
+          else toast.warning("Admission saved, but the Medicaid answers were not. Record them on the admission page.", { duration: 8000 });
+        }
+        if (intake.outcome === "already_started") {
+          toast.info("This referral's intake was already started. Opening it.", { duration: 6000 });
+        } else if (intent === "draft") {
+          toast.success("Draft saved.", { duration: 5000 });
+        } else {
+          toast.success(`Case opened. ${bedId ? "Bed preference recorded; reservation follows clearance." : "Bed pending."}`, { duration: 6000 });
+        }
+        sessionStorage.removeItem(intakeKey);
+        router.push(`/admin/admissions/${intake.admission_case_id}`);
+        router.refresh();
+        return;
+      }
+
       let finalResidentId = "";
-      let payloadLeadId: string | null = null;
       let admissionCaseSource: Database["public"]["Enums"]["admission_case_source"] | null = null;
       let admissionCaseSourceOther: string | null = null;
 
-      const resumeKey = `haven:intake:${user.id}:${selectedFacilityId}:${origin}:${origin === "lead" ? referralLeadId : `${directFirstName.trim()}:${directLastName.trim()}`}`;
+      const resumeKey = `haven:intake:${user.id}:${selectedFacilityId}:${origin}:${directFirstName.trim()}:${directLastName.trim()}`;
       const savedResidentId = sessionStorage.getItem(resumeKey);
       if (savedResidentId && origin !== "inquiry") {
         finalResidentId = savedResidentId;
-        payloadLeadId = origin === "lead" ? referralLeadId : null;
       } else if (origin === "inquiry") {
         if (!residentId) {
           setError("Select an inquiry resident.");
           return;
         }
         finalResidentId = residentId;
-        payloadLeadId = referralLeadId.trim() || null;
-      } else if (origin === "lead") {
-        if (!referralLeadId) {
-          setError("Select a referral lead.");
-          return;
-        }
-        const lead = leads.find((l) => l.id === referralLeadId);
-        if (!lead) {
-          setError("Referral lead not found.");
-          return;
-        }
-        const dobIso = lead.date_of_birth?.trim() || null;
-        const { data: newRes, error: resErr } = await supabase
-          .from("residents")
-          .insert({
-            facility_id: selectedFacilityId,
-            organization_id: fac.organization_id,
-            first_name: lead.first_name.trim(),
-            last_name: lead.last_name.trim(),
-            preferred_name: lead.preferred_name?.trim() || null,
-            date_of_birth: dobIso,
-            gender: "prefer_not_to_say",
-            status: "inquiry",
-            referral_source_id: lead.referral_source_id,
-            created_by: user.id,
-            updated_by: user.id,
-          })
-          .select("id")
-          .single();
-        if (resErr || !newRes?.id) {
-          setError(resErr?.message ?? "Could not create resident from lead.");
-          return;
-        }
-        finalResidentId = newRes.id;
-        sessionStorage.setItem(resumeKey, finalResidentId);
-        payloadLeadId = referralLeadId;
       } else {
         const parsed = (intent === "draft" ? parseDirectAdmitDraft : parseDirectAdmitForSubmit)({
           firstName: directFirstName,
@@ -1210,20 +1238,12 @@ function AdmissionsNewInner() {
         }
         finalResidentId = newRes.id;
         sessionStorage.setItem(resumeKey, finalResidentId);
-        payloadLeadId = null;
         if (srcTok && !srcTok.startsWith("src:")) {
           admissionCaseSource = srcTok as Database["public"]["Enums"]["admission_case_source"];
           admissionCaseSourceOther =
             srcTok === "other" ? (d.sourceOther?.trim() || null) : null;
         }
       }
-
-      const payerSrc =
-        anticipatedPayerSource && ANTICIPATED_PAYER_OPTIONS.some((x) => x.value === anticipatedPayerSource)
-          ? (anticipatedPayerSource as AnticipatedPayerDb)
-          : null;
-      const payerOtherTxt =
-        payerSrc === "other" ? anticipatedPayerOther.trim() || null : null;
 
       const caseRequestKey = `${resumeKey}:case:${intent}`;
       const caseRequestId = sessionStorage.getItem(caseRequestKey) ?? crypto.randomUUID();
@@ -1232,7 +1252,6 @@ function AdmissionsNewInner() {
         create_request_id: caseRequestId,
         facility_id: selectedFacilityId,
         resident_id: finalResidentId,
-        referral_lead_id: payloadLeadId,
         bed_id: bedId || null,
         target_move_in_date: intent === "draft" ? (targetMoveIn.trim() || null) : targetMoveIn.trim(),
         notes: notes.trim() || null,
@@ -1869,31 +1888,9 @@ function AdmissionsNewInner() {
                 ) : null}
 
                 {origin === "inquiry" ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="inquiry-lead-link" className="text-[13px]">
-                      Referral lead <span className="font-normal text-muted-foreground">(optional)</span>
-                    </Label>
-                    <Select
-                      value={referralLeadId ? referralLeadId : OPTIONAL_LEAD_NONE}
-                      onValueChange={(v) => setReferralLeadId(v === OPTIONAL_LEAD_NONE ? "" : v)}
-                      disabled={loadingRefs}
-                    >
-                      <SelectTrigger id="inquiry-lead-link">
-                        <SelectValue placeholder="Select a referral lead…" />
-                      </SelectTrigger>
-                      <SelectContent position="popper">
-                        <SelectItem value={OPTIONAL_LEAD_NONE}>None</SelectItem>
-                        {leads.map((l) => (
-                          <SelectItem key={l.id} value={l.id}>
-                            {l.first_name} {l.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[12px] text-muted-foreground">
-                      Optionally link this case to a CRM lead so source attribution carries forward.
-                    </p>
-                  </div>
+                  <p className="text-[12px] text-muted-foreground">
+                    Someone on a referral is admitted from the referral (From a referral), so the referral stays linked to the admission.
+                  </p>
                 ) : null}
 
                 <div className="space-y-2">

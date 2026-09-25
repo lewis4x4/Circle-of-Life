@@ -68,8 +68,19 @@ INSERT INTO admission_case_rate_terms(admission_case_id,accommodation_type,quote
 CREATE FUNCTION pg_temp.ar_assert(ok boolean,msg text) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN IF ok IS NOT TRUE THEN RAISE EXCEPTION 'Arrival conversion: %',msg; END IF; END $$;
 
--- 1. Moving the case to move_in without an actual arrival converts nothing.
-UPDATE admission_cases SET status='move_in' WHERE id=(SELECT case_c FROM ar);
+-- COL-333 (538): an administrator approves each case's current readiness before its arrival.
+CREATE FUNCTION pg_temp.ar_approve(p_case uuid) RETURNS void LANGUAGE sql AS $$
+  SELECT admission_arrival_approve(p_case,(SELECT owner_id FROM ar),haven.admission_arrival_readiness(p_case)->>'fingerprint',gen_random_uuid())::text::void
+$$;
+SELECT pg_temp.ar_approve(c) FROM ar, LATERAL (VALUES (case_a),(case_b),(case_c),(case_d)) v(c);
+
+-- 1. Moving the case to move_in without an actual arrival is refused (538) and converts nothing.
+DO $$ BEGIN
+  UPDATE admission_cases SET status='move_in' WHERE id=(SELECT case_c FROM ar);
+  RAISE EXCEPTION 'a move_in status without an actual arrival was accepted';
+EXCEPTION WHEN insufficient_privilege THEN
+  IF SQLERRM<>'Move-in is recorded by confirming the actual arrival' THEN RAISE; END IF;
+END $$;
 SELECT pg_temp.ar_assert((SELECT status='tour_completed' AND converted_at IS NULL FROM referral_leads WHERE id=(SELECT lead_c FROM ar)),
   'a move_in status without an actual arrival converted the referral');
 
@@ -102,7 +113,9 @@ DO $$ DECLARE f record; l record; e record; c record; BEGIN
     RAISE EXCEPTION 'lead closure fields wrong: % % % %', l.work_state, l.next_action, l.status_before_close, l.closed_at; END IF;
   SELECT * INTO STRICT e FROM referral_episode_events WHERE referral_lead_id=f.lead_a AND event_kind='admission_transition';
   IF e.from_status<>'application_pending' OR e.to_status<>'converted' OR e.actor_id<>f.owner_id OR e.actor_role<>'owner'
-     OR e.request_key<>'arrival:'||f.case_a OR e.effective_at IS DISTINCT FROM c.actual_arrival_at
+     OR e.request_key<>'arrival:'||f.case_a
+     -- 538: an arrival given as a date only is recorded as a date, never as an invented instant.
+     OR e.effective_precision<>'date' OR e.effective_date IS DISTINCT FROM f.today OR e.effective_at IS NOT NULL
      OR e.source_reference->>'admission_case_id'<>f.case_a::text OR e.result_revision<>l.episode_revision THEN
     RAISE EXCEPTION 'arrival event wrong: %', to_jsonb(e); END IF;
   IF (SELECT o.state FROM referral_opportunities o JOIN referral_facility_considerations fc ON fc.opportunity_id=o.id WHERE fc.id=l.facility_consideration_id)<>'closed' THEN

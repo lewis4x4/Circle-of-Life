@@ -56,6 +56,13 @@ export async function PATCH(
   const parsed = admissionPatchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid admission fields", details: parsed.error.flatten() }, { status: 400 });
   const patch = parsed.data;
+  // COL-333: nothing but the confirmed arrival records a move-in (migration 538
+  // refuses it in the database too, for every writer).
+  if (patch.status === "move_in") {
+    return NextResponse.json({
+      error: "Move-in is recorded by confirming the actual arrival, after an administrator approves it.",
+    }, { status: 409 });
+  }
   if (patch.financial_clearance_by !== undefined && patch.financial_clearance_by !== actor.id && patch.financial_clearance_by !== null) {
     return NextResponse.json({ error: "Clearance must identify the acting user" }, { status: 400 });
   }

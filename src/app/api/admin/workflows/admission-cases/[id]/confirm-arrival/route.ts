@@ -13,6 +13,10 @@ const TRUSTED_ARRIVAL_ERRORS = new Set([
     "The selected bed is reserved for another admission",
     "The selected bed is occupied by another resident",
     "The bed is unavailable for arrival",
+    // COL-333 (migration 538)
+    "An administrator must approve the current readiness before arrival",
+    "You no longer have access to confirm this arrival",
+    "The arrival time must fall on the arrival date",
 ]);
 export async function POST(request: NextRequest, { params }: {
     params: Promise<{

@@ -32,12 +32,7 @@ import {
 } from "@/lib/admissions/admission-onboarding-checklist";
 import { headCountOrNull } from "@/lib/metrics/head-count";
 import { AdmissionMedicaidScreening } from "@/components/benefits/AdmissionMedicaidScreening";
-import { MovementWhenFields, useMovementBackdateWindow } from "@/components/residents/MovementWhenFields";
-import {
-  EMPTY_MOVEMENT_WHEN,
-  resolveMovementWhen,
-  type MovementWhenDraft,
-} from "@/lib/residents/movement-effective-at";
+import { AdmissionArrivalPanel } from "@/components/admissions/AdmissionArrivalPanel";
 import {
   formatAdmissionDetailBedLabel,
   formatAdmissionDetailChecklistReceivedAt,
@@ -191,10 +186,6 @@ export default function AdminAdmissionCaseDetailPage() {
   const [effectiveDateDraft, setEffectiveDateDraft] = useState("");
   const [rateNotesDraft, setRateNotesDraft] = useState("");
   const [editingRateTermId, setEditingRateTermId] = useState<string | null>(null);
-  const [arrivalWhen, setArrivalWhen] = useState<MovementWhenDraft>(EMPTY_MOVEMENT_WHEN);
-  const arrivalDate = arrivalWhen.date;
-  const [arrivalMessage, setArrivalMessage] = useState<string | null>(null);
-  const arrivalWindowDays = useMovementBackdateWindow({ facilityId: row?.facility_id ?? null, enabled: !!row?.facility_id });
   const [form1823StatusDraft, setForm1823StatusDraft] = useState<Form1823Record["status"] | "">("");
   const [form1823PhysicianDraft, setForm1823PhysicianDraft] = useState("");
   const [form1823ExamDateDraft, setForm1823ExamDateDraft] = useState("");
@@ -387,18 +378,9 @@ export default function AdminAdmissionCaseDetailPage() {
     }
   }
 
-  async function confirmArrival() {
-    setArrivalMessage(null);
-    // COL-750: the move-in is dated when the resident arrived, not when this is saved.
-    const resolved = resolveMovementWhen(arrivalWhen, { windowDays: arrivalWindowDays ?? null, dateRequired: true });
-    if (!resolved.ok) { setArrivalMessage(resolved.error); return; }
-    try { const response = await fetch(`/api/admin/workflows/admission-cases/${id}/confirm-arrival`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ arrival_date: arrivalDate, arrival_time: arrivalWhen.time.trim() || undefined, late_entry_reason: resolved.value.reason ?? undefined }) }); const result=await response.json(); if(!response.ok)throw new Error(result.error ?? "Arrival was not recorded"); setArrivalMessage("Arrival confirmed. Resident is active and bed occupancy is recorded."); } catch(e) { setArrivalMessage(e instanceof Error ? e.message : "Arrival was not recorded"); }
-  }
-
   const form1823Satisfied = isForm1823Current(form1823Record, form1823ChecklistItem);
   const readiness = row ? admissionReadinessChecklist(row, rateTerms, form1823Satisfied) : [];
   const canReserveBed = Boolean(row?.financial_clearance_at && row?.physician_orders_received_at && row?.bed_id);
-  const canAdvanceMoveIn = Boolean(canReserveBed && row?.target_move_in_date && rateTerms.length > 0 && form1823Satisfied);
   const onboarding = admissionOnboardingChecklist(onboardingCounts);
   const selectedRateSchedule = rateSchedules.find((schedule) => schedule.id === rateScheduleDraft) ?? null;
 
@@ -512,9 +494,7 @@ export default function AdminAdmissionCaseDetailPage() {
 
   return (
     <div className="relative w-full space-y-6 pb-12">
-      {row && <div className="space-y-2 rounded border border-border p-4"><h2 className="font-semibold">Confirm actual arrival</h2><p>Ready for move-in and arrival are separate steps. This activates the resident census and records bed occupancy after readiness checks pass.</p><MovementWhenFields value={arrivalWhen} onChange={setArrivalWhen} windowDays={arrivalWindowDays} idPrefix="admission-arrival" dateLabel="Actual arrival date" dateRequired /><Button disabled={!arrivalDate} onClick={()=>void confirmArrival()}>Confirm arrival</Button>{arrivalMessage&&<p role="status">{arrivalMessage}</p>}</div>}
-      <></>
-      
+
       <div className="relative z-10 space-y-6 animate-in fade-in duration-[var(--motion-duration)]">
         <AdmissionsHubNav />
         <RecordDetailHeader
@@ -565,6 +545,7 @@ export default function AdminAdmissionCaseDetailPage() {
 
             {row.resident_id && <AdmissionMedicaidScreening residentId={row.resident_id} admissionCaseId={row.id} />}
 
+            <div id="admission-documents" />
             <RecordDetailSection
               title="Resident packet reviews"
               description="Admission documents stay available here after resident matching and review."
@@ -725,7 +706,7 @@ export default function AdminAdmissionCaseDetailPage() {
                     {rateTerms.length === 0 ? <li>Add quoted rate terms for the admission package.</li> : null}
                     {!form1823Satisfied ? <li>Record Form 1823 as received before move-in.</li> : null}
                     {row.financial_clearance_at && row.physician_orders_received_at && row.bed_id && row.target_move_in_date && rateTerms.length > 0 && form1823Satisfied ? (
-                      <li>Core readiness items are in place. Advance this case through the move-in workflow.</li>
+                      <li>Core readiness items are in place. An administrator approves the arrival below, then the arrival is confirmed.</li>
                     ) : null}
                   </ul>
                 </div>
@@ -890,20 +871,17 @@ export default function AdminAdmissionCaseDetailPage() {
                     >
                       {actionLoading === "Case advanced to bed reserved." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to bed reserved"}
                     </Button>
-                    <Button
-                      type="button"
-                      disabled={!canAdvanceMoveIn || row.status === "move_in" || !!actionLoading}
-                      onClick={() => void updateCase({ status: "move_in" }, "Case advanced to move-in.")}
-                    >
-                      {actionLoading === "Case advanced to move-in." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Advance to move-in"}
-                    </Button>
                   </div>
+                </div>
+                {/* COL-333: move-in is the confirmed arrival, after an administrator approves the readiness. */}
+                <div className="mt-5">
+                  <AdmissionArrivalPanel caseId={row.id} facilityId={row.facility_id} residentId={row.resident_id} onChanged={() => void load()} />
                 </div>
                 <div className="mt-5 rounded-[8px] border border-info/20 bg-info/10 p-4 space-y-3">
                   <p className="text-[10px] font-medium tracking-wider uppercase text-muted-foreground">Downstream onboarding work</p>
                   {row.status !== "move_in" ? (
                     <p className="text-sm text-foreground">
-                      Advance this case to <span className="font-semibold">move in</span> before completing downstream onboarding work across resident, care plan, medications, billing, and family coordination.
+                      Confirm the <span className="font-semibold">arrival</span> before completing downstream onboarding work across resident, care plan, medications, billing, and family coordination.
                     </p>
                   ) : (
                     <>
