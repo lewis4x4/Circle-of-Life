@@ -7,7 +7,7 @@ vi.mock("@/hooks/useFacilityStore", () => ({
     selector({ selectedFacilityId: store.selectedFacilityId, availableFacilities: [{ id: "11111111-1111-4111-8111-111111111111", name: "Anon Facility" }] }),
 }));
 
-import { MedicaidBoard, boardDate, revenueLabel } from "./MedicaidBoard";
+import { MedicaidBoard, boardDate, phaseLabel, revenueLabel } from "./MedicaidBoard";
 
 const facilityId = "11111111-1111-4111-8111-111111111111";
 const caseId = "22222222-2222-4222-8222-222222222222";
@@ -50,6 +50,37 @@ describe("Medicaid board", () => {
     const post = fetch.mock.calls.find(([, init]) => init?.method === "POST")!;
     expect(post[0]).toBe(`/api/admin/benefits/board/${caseId}`);
     expect(JSON.parse(post[1].body as string)).toMatchObject({ action: "record_score", expected_revision: 3, payload: { score: 4 } });
+  });
+  it("labels rows past the agency steps (COL-774)", () => {
+    expect(phaseLabel({ phase: "working", phase_days: null, renewal_date: null })).toBeNull();
+    expect(phaseLabel({ phase: "awaiting_first_payment", phase_days: 12, renewal_date: null })).toBe("Approved — awaiting first payment (12 days)");
+    expect(phaseLabel({ phase: "renewal", phase_days: 30, renewal_date: "2026-10-24" })).toBe("Renewal due Oct 24 (30 days)");
+    expect(phaseLabel({ phase: "renewal", phase_days: -3, renewal_date: "2026-09-21" })).toBe("Renewal overdue since Sep 21");
+  });
+  it("records plan authorization with coverage start, renewal and contribution", async () => {
+    const authorizing = { ...row, step_dates: { ...row.step_dates, plan_enrolled: "2026-09-15" }, next_step: "plan_authorized", stalled: false };
+    const planSteps = [...steps, { step: "plan_enrolled", label: "Plan enrolled" }, { step: "plan_authorized", label: "Plan authorized" }];
+    const fetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => init?.method === "POST" ? json({ case_id: caseId, revision: 4 }) : json(board({ steps: planSteps, rows: [authorizing] })));
+    vi.stubGlobal("fetch", fetch);
+    render(<MedicaidBoard />);
+    fireEvent.click(within(await screen.findByRole("table")).getByRole("button", { name: "Record" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record" }));
+    expect(await within(dialog).findByText("Record the coverage start the plan authorized.")).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText(/Coverage start/), { target: { value: "2026-09-01" } });
+    fireEvent.change(within(dialog).getByLabelText(/Renewal/), { target: { value: "2027-08-31" } });
+    fireEvent.change(within(dialog).getByLabelText(/monthly contribution/), { target: { value: "120.50" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record" }));
+    await waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
+    const post = fetch.mock.calls.find(([, init]) => init?.method === "POST")!;
+    expect(JSON.parse(post[1].body as string)).toMatchObject({ action: "record_step", payload: { step: "plan_authorized", coverage_start: "2026-09-01", renewal_date: "2027-08-31", resident_contribution_cents: 12050 } });
+  });
+  it("shows an authorized row as awaiting first payment instead of waiting on the agency", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(() => json(board({ rows: [{ ...row, next_step: null, stalled: false, phase: "awaiting_first_payment", phase_days: 4 }] }))));
+    render(<MedicaidBoard />);
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("Approved — awaiting first payment (4 days)")).toBeTruthy();
+    expect(within(table).queryByText("Waiting on agency")).toBeNull();
   });
   it("asks for a facility when viewing all facilities", async () => {
     store.selectedFacilityId = null;

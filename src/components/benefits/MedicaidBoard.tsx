@@ -19,6 +19,15 @@ export function boardDate(value: string | undefined) {
 function todayEt() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
 }
+/** COL-774: what a row past the agency steps is waiting for. */
+export function phaseLabel(row: Pick<BoardRow, "phase" | "phase_days" | "renewal_date">) {
+  if (row.phase === "awaiting_first_payment") return `Approved — awaiting first payment (${row.phase_days ?? 0} day${row.phase_days === 1 ? "" : "s"})`;
+  if (row.phase === "renewal") {
+    const days = row.phase_days ?? 0;
+    return days < 0 ? `Renewal overdue since ${boardDate(row.renewal_date ?? undefined)}` : `Renewal due ${boardDate(row.renewal_date ?? undefined)} (${days} day${days === 1 ? "" : "s"})`;
+  }
+  return null;
+}
 export function revenueLabel(row: Pick<BoardRow, "revenue_not_collected_cents" | "plan_rate_cents">) {
   return row.revenue_not_collected_cents == null ? "Rate not set" : `${dollars(row.revenue_not_collected_cents)} not yet collected`;
 }
@@ -31,21 +40,36 @@ function RecordStepDialog({ target, onClose, onSaved }: { target: Target | null;
   const [score, setScore] = useState("");
   const [decision, setDecision] = useState("");
   const [notes, setNotes] = useState("");
+  const [plan, setPlan] = useState("");
+  const [reference, setReference] = useState("");
+  const [coverageStart, setCoverageStart] = useState("");
+  const [renewal, setRenewal] = useState("");
+  const [contribution, setContribution] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
-  useEffect(() => { setOn(todayEt()); setScore(""); setDecision(""); setNotes(""); setError(null); setRequestId(crypto.randomUUID()); }, [target]);
+  useEffect(() => { setOn(todayEt()); setScore(""); setDecision(""); setNotes(""); setPlan(""); setReference(""); setCoverageStart(""); setRenewal(""); setContribution(""); setError(null); setRequestId(crypto.randomUUID()); }, [target]);
   if (!target) return null;
   const isScore = target.step === "score";
   const isDecision = target.step === "dcf_decision";
+  const isEnrolled = target.step === "plan_enrolled";
+  const isAuthorized = target.step === "plan_authorized";
   const save = async () => {
     if (isScore && !score) { setError("Choose the score the agency gave."); return; }
     if (isDecision && !decision) { setError("Choose approved or denied."); return; }
+    if (isEnrolled && !plan.trim()) { setError("Name the plan the resident enrolled in."); return; }
+    if (isAuthorized && !coverageStart) { setError("Record the coverage start the plan authorized."); return; }
+    const contributionCents = contribution.trim() ? Math.round(Number(contribution) * 100) : null;
+    if (contributionCents != null && (!Number.isFinite(contributionCents) || contributionCents < 0)) { setError("Enter the resident's monthly contribution in dollars."); return; }
+    const funding = {
+      ...(isEnrolled ? { plan: plan.trim(), ...(reference.trim() ? { reference: reference.trim() } : {}) } : {}),
+      ...(isAuthorized ? { coverage_start: coverageStart, ...(renewal ? { renewal_date: renewal } : {}), ...(contributionCents != null ? { resident_contribution_cents: contributionCents } : {}) } : {}),
+    };
     if (!on || on > todayEt()) { setError("Record the date it happened; not in the future."); return; }
     setBusy(true); setError(null);
     const body = isScore
       ? { action: "record_score", payload: { score: Number(score), occurred_on: on, ...(notes.trim() ? { notes: notes.trim() } : {}) } }
-      : { action: "record_step", payload: { step: target.step, occurred_on: on, ...(isDecision ? { outcome: decision } : {}), ...(notes.trim() ? { notes: notes.trim() } : {}) } };
+      : { action: "record_step", payload: { step: target.step, occurred_on: on, ...(isDecision ? { outcome: decision } : {}), ...funding, ...(notes.trim() ? { notes: notes.trim() } : {}) } };
     try {
       await benefitsFetch(`/api/admin/benefits/board/${target.row.case_id}`, { method: "POST", body: JSON.stringify({ ...body, request_id: requestId, expected_revision: target.row.revision }) });
       await onSaved();
@@ -78,6 +102,20 @@ function RecordStepDialog({ target, onClose, onSaved }: { target: Target | null;
               <p className="text-xs text-muted-foreground">This marks the board. Record the formal decision letter on the case to hand funding to billing.</p>
             </div>
           )}
+          {isEnrolled && (
+            <>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-plan`} required>Plan</FormLabel><input id={`${id}-plan`} className={fieldClass} value={plan} onChange={(e) => setPlan(e.target.value)} placeholder="e.g. UHC" /></div>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-reference`}>Enrollment reference</FormLabel><input id={`${id}-reference`} className={fieldClass} value={reference} onChange={(e) => setReference(e.target.value)} /></div>
+            </>
+          )}
+          {isAuthorized && (
+            <>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-coverage`} required>Coverage start</FormLabel><input id={`${id}-coverage`} type="date" className={fieldClass} value={coverageStart} onChange={(e) => setCoverageStart(e.target.value)} /></div>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-renewal`}>Renewal (redetermination) date</FormLabel><input id={`${id}-renewal`} type="date" className={fieldClass} value={renewal} onChange={(e) => setRenewal(e.target.value)} /></div>
+              <div className="space-y-2"><FormLabel htmlFor={`${id}-contribution`}>Resident monthly contribution ($)</FormLabel><input id={`${id}-contribution`} inputMode="decimal" className={fieldClass} value={contribution} onChange={(e) => setContribution(e.target.value)} /></div>
+              <p className="text-xs text-muted-foreground">These go on the case as unverified funding. The row stays on the board until the plan&apos;s first payment posts in billing.</p>
+            </>
+          )}
           <div className="space-y-2"><FormLabel htmlFor={`${id}-notes`}>Note (optional)</FormLabel><input id={`${id}-notes`} className={fieldClass} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           <ErrorNotice error={error} />
           <div className="flex gap-2"><Button type="submit" className="min-h-11" disabled={busy}>{busy ? "Saving…" : "Record"}</Button><Button type="button" variant="outline" className="min-h-11" onClick={onClose}>Cancel</Button></div>
@@ -109,9 +147,11 @@ function CaseworkerSelect({ row, data, onSaved }: { row: BoardRow; data: BoardDa
 }
 
 function RowBadges({ row }: { row: BoardRow }) {
+  const phase = phaseLabel(row);
   return (
     <div className="flex flex-wrap gap-1">
-      <StatusPill tone={row.waiting_on === "us" ? "info" : "muted"}>{row.waiting_on === "us" ? "Waiting on us" : "Waiting on agency"}</StatusPill>
+      {phase ? <StatusPill tone={row.phase === "renewal" ? "warning" : "info"}>{phase}</StatusPill>
+        : <StatusPill tone={row.waiting_on === "us" ? "info" : "muted"}>{row.waiting_on === "us" ? "Waiting on us" : "Waiting on agency"}</StatusPill>}
       {row.stalled && <StatusPill tone="warning">{`No step in ${row.days_since_last_step} days`}</StatusPill>}
       {row.agency_score != null && row.agency_score < 5 && row.reapply_on && <StatusPill tone="warning">{`Score ${row.agency_score}: reapply ${boardDate(row.reapply_on)}`}</StatusPill>}
     </div>
@@ -238,7 +278,7 @@ export function MedicaidBoard() {
                         <span>Next: {stepLabel(row.next_step)}</span>
                         {data.can_write && <Button size="sm" className="min-h-11" onClick={() => setTarget({ row, step: row.next_step!, label: stepLabel(row.next_step!) })}>Record</Button>}
                       </div>
-                    ) : <p className="text-sm">All steps recorded.</p>}
+                    ) : !phaseLabel(row) && <p className="text-sm">All steps recorded.</p>}
                   </li>
                 ))}
               </ul>
