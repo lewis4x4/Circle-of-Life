@@ -132,8 +132,17 @@ export interface MedicaidPrompts { as_of: string; late_signal: Array<{ facility_
 export const BOARD_STEPS = ["intake_requested", "intake_emailed", "assessment_complete", "score", "form_3008_requested", "form_3008_returned", "app_requested", "app_returned", "cares_processing", "cares_appointment", "dcf_decision", "plan_enrolled", "plan_authorized"] as const;
 export type BoardStep = typeof BOARD_STEPS[number];
 export const CONTACT_AGENCIES = ["dcf", "elder_options", "elder_affairs", "cares", "plan", "other"] as const;
+/** COL-774: the plan steps carry the funding facts into the case as unverified funding. */
+const planStepFunding = {
+  plan: z.string().trim().min(1).max(200).optional(),
+  reference: z.string().trim().min(1).max(200).optional(),
+  coverage_start: date.optional(),
+  coverage_end: date.optional(),
+  renewal_date: date.optional(),
+  resident_contribution_cents: z.number().int().min(0).max(99999999).optional(),
+};
 export const boardCommandSchema = z.discriminatedUnion("action", [
-  z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("record_step"), payload: z.object({ step: z.enum(BOARD_STEPS).exclude(["score"]), occurred_on: date.optional(), outcome: z.string().trim().max(200).optional(), notes: z.string().trim().max(2000).optional() }).strict() }).strict(),
+  z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("record_step"), payload: z.object({ step: z.enum(BOARD_STEPS).exclude(["score"]), occurred_on: date.optional(), outcome: z.string().trim().max(200).optional(), notes: z.string().trim().max(2000).optional(), ...planStepFunding }).strict() }).strict(),
   z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("record_score"), payload: z.object({ score: z.number().int().min(1).max(5), occurred_on: date.optional(), notes: z.string().trim().max(2000).optional() }).strict() }).strict(),
   z.object({ request_id: uuid, expected_revision: z.number().int().min(1), action: z.literal("set_caseworker"), payload: z.object({ contact_id: uuid.nullable() }).strict() }).strict(),
 ]);
@@ -143,6 +152,8 @@ export interface BoardRow {
   agency_score: number | null; reapply_on: string | null; caseworker_id: string | null; caseworker_name: string | null; caseworker_phone: string | null;
   step_dates: Partial<Record<BoardStep, string>>; next_step: BoardStep | null; waiting_on: "us" | "agency"; days_since_last_step: number; stalled: boolean;
   plan_rate_cents: number | null; revenue_not_collected_cents: number | null;
+  /** COL-774: working → awaiting_first_payment (authorized, no plan payment yet) → off the board → renewal (paid, renewal within the warning window). */
+  phase?: "working" | "awaiting_first_payment" | "renewal"; phase_days?: number | null; first_payment_on?: string | null; renewal_date?: string | null;
 }
 export interface BoardContact { id: string; name: string; agency: typeof CONTACT_AGENCIES[number]; phone: string | null }
 export interface MedicaidBoard { as_of: string; facility_id: string; facility_name: string; stalled_days: number; can_write: boolean; steps: Array<{ step: BoardStep; label: string }>; rows: BoardRow[]; needs_answers: Array<{ resident_id: string; resident_name: string }>; rechecks_due: number; contacts: BoardContact[] }
