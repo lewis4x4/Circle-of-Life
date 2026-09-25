@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import axe from "axe-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildFacilityProfile } from "@/lib/operations/facility-profile";
+import { OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY } from "@/lib/operations/operations-display-copy";
 import Page from "./page";
 import { useFacilityStore } from "@/hooks/useFacilityStore";
 
@@ -136,7 +137,7 @@ describe("Facility profile review", () => {
   it("keeps an unavailable URL facility out of the profile fetch", async () => {
     env.query = "facility_id=revoked-site";
     render(<Page />);
-    await screen.findByText("This facility is no longer accessible.");
+    await screen.findByText(OPERATIONS_FACILITY_NO_LONGER_ACCESSIBLE_COPY);
     expect(fetch).not.toHaveBeenCalled();
     // COL-651: the page's own dropdown is gone; the gate sets the header scope and the URL follows.
     expect(screen.queryByRole("combobox", { name: "Facility" })).not.toBeInTheDocument();
