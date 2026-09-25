@@ -126,4 +126,14 @@ describe("board API", () => {
     expect((await commandMedicaidBoard(post({ request_id: requestId, expected_revision: 7, action: "record_step", payload: { step: "intake_requested", occurred_on: "2026-09-20" } }), caseId)).status).toBe(409);
     expect(mocks.rpc).toHaveBeenCalledWith("benefits_board_command", { p_case_id: caseId, p_action: "record_step", p_payload: { step: "intake_requested", occurred_on: "2026-09-20" }, p_expected_revision: 7, p_request_id: requestId });
   });
+  it("keeps the first-payment and renewal phase on each row (COL-774)", async () => {
+    const { getMedicaidBoard } = await import("./server");
+    const row = { case_id: caseId, revision: 2, status: "waiting", resident_id: residentId, resident_name: "Anon", next_action: null, due_date: null, assignee_name: null, agency_score: null, reapply_on: null, caseworker_id: null, caseworker_name: null, caseworker_phone: null,
+      step_dates: { plan_authorized: "2026-09-20" }, next_step: null, waiting_on: "agency", days_since_last_step: 4, stalled: false, plan_rate_cents: null, revenue_not_collected_cents: null,
+      phase: "awaiting_first_payment", phase_days: 4, first_payment_on: null, renewal_date: "2027-09-01" };
+    mocks.rpc.mockResolvedValue({ data: { as_of: "2026-09-24", facility_id: facilityId, facility_name: "Anon", stalled_days: 14, can_write: true, steps: [], rows: [row], needs_answers: [], rechecks_due: 0, contacts: [] }, error: null });
+    const response = await getMedicaidBoard(new Request(`http://localhost/api/admin/benefits/board?facility_id=${facilityId}`));
+    expect(response.status).toBe(200);
+    expect((await response.json()).rows[0]).toMatchObject({ phase: "awaiting_first_payment", phase_days: 4, renewal_date: "2027-09-01" });
+  });
 });
