@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { actorCanAccessFacility, requireAdminApiActor } from "@/lib/admin/api-auth";
+import { loadMoveInMedicaidGate, moveInGateOverrideAllowed } from "@/lib/benefits/move-in-gate";
 import { logError } from "@/lib/observability/logger";
 import {
   emitWorkflowEvent,
@@ -35,6 +36,8 @@ const admissionPatchSchema = z.object({
   source_other: z.string().max(2000).nullable().optional(),
   anticipated_payer_source: z.enum(Constants.public.Enums.anticipated_payer_source).nullable().optional(),
   anticipated_payer_other: z.string().max(2000).nullable().optional(),
+  // COL-575: a Facility Executive may let move-in proceed without a "likely to qualify" Medicaid review.
+  medicaid_gate_override_reason: z.string().trim().min(1).max(2000).optional(),
 }).strict().refine((value) => Object.keys(value).length > 0);
 
 export async function PATCH(
@@ -54,7 +57,10 @@ export async function PATCH(
   }
   const parsed = admissionPatchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid admission fields", details: parsed.error.flatten() }, { status: 400 });
-  const patch = parsed.data;
+  const { medicaid_gate_override_reason: overrideReason, ...patch } = parsed.data;
+  if (overrideReason !== undefined && !moveInGateOverrideAllowed(actor.app_role)) {
+    return NextResponse.json({ error: "Only a Facility Executive can override the Medicaid move-in review" }, { status: 403 });
+  }
   if (patch.financial_clearance_by !== undefined && patch.financial_clearance_by !== actor.id && patch.financial_clearance_by !== null) {
     return NextResponse.json({ error: "Clearance must identify the acting user" }, { status: 400 });
   }
@@ -102,6 +108,17 @@ export async function PATCH(
       rateTermCount === 0 ? "quoted rate terms" : null,
       !form1823State.isSatisfied ? "Form 1823" : null,
     ].filter(Boolean);
+    const nextPayer = patch.anticipated_payer_source === undefined ? current.anticipated_payer_source ?? null : patch.anticipated_payer_source;
+    let medicaidGate;
+    try {
+      medicaidGate = await loadMoveInMedicaidGate(actor.admin, current.id, nextPayer);
+    } catch (error) {
+      logError("admin.workflows.admission.medicaid_gate", error, { action: "move_in", admissionCaseId: current.id, facilityId: current.facility_id });
+      return NextResponse.json({ error: "The Medicaid move-in review could not be checked. Retry the update." }, { status: 503 });
+    }
+    if (!medicaidGate.satisfied && overrideReason === undefined) {
+      blockedBy.push(medicaidGate.reason ?? "Medicaid preliminary review");
+    }
 
     if (blockedBy.length > 0) {
       await emitWorkflowEvent(actor.admin, {
@@ -127,6 +144,11 @@ export async function PATCH(
 
   const updatePayload = {
     ...patch,
+    ...(overrideReason !== undefined ? {
+      medicaid_gate_override_reason: overrideReason,
+      medicaid_gate_override_by: actor.id,
+      medicaid_gate_override_at: new Date().toISOString(),
+    } : {}),
     ...(patch.financial_clearance_at !== undefined ? { financial_clearance_by: patch.financial_clearance_at ? actor.id : null } : {}),
     updated_at: new Date().toISOString(),
     updated_by: actor.id,
@@ -162,6 +184,7 @@ export async function PATCH(
       payload_json: {
         from_status: current.status,
         to_status: patch.status,
+        ...(overrideReason !== undefined ? { medicaid_gate_overridden: true } : {}),
       },
     });
 
@@ -176,7 +199,7 @@ export async function PATCH(
       source_module: "admissions",
       created_by: actor.id,
       payload_json: {
-        fields: Object.keys(patch),
+        fields: [...Object.keys(patch), ...(overrideReason !== undefined ? ["medicaid_gate_override_reason"] : [])],
       },
     });
   }
