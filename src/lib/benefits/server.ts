@@ -260,6 +260,8 @@ const promptsSchema = z.object({
   late_signal: z.array(z.object({ facility_id: uuid, facility_name: z.string(), live: z.boolean() })),
   runway: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), runway_date: z.string(), days_left: z.number().int(), last_result: screeningResultSchema, can_write: z.boolean() })),
   late_payments: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), oldest_due: z.string(), owed_cents: z.number().int(), can_write: z.boolean() })),
+  over_income: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), answered_at: z.string(), can_write: z.boolean() })).default([]),
+  property_lookback: z.array(z.object({ resident_id: uuid, resident_name: z.string(), facility_id: uuid, facility_name: z.string(), changed_at: z.string(), can_write: z.boolean() })).default([]),
 });
 export async function getMedicaidPrompts(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
@@ -281,7 +283,7 @@ export async function startPromptCase(request: Request) {
 export async function dismissPrompt(request: Request) {
   const auth = await requireBenefitsActor(); if ("response" in auth) return auth.response;
   const parsed = dismissPromptSchema.safeParse(await readBody(request)); if (!parsed.success) return benefitsFailure(400, "Give the number of days and the reason.");
-  const result = await rpc(auth.actor, "benefits_prompt_dismiss", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_days: parsed.data.days, p_reason: parsed.data.reason, p_request_id: parsed.data.request_id });
+  const result = await rpc(auth.actor, "benefits_prompt_dismiss", { p_resident_id: parsed.data.resident_id, p_kind: parsed.data.kind, p_days: parsed.data.days, p_reason: parsed.data.reason || null, p_request_id: parsed.data.request_id });
   if (result.error) return rpcFailure(result.error);
   const reply = z.object({ dismissal_id: uuid, until_on: z.string() }).safeParse(result.data);
   return reply.success ? NextResponse.json(reply.data, { status: 201, headers: noStore }) : benefitsFailure();

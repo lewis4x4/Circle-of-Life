@@ -112,6 +112,16 @@ describe("prompts API", () => {
   });
 });
 
+describe("informational prompt set-aside (COL-769)", () => {
+  it("needs a reason for runway prompts but not for the trust or look-back prompts", async () => {
+    const { dismissPrompt } = await import("./server");
+    mocks.rpc.mockResolvedValue({ data: { dismissal_id: caseId, until_on: "2026-12-23" }, error: null });
+    expect((await dismissPrompt(post({ request_id: requestId, resident_id: residentId, kind: "runway", days: 30 }))).status).toBe(400);
+    expect((await dismissPrompt(post({ request_id: requestId, resident_id: residentId, kind: "over_income", days: 90 }))).status).toBe(201);
+    expect(mocks.rpc).toHaveBeenCalledWith("benefits_prompt_dismiss", { p_resident_id: residentId, p_kind: "over_income", p_days: 90, p_reason: null, p_request_id: requestId });
+  });
+});
+
 describe("board API", () => {
   it("requires a facility, rejects the score step as a plain step and scores outside 1-5", async () => {
     const { getMedicaidBoard, commandMedicaidBoard } = await import("./server");

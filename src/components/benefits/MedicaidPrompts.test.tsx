@@ -47,4 +47,22 @@ describe("Medicaid prompts", () => {
     const { container } = render(<MedicaidPromptsPanel />);
     await waitFor(() => expect(container.textContent).toBe(""));
   });
+  it("shows the trust and look-back prompts as information, set aside without a reason and never start a case (COL-769)", async () => {
+    const fetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) =>
+      init?.method === "POST" ? json({ dismissal_id: caseId, until_on: "2026-12-23" }, 201)
+        : json({ ...base, over_income: [{ resident_id: residentId, resident_name: "Anon Resident", facility_id: facilityId, facility_name: "Anon Facility", answered_at: "2026-09-20T12:00:00Z", can_write: true }],
+          property_lookback: [{ resident_id: facilityId, resident_name: "Other Resident", facility_id: facilityId, facility_name: "Anon Facility", changed_at: "2026-09-21T12:00:00Z", can_write: false }] }));
+    vi.stubGlobal("fetch", fetch);
+    render(<MedicaidPromptsPanel />);
+    expect(await screen.findByText("Over income — consider a Qualified Income Trust")).toBeTruthy();
+    expect(screen.getByText("Property status changed — check the transfer look-back before applying")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Start Medicaid case" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Set aside" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Set aside" }).at(-1)!);
+    await waitFor(() => expect(fetch.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true));
+    const post = fetch.mock.calls.find(([, init]) => init?.method === "POST")!;
+    const body = JSON.parse(post[1].body as string);
+    expect(body).toMatchObject({ resident_id: residentId, kind: "over_income", days: 90 });
+    expect(body.reason).toBeUndefined();
+  });
 });
