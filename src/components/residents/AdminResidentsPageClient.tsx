@@ -56,6 +56,8 @@ import {
   unoccupiedBedsFigure,
 } from "@/lib/residents/resident-roster-summary";
 import { presenceLabel, presenceTone, type BedHoldStayType } from "@/lib/residents/presence";
+import { CensusDisagreementChips } from "@/components/stand-up/CensusDisagreementChip";
+import { isValidFacilityIdForQuery } from "@/lib/supabase/env";
 import { formatRosterStatusSince } from "@/lib/residents/roster-display-copy";
 import {
   averageAcuity,
@@ -788,6 +790,8 @@ export function AdminResidentsPageClient({
           <span className="font-medium">{presenceLine(facilityPresence)}</span>
           <span className="text-muted-foreground"> · facility-wide, not affected by filters</span>
         </p>
+        {/* COL-555: when this week's Stand Up disagrees with the roster, the same chip as everywhere else. */}
+        {isValidFacilityIdForQuery(selectedFacilityId) ? <CensusDisagreementChips facilityId={selectedFacilityId} refreshKey={rows.length} /> : null}
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)] ring-1 ring-border/60">
           <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-3">
             <SummaryCell

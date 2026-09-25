@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { dateLabel, entryOpensStamp, entryWindowLine, reportDeadlineState, derivedValues, easternTime, fieldDisplay, reportState, staffingPeriod, shiftDay, FIELD_STATE_TEXT, type StandUpReport } from '@/lib/stand-up/model';
 import { rosterSourceSuffix } from '@/lib/stand-up/roster-census';
 import { MEETING_DAYS, MEETING_LABELS, type MeetingDay } from '@/lib/stand-up/meetings';
+import { readReconcileRequest } from '@/lib/stand-up/census-disagreement';
+import { CensusNotices } from './CensusNotices';
 import { StandUpEditor } from './editor';
 import { MeetingStandUp } from './meeting';
 import { StandUpViewsNav } from './StandUpViewsNav';
@@ -19,16 +21,20 @@ import type { StandUpWorkspaceData } from './types';
 
 export function StandUpWorkspace() {
   const auth = useHavenAuth();
-  const [meeting, setMeeting] = useState<MeetingDay>('monday');
+  // COL-555: a Reconcile link from anywhere census appears opens that facility's
+  // report for that meeting with the Reconcile dialog.
+  const [request] = useState(() => typeof window === 'undefined' ? null : readReconcileRequest(window.location.search));
+  const [meeting, setMeeting] = useState<MeetingDay>(request?.meeting ?? 'monday');
   if (auth.loading) return <p role="status" className="p-6">Checking your Haven access…</p>;
   if (!auth.user || !auth.organizationId) return <p role="alert" className="p-6">Sign in to your Haven organization to open Stand Up.</p>;
   const session = `${auth.organizationId}:${auth.user.id}:${auth.appRole}`;
   // COL-752: recruiters attend Thursday and read it; Monday's weekly report is not theirs.
   if (auth.appRole === 'recruiter') return <MeetingStandUp key={session} day="thursday" />;
+  const reconcile = request && request.meeting === meeting ? request.facilityId : null;
   // Switching meeting asks the open report first, so unsaved figures are never dropped.
   const picker = (guard: () => boolean) => <MeetingPicker value={meeting} onChange={next => { if (guard()) setMeeting(next); }} />;
-  if (meeting !== 'monday') return <MeetingStandUp key={`${session}:${meeting}`} day={meeting} picker={picker} />;
-  return <StandUpSession key={session} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} picker={picker} />;
+  if (meeting !== 'monday') return <MeetingStandUp key={`${session}:${meeting}`} day={meeting} picker={picker} reconcileFacilityId={reconcile} />;
+  return <StandUpSession key={session} userId={auth.user.id} canOpenRollUp={!!auth.appRole && canOpenExecutiveStandup(auth.appRole)} picker={picker} reconcileFacilityId={reconcile} />;
 }
 
 function MeetingPicker({ value, onChange }: { value: MeetingDay; onChange: (next: MeetingDay) => void }) {
@@ -37,7 +43,7 @@ function MeetingPicker({ value, onChange }: { value: MeetingDay; onChange: (next
   </select></label>;
 }
 
-function StandUpSession({ userId, canOpenRollUp, picker }: { userId: string; canOpenRollUp: boolean; picker?: (guard: () => boolean) => ReactNode }) {
+function StandUpSession({ userId, canOpenRollUp, picker, reconcileFacilityId }: { userId: string; canOpenRollUp: boolean; picker?: (guard: () => boolean) => ReactNode; reconcileFacilityId?: string | null }) {
   const routePending = useRouteTransitionPending();
   const selectedId = useFacilityStore(state => state.selectedFacilityId);
   const setSelectedFacility = useFacilityStore(state => state.setSelectedFacility);
@@ -71,6 +77,7 @@ function StandUpSession({ userId, canOpenRollUp, picker }: { userId: string; can
         // authorized response always validates it again before any form is mounted,
         // and an account with more than one grant chooses again each new Monday.
         if (data.facilities.length === 1) current.setSelectedFacility(data.facilities[0].id);
+        else if (reconcileFacilityId && data.facilities.some(f => f.id === reconcileFacilityId)) current.setSelectedFacility(reconcileFacilityId);
         else if (current.facilitiesCacheUserId !== userId || !data.facilities.some(f => f.id === current.selectedFacilityId) || !selectionBelongsToPeriod(current.selectedReportingPeriod, data.current_week)) current.setSelectedFacility(null);
         hydrated.current = true;
       }
@@ -81,7 +88,7 @@ function StandUpSession({ userId, canOpenRollUp, picker }: { userId: string; can
       // of permitted facilities is never used to authorize a later operation.
       if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) setWorkspace(null);
     } finally { if (mounted.current && generation === loadGeneration.current) setLoading(false); }
-  }, [userId]);
+  }, [userId, reconcileFacilityId]);
   useEffect(() => {
     mounted.current = true; void reload(true);
     const clock = window.setInterval(() => setNow(new Date(Date.now() + clockOffset.current)), 15000);
@@ -135,6 +142,7 @@ function StandUpSession({ userId, canOpenRollUp, picker }: { userId: string; can
     {google?.state === 'reconnect_required' && <section role="alert" className="space-y-2 rounded border border-destructive bg-destructive/5 p-4"><h2 className="font-semibold">Google workbook disconnected</h2><p className="text-sm">Drive changes are not reaching Haven. Reconnect the dedicated Stand Up account before relying on workbook figures.</p>{google.last_success_at && <p className="text-xs text-muted-foreground">Last successful workbook synchronization: {easternTime(google.last_success_at)}.</p>}</section>}
     {googleDelayed && <section role="alert" className="space-y-2 rounded border border-warning bg-warning/5 p-4"><h2 className="font-semibold">Google workbook synchronization is delayed</h2><p className="text-sm">The connector has not completed within five minutes. Drive may be newer than Haven; check the connection before using these figures.</p>{google?.last_checked_at && <p className="text-xs text-muted-foreground">Last connector check: {easternTime(google.last_checked_at)}.</p>}</section>}
     {error && workspace && <p role="alert" className="rounded border border-destructive p-3 text-sm">{error} Your current entries are retained.</p>}
+    <CensusNotices refreshKey={currentReports.map(report => report.version).join(':')} />
     {loading ? <p role="status">Loading your permitted facilities and reports…</p> : error && !workspace ? <section role="alert" className="space-y-3 rounded border border-destructive p-4"><p>{error}</p><Button onClick={() => void reload(true)}>Check access and reload</Button></section> : workspace && <>
       {workspace.facilities.length === 0 ? <section className="rounded border border-border p-5"><h2 className="font-semibold">No facility assignment</h2><p className="mt-2 text-sm">Ask your company administrator to assign your Haven account to the ALF you report for. Entry stays unavailable until access is assigned.</p></section> : <>
         <section aria-label="Report identity" className="grid gap-4 border-y border-border py-4 sm:grid-cols-[1fr_auto]">
@@ -153,7 +161,7 @@ function StandUpSession({ userId, canOpenRollUp, picker }: { userId: string; can
           <div className="overflow-x-auto rounded border border-border" role="region" aria-label="Facility reporting overview" tabIndex={0}><table className="w-full text-left text-sm"><caption className="sr-only">Facility status and current reported operating figures</caption><thead className="bg-muted/40"><tr>{['Facility', 'Report status', 'Census', 'Open beds', 'Monthly rent roll', 'Overtime', ''].map((label, i) => <th key={i} scope="col" className="p-3 font-medium">{label || <span className="sr-only">Open report</span>}</th>)}</tr></thead><tbody>{workspace.facilities.map(facility => { const report = currentReports.find(item => item.facility_id === facility.id); const derived = report && derivedValues(report.values); return <tr key={facility.id} className="border-t border-border"><th scope="row" className="min-w-40 p-3 font-medium">{facility.name}</th><td className="min-w-44 p-3"><span>{reportState(report)}</span><span className="mt-1 block text-xs text-muted-foreground">{derived?.completed_fields ?? 0}/16 provided{reportDeadlineState(report, week, workspace.current_week, now) === 'past_target' ? ' · Haven submission target passed' : reportDeadlineState(report, week, workspace.current_week, now) === 'timing_unknown' ? ' · Original submission time unavailable' : ''}</span>{report && <span className="mt-1 block text-xs text-muted-foreground">Saved {easternTime(report.updated_at)}</span>}</td><td className="p-3 tabular-nums">{fieldDisplay(report, 'current_total_census')}{rosterSourceSuffix(report?.roster_confirmations?.current_total_census) && <span className="text-xs text-muted-foreground"> · {rosterSourceSuffix(report?.roster_confirmations?.current_total_census)}</span>}</td><td className="p-3 tabular-nums">{derived?.total_beds_open ?? (reportState(report) === 'Not started' ? FIELD_STATE_TEXT.no_report : FIELD_STATE_TEXT.not_provided)}</td><td className="whitespace-nowrap p-3 tabular-nums">{fieldDisplay(report, 'monthly_rent_roll_cents')}</td><td className="whitespace-nowrap p-3 tabular-nums">{fieldDisplay(report, 'overtime_reported')}</td><td className="p-3"><Button variant="outline" onClick={() => setSelectedFacility(facility.id)} aria-label={`Open ${facility.name} report`}>Open report</Button></td></tr>; })}</tbody></table></div>
           <p className="text-xs text-muted-foreground">Blank figures are not zero. Reported figures have not yet been checked against payroll or other operating records.</p>
         </section>}
-        {selected && hydrated.current && <StandUpEditor key={`${selected.id}:${week}`} facility={selected} week={week} currentWeek={openWeek} leadMinutes={selected.entry_open_lead_minutes} report={currentReports.find(report => report.facility_id === selected.id)} reports={workspace.reports} recoveries={(workspace.pending_recoveries ?? []).filter(item => item.facility_id === selected.id && item.week_start === week)} canManage={canManage} canEditSubmitted={workspace.can_edit_submitted === true} userId={userId} now={now} onSaved={accept} onDenied={deny} bindGuard={bindGuard} onReload={() => reload(false)} />}
+        {selected && hydrated.current && <StandUpEditor key={`${selected.id}:${week}`} facility={selected} week={week} currentWeek={openWeek} leadMinutes={selected.entry_open_lead_minutes} report={currentReports.find(report => report.facility_id === selected.id)} reports={workspace.reports} autoReconcile={selected.id === reconcileFacilityId} recoveries={(workspace.pending_recoveries ?? []).filter(item => item.facility_id === selected.id && item.week_start === week)} canManage={canManage} canEditSubmitted={workspace.can_edit_submitted === true} userId={userId} now={now} onSaved={accept} onDenied={deny} bindGuard={bindGuard} onReload={() => reload(false)} />}
         {canManage && <section className="border-t border-border pt-4"><Button variant="ghost" disabled={routePending} aria-expanded={tools} onClick={() => { if (guard.current()) setTools(value => !value); }}>{tools ? 'Close management tools' : 'Management tools'}</Button>{tools && <><EntryWindowSettings facilities={workspace.facilities} disabled={routePending || loading} onSaved={() => reload(false)} onDenied={deny} /><HistoricalImports onReload={() => reload(false)} bindGuard={bindGuard} onDenied={deny} /></>}</section>}
       </>}
     </>}

@@ -12,7 +12,16 @@ import {
   type OperatingRulesSettingsLoad,
 } from "@/lib/operating-rules/operating-rules-settings";
 import { parseRiskScoreBands } from "@/lib/operating-rules/risk-bands";
-import { parseBackdateWindowDays, parseDueWindowDays, parseScoreAlertBelowPct } from "@/lib/operating-rules/operating-rules";
+import {
+  CENSUS_NOTICE_ROLE_CHOICES,
+  parseBackdateWindowDays,
+  parseCensusNoticeLeadMinutes,
+  parseCensusNoticeRoles,
+  parseCensusReasonWindowDays,
+  parseDueWindowDays,
+  parseScoreAlertBelowPct,
+} from "@/lib/operating-rules/operating-rules";
+import { censusNoticeRoleLabel } from "@/lib/operating-rules/operating-rules-settings";
 import { createClient } from "@/lib/supabase/client";
 
 const INPUT = "h-8 rounded-sm border border-border bg-surface px-2 text-sm text-text-primary tabular-nums";
@@ -40,6 +49,16 @@ function draftFromCurrent(rule: OperatingRuleSetting): OperatingRuleDraft {
       const days = parseBackdateWindowDays(rule.current);
       return { key: rule.key, days: days === null ? "" : String(days) };
     }
+    case "stand_up.census_reason_window_days": {
+      const days = parseCensusReasonWindowDays(rule.current);
+      return { key: rule.key, days: days === null ? "" : String(days) };
+    }
+    case "stand_up.census_notice_lead_minutes": {
+      const minutes = parseCensusNoticeLeadMinutes(rule.current);
+      return { key: rule.key, minutes: minutes === null ? "" : String(minutes) };
+    }
+    case "stand_up.census_notice_roles":
+      return { key: rule.key, roles: parseCensusNoticeRoles(rule.current) ?? [] };
   }
 }
 
@@ -93,6 +112,43 @@ function RuleValueFields({
           className={`${INPUT} w-24 text-right`}
         />
       </label>
+    );
+  }
+  if (draft.key === "stand_up.census_reason_window_days" || draft.key === "stand_up.census_notice_lead_minutes") {
+    const days = draft.key === "stand_up.census_reason_window_days";
+    return (
+      <label className="flex flex-col gap-1 text-xs text-text-muted" htmlFor={`${idPrefix}-value`}>
+        {days ? "Days" : "Minutes before the deadline"}
+        <input
+          id={`${idPrefix}-value`}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={days ? 60 : 1440}
+          step={1}
+          value={days ? draft.days : draft.minutes}
+          onChange={(e) => onChange(days ? { ...draft, days: e.target.value } as OperatingRuleDraft : { ...draft, minutes: e.target.value } as OperatingRuleDraft)}
+          className={`${INPUT} w-24 text-right`}
+        />
+      </label>
+    );
+  }
+  if (draft.key === "stand_up.census_notice_roles") {
+    return (
+      <fieldset className="flex flex-wrap gap-3">
+        <legend className="mb-1 text-xs text-text-muted">Notify</legend>
+        {CENSUS_NOTICE_ROLE_CHOICES.map((role) => (
+          <label key={role} className="flex items-center gap-2 text-sm text-text-primary" htmlFor={`${idPrefix}-${role}`}>
+            <input
+              id={`${idPrefix}-${role}`}
+              type="checkbox"
+              checked={draft.roles.includes(role)}
+              onChange={(e) => onChange({ ...draft, roles: e.target.checked ? [...draft.roles, role] : draft.roles.filter((item) => item !== role) })}
+            />
+            {censusNoticeRoleLabel(role)}
+          </label>
+        ))}
+      </fieldset>
     );
   }
   if (draft.key === "survey_binder.due_window_days") {

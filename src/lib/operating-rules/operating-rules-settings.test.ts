@@ -59,3 +59,29 @@ describe("resident movement back-date window (COL-750)", () => {
     expect(operatingRuleValueFromDraft({ key: "resident_movement.backdate_window_days", days: "" }).ok).toBe(false);
   });
 });
+
+describe("Stand Up census settings (COL-555 / COL-751)", () => {
+  it("describes and validates the reason window, the notice lead time and who is told", async () => {
+    const { describeOperatingRuleValue: describe_, operatingRuleValueFromDraft: fromDraft } = await import("./operating-rules-settings");
+    expect(describe_("stand_up.census_reason_window_days", 7)).toBe("7 days");
+    expect(describe_("stand_up.census_reason_window_days", 0)).toBe("A reason never holds");
+    expect(describe_("stand_up.census_notice_lead_minutes", 60)).toBe("60 minutes before the deadline, and at it");
+    expect(describe_("stand_up.census_notice_lead_minutes", 0)).toBe("At the deadline only");
+    expect(describe_("stand_up.census_notice_roles", ["facility_admin", "manager"])).toBe("Administrator, Manager");
+    expect(describe_("stand_up.census_notice_roles", ["med_tech"])).toBe("Not readable");
+    expect(fromDraft({ key: "stand_up.census_reason_window_days", days: "61" }).ok).toBe(false);
+    expect(fromDraft({ key: "stand_up.census_notice_lead_minutes", minutes: "90" })).toEqual({ ok: true, value: 90 });
+    expect(fromDraft({ key: "stand_up.census_notice_roles", roles: [] }).ok).toBe(false);
+    expect(fromDraft({ key: "stand_up.census_notice_roles", roles: ["manager", "facility_admin"] })).toEqual({ ok: true, value: ["facility_admin", "manager"] });
+  });
+
+  it("holds the same keys and bounds as the database", async () => {
+    const { readFileSync } = await import("node:fs");
+    const sql = readFileSync(`${process.cwd()}/supabase/migrations/523_census_disagreement_notice.sql`, "utf8");
+    const { OPERATING_RULE_KEYS, CENSUS_NOTICE_ROLE_CHOICES } = await import("./operating-rules");
+    for (const key of OPERATING_RULE_KEYS) expect(sql).toContain(`'${key}'`);
+    expect(sql).toContain(`NOT IN (${CENSUS_NOTICE_ROLE_CHOICES.map((role) => `'${role}'`).join(", ")})`);
+    expect(sql).toContain("NOT BETWEEN 0 AND 60");
+    expect(sql).toContain("NOT BETWEEN 0 AND 1440");
+  });
+});

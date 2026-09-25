@@ -49,6 +49,7 @@ import {
 } from "@/lib/resident-assurance/command-center-brief";
 import type { ComplianceSummary } from "@/lib/rounding/observation-compliance-summary";
 import { createClient } from "@/lib/supabase/client";
+import { CensusDisagreementChips } from "@/components/stand-up/CensusDisagreementChip";
 import { cn } from "@/lib/utils";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -466,6 +467,8 @@ function FacilityOverview({ facilityId }: { facilityId: string }) {
             >
               Facility snapshot
             </SectionHeading>
+            {/* COL-555: the census tile never silently picks one number over the Stand Up's. */}
+            {facilityId ? <CensusDisagreementChips facilityId={facilityId} /> : null}
             {kpi?.status === "failed" ? (
               <Card>
                 <CardContent className="p-4">

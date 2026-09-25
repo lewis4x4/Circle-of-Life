@@ -31,6 +31,7 @@ import { GlanceStrip } from "./GlanceStrip";
 import { CARD_CLASS, CARD_HEAD_CLASS, LINK_BUTTON_CLASS } from "./home-styles";
 import { ClearedRow, OnTapRow } from "./OnTapRow";
 import { PresenceTiles } from "./PresenceTiles";
+import { CensusNotices } from "@/components/stand-up/CensusNotices";
 import { QuickActions } from "./QuickActions";
 
 export type FacilityOperatorHomePageClientProps = {
@@ -306,6 +307,9 @@ export function FacilityOperatorHomePageClient({ initial, initialFacilityId, cur
           {error}
         </p>
       ) : null}
+
+      {/* COL-751: a Stand Up census disagreement reaches the administrator before the deadline. */}
+      <div className="mb-4 empty:hidden"><CensusNotices /></div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[2fr_1fr]">
         <section className={cn(CARD_CLASS, "overflow-hidden", loading && "opacity-60")} aria-labelledby="on-tap-heading" aria-busy={loading}>

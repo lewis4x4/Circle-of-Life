@@ -16,6 +16,9 @@ import { OutOfHousePanel } from './out-of-house';
 import { RecoveryTools } from './recovery';
 import { StandUpRequestError, standUpRequest } from './transport';
 import type { RecoveryPreview } from './types';
+import { CensusDisagreementChips, loadCensusDisagreements } from './CensusDisagreementChip';
+import { ReconcileDialog } from './ReconcileDialog';
+import { showsChip, type CensusDisagreement } from '@/lib/stand-up/census-disagreement';
 
 type Props = {
   facility: { id: string; name: string }; week: string; currentWeek: string;
@@ -25,6 +28,8 @@ type Props = {
   canManage: boolean; userId: string; now: Date;
   /** COL-797: owner, org_admin or facility_admin may change a week after it was submitted. */
   canEditSubmitted?: boolean;
+  /** COL-555: opened from a Reconcile link; show the dialog once the disagreement is read. */
+  autoReconcile?: boolean;
   onSaved: (report: StandUpReport) => void; onDenied: () => void; onReload: () => Promise<void>;
   bindGuard: (guard: (silent?: boolean) => boolean) => () => void;
 };
@@ -72,6 +77,9 @@ export function StandUpEditor(props: Props) {
   const [prefillReasons, setPrefillReasons] = useState<Partial<Record<PrefillKey, PrefillOverrideReason>>>({});
   const prefillRef = useRef(prefill); const prefillReasonsRef = useRef(prefillReasons);
   const prefillApplied = useRef(false);
+  // COL-555: the census disagreement for this report, and its Reconcile dialog.
+  const [reconcileTarget, setReconcileTarget] = useState<CensusDisagreement | null>(null);
+  const [disagreementTick, setDisagreementTick] = useState(0);
   const rosterRef = useRef(roster); const reasonsRef = useRef(reasons);
   const mounted = useRef(true);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
@@ -260,7 +268,7 @@ export function StandUpEditor(props: Props) {
     reasonsRef.current = next; setReasons(next);
     if (phase === 'failed' && !pending.current) { setPhase('idle'); setError(''); }
   };
-  const useRoster = (key: RosterFieldKey) => {
+  const applyRoster = (key: RosterFieldKey) => {
     const suggested = rosterSuggestion(rosterRef.current, key);
     if (suggested === null) return;
     setRosterReason(key, null); change(key, String(suggested));
@@ -270,13 +278,22 @@ export function StandUpEditor(props: Props) {
     prefillReasonsRef.current = next; setPrefillReasons(next);
     if (phase === 'failed' && !pending.current) { setPhase('idle'); setError(''); }
   };
-  const usePrefill = (key: PrefillKey) => {
+  const applyPrefill = (key: PrefillKey) => {
     const haven = prefillValue(prefillRef.current, key);
     if (haven === null) return;
     setPrefillReason(key, null); change(key, String(key === 'monthly_rent_roll_cents' ? haven / 100 : haven));
   };
-  const prefillEntry: PrefillEntry | undefined = !entering ? undefined : { data: prefill, loading: prefillLoading, error: prefillError, reasons: prefillReasons, onReason: setPrefillReason, onUsePrefill: usePrefill };
-  const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: useRoster };
+  useEffect(() => {
+    if (!props.autoReconcile || !entering) return;
+    let live = true;
+    void loadCensusDisagreements(facility.id).then(rows => {
+      const row = rows?.find(item => item.meeting_day === 'monday' && item.facility_id === facility.id && showsChip(item));
+      if (live && row) setReconcileTarget(row);
+    });
+    return () => { live = false; };
+  }, [props.autoReconcile, entering, facility.id]);
+  const prefillEntry: PrefillEntry | undefined = !entering ? undefined : { data: prefill, loading: prefillLoading, error: prefillError, reasons: prefillReasons, onReason: setPrefillReason, onUsePrefill: applyPrefill };
+  const rosterEntry: RosterEntry | undefined = !entering ? undefined : { data: roster, loading: rosterLoading, error: rosterError, reasons, onReason: setRosterReason, onUseRoster: applyRoster };
   const discard = () => {
     if (savingRef.current || advancedBusy || pending.current) return;
     const latest = props.report && props.report.version > (savedRef.current?.version ?? 0) ? props.report : savedRef.current;
@@ -335,6 +352,12 @@ export function StandUpEditor(props: Props) {
       </ul>
     </details>
     {saved?.entry_origin === 'imported' && !saved.last_submitted_at && <p className="border-l-2 border-border pl-3 text-sm">These figures came from a historical import, not from entry in Haven. Check every section before submitting; filled fields do not mean administrator review is complete.</p>}
+    {entering && <CensusDisagreementChips facilityId={facility.id} meetingDay="monday" refreshKey={`${saved?.version ?? 0}:${rosterTick}:${disagreementTick}`}
+      action={d => <Button variant="outline" size="sm" onClick={() => setReconcileTarget(d)}>Reconcile</Button>} />}
+    {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={open => { if (!open) setReconcileTarget(null); }} canChange={editable && !readOnly}
+      onUseRoster={figure => applyRoster(figure.key)}
+      onExplain={(figure, why) => { setRosterReason(figure.key, why); void save('draft').then(() => setDisagreementTick(tick => tick + 1)); }}
+      onCheckAgain={() => { void loadRoster(); setDisagreementTick(tick => tick + 1); setReconcileTarget(null); }} />}
     {overtimeError && <p role="alert" className="rounded border border-destructive p-3">{overtimeError.message}</p>}
     {!online && <p role="status" className="rounded border border-border p-3 text-sm">Haven is offline. Keep this page open to retain unsaved entries. The shared Google workbook is your outage fallback while Drive is available.</p>}
     {historical && <section className="space-y-2 rounded border border-border p-4"><h3 className="font-medium">Historical report — {dateLabel(week)}</h3><p className="text-sm">Previous meetings are preserved. This is not the open reporting period.{readOnly ? ' Figures are read-only.' : ''}</p>{canManage && !mayEditSubmitted && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={correction} disabled={routePending || phase === 'saving' || dirty || !!pending.current} onChange={event => setCorrection(event.target.checked)} /> Make a correction with a recorded reason</label>}</section>}

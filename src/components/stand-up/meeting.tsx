@@ -12,6 +12,10 @@ import {
   type MeetingDay, type MeetingFacility, type MeetingHistory, type MeetingReport, type MeetingWorkspace, type MondaySubmitted, type ThursdayKey, type ThursdayValues,
 } from '@/lib/stand-up/meetings';
 import { StandUpRequestError, standUpRequest } from './transport';
+import { CensusDisagreementChips, loadCensusDisagreements } from './CensusDisagreementChip';
+import { CensusNotices } from './CensusNotices';
+import { ReconcileDialog } from './ReconcileDialog';
+import { showsChip, type CensusDisagreement } from '@/lib/stand-up/census-disagreement';
 
 type Fields = Record<ThursdayKey, string>;
 const fieldsFor = (values: ThursdayValues = emptyThursdayValues()): Fields =>
@@ -23,7 +27,7 @@ const fieldsFor = (values: ThursdayValues = emptyThursdayValues()): Fields =>
  * same page and write nothing. The window, due time and call time are the
  * server's schedule, never this file's.
  */
-export function MeetingStandUp({ day, picker }: { day: MeetingDay; picker?: (guard: () => boolean) => ReactNode }) {
+export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: MeetingDay; picker?: (guard: () => boolean) => ReactNode; reconcileFacilityId?: string | null }) {
   const routePending = useRouteTransitionPending();
   const [workspace, setWorkspace] = useState<MeetingWorkspace | null>(null);
   const [error, setError] = useState('');
@@ -44,7 +48,9 @@ export function MeetingStandUp({ day, picker }: { day: MeetingDay; picker?: (gua
       setWorkspace(data); setError('');
       if (initial) {
         const stored = useFacilityStore.getState().selectedFacilityId;
-        const chosen = data.facilities.length === 1 ? data.facilities[0].id : data.facilities.some(facility => facility.id === stored) ? stored : null;
+        const chosen = data.facilities.length === 1 ? data.facilities[0].id
+          : reconcileFacilityId && data.facilities.some(facility => facility.id === reconcileFacilityId) ? reconcileFacilityId
+          : data.facilities.some(facility => facility.id === stored) ? stored : null;
         setFacilityId(chosen);
         setWeek(data.facilities.find(facility => facility.id === chosen)?.open_week ?? data.current_week ?? '');
       }
@@ -52,7 +58,7 @@ export function MeetingStandUp({ day, picker }: { day: MeetingDay; picker?: (gua
       setError(cause instanceof Error ? cause.message : 'Reports could not be loaded. Try again.');
       if (cause instanceof StandUpRequestError && [401, 403].includes(cause.status)) setWorkspace(null);
     } finally { setLoading(false); }
-  }, [day]);
+  }, [day, reconcileFacilityId]);
   useEffect(() => { void reload(true); }, [reload]);
 
   const label = MEETING_LABELS[day];
@@ -86,6 +92,7 @@ export function MeetingStandUp({ day, picker }: { day: MeetingDay; picker?: (gua
       </div>
     </header>
     {error && workspace && <p role="alert" className="rounded border border-destructive p-3 text-sm">{error}</p>}
+    {workspace?.can_edit && <CensusNotices refreshKey={workspace.reports.map(report => report.version).join(':')} />}
     {loading ? <p role="status">Loading your permitted facilities and reports…</p>
       : !workspace ? <section role="alert" className="space-y-3 rounded border border-destructive p-4"><p>{error || 'Reports could not be loaded.'}</p><Button onClick={() => void reload(true)}>Check access and reload</Button></section>
       : !workspace.scheduled ? <section className="rounded border border-border p-5"><h2 className="font-semibold">No {label} meeting is scheduled</h2><p className="mt-2 text-sm">Your company administrator sets which days Stand Up meets.</p></section>
@@ -105,7 +112,7 @@ export function MeetingStandUp({ day, picker }: { day: MeetingDay; picker?: (gua
         {!selected ? <MeetingOverview facilities={workspace.facilities} reports={reportsForWeek} baseline={baseline} onOpen={chooseFacility} />
           : <MeetingEditor key={`${selected.id}:${week}`} day={day} facility={selected} week={week} openWeek={openWeek}
               report={reportsForWeek.find(report => report.facility_id === selected.id)} monday={baseline(selected.id) ?? null}
-              canEdit={workspace.can_edit} dirty={dirty} onSaved={accept} onError={setError} />}
+              canEdit={workspace.can_edit} dirty={dirty} onSaved={accept} onError={setError} autoReconcile={selected.id === reconcileFacilityId} />}
       </>}
   </div>;
 }
@@ -136,9 +143,11 @@ function MeetingOverview({ facilities, reports, baseline, onOpen }: { facilities
 type EditorProps = {
   day: MeetingDay; facility: MeetingFacility; week: string; openWeek: string; report?: MeetingReport; monday: MondaySubmitted
   canEdit: boolean; dirty: { current: boolean }; onSaved: (report: MeetingReport) => void; onError: (message: string) => void
+  /** COL-555: opened from a Reconcile link. */
+  autoReconcile?: boolean
 };
 
-function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError }: EditorProps) {
+function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError, autoReconcile }: EditorProps) {
   const [saved, setSaved] = useState(report);
   const [fields, setFields] = useState(() => fieldsFor(report?.values));
   const [reason, setReason] = useState('');
@@ -155,6 +164,19 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
   let typed: ThursdayValues | null = null; let parseError = '';
   try { typed = Object.fromEntries(THURSDAY_KEYS.map(key => [key, parseThursdayField(key, fields[key])])) as ThursdayValues; } catch (cause) { parseError = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const complete = !!typed && THURSDAY_KEYS.every(key => typed![key] !== null);
+  // COL-555: this meeting's census against the roster, with the Reconcile dialog.
+  const [reconcileTarget, setReconcileTarget] = useState<CensusDisagreement | null>(null);
+  const [disagreementTick, setDisagreementTick] = useState(0);
+  const current = week === openWeek;
+  useEffect(() => {
+    if (!autoReconcile || !current) return;
+    let live = true;
+    void loadCensusDisagreements(facility.id).then(rows => {
+      const row = rows?.find(item => item.meeting_day === day && item.facility_id === facility.id && showsChip(item));
+      if (live && row) setReconcileTarget(row);
+    });
+    return () => { live = false; };
+  }, [autoReconcile, current, facility.id, day]);
 
   const save = async (status: 'draft' | 'ready') => {
     if (!typed) { setProblem(parseError); return; }
@@ -184,6 +206,12 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
     </div>
     {notOpen && <p role="status" className="rounded border border-border p-3 text-sm">This report opens {meetingWindow?.entry_opens_at ? easternStamp(meetingWindow.entry_opens_at) : 'after the meeting before it'}.</p>}
     {saved?.updated_at && <p className="text-xs text-muted-foreground">Last saved {meetingStamp(saved.updated_at)}{saved.updated_by_name ? ` by ${saved.updated_by_name}` : ''}{saved.last_submitted_at ? ` · Submitted ${meetingStamp(saved.last_submitted_at)}` : ''}</p>}
+    {current && <CensusDisagreementChips facilityId={facility.id} meetingDay={day} refreshKey={`${saved?.version ?? 0}:${disagreementTick}`}
+      action={d => <Button variant="outline" size="sm" onClick={() => setReconcileTarget(d)}>Reconcile</Button>} />}
+    {reconcileTarget && <ReconcileDialog disagreement={reconcileTarget} open onOpenChange={next => { if (!next) setReconcileTarget(null); }} canChange={editable}
+      onUseRoster={figure => { if (figure.roster === null) return; setFields(prev => ({ ...prev, [figure.key]: String(figure.roster) })); setChanged(true); setMessage(''); }}
+      explainUnavailable={`The ${MEETING_LABELS[day]} report records no reasons. Put the roster’s figure on it, or fix the roster.`}
+      onCheckAgain={() => { setDisagreementTick(tick => tick + 1); setReconcileTarget(null); }} />}
     <p className="text-sm text-muted-foreground">{monday ? `Compared with what was submitted on Monday, ${meetingStamp(monday.submitted_at)}.` : 'Monday’s report for this week was not submitted, so there is nothing to compare with.'}</p>
     <div className="overflow-x-auto rounded border border-border">
       <table className="w-full text-left text-sm">
