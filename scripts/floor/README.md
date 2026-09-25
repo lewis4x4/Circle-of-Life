@@ -37,3 +37,13 @@ supabase db query --linked -f scripts/floor/fidelity-demo-teardown.sql
 { echo "SET haven.col695_apply = 'fidelity-demo-teardown';"; cat scripts/floor/fidelity-demo-teardown.sql; } > /tmp/fidelity-demo-teardown-apply.sql
 supabase db query --linked -f /tmp/fidelity-demo-teardown-apply.sql
 ```
+
+## Homewood test window (COL-849)
+
+Brian's production test of the floor tablets and kiosk at Homewood, 2026-09-25 20:24 UTC to the evening of 2026-09-30. Runbook, order and the full test checklist: `docs/operations/homewood-test-window.md`. Inventory: `HANDOFFS/2026-09-25__homewood-test-window/WRITE-INVENTORY.md`. Proof: `supabase/tests/review_homewood_test_window.sql` (fixture in `fixtures/homewood-test-window-proof.sql`).
+
+| When | File | What the apply changes |
+|---|---|---|
+| Now | `homewood-test-window-open.sql` (switch `haven.col849_apply`) | Timeclock on; a test cadence with version 3's windows until 2026-10-01 00:00 UTC; outside alerts to Brian only (a route plus a time-boxed delivery fence); a configuration snapshot in `audit_log` |
+| Sept 30, first | `homewood-test-window-photos.mjs --apply` | Removes the window's incident photos through the Storage API |
+| Sept 30, then | `homewood-test-window-wipe.sql` (switch `haven.col849_apply`) | Deletes every window row at Homewood, restores the snapshot, Timeclock off, lockouts cleared, verifies before commit |
