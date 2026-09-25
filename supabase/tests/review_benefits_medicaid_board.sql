@@ -1,5 +1,7 @@
 -- Rollback-only synthetic proof for COL-767 (facility Medicaid board). No actual resident data.
 BEGIN;
+-- Rules compare against the session date; pin it to Eastern so the probe also passes 8 p.m.–midnight ET (UTC is already tomorrow).
+SET LOCAL TIME ZONE 'America/New_York';
 CREATE TEMP TABLE bdf AS SELECT gen_random_uuid() org,gen_random_uuid() entity,gen_random_uuid() site,gen_random_uuid() other_site;
 CREATE TEMP TABLE bdr AS SELECT label,gen_random_uuid() id FROM unnest(ARRAY['one','two']) label;
 CREATE TEMP TABLE bda AS SELECT role,gen_random_uuid() id,gen_random_uuid() session FROM unnest(ARRAY['owner','manager','caregiver']) role;
