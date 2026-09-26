@@ -16,13 +16,16 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   TIMELINE_EMPTY_COPY,
+  TIMELINE_FILTERS,
+  filterTimelineRows,
   groupTimelineByDay,
+  timelineFilterEmptyCopy,
   timelineDetailNeedsExpand,
   timelineLinkFor,
   timelineRowKey,
   timelineRowLabel,
   type ResidentTimelineRow,
-  type TimelineDayGroup,
+  type TimelineFilterId,
   type TimelineWorkspace,
 } from "@/lib/care-events/timeline";
 import { loadResidentTimeZone, loadResidentTimeline } from "@/lib/care-events/timeline-load";
@@ -35,7 +38,7 @@ type TimelineState =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "success-empty" }
-  | { status: "success-populated"; groups: TimelineDayGroup[]; timeZone: string };
+  | { status: "success-populated"; rows: ResidentTimelineRow[]; timeZone: string };
 
 type ResidentTimelineProps = {
   residentId: string;
@@ -61,6 +64,7 @@ export function ResidentTimeline({ residentId, workspace }: ResidentTimelineProp
   const supabase = useMemo(() => createClient(), []);
   const [state, setState] = useState<TimelineState>({ status: "idle" });
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const [filter, setFilter] = useState<TimelineFilterId>("all");
 
   const load = useCallback(() => {
     setState({ status: "loading" });
@@ -70,7 +74,7 @@ export function ResidentTimeline({ residentId, workspace }: ResidentTimelineProp
           setState({ status: "success-empty" });
           return;
         }
-        setState({ status: "success-populated", groups: groupTimelineByDay(rows, timeZone), timeZone });
+        setState({ status: "success-populated", rows, timeZone });
       })
       .catch((error: unknown) => {
         setState({ status: "error", message: formatLiveDataLoadError(error, "The timeline is unavailable right now.") });
@@ -82,6 +86,17 @@ export function ResidentTimeline({ residentId, workspace }: ResidentTimelineProp
     // Defer so the loading transition happens in a callback, not in the effect body.
     queueMicrotask(load);
   }, [load, residentId]);
+
+  const populated = state.status === "success-populated" ? state : null;
+  const groups = useMemo(
+    () => (populated ? groupTimelineByDay(filterTimelineRows(populated.rows, filter), populated.timeZone) : []),
+    [populated, filter],
+  );
+  const filterCounts = useMemo(() => {
+    const counts = new Map<TimelineFilterId, number>();
+    for (const option of TIMELINE_FILTERS) counts.set(option.id, populated ? filterTimelineRows(populated.rows, option.id).length : 0);
+    return counts;
+  }, [populated]);
 
   const toggleExpanded = useCallback((key: string) => {
     setExpanded((current) => {
@@ -127,9 +142,31 @@ export function ResidentTimeline({ residentId, workspace }: ResidentTimelineProp
     );
   }
 
+  const tapClass = workspace === "admin" ? "" : "min-h-11";
+
   return (
     <div className="flex flex-col gap-6">
-      {state.groups.map((group) => (
+      <div role="group" aria-label="Show on the timeline" className="flex flex-wrap gap-2">
+        {TIMELINE_FILTERS.map((option) => (
+          <Button
+            key={option.id}
+            type="button"
+            size="sm"
+            variant={filter === option.id ? "default" : "outline"}
+            className={tapClass}
+            aria-pressed={filter === option.id}
+            onClick={() => setFilter(option.id)}
+          >
+            {option.label} ({filterCounts.get(option.id) ?? 0})
+          </Button>
+        ))}
+      </div>
+      {groups.length === 0 ? (
+        <p role="status" className="rounded-lg border border-dashed border-border bg-card px-4 py-6 text-sm text-muted-foreground">
+          {timelineFilterEmptyCopy(filter)}
+        </p>
+      ) : null}
+      {groups.map((group) => (
         <section key={group.dayKey} aria-label={group.dayLabel} className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-foreground">{group.dayLabel}</h3>
           <ol className="divide-y divide-border rounded-lg border border-border bg-card">

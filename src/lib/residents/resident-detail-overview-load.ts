@@ -34,6 +34,7 @@ import { responsiblePartyContact } from "@/lib/residents/resident-responsible-pa
 import { RESIDENT_NO_BED_COPY, RESIDENT_NO_UNIT_COPY } from "@/lib/residents/roster-display-copy";
 import type { Database } from "@/types/database";
 import { enumLabel } from "@/lib/display/enum-label";
+import { visitorTypeLabel } from "@/lib/registers/visitor-log";
 
 export type Acuity = 1 | 2 | 3;
 export type { ResidencyStatus };
@@ -212,6 +213,20 @@ export type ResidentOverviewDetail = {
     somethingWrong: boolean;
     chartedByLabel: string;
   }>;
+  /** Visits to this resident signed in during the period (front desk and kiosk), newest first; voided entries are left out. */
+  recentVisits: Array<{
+    id: string;
+    visitorName: string;
+    visitorCompany: string | null;
+    typeLabel: string;
+    arrivedLabel: string;
+    /** Raw `visitor_log_entries.checked_in_at` for period filtering. */
+    arrivedAtIso: string;
+    /** Sign-out time, or null while the visitor is still signed in. */
+    leftLabel: string | null;
+    purpose: string | null;
+    symptomsReported: boolean;
+  }>;
   recentConditionChanges: Array<{
     id: string;
     typeLabel: string;
@@ -288,6 +303,18 @@ export type LoadResidentOverviewOptions = {
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
+
+/** `visitor_log_entries` is not in the generated types; these are the columns the feed reads. */
+type VisitRow = {
+  id: string;
+  visitor_name: string;
+  visitor_company: string | null;
+  visitor_type: string;
+  purpose: string | null;
+  checked_in_at: string;
+  checked_out_at: string | null;
+  symptoms_reported: boolean;
+};
 
 type SupabaseResidentRow = {
   id: string;
@@ -548,6 +575,7 @@ export async function loadResidentOverviewDetail(
     followupResult,
     fieldStatesResult,
     safetyCheckResult,
+    visitResult,
   ] = await Promise.all([
     // The feed shows daily logs only when they carry a general note, and ADL
     // entries only when refused — so read exactly those, not the newest rows
@@ -667,6 +695,17 @@ export async function loadResidentOverviewDetail(
       .gte("observed_at", activityBounds.sinceIso)
       .order("observed_at", { ascending: false })
       .limit(ACTIVITY_FEED_ROW_CAP),
+    // Every unvoided visit to this resident signed in during the period (COL-871).
+    supabase
+      .from("visitor_log_entries" as never)
+      .select("id, visitor_name, visitor_company, visitor_type, purpose, checked_in_at, checked_out_at, symptoms_reported")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .is("voided_at", null)
+      .gte("checked_in_at", activityBounds.sinceIso)
+      .order("checked_in_at", { ascending: false })
+      .limit(ACTIVITY_FEED_ROW_CAP) as unknown as Promise<QueryResult<VisitRow[]>>,
   ]);
 
   if (
@@ -677,7 +716,8 @@ export async function loadResidentOverviewDetail(
     carePlansResult.error ||
     contactsResult.error ||
     assessmentsResult.error ||
-    safetyCheckResult.error
+    safetyCheckResult.error ||
+    visitResult.error
   ) {
     throw new Error(
       dailyResult.error?.message ??
@@ -688,6 +728,7 @@ export async function loadResidentOverviewDetail(
         contactsResult.error?.message ??
         assessmentsResult.error?.message ??
         safetyCheckResult.error?.message ??
+        visitResult.error?.message ??
         "Resident aggregation failed.",
     );
   }
@@ -697,6 +738,7 @@ export async function loadResidentOverviewDetail(
   const behaviorRows = behaviorResult.data ?? [];
   const conditionRows = conditionResult.data ?? [];
   const safetyCheckRows = safetyCheckResult.data ?? [];
+  const visitRows = visitResult.data ?? [];
   const carePlanRows = carePlansResult.data ?? [];
   const contactRowsRaw = contactsResult.data ?? [];
 
@@ -818,6 +860,18 @@ export async function loadResidentOverviewDetail(
     chartedByLabel: (r.staff_id && staffNameById.get(r.staff_id)) || "Staff",
   }));
 
+  const recentVisits = visitRows.map((r) => ({
+    id: r.id,
+    visitorName: r.visitor_name,
+    visitorCompany: r.visitor_company?.trim() || null,
+    typeLabel: visitorTypeLabel(r.visitor_type),
+    arrivedLabel: formatLogTime(r.checked_in_at),
+    arrivedAtIso: r.checked_in_at,
+    leftLabel: r.checked_out_at ? formatLogTime(r.checked_out_at) : null,
+    purpose: r.purpose?.trim() || null,
+    symptomsReported: r.symptoms_reported,
+  }));
+
   const recentConditionChanges = conditionRows.map((r) => ({
     id: r.id,
     typeLabel: conditionChangeTypeLabel(r.change_type),
@@ -836,6 +890,7 @@ export async function loadResidentOverviewDetail(
   if (adlRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("adl");
   if (dailyRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("note");
   if (safetyCheckRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("check");
+  if (visitRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("visit");
 
   // The row that opened a span was written by whoever changed the status
   // (`fn_resident_status_history_capture` sets created_by to the actor);
@@ -1000,6 +1055,7 @@ export async function loadResidentOverviewDetail(
     })),
     contacts: contactsView,
     recentSafetyChecks,
+    recentVisits,
     recentDailyNotes,
     recentAdl,
     recentBehavior,

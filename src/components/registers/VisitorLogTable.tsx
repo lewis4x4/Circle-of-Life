@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { HorizontalScroll } from "@/components/ui/horizontal-scroll";
 import {
   VISITOR_LOG_RANGE_EMPTY_COPY,
   VOID_REASONS,
+  filterVisitsToResident,
   needsResidentMatch,
+  visitorLogResidentOptions,
+  visitorLogResidentEmptyCopy,
   signedInByDisplay,
   visitingDisplay,
   visitorDisplayName,
@@ -44,6 +47,11 @@ export function VisitorLogTable({
   onMatch: (entryId: string, residentId: string) => void;
 }) {
   const [voidingId, setVoidingId] = useState<string | null>(null);
+  // Kept here, not in the parent's load, so it survives a change of dates (COL-871).
+  const [residentId, setResidentId] = useState("");
+  const residentOptions = useMemo(() => visitorLogResidentOptions(residents, rows), [residents, rows]);
+  const shown = filterVisitsToResident(rows.filter((row) => !row.voidedAt), residentId);
+  const residentName = residentOptions.find((option) => option.id === residentId)?.name ?? "";
   return (
     <section aria-labelledby="visitor-range-heading" className="space-y-3">
       <h2 id="visitor-range-heading" className="text-sm font-medium text-foreground">
@@ -62,9 +70,24 @@ export function VisitorLogTable({
           </label>
           <input id="visitor-to" type="date" value={to} onChange={(e) => onTo(e.target.value)} className={inputCls} />
         </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="visitor-log-resident" className="text-xs text-muted-foreground">
+            Visits to
+          </label>
+          <select id="visitor-log-resident" value={residentId} onChange={(e) => setResidentId(e.target.value)} className={inputCls}>
+            <option value="">Everyone</option>
+            {residentOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      {rows.filter((row) => !row.voidedAt).length === 0 ? (
-        <p className="text-sm text-muted-foreground">{VISITOR_LOG_RANGE_EMPTY_COPY}</p>
+      {shown.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {residentId ? visitorLogResidentEmptyCopy(residentName) : VISITOR_LOG_RANGE_EMPTY_COPY}
+        </p>
       ) : (
         <HorizontalScroll label="Visitor log">
           <table className="w-full border-collapse text-sm">
@@ -83,15 +106,24 @@ export function VisitorLogTable({
               </tr>
             </thead>
             <tbody>
-              {rows
-                .filter((row) => !row.voidedAt)
-                .map((row) => (
+              {shown.map((row) => (
                   <tr key={row.id} className="border-b border-border align-top">
                     <td className="py-2 pr-3 text-foreground">{visitorDisplayName(row)}</td>
                     <td className="py-2 pr-3 text-muted-foreground">{visitorTypeLabel(row.visitorType)}</td>
                     <td className="py-2 pr-3 text-muted-foreground">
                       <div className="flex flex-col items-start gap-1">
-                        <span>{visitingDisplay(row)}</span>
+                        {row.visitingResidentId && row.visitingResidentId !== residentId ? (
+                          <button
+                            type="button"
+                            className="text-left underline decoration-dotted underline-offset-2 hover:text-foreground"
+                            aria-label={`Show only visits to ${visitingDisplay(row)}`}
+                            onClick={() => setResidentId(row.visitingResidentId ?? "")}
+                          >
+                            {visitingDisplay(row)}
+                          </button>
+                        ) : (
+                          <span>{visitingDisplay(row)}</span>
+                        )}
                         {/* Open entries are matched from "In the building now" above; this covers visits already over. */}
                         {needsResidentMatch(row) && row.signedOutAt ? (
                           <KioskVisitMatch

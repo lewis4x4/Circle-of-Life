@@ -17,6 +17,18 @@ function timeVal(v: unknown): string {
   return v.length >= 5 ? v.slice(0, 5) : v;
 }
 
+const FAMILY_VISIT_HISTORY_OPTIONS = [
+  { id: "with_visitor_name", label: "When, the kind of visitor, and the visitor's short name (Jordan P.)" },
+  { id: "times_only", label: "When and the kind of visitor, no names" },
+  { id: "off", label: "Do not show visits" },
+] as const;
+
+type FamilyVisitHistory = (typeof FAMILY_VISIT_HISTORY_OPTIONS)[number]["id"];
+
+function isFamilyVisitHistory(value: unknown): value is FamilyVisitHistory {
+  return FAMILY_VISIT_HISTORY_OPTIONS.some((option) => option.id === value);
+}
+
 function parseMinutes(hm: string): number {
   const [h, m] = hm.split(":").map((x) => Number.parseInt(x, 10));
   if (!Number.isFinite(h) || !Number.isFinite(m)) return NaN;
@@ -36,6 +48,7 @@ function settingsToBase(settings: Record<string, unknown> | null): Partial<Commu
     care_plan_update_notifications: Boolean(s.care_plan_update_notifications),
     photo_sharing_enabled: Boolean(s.photo_sharing_enabled),
     message_approval_required: Boolean(s.message_approval_required),
+    family_visit_history: isFamilyVisitHistory(s.family_visit_history) ? s.family_visit_history : undefined,
     google_business_profile_url: (s.google_business_profile_url as string) ?? undefined,
     yelp_listing_url: (s.yelp_listing_url as string) ?? undefined,
     caring_com_profile_url: (s.caring_com_profile_url as string) ?? undefined,
@@ -194,6 +207,33 @@ export function CommunicationTab({ facilityId, communicationApi }: Communication
             onChange={(e) => setDraft((d) => ({ ...d, message_approval_required: e.target.checked }))}
           />
           Message approval required
+        </label>
+        <label className="block text-sm text-foreground">
+          Visits in the family portal
+          <select
+            className={inputCls}
+            disabled={!canEdit}
+            value={merged.family_visit_history ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (isFamilyVisitHistory(value)) setDraft((d) => ({ ...d, family_visit_history: value }));
+            }}
+          >
+            {merged.family_visit_history ? null : (
+              <option value="" disabled>
+                Not set yet
+              </option>
+            )}
+            {FAMILY_VISIT_HISTORY_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Family never sees a visitor&apos;s phone, company, purpose or health screening. Healthcare provider visits show only to
+            family allowed to see clinical detail.
+          </span>
         </label>
       </RecordDetailSection>
 

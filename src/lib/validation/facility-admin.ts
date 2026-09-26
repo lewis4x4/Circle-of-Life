@@ -242,6 +242,8 @@ export const communicationSettingsSchema = z.object({
   care_plan_update_notifications: z.boolean().optional(),
   photo_sharing_enabled: z.boolean().optional(),
   message_approval_required: z.boolean().optional(),
+  /** COL-871: what the family portal shows about visits (migration 562). */
+  family_visit_history: z.enum(["off", "times_only", "with_visitor_name"]).optional(),
   google_business_profile_url: z.string().url().optional(),
   yelp_listing_url: z.string().url().optional(),
   caring_com_profile_url: z.string().url().optional(),

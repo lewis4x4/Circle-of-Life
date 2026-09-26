@@ -123,6 +123,8 @@ export const PILLARS: Pillar[] = [
       { key: "billing", href: "/admin/billing", label: "Billing & AR", icon: CreditCard },
       // Received scans, photos and email attachments waiting for a person to file them (COL-771).
       { key: "document-intake", href: "/admin/document-intake", label: "Document Intake", icon: Inbox },
+      // Who is in the building, the visitor log and kiosk sign-ins (COL-871: it was reachable only from ⌘K).
+      { key: "front-desk", href: "/admin/front-desk", label: "Front desk & visitors", icon: DoorOpen },
       // Resident trips are a facility-operations desk, not a clinical one (COL-655).
       { key: "transportation", href: "/admin/transportation", label: "Transportation", icon: Bus },
     ],
@@ -236,7 +238,6 @@ export const AUXILIARY_ROUTES: AuxiliaryRoute[] = [
   { key: "briefing", href: "/admin/briefing", label: "Daily briefing", icon: FileText, pillar: "command" },
   { key: "calendar", href: "/admin/calendar", label: "Calendar", icon: CalendarDays, pillar: "command" },
   { key: "kanban", href: "/admin/kanban", label: "Team tasks", icon: ClipboardList, pillar: "command" },
-  { key: "front-desk", href: "/admin/front-desk", label: "Front desk", icon: Home, pillar: "command" },
   { key: "contacts", href: "/admin/contacts", label: "Contacts", icon: Users, pillar: "command" },
   { key: "pilot-feedback", href: "/admin/feedback", label: "Feedback", icon: MessageSquare, pillar: "command" },
   { key: "files", href: "/admin/files", label: "Files", icon: FileText, pillar: "knowledge" },

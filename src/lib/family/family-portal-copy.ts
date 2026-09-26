@@ -116,3 +116,10 @@ export const FAMILY_PAYMENTS_EMPTY_TITLE = "No payments posted yet";
 
 export const FAMILY_PAYMENTS_EMPTY_DESCRIPTION =
   "When the business office posts a payment, it will appear here.";
+
+/** Visits (COL-871): who came to see the resident, from the front desk and kiosk sign-in. */
+export const FAMILY_VISITS_TITLE = "Visits";
+export const FAMILY_VISITS_DESCRIPTION = "Visitors who signed in at the front desk or the front-door kiosk to see this resident.";
+export const FAMILY_VISITS_EMPTY = "No visits have been signed in yet.";
+export const FAMILY_VISITS_NOT_SHARED = "This community does not share visit history in the portal. Ask the front desk if you need it.";
+export const FAMILY_VISITS_LOADING = "Loading visits…";

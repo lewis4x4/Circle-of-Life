@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   communicationStripListingHealthIsResolved,
@@ -37,16 +39,44 @@ function StripTile({
 export type FacilityCommunicationMetricsStripProps = {
   loading: boolean;
   settings: Record<string, unknown> | null;
+  /** When given, the visitor tile counts who is signed in right now (COL-871). */
+  facilityId?: string;
 };
+
+/** Visitors signed in at this building and not signed out; null when the read fails. */
+function useVisitorsInBuilding(facilityId: string | undefined): { loading: boolean; count: number | null } {
+  const [state, setState] = useState<{ loading: boolean; count: number | null }>({ loading: Boolean(facilityId), count: null });
+  useEffect(() => {
+    if (!facilityId) return;
+    let cancelled = false;
+    void (async () => {
+      const { count, error } = await createClient()
+        .from("visitor_log_entries" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("facility_id", facilityId)
+        .is("checked_out_at", null)
+        .is("voided_at", null)
+        .is("deleted_at", null);
+      if (!cancelled) setState({ loading: false, count: error ? null : (count ?? 0) });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [facilityId]);
+  return state;
+}
 
 /**
  * Communications & Policy tab — contextual tiles (notification/visitor telemetry may be wired later).
  */
-export function FacilityCommunicationMetricsStrip({ loading, settings }: FacilityCommunicationMetricsStripProps) {
+export function FacilityCommunicationMetricsStrip({ loading, settings, facilityId }: FacilityCommunicationMetricsStripProps) {
+  const visitors = useVisitorsInBuilding(facilityId);
   const health = resolveCommunicationStripOnlineListingHealth(settings, loading);
   const healthResolved = communicationStripListingHealthIsResolved(health);
   const lastFamilyNotification = formatCommunicationStripLastFamilyNotification(loading);
-  const openVisitorSessions = formatCommunicationStripOpenVisitorSessions(loading);
+  const visitorsLoading = facilityId ? visitors.loading : loading;
+  const openVisitorSessions = formatCommunicationStripOpenVisitorSessions(visitorsLoading, facilityId ? visitors.count : null);
+  const visitorCountShown = !visitorsLoading && facilityId !== undefined && visitors.count !== null;
   const lastChange = formatCommunicationStripLastChange(settings?.updated_at, loading);
 
   return (
@@ -58,10 +88,20 @@ export function FacilityCommunicationMetricsStrip({ loading, settings }: Facilit
         valueClassName={loading ? "text-2xl text-muted-foreground animate-pulse" : "text-2xl text-muted-foreground"}
       />
       <StripTile
-        label="Open visitor sessions"
+        label="Visitors in the building now"
         value={openVisitorSessions}
-        sub={loading ? "…" : "Visitor session tracking pending"}
-        valueClassName={loading ? "text-2xl text-muted-foreground animate-pulse" : "text-2xl text-muted-foreground"}
+        sub={
+          visitorsLoading ? (
+            "…"
+          ) : (
+            <Link href="/admin/front-desk" prefetch={false} className="underline underline-offset-2 hover:text-foreground">
+              Open the front desk
+            </Link>
+          )
+        }
+        valueClassName={
+          visitorsLoading ? "text-2xl text-muted-foreground animate-pulse" : visitorCountShown ? undefined : "text-2xl text-muted-foreground"
+        }
       />
       <StripTile
         label="Online listing health"

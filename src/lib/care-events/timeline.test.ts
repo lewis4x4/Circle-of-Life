@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   TIMELINE_NO_TIME_COPY,
   TIMELINE_UNKNOWN_DAY_KEY,
+  filterTimelineRows,
   groupTimelineByDay,
+  timelineFilterEmptyCopy,
   timelineDayKey,
   timelineDayLabel,
   timelineDetailNeedsExpand,
@@ -160,5 +162,34 @@ describe("row keys and expand control", () => {
     expect(timelineDetailNeedsExpand("Short note.")).toBe(false);
     expect(timelineDetailNeedsExpand("Line one.\nLine two.")).toBe(true);
     expect(timelineDetailNeedsExpand("x".repeat(141))).toBe(true);
+  });
+});
+
+describe("visits on the timeline (COL-871)", () => {
+  const visit = row({ source: "visit", source_id: "v1", kind: "family_friend", title: "Visit from family or a friend", detail: "Jordan Pierce. Left 3:10 PM." });
+  const check = row({ source: "safety_check", source_id: "c1", kind: "observation", title: "Safety check" });
+  const wrong = row({ source: "observation_exception", source_id: "c2", kind: "observation", title: "Safety check: something wrong" });
+  const note = row({ source: "daily_log", source_id: "n1" });
+  const fall = row({ source: "care_event", source_id: "e1", kind: "fall", care_event_id: "e1", level: "level_2" });
+  const rows = [visit, check, wrong, note, fall];
+
+  it("labels a visit with the view's title and the Visit source word", () => {
+    const label = timelineRowLabel(visit, TIME_ZONE);
+    expect(label.title).toBe("Visit from family or a friend");
+    expect(label.sourceWord).toBe("Visit");
+    expect(label.levelWord).toBeNull();
+    expect(timelineLinkFor("admin", visit)).toEqual([]);
+  });
+
+  it("narrows to one kind of entry, and All keeps everything", () => {
+    expect(filterTimelineRows(rows, "visits").map((r) => r.source_id)).toEqual(["v1"]);
+    expect(filterTimelineRows(rows, "checks").map((r) => r.source_id)).toEqual(["c1", "c2"]);
+    expect(filterTimelineRows(rows, "notes").map((r) => r.source_id)).toEqual(["n1"]);
+    expect(filterTimelineRows(rows, "care").map((r) => r.source_id)).toEqual(["e1"]);
+    expect(filterTimelineRows(rows, "all")).toHaveLength(rows.length);
+  });
+
+  it("says what is missing when a filter is empty", () => {
+    expect(timelineFilterEmptyCopy("visits")).toBe("No visits on this timeline yet. Choose All entries to see everything else.");
   });
 });

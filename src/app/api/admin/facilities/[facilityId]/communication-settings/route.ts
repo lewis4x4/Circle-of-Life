@@ -109,6 +109,7 @@ export async function PUT(request: NextRequest, ctx: RouteContext) {
       "care_plan_update_notifications",
       "photo_sharing_enabled",
       "message_approval_required",
+      "family_visit_history",
     ];
 
     // Filter updates to only allowed fields

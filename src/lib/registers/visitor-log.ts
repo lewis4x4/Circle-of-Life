@@ -1,4 +1,5 @@
 import { enumLabel } from "@/lib/display/enum-label";
+import { formatPersonNameLastFirst } from "@/lib/format/datetime";
 /**
  * The front desk visitor log.
  *
@@ -183,3 +184,43 @@ export function residentPrefixMatches<T extends { firstName: string; lastName: s
 
 export const VISITOR_LOG_EMPTY_COPY = "Nobody is signed in right now.";
 export const VISITOR_LOG_RANGE_EMPTY_COPY = "No visitors signed in for this range.";
+
+/** One resident the Front Desk log can be narrowed to (COL-871). */
+export type VisitorLogResidentOption = { id: string; name: string };
+
+/**
+ * Residents the log can be filtered by: everyone who can be visited now, plus anyone a
+ * visit in the range was for (a resident discharged since still has their visits).
+ * Sorted by last name, the way the desk looks people up.
+ */
+export function visitorLogResidentOptions(
+  residents: readonly { id: string; firstName: string; lastName: string }[],
+  rows: readonly VisitorLogRow[],
+): VisitorLogResidentOption[] {
+  const byId = new Map<string, { name: string; sortKey: string }>();
+  for (const resident of residents) {
+    byId.set(resident.id, {
+      name: formatPersonNameLastFirst({ first_name: resident.firstName, last_name: resident.lastName }),
+      sortKey: `${resident.lastName} ${resident.firstName}`.toLowerCase(),
+    });
+  }
+  for (const row of rows) {
+    if (!row.visitingResidentId || byId.has(row.visitingResidentId)) continue;
+    const name = row.visitingResidentName?.trim() || "Resident";
+    const parts = name.split(/\s+/);
+    byId.set(row.visitingResidentId, { name, sortKey: `${parts[parts.length - 1]} ${name}`.toLowerCase() });
+  }
+  return [...byId.entries()]
+    .sort((a, b) => a[1].sortKey.localeCompare(b[1].sortKey))
+    .map(([id, entry]) => ({ id, name: entry.name }));
+}
+
+/** Rows for one resident, or every row when no resident is chosen. */
+export function filterVisitsToResident<T extends Pick<VisitorLogRow, "visitingResidentId">>(rows: readonly T[], residentId: string): T[] {
+  if (!residentId) return [...rows];
+  return rows.filter((row) => row.visitingResidentId === residentId);
+}
+
+export function visitorLogResidentEmptyCopy(residentName: string): string {
+  return `No visits to ${residentName || "this resident"} in this range.`;
+}

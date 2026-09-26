@@ -82,6 +82,7 @@ describe("role navigation", () => {
       "My facility",
       "Billing & AR",
       "Document Intake",
+      "Front desk & visitors",
       "Transportation",
     ]);
     const myFacility = command?.items.find((item) => item.key === "facilities");

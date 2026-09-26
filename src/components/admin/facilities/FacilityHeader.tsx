@@ -256,6 +256,7 @@ export function FacilityHeader(props: FacilityHeaderProps) {
           <FacilityCommunicationMetricsStrip
             loading={communicationStrip.loading}
             settings={communicationStrip.settings}
+            facilityId={facility.id}
           />
         );
       }
