@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import { headCountOrNull } from "@/lib/metrics/head-count";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -50,14 +51,14 @@ function useVisitorsInBuilding(facilityId: string | undefined): { loading: boole
     if (!facilityId) return;
     let cancelled = false;
     void (async () => {
-      const { count, error } = await createClient()
+      const reply = await createClient()
         .from("visitor_log_entries" as never)
         .select("id", { count: "exact", head: true })
         .eq("facility_id", facilityId)
         .is("checked_out_at", null)
         .is("voided_at", null)
         .is("deleted_at", null);
-      if (!cancelled) setState({ loading: false, count: error ? null : (count ?? 0) });
+      if (!cancelled) setState({ loading: false, count: headCountOrNull(reply) });
     })();
     return () => {
       cancelled = true;
