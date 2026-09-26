@@ -37,7 +37,7 @@ export function SettingChange({ sql }: { sql: string }) {
         <h4 id={headingId} className="text-xs font-semibold text-muted-foreground">
           Setting change for Brian to apply
         </h4>
-        <Button type="button" variant="outline" size="sm" onClick={() => void copy()}>
+        <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => void copy()}>
           <Copy className="size-4" aria-hidden />
           Copy
         </Button>

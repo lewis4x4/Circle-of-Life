@@ -81,10 +81,23 @@ function readError(error: { code?: string; message?: string }): IntakeReadError 
   return new IntakeReadError(forbidden ? "You do not have access to this." : "Jev accuracy could not be loaded. Try again in a moment.", forbidden);
 }
 
-async function readAll<T>(sb: SupabaseClient, view: string, columns: string, since: string | null, parse: (r: Row) => T | null): Promise<T[]> {
+/**
+ * Pages with `.range()` are only stable over a total order. The outcomes view
+ * has one row per filing; the check view has one row per filing and check, so
+ * it also orders by check_code.
+ */
+async function readAll<T>(
+  sb: SupabaseClient,
+  view: string,
+  columns: string,
+  tieBreakers: readonly string[],
+  since: string | null,
+  parse: (r: Row) => T | null,
+): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; from < MAX_ROWS; from += PAGE) {
-    let q = sb.from(view).select(columns).order("approved_at", { ascending: false }).order("filing_id", { ascending: true });
+    let q = sb.from(view).select(columns).order("approved_at", { ascending: false });
+    for (const column of tieBreakers) q = q.order(column, { ascending: true });
     if (since) q = q.gte("approved_at", since);
     const { data, error } = await q.range(from, from + PAGE - 1);
     if (error) throw readError(error);
@@ -109,19 +122,31 @@ async function loadDocumentIntakeRouting(sb: SupabaseClient): Promise<unknown | 
   return (data as { document_intake?: unknown }).document_intake ?? {};
 }
 
+/** Ids per `.in()` request, so the query string stays well under URL limits. */
+const ID_CHUNK = 200;
+
+/** destination_kind for every filing id, read in sequential chunks. A chunk that fails leaves its misses at "Not available". */
 async function loadDestinationKinds(sb: SupabaseClient, filingIds: string[]): Promise<Record<string, string>> {
-  const ids = [...new Set(filingIds)].slice(0, 200);
-  if (ids.length === 0) return {};
-  const { data, error } = await sb.from("document_intake_filings").select("id,destination_kind").in("id", ids);
-  if (error || !data) return {};
-  return Object.fromEntries((data as Row[]).flatMap((r) => (typeof r.id === "string" && typeof r.destination_kind === "string" ? [[r.id, r.destination_kind]] : [])));
+  const ids = [...new Set(filingIds)];
+  const out: Record<string, string> = {};
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const { data, error } = await sb
+      .from("document_intake_filings")
+      .select("id,destination_kind")
+      .in("id", ids.slice(i, i + ID_CHUNK));
+    if (error || !data) continue;
+    for (const r of data as Row[]) {
+      if (typeof r.id === "string" && typeof r.destination_kind === "string") out[r.id] = r.destination_kind;
+    }
+  }
+  return out;
 }
 
 export async function loadAccuracyReport(sb: SupabaseClient, window: AccuracyWindow, now: number): Promise<AccuracyReport> {
   const since = windowStartIso(window, now);
   const [outcomes, checks, catalog, routing] = await Promise.all([
-    readAll(sb, "document_intake_jev_outcomes", OUTCOME_COLUMNS, since, parseOutcomeRow),
-    readAll(sb, "document_intake_jev_check_outcomes", CHECK_COLUMNS, since, parseCheckRow),
+    readAll(sb, "document_intake_jev_outcomes", OUTCOME_COLUMNS, ["filing_id"], since, parseOutcomeRow),
+    readAll(sb, "document_intake_jev_check_outcomes", CHECK_COLUMNS, ["filing_id", "check_code"], since, parseCheckRow),
     loadCatalog(sb).catch(() => []),
     loadDocumentIntakeRouting(sb),
   ]);

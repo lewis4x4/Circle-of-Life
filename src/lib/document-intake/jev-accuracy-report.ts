@@ -6,7 +6,8 @@
  * this module only groups, counts and labels. Numbers are strictly per
  * questions_version: a type whose question set changed reports only its
  * current version (the version of its most recently approved Jev run) and
- * says how many older-version documents it left out.
+ * says how many older-version documents it left out. Misses follow the same
+ * rule.
  */
 import {
   MARGIN_OFF,
@@ -320,12 +321,22 @@ export function buildAccuracyReport(input: ReportInput): AccuracyReport {
   }
   types.sort((a, b) => b.filed - a.filed || a.label.localeCompare(b.label));
 
+  // Misses follow the same version rule as Tier 1 and 2: only each type's
+  // current question set. A type with Wrong verdicts but no outcome read takes
+  // the version of its newest check row.
+  const currentVersion = new Map<string, string | null>(types.map((t) => [t.code, t.questionsVersion]));
+  for (const [code, list] of checksByType) {
+    if (!currentVersion.has(code)) currentVersion.set(code, [...list].sort(newestFirst)[0]?.questions_version ?? null);
+  }
+  const isCurrent = (row: { filed_code: string; questions_version: string | null }) => currentVersion.get(row.filed_code) === row.questions_version;
+
   const wrongChecks = groupBy(
-    checks.filter((r) => r.verdict === "wrong"),
+    checks.filter((r) => r.verdict === "wrong" && isCurrent(r)),
     (r) => r.filing_id,
   );
   const missed = new Map<string, Miss>();
   for (const row of outcomes) {
+    if (!isCurrent(row)) continue;
     const topPickWrong = row.jev_top_correct === false;
     const wrong = wrongChecks.get(row.filing_id) ?? [];
     if (!topPickWrong && wrong.length === 0) continue;

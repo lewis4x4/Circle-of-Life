@@ -93,6 +93,20 @@ describe("buildAccuracyReport", () => {
     expect(detail.checks[0]).toMatchObject({ code: "jev_holder_matches", answered: 1, rated: 1, right_rate: 1, action: "collect" });
   });
 
+  it("leaves older-version wrong top picks and Wrong verdicts out of the misses once a newer version is current", () => {
+    const oldPick = outcome({ questions_version: "intake-v2/vendor_coi.1", approved_at: "2026-09-01T00:00:00Z", jev_top_correct: false });
+    const oldCheck = outcome({ questions_version: "intake-v2/vendor_coi.1", approved_at: "2026-09-02T00:00:00Z" });
+    const newPick = outcome({ questions_version: "intake-v2/vendor_coi.2", approved_at: "2026-09-20T00:00:00Z", jev_top_correct: false });
+    const checks = [
+      check({ filing_id: oldCheck.filing_id, item_id: oldCheck.item_id, questions_version: "intake-v2/vendor_coi.1", verdict: "wrong" }),
+      // A version 1 Wrong verdict whose outcome row was not read.
+      check({ filing_id: "f-unread", item_id: "i-unread", questions_version: "intake-v2/vendor_coi.1", verdict: "wrong" }),
+    ];
+    const report = buildAccuracyReport({ outcomes: [oldPick, oldCheck, newPick], checks, catalogLabels: labels, documentIntakeRouting: null });
+    expect(report.types[0]).toMatchObject({ questionsVersion: "intake-v2/vendor_coi.2", excludedOlder: 2 });
+    expect(report.misses.map((m) => m.filingId)).toEqual([newPick.filing_id]);
+  });
+
   it("falls back to the latest run's margin when the live setting cannot be read", () => {
     const outcomes = [
       outcome({ approved_at: "2026-09-01T00:00:00Z", margin_at_run: 0.15 }),

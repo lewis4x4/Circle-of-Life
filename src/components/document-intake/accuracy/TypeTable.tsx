@@ -45,7 +45,7 @@ export function TypeTable({
                     onClick={() => onSelect(open ? null : t.code)}
                     aria-expanded={open}
                     aria-controls={open ? detailId : undefined}
-                    className="inline-flex min-h-8 items-center gap-1 text-left font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-11 items-center gap-1 text-left font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <ChevronRight aria-hidden className={cn("size-4 shrink-0 text-muted-foreground", open && "rotate-90")} />
                     {t.label}

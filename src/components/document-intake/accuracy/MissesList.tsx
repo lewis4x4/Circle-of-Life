@@ -72,7 +72,7 @@ export function MissesList({ misses }: { misses: Miss[] }) {
                   <TableCell className="text-right">
                     <Link
                       href={`/admin/document-intake/${m.itemId}`}
-                      className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       Open<span className="sr-only"> {m.label} filed {formatFacilityTimestampEt(m.approvedAt)}</span>
                     </Link>
@@ -83,7 +83,7 @@ export function MissesList({ misses }: { misses: Miss[] }) {
           </Table>
           {misses.length > FIRST_PAGE && !showAll ? (
             <div className="border-t border-border p-3">
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowAll(true)}>
+              <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setShowAll(true)}>
                 Show all {misses.length}
               </Button>
             </div>
