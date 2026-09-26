@@ -538,7 +538,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
             : facilityControlLoading
               ? "Facility filter — loading"
               : `Facility filter — ${
-                  safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "selected facility"
+                  safeSelectedFacilityId === null ? "all facilities" : currentFacility?.name ?? "No facility name posted"
                 }`
         }
         title={facilityControlLoading ? undefined : facilityTriggerLabel}
