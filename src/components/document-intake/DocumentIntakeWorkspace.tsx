@@ -153,7 +153,7 @@ export function DocumentIntakeWorkspace({ initialTab }: { initialTab: IntakeTab 
   const catalogLabels = useMemo(() => Object.fromEntries(catalog.map((c) => [c.code, c.label])), [catalog]);
   const alertHours = settings?.pending_alert_hours ?? null;
   const now = Date.now();
-  const scopeName = selectedFacilityId ? (facilityNames[selectedFacilityId] ?? "Selected facility") : "All facilities";
+  const scopeName = selectedFacilityId ? (facilityNames[selectedFacilityId] ?? "No facility name posted") : "All facilities";
 
   return (
     <div className="flex max-w-[1440px] flex-col gap-4 pb-8 pt-2">

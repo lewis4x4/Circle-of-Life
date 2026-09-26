@@ -56,7 +56,7 @@ export default function FinanceForecastPageClient({
   const scopeLabel = useMemo(() => {
     if (!initialFacilityId) return "Portfolio scope · all accessible facilities";
     const scopedFacility = snapshot?.facilities.find((facility) => facility.id === initialFacilityId);
-    return `Facility scope · ${scopedFacility?.name ?? "selected facility"}`;
+    return `Facility scope · ${scopedFacility?.name ?? "No facility name posted"}`;
   }, [initialFacilityId, snapshot?.facilities]);
 
   const costRecordCount = snapshot
