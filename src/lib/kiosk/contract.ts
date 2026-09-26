@@ -349,5 +349,4 @@ export const KIOSK_VISITOR_COPY = {
   /** "When you leave, tap **Sign out** on the home screen." */
   signOutReminder: { before: "When you leave, tap ", strong: "Sign out", after: " on the home screen." },
   signOutPrompt: "Leaving? Sign out",
-  signOutHint: "Type the first 3 letters of your first name",
 } as const;

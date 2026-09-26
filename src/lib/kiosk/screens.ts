@@ -65,13 +65,46 @@ export const KIOSK_SIGN_IN_COPY = {
 } as const;
 
 export const KIOSK_LEAVING_COPY = {
-  title: "Signing out",
+  title: "Sign out",
+  nameLabel: "Your first name",
+  nameHelper: "Type at least 3 letters.",
   hint: "Tap your name.",
-  none: "No one signed in by that name. Please see the front desk.",
+  none: "No open visit under that name. Ask the front desk to sign you out.",
   searching: "Looking for your name.",
   signOut: "Sign out",
-  doneTitle: "Signed out. Thank you for visiting.",
+  cancel: "Cancel",
+  listLabel: "Open visits",
+  /** Sign-out errors in this screen's words; anything else uses the shared visitor copy. */
+  errors: {
+    not_found: "No open visit under that name. Ask the front desk to sign you out.",
+    already_signed_out: "That visit is already signed out.",
+    device_throttled: "Too many tries. Ask the front desk.",
+  },
 } as const;
+
+/** "Sign out Brian L.?" on the confirm sheet. */
+export function kioskSignOutConfirmTitle(displayName: string): string {
+  return `Sign out ${displayName}?`;
+}
+
+/** "Brian" from "Brian L.": the display name without its last initial. */
+export function kioskVisitorFirstName(displayName: string): string {
+  const trimmed = displayName.trim();
+  const withoutInitial = trimmed.replace(/\s+\p{L}\.$/u, "");
+  return withoutInitial || trimmed;
+}
+
+/** "You're signed out. Thanks, Brian." */
+export function kioskSignedOutTitle(displayName: string): string {
+  const first = kioskVisitorFirstName(displayName);
+  return first ? `You're signed out. Thanks, ${first}.` : "You're signed out. Thanks.";
+}
+
+/** "Healthcare provider · In at 7:17 PM" on an open visit row. */
+export function kioskOpenVisitLine(typeLabel: string, checkedInAt: string, timeZone = KIOSK_TIME_ZONE): string {
+  const at = `In at ${formatKioskClock(checkedInAt, timeZone)}`;
+  return typeLabel ? `${typeLabel} · ${at}` : at;
+}
 
 export const KIOSK_BACK = "Back";
 
@@ -115,8 +148,9 @@ export function kioskPunchTitle(punchType: PunchType, punchedAt: string, timeZon
   return `${verb[punchType]} at ${formatKioskClock(punchedAt, timeZone)}`;
 }
 
-export function kioskSignedOutLine(displayName: string, checkedInAt: string, checkedOutAt: string, timeZone = KIOSK_TIME_ZONE): string {
-  return `${displayName} · in ${formatKioskClock(checkedInAt, timeZone)} · out ${formatKioskClock(checkedOutAt, timeZone)}`;
+/** "In 7:17 PM · Out 8:02 PM" on the signed-out confirmation. */
+export function kioskSignedOutLine(checkedInAt: string, checkedOutAt: string, timeZone = KIOSK_TIME_ZONE): string {
+  return `In ${formatKioskClock(checkedInAt, timeZone)} · Out ${formatKioskClock(checkedOutAt, timeZone)}`;
 }
 
 /** A random UUID for idempotent kiosk writes. */

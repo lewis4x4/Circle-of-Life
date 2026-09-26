@@ -5,13 +5,14 @@
  * IndexedDB (`haven-timeclock`) is the only credential. The shell reads it once
  * for every /kiosk screen, sends a tablet without one to /kiosk/setup, replays
  * offline punches whenever the network is back (whatever screen is showing),
- * and returns any screen but home to home after 30 seconds without input.
+ * and returns any screen but home to home after 30 seconds without input
+ * (60 on sign-out and the staff clock).
  */
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { KIOSK_IDLE_RESET_MS } from "@/lib/kiosk/contract";
+import { KIOSK_IDLE_RESET_MS, KIOSK_SIGN_OUT_IDLE_MS } from "@/lib/kiosk/contract";
 import { KIOSK_SETUP_COPY, KIOSK_TIME_ZONE } from "@/lib/kiosk/screens";
 import { replayKioskQueue, resolveKioskStore, type KioskDevice, type KioskStore } from "@/lib/timeclock/kiosk-store";
 
@@ -32,6 +33,7 @@ export type KioskShellProps = {
 };
 
 const IDLE_EVENTS = ["pointerdown", "keydown", "input"] as const;
+const LONG_IDLE_PATHS = new Set(["/kiosk/leaving", "/kiosk/staff"]);
 
 export function KioskShell({ children, store: storeProp, fetchImpl: fetchProp, now: nowProp, timeZone = KIOSK_TIME_ZONE, online: onlineProp, idleMs = KIOSK_IDLE_RESET_MS }: KioskShellProps) {
   const router = useRouter();
@@ -94,19 +96,22 @@ export function KioskShell({ children, store: storeProp, fetchImpl: fetchProp, n
   const goHome = useCallback(() => router.replace(KIOSK_HOME_PATH), [router]);
 
   // Idle: any screen but home and setup returns home after 30 seconds without input.
+  // Sign-out and the staff name picker wait 60 seconds: typing a name or finding
+  // yours takes longer, and the staff PIN screen clears itself after 30.
+  const screenIdleMs = LONG_IDLE_PATHS.has(pathname) ? Math.max(idleMs, KIOSK_SIGN_OUT_IDLE_MS) : idleMs;
   useEffect(() => {
     if (pathname === KIOSK_HOME_PATH || onSetup) return;
-    let timer = window.setTimeout(goHome, idleMs);
+    let timer = window.setTimeout(goHome, screenIdleMs);
     const touch = () => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(goHome, idleMs);
+      timer = window.setTimeout(goHome, screenIdleMs);
     };
     for (const name of IDLE_EVENTS) window.addEventListener(name, touch, true);
     return () => {
       window.clearTimeout(timer);
       for (const name of IDLE_EVENTS) window.removeEventListener(name, touch, true);
     };
-  }, [pathname, onSetup, idleMs, goHome]);
+  }, [pathname, onSetup, screenIdleMs, goHome]);
 
   const setDevice = useCallback(
     async (next: KioskDevice) => {
