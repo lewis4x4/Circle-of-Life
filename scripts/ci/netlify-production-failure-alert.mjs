@@ -388,11 +388,14 @@ export function planRunAudit(state, { source, now }) {
   return { shards, queries: [recent, ...shards].map((r) => ({ per_page: 100, created: `${r.from}..${r.to}`, branch: 'main' })), pendingRunIds: cursor.pending.map((r) => r.id), maxRequests: 50, maxPagesPerPartition: 10 };
 }
 const failureOutcomes = new Set(['failure', 'timed_out', 'action_required', 'startup_failure', 'cancelled']);
-function normalizeRun(run, options) {
+export function normalizeRun(run, options) {
   const expectedPath = `.github/workflows/${options.source === 'observer' ? 'netlify-production-failure-alert.yml' : 'ci-gates.yml'}`;
   if (run.workflow_id !== options.workflowId || run.repository?.full_name !== options.repository || run.head_repository?.full_name !== options.repository || run.head_branch !== 'main' || run.path !== expectedPath) return null;
   if (run.event === 'workflow_dispatch') {
-    ensure(run.verifiedMode === 'observe' || (options.source === 'observer' && run.verifiedMode === 'replay'), 'audit-ambiguous-dispatch');
+    // The primary CI workflow has no synthetic replay mode. Its manual runs
+    // use the same repository/workflow/main-source checks as push runs above.
+    // Only the provider observer must prove live versus synthetic dispatch.
+    if (options.source === 'observer') ensure(['observe', 'replay'].includes(run.verifiedMode), 'audit-ambiguous-dispatch');
   } else if (!(options.source === 'observer' ? ['push', 'schedule'] : ['push']).includes(run.event)) return null;
   if (!Number.isSafeInteger(run.id) || run.id < 1 || !Number.isSafeInteger(run.run_attempt) || run.run_attempt < 1 || !SHA.test(run.head_sha) || !instant(run.created_at, options.now) || !instant(run.updated_at, options.now)) throw fault('audit-run-identity');
   if (!['queued', 'in_progress', 'completed', 'waiting', 'requested', 'pending'].includes(run.status) || (run.conclusion !== null && !['success', 'failure', 'timed_out', 'action_required', 'startup_failure', 'cancelled', 'neutral', 'skipped', 'stale'].includes(run.conclusion))) throw fault('audit-run-outcome');

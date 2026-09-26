@@ -223,7 +223,8 @@ test("WF03/WF06: observer-health catch-up runs every five minutes with isolated 
   assert.match(workflow, /cron: ["'][^"']*\/5 \* \* \* \*["']/);
   assert.match(workflow, /group:.*main-ci/);
   assert.match(workflow, /group:.*netlify-observer-health/);
-  assert.equal([...workflow.matchAll(/cancel-in-progress: false/g)].length, 2);
+  assert.equal([...workflow.matchAll(/cancel-in-progress: false/g)].length, 3);
+  assert.match(workflow, /group: main-ci-dispatch/);
   assert.match(workflow, /github\.repository == 'lewis4x4\/Circle-of-Life'/);
   assert.match(workflow, /ref: main/);
   assert.doesNotMatch(workflow, /NETLIFY_AUTH_TOKEN/);
