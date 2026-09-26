@@ -134,6 +134,12 @@ export default function PoliciesListPage() {
             </h2>
             {kbDocs ? <span className="text-[12px] text-muted-foreground">{kbDocs.length} documents</span> : null}
           </div>
+          <p className="text-[12px] text-muted-foreground pl-2 mb-3">
+            New hires sign the manuals their job role requires during onboarding.{" "}
+            <Link href="/admin/staff/onboarding-manuals" className="underline">
+              Choose which manuals
+            </Link>
+          </p>
           {kbError ? (
             <p className="text-[13px] text-destructive pl-2" role="alert">
               Knowledge base documents could not be loaded. This is not an empty knowledge base.
