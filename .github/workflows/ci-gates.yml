@@ -18,7 +18,9 @@ on:
         type: string
 
 concurrency:
-  group: haven-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Preserve already-running main gates when a later policy-only change lands.
+  # PR updates still replace older runs for the same pull request.
+  group: haven-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -409,6 +411,9 @@ jobs:
     needs: [classify, app-tests, gates, finance]
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Enforce applicable jobs
         env:
@@ -430,3 +435,14 @@ jobs:
           for value in "$CLASSIFICATION_SAFE" "$DATABASE_SENSITIVE" "$FINANCE_SENSITIVE" "$UI_SENSITIVE" "$RELEASE_SENSITIVE" "$POLICY_ONLY"; do
             test "$value" = "true" || test "$value" = "false"
           done
+
+      - uses: actions/checkout@v4
+        if: always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        with:
+          persist-credentials: false
+
+      - name: Notify main CI completion observer
+        if: always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/dispatch-main-ci.mjs notify

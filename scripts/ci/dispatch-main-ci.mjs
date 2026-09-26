@@ -91,6 +91,15 @@ export function createApi(token, fetchImpl = fetch) {
   };
 }
 
+export async function notifyCompletion({ api, runId }) {
+  requireValue(Number.isSafeInteger(runId) && runId > 0, "Primary CI notification requires a run id");
+  const result = await api("POST", `${root}/actions/workflows/main-ci-failure-alert.yml/dispatches`, {
+    ref: "main", inputs: { primary_run_id: String(runId) },
+  });
+  requireValue(Number.isSafeInteger(result?.workflow_run_id) && result.workflow_run_id > 0, "Primary CI observer notification was not verified");
+  return { action: "notified", primary_run_id: runId, observer_run_id: result.workflow_run_id };
+}
+
 async function main() {
   if (process.argv[2] === "validate") {
     const parent = spawnSync("git", ["rev-parse", "HEAD", "HEAD^"], { encoding: "utf8" });
@@ -101,7 +110,10 @@ async function main() {
     return;
   }
   requireValue(process.env.GITHUB_REPOSITORY === REPOSITORY && process.env.GITHUB_REF === "refs/heads/main", "Reconciliation must run from trusted main");
-  console.log(JSON.stringify(await reconcile({ api: createApi(process.env.GITHUB_TOKEN) })));
+  const api = createApi(process.env.GITHUB_TOKEN);
+  console.log(JSON.stringify(process.argv[2] === "notify"
+    ? await notifyCompletion({ api, runId: Number(process.env.GITHUB_RUN_ID) })
+    : await reconcile({ api })));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
