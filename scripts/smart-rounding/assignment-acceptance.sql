@@ -655,7 +655,7 @@ BEGIN
 
   SELECT user_id INTO v_user FROM public.staff WHERE id=v_worked.assigned_staff_id;
   INSERT INTO auth.sessions(id,user_id) VALUES(v_session,v_user);
-  -- Migration 553: a check is charted inside its window, never before it opens. The
+  -- Migration 554: a check is charted inside its window, never before it opens. The
   -- generated check may belong to a later window, so open its window now.
   UPDATE public.resident_observation_tasks SET scheduled_for = now() - interval '5 minutes',
     due_at = now() + interval '10 minutes', grace_ends_at = now() + interval '70 minutes'

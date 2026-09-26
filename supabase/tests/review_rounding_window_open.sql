@@ -1,4 +1,4 @@
--- Migration 553: a Smart Rounding check cannot be charted before its window opens.
+-- Migration 554: a Smart Rounding check cannot be charted before its window opens.
 -- Rollback-only fixture on a seeded facility and resident.
 BEGIN;
 CREATE TEMP TABLE wo AS
@@ -12,13 +12,13 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM wo) THEN RAISE EXCEPTION 'Seeded facili
 
 -- A cadence version in draft is enough to stamp the tasks; it is never put in force.
 INSERT INTO public.facility_cadence_versions (id, organization_id, facility_id, version_number, status, effective_from, change_reason)
-SELECT cadence, org, facility, 900, 'draft', now(), 'Migration 553 probe' FROM wo;
+SELECT cadence, org, facility, 900, 'draft', now(), 'Migration 554 probe' FROM wo;
 INSERT INTO public.resident_observation_tasks (id, organization_id, entity_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status)
 SELECT early_task, org, entity, facility, resident, cadence, 'probe_tomorrow', current_date + 1, now() + interval '8 hours', now() + interval '8 hours', now() + interval '9 hours', 'upcoming'::public.resident_observation_task_status FROM wo
 UNION ALL
 SELECT open_task, org, entity, facility, resident, cadence, 'probe_open', current_date + 1, now() - interval '5 minutes', now() + interval '10 minutes', now() + interval '70 minutes', 'upcoming'::public.resident_observation_task_status FROM wo;
 INSERT INTO public.resident_observation_plans (id, organization_id, facility_id, resident_id, status, source_type, effective_from, rationale)
-SELECT plan, org, facility, resident, 'active', 'manual', now(), 'Migration 553 probe: an older plan-rule check stays outside the window rule' FROM wo;
+SELECT plan, org, facility, resident, 'active', 'manual', now(), 'Migration 554 probe: an older plan-rule check stays outside the window rule' FROM wo;
 INSERT INTO public.resident_observation_plan_rules (id, plan_id, organization_id, facility_id, resident_id, interval_type, interval_minutes, grace_minutes)
 SELECT rule, plan, org, facility, resident, 'fixed_minutes', 60, 15 FROM wo;
 INSERT INTO public.resident_observation_tasks (id, organization_id, facility_id, resident_id, plan_id, plan_rule_id, scheduled_for, due_at, grace_ends_at, status)

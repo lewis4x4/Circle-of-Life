@@ -62,7 +62,7 @@ export function formatOpensLabel(minutes: number): string {
  * `opensAtIso` is the task's `scheduled_for`, the instant its window opens
  * (the cadence window's grace before the due time, or a monitoring order's
  * occurrence). Before it the check cannot be charted: the server refuses it
- * (migration 553), so the tablet offers no Done and says when it opens.
+ * (migration 554), so the tablet offers no Done and says when it opens.
  */
 export function checkTiming(
   derivedStatus: ObservationTaskStatus | string,
