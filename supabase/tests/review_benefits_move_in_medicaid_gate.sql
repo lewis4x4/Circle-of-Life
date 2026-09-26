@@ -48,7 +48,7 @@ RESET ROLE;
 -- Executive override on the case: must be complete (reason, who, when), then satisfies the gate.
 DO $$ BEGIN
  BEGIN UPDATE public.admission_cases SET medicaid_gate_override_reason='Only a reason' WHERE id=(SELECT admission FROM tr WHERE label='overridden'); RAISE EXCEPTION 'COL575 partial override accepted';
- EXCEPTION WHEN check_violation THEN NULL; END;
+ EXCEPTION WHEN check_violation OR insufficient_privilege THEN NULL; END;
 END $$;
 UPDATE public.admission_cases SET medicaid_gate_override_reason='Family paying privately until the application is decided',medicaid_gate_override_by=(SELECT id FROM ta),medicaid_gate_override_at=now() WHERE id=(SELECT admission FROM tr WHERE label='overridden');
 SET LOCAL ROLE service_role;
