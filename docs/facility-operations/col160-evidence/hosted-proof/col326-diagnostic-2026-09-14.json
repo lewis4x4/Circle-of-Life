@@ -1,0 +1,68 @@
+{
+  "at": "2026-09-14T19:34:27.041995+00:00",
+  "sourceSha": "5af737e173a85a74eb729452489e461d64fcd652",
+  "target": "iwcnajanvjvynolltflw",
+  "outcome": "Root cause NARROWED but NOT fixed. A fix was attempted, failed, and was reverted.",
+  "note": "Diagnostic artifact, deliberately separate from the COL-160 proof evidence set.",
+  "isolation": {
+    "claim": "The stall is specific to one request. It is not the Node process and not the database.",
+    "appLog": [
+      "GET /api/admin/operations/drafts 200 in 406ms",
+      "POST /api/admin/operations/corporate-deliverables 200 in 29.6s",
+      "GET /api/admin/operations/drafts 200 in 391ms"
+    ],
+    "duringHang": "Unrelated authenticated endpoint stayed at 0.39-1.44s throughout. pg_stat_activity showed 0 blocked backends and longest transaction 0s."
+  },
+  "discriminator": {
+    "method": "Same endpoint, same session, same fixture, one field changed.",
+    "results": [
+      {
+        "case": "valid expected_revision",
+        "raisedWhere": "commits",
+        "result": "200 in 1.41s"
+      },
+      {
+        "case": "nonexistent expectation -> 42501",
+        "raisedWhere": "line 286, BEFORE any pg_advisory_xact_lock",
+        "result": "404 in 0.84s"
+      },
+      {
+        "case": "bogus expected_revision -> 40001",
+        "raisedWhere": "line 302, AFTER pg_advisory_xact_lock('corporate-expectation:...')",
+        "result": "HANGS"
+      },
+      {
+        "case": "reused request_key changed body -> 23505",
+        "raisedWhere": "line 295, AFTER pg_advisory_xact_lock('corporate-request:...')",
+        "result": "HANGS"
+      }
+    ],
+    "conclusion": "An error raised BEFORE any advisory lock returns in under a second. An error raised AFTER one never returns. The success path, which also holds advisory locks but commits, returns normally."
+  },
+  "layerIsolated": "A direct POST to PostgREST /rest/v1/rpc/corporate_deliverable_command, bypassing Next entirely, hangs identically. The defect is below Haven's application code.",
+  "contentionCaptured": {
+    "observed": "Seven PostgREST backends chained on Lock/tuple and Lock/transactionid from a single sent request; the other six accumulated from earlier attempts and never drained.",
+    "sampling": "Across three samples 4s apart, xact_age and query_age stayed pinned at 0.0-0.1s while backend_age grew past 1100s, and the head-of-chain role rotated between backends.",
+    "advisoryLocks": "Zero advisory locks held at the time of capture."
+  },
+  "attemptedFixThatFailed": {
+    "what": "Migration 380 set a transaction-scoped lock_timeout of 4s and re-raised lock_not_available as 40001.",
+    "result": "No effect. The bogus-revision case still hung.",
+    "whyItWasWrong": "The refutation was already in the captured data: xact_age was pinned at 0.0-0.1s, so each transaction restarts long before a 4s timeout could fire. A timeout cannot bound a wait that never reaches it.",
+    "reverted": "380 was reverted on staging (function restored to 374's definition, ledger row deleted) and the file removed. It never entered the repository or production. Staging is back to 382 rows matching main."
+  },
+  "eliminatedWithEvidence": [
+    "Obsolete-revision slow 409 - a valid revision behaves differently, so the framing was wrong",
+    "Table-level AccessExclusiveLock escalation - reproduced the signature with two plain SELECT ... FOR UPDATE; it is a tuple lock",
+    "Database slowness - pg_stat_statements, never reset: corporate_deliverable_command 362 calls, max 1.33s, mean 0.19s",
+    "Data-volume blowup in the snapshot loops - 13 captures, max 2 sites each, ~1.6KB snapshots",
+    "autoRefreshToken refresh storm - @supabase/ssr 0.10.0 forces autoRefreshToken false internally",
+    "GoTrue stalling under burst - 25 concurrent /auth/v1/user calls, max 0.424s, zero 429s",
+    "census_daily_log SHARE contention - SHARE is self-compatible, and all five locked tables acquired SHARE in ~0.67s when idle",
+    "Process-wide stall - an unrelated authenticated endpoint stayed fast immediately before and after the hanging request",
+    "Playwright body rewriting - a plain urllib POST with a correct Content-Length reproduces it, and PostgREST hangs when called directly"
+  ],
+  "stillUnexplained": "Why an error raised after an advisory lock fails to return through PostgREST, and why the contending transactions restart every ~0.1s instead of one winning durably.",
+  "recommendedNextStep": "Take the discriminator table to whoever owns the PostgREST/Supabase layer. The reproduction is small: any authenticated caller, one RPC, one field changed, hangs versus returns in under a second.",
+  "boundaries": "No production change was made by this diagnostic. No provider, email, Front Office receiver, live schedule, staff or operating acceptance was performed or claimed. COL-160 remains incomplete and http-proof.py deny has still never run."
+}

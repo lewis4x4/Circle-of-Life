@@ -1,7 +1,7 @@
 {
   "result": "PASS",
   "target": "iwcnajanvjvynolltflw",
-  "sourceSha": "3026632a5d9cf9d442d2ab69ea6a1d9003aeae34",
+  "sourceSha": "5af737e173a85a74eb729452489e461d64fcd652",
   "migration_sha256": "5bab09edc15611ec19382ac702a652740e18388ac31ce6d9bfe8a0d2b77ae42f",
   "project": {
     "id": "iwcnajanvjvynolltflw",
@@ -43,6 +43,6 @@
       "public_denied": true
     }
   },
-  "at": "2026-09-14T16:45:02.163352+00:00",
+  "at": "2026-09-14T19:07:57.053140+00:00",
   "scope": "Staging private projector correction375 only; original374 ledger/source and failed fixture immutable history retained; no rule publication or operating acceptance"
 }
