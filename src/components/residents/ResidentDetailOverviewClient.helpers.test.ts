@@ -58,6 +58,7 @@ function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOvervi
     assessmentsUpcomingJson: [],
     contacts: [],
     recentDailyNotes: [],
+    recentSafetyChecks: [],
     recentAdl: [],
     recentBehavior: [],
     recentConditionChanges: [],
@@ -231,5 +232,39 @@ describe("activity feed items", () => {
       }),
     );
     expect(items.map((i) => `${i.kind}:${i.id}`)).toEqual(["behavior:b1", "note:n1", "adl:a1"]);
+  });
+
+  it("includes every safety check in time order with who charted it (COL-849 finding)", () => {
+    const items = buildFeedItems(
+      detail({
+        recentSafetyChecks: [
+          {
+            id: "c1",
+            observedLabel: "Sep 25, 9:59 PM",
+            observedAtIso: "2026-09-26T01:59:31Z",
+            summary: "Ate some, quiet, no meds this window. Calm, Resting in Bed. In Resident Room.",
+            note: null,
+            somethingWrong: false,
+            chartedByLabel: "Abbigail H",
+          },
+        ],
+        recentBehavior: [
+          {
+            id: "b1",
+            typeLabel: "Agitation / anxiety",
+            behaviorText: "Restless after lunch",
+            occurredLabel: "Sep 12, 2:00 PM",
+            occurredAtIso: "2026-09-12T18:00:00Z",
+            shift: "day",
+            loggedByLabel: "Ana",
+            injuryOccurred: false,
+            notesSnippet: null,
+          },
+        ],
+      }),
+    );
+    expect(items.map((i) => `${i.kind}:${i.id}`)).toEqual(["check:c1", "behavior:b1"]);
+    const check = items[0];
+    expect(check.kind === "check" && check.content.chartedByLabel).toBe("Abbigail H");
   });
 });

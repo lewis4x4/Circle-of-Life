@@ -4,7 +4,7 @@ import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Brain, FileText, NotebookPen, Stethoscope, User } from "lucide-react";
+import { Brain, FileText, NotebookPen, ShieldCheck, Stethoscope, User } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { BehaviorLogModal, ConditionLogModal, GeneralNoteModal } from "@/components/admin/resident-log-modals";
@@ -49,6 +49,7 @@ import {
   type ConditionEventContent,
   type ResidentContactRowView,
   type ResidentOverviewDetail,
+  type SafetyCheckContent,
 } from "@/lib/residents/resident-detail-overview-load";
 import { classifyAnnualReview } from "@/lib/residents/care-plan-annual-review-window";
 import { isPresenceStatus, lifecycleStatusLabel } from "@/lib/residents/presence";
@@ -282,7 +283,8 @@ type FeedItem =
   | { kind: "condition"; id: string; atIso: string; label: string; content: ConditionEventContent }
   | { kind: "behavior"; id: string; atIso: string; label: string; content: BehaviorEventContent }
   | { kind: "adl"; id: string; atIso: string; label: string; content: ADLEventContent }
-  | { kind: "note"; id: string; atIso: string; label: string; content: { snippet: string; shift: string; loggedByLabel: string } };
+  | { kind: "note"; id: string; atIso: string; label: string; content: { snippet: string; shift: string; loggedByLabel: string } }
+  | { kind: "check"; id: string; atIso: string; label: string; content: SafetyCheckContent };
 
 function feedItemTime(item: FeedItem): number {
   const iso = /^\d{4}-\d{2}-\d{2}$/.test(item.atIso) ? `${item.atIso}T12:00:00` : item.atIso;
@@ -318,6 +320,13 @@ export function buildFeedItems(detail: ResidentOverviewDetail): FeedItem[] {
         label: `${isoDayLabel(n.logDate) ?? n.logDate} · ${enumLabel(n.shift)} shift`,
         content: { snippet: n.snippet, shift: n.shift, loggedByLabel: n.loggedByLabel },
       })),
+    ...(detail.recentSafetyChecks ?? []).map((c) => ({
+      kind: "check" as const,
+      id: c.id,
+      atIso: c.observedAtIso,
+      label: c.observedLabel,
+      content: c,
+    })),
   ];
   return items.sort((a, b) => feedItemTime(b) - feedItemTime(a));
 }
@@ -936,7 +945,7 @@ export function ResidentDetailOverviewClient({
               <div className="flex flex-col items-start gap-3 py-2" role="status">
                 <p className="text-[13px] font-medium text-foreground">{activityFeedEmptyCopy(feedWindow)}</p>
                 <p className="text-[12px] leading-relaxed text-muted-foreground">
-                  Behavior logs, condition changes, ADL refusals and general notes recorded for {detail.fullName} appear
+                  Safety checks, behavior logs, condition changes, ADL refusals and general notes recorded for {detail.fullName} appear
                   here. Nothing recorded in this period does not confirm an uneventful period.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1341,6 +1350,28 @@ function renderFeedItem(item: FeedItem, idx: number) {
               </>
             ) : null}
           </p>
+        </div>
+      </div>
+    );
+  }
+  if (item.kind === "check") {
+    const c = item.content;
+    return (
+      <div key={`check-${c.id}-${idx}`} className="flex gap-4">
+        <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", c.somethingWrong ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground")}>
+          <ShieldCheck className="size-4" aria-hidden />
+        </div>
+        <div className={cn("min-w-0 flex-1 rounded-[8px] border bg-card p-3 shadow-[var(--shadow-card)]", c.somethingWrong ? "border-warning/20" : "border-border")}>
+          <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
+            <span className="text-[13px] font-semibold text-foreground">
+              Safety check
+              {c.somethingWrong ? <span className="ml-1 text-[11px] font-semibold text-warning">(something wrong)</span> : null}
+            </span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">{item.label}</span>
+          </div>
+          <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">{c.summary}</p>
+          {c.note ? <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">Note: {c.note}</p> : null}
+          <p className="text-[11px] text-muted-foreground">Charted by {c.chartedByLabel}</p>
         </div>
       </div>
     );

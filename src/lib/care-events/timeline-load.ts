@@ -7,7 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
 
-import { TIMELINE_PAGE_SIZE, type ResidentTimelineRow } from "./timeline";
+import { TIMELINE_PAGE_SIZE, TIMELINE_SAFETY_CHECK_SOURCE, type ResidentTimelineRow } from "./timeline";
 
 export const DEFAULT_TIMELINE_TIME_ZONE = "America/New_York";
 
@@ -21,17 +21,32 @@ export async function loadResidentTimeZone(supabase: SupabaseClient<Database>, r
   return facility.data?.timezone?.trim() || DEFAULT_TIMELINE_TIME_ZONE;
 }
 
-/** Newest entries first, capped so the tab stays quick on long stays. */
+/**
+ * Newest entries first, capped so the tab stays quick on long stays. Routine safety checks
+ * (four or more a day) are read under their own cap, so they never push an incident, a
+ * condition change or a note out of the tab.
+ */
 export async function loadResidentTimeline(
   supabase: SupabaseClient<Database>,
   residentId: string,
 ): Promise<ResidentTimelineRow[]> {
-  const result = await supabase
-    .from("v_resident_timeline")
-    .select("*")
-    .eq("resident_id", residentId)
-    .order("occurred_at", { ascending: false })
-    .limit(TIMELINE_PAGE_SIZE);
-  if (result.error) throw result.error;
-  return result.data ?? [];
+  const [entries, checks] = await Promise.all([
+    supabase
+      .from("v_resident_timeline")
+      .select("*")
+      .eq("resident_id", residentId)
+      .neq("source", TIMELINE_SAFETY_CHECK_SOURCE)
+      .order("occurred_at", { ascending: false })
+      .limit(TIMELINE_PAGE_SIZE),
+    supabase
+      .from("v_resident_timeline")
+      .select("*")
+      .eq("resident_id", residentId)
+      .eq("source", TIMELINE_SAFETY_CHECK_SOURCE)
+      .order("occurred_at", { ascending: false })
+      .limit(TIMELINE_PAGE_SIZE),
+  ]);
+  if (entries.error) throw entries.error;
+  if (checks.error) throw checks.error;
+  return [...(entries.data ?? []), ...(checks.data ?? [])].sort((a, b) => (b.occurred_at ?? "").localeCompare(a.occurred_at ?? ""));
 }

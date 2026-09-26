@@ -1,4 +1,4 @@
-import { formatShortDateTime } from "@/lib/format/datetime";
+import { formatPersonName, formatShortDateTime } from "@/lib/format/datetime";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { headCountOrNull } from "@/lib/metrics/head-count";
@@ -37,6 +37,8 @@ import { enumLabel } from "@/lib/display/enum-label";
 
 export type Acuity = 1 | 2 | 3;
 export type { ResidencyStatus };
+
+export type SafetyCheckContent = ResidentOverviewDetail["recentSafetyChecks"][number];
 
 export type ConditionEventContent = {
   id: string;
@@ -196,6 +198,19 @@ export type ResidentOverviewDetail = {
     loggedByLabel: string;
     injuryOccurred: boolean;
     notesSnippet: string | null;
+  }>;
+  /** Smart Rounding safety checks charted in the period, newest first. */
+  recentSafetyChecks: Array<{
+    id: string;
+    observedLabel: string;
+    /** Raw `resident_observation_logs.observed_at` for period filtering. */
+    observedAtIso: string;
+    /** What was seen, as composed when it was charted ("Ate some, quiet. Calm, Resting in Bed. In Resident Room."). */
+    summary: string;
+    note: string | null;
+    /** Something wrong was charted (an observation exception). */
+    somethingWrong: boolean;
+    chartedByLabel: string;
   }>;
   recentConditionChanges: Array<{
     id: string;
@@ -532,6 +547,7 @@ export async function loadResidentOverviewDetail(
     form1823Result,
     followupResult,
     fieldStatesResult,
+    safetyCheckResult,
   ] = await Promise.all([
     // The feed shows daily logs only when they carry a general note, and ADL
     // entries only when refused — so read exactly those, not the newest rows
@@ -640,6 +656,17 @@ export async function loadResidentOverviewDetail(
     supabase.rpc("resident_record_field_sources" as never, { p_resident_id: residentId } as never) as unknown as Promise<
       QueryResult<unknown>
     >,
+    // Every Smart Rounding safety check charted for this resident in the period: what was
+    // seen (the composed summary), any note, and who charted it.
+    supabase
+      .from("resident_observation_logs")
+      .select("id, observed_at, composed_summary, note, exception_present, staff_id")
+      .eq("resident_id", residentId)
+      .eq("facility_id", facilityId)
+      .is("deleted_at", null)
+      .gte("observed_at", activityBounds.sinceIso)
+      .order("observed_at", { ascending: false })
+      .limit(ACTIVITY_FEED_ROW_CAP),
   ]);
 
   if (
@@ -649,7 +676,8 @@ export async function loadResidentOverviewDetail(
     conditionResult.error ||
     carePlansResult.error ||
     contactsResult.error ||
-    assessmentsResult.error
+    assessmentsResult.error ||
+    safetyCheckResult.error
   ) {
     throw new Error(
       dailyResult.error?.message ??
@@ -659,6 +687,7 @@ export async function loadResidentOverviewDetail(
         carePlansResult.error?.message ??
         contactsResult.error?.message ??
         assessmentsResult.error?.message ??
+        safetyCheckResult.error?.message ??
         "Resident aggregation failed.",
     );
   }
@@ -667,6 +696,7 @@ export async function loadResidentOverviewDetail(
   const adlRows = adlResult.data ?? [];
   const behaviorRows = behaviorResult.data ?? [];
   const conditionRows = conditionResult.data ?? [];
+  const safetyCheckRows = safetyCheckResult.data ?? [];
   const carePlanRows = carePlansResult.data ?? [];
   const contactRowsRaw = contactsResult.data ?? [];
 
@@ -768,6 +798,26 @@ export async function loadResidentOverviewDetail(
     notesSnippet: r.notes?.trim() ? truncateSnippet(r.notes.trim(), 200) : null,
   }));
 
+  // Safety checks name the staff member who charted them (logs carry the staff row, not the login).
+  const checkStaffIds = [...new Set(safetyCheckRows.map((r) => r.staff_id))].filter((x): x is string => typeof x === "string" && UUID_STRING_RE.test(x));
+  const staffNameById = new Map<string, string>();
+  if (checkStaffIds.length > 0) {
+    const staffResult = await supabase.from("staff").select("id, first_name, last_name, preferred_name").in("id", checkStaffIds);
+    throwIfQueryError(staffResult.error, "staff");
+    for (const s of staffResult.data ?? []) {
+      staffNameById.set(s.id, formatPersonName(s, { fallback: "Staff" }));
+    }
+  }
+  const recentSafetyChecks = safetyCheckRows.map((r) => ({
+    id: r.id,
+    observedLabel: formatLogTime(r.observed_at),
+    observedAtIso: r.observed_at,
+    summary: r.composed_summary?.trim() || "Checked",
+    note: r.note?.trim() ? truncateSnippet(r.note.trim(), 240) : null,
+    somethingWrong: r.exception_present,
+    chartedByLabel: (r.staff_id && staffNameById.get(r.staff_id)) || "Staff",
+  }));
+
   const recentConditionChanges = conditionRows.map((r) => ({
     id: r.id,
     typeLabel: conditionChangeTypeLabel(r.change_type),
@@ -785,6 +835,7 @@ export async function loadResidentOverviewDetail(
   if (behaviorRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("behavior");
   if (adlRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("adl");
   if (dailyRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("note");
+  if (safetyCheckRows.length >= ACTIVITY_FEED_ROW_CAP) activityTruncatedKinds.push("check");
 
   // The row that opened a span was written by whoever changed the status
   // (`fn_resident_status_history_capture` sets created_by to the actor);
@@ -948,6 +999,7 @@ export async function loadResidentOverviewDetail(
       assessedAt: row.assessment_date as string,
     })),
     contacts: contactsView,
+    recentSafetyChecks,
     recentDailyNotes,
     recentAdl,
     recentBehavior,

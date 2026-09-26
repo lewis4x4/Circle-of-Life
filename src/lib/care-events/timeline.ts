@@ -2,7 +2,7 @@
  * Pure helpers for the resident Timeline tab (spec 07A §6.2 `v_resident_timeline`,
  * §6.3 "Resident profile Timeline tab", §7 Tier 3). The view unions care events,
  * pre-launch incidents, condition changes, behavior logs, shift notes, and
- * observation exceptions; these helpers group and label rows for the screen.
+ * every safety check; these helpers group and label rows for the screen.
  * No raw `level_n` ever leaves this file: level words go through formatLevelWord.
  */
 
@@ -39,7 +39,7 @@ export type TimelineLink = { label: string; href: string };
 export const TIMELINE_UNKNOWN_DAY_KEY = "unknown";
 export const TIMELINE_NO_TIME_COPY = "No time posted";
 export const TIMELINE_EMPTY_COPY =
-  "No entries yet. Care events, shift notes, and observation exceptions will appear here.";
+  "No entries yet. Care events, safety checks, shift notes, and observation exceptions will appear here.";
 export const TIMELINE_PAGE_SIZE = 200;
 
 const SOURCE_WORDS: Record<string, string> = {
@@ -49,7 +49,11 @@ const SOURCE_WORDS: Record<string, string> = {
   behavior: "Behavior",
   daily_log: "Shift note",
   observation_exception: "Observation exception",
+  safety_check: "Safety check",
 };
+
+/** The view's source for a routine Smart Rounding safety check (migration 556). */
+export const TIMELINE_SAFETY_CHECK_SOURCE = "safety_check";
 
 function parseIso(value: string | null | undefined): Date | null {
   if (!value) return null;
