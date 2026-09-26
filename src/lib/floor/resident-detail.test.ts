@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { knowBeforeItems, nextOpenCheck, todayCheckItems } from "./resident-detail";
+import { knowBeforeItems, nextOpenCheck, nextOpeningCheck, todayCheckItems } from "./resident-detail";
 
 const NOW = new Date("2026-09-23T13:40:00Z");
 const DAY_START = "2026-09-23T04:00:00.000Z";
@@ -35,6 +35,15 @@ describe("today's checks", () => {
     });
     expect(items.map((item) => item.detail)).toEqual(["Not charted · 10 minutes over", "Upcoming"]);
     expect(nextOpenCheck([task("later", "2026-09-23T15:30:00Z", "upcoming"), task("over", "2026-09-23T13:30:00Z", "overdue")], NOW)?.id).toBe("over");
+  });
+
+  it("never offers a check whose window has not opened; the header says when the next one opens", () => {
+    const tomorrow = { id: "tomorrow", due_at: "2026-09-24T10:00:00Z", scheduled_for: "2026-09-24T10:00:00Z", derived_status: "upcoming" };
+    const later = { id: "later", due_at: "2026-09-24T14:00:00Z", scheduled_for: "2026-09-24T14:00:00Z", derived_status: "upcoming" };
+    expect(nextOpenCheck([later, tomorrow], NOW)).toBeNull();
+    expect(nextOpeningCheck([later, tomorrow], NOW)?.id).toBe("tomorrow");
+    const open = { id: "open", due_at: "2026-09-23T14:00:00Z", scheduled_for: "2026-09-23T13:30:00Z", derived_status: "upcoming" };
+    expect(nextOpenCheck([later, open], NOW)?.id).toBe("open");
   });
 });
 

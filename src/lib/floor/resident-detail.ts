@@ -182,7 +182,7 @@ export function todayCheckItems(input: {
           detail: `${FLOOR_CHECK_NAME} · ${log.staffName ?? "Staff"}`,
         };
       }
-      const timing = checkTiming(task.derived_status, task.due_at, input.now);
+      const timing = checkTiming(task.derived_status, task.due_at, input.now, task.scheduled_for);
       const detail =
         timing.kind === "over"
           ? `Not charted · ${timing.minutes} ${timing.minutes === 1 ? "minute" : "minutes"} over`
@@ -197,13 +197,21 @@ export function todayCheckItems(input: {
     });
 }
 
-/** The next check to chart: the oldest one still open. */
+/** The next check to chart: the oldest one whose window is open and that is not charted yet. */
 export function nextOpenCheck(tasks: readonly FloorTaskApiRow[], now: Date): FloorTaskApiRow | null {
   const open = tasks
-    .filter((task) => {
-      const kind = checkTiming(task.derived_status, task.due_at, now).kind;
-      return kind === "over" || kind === "due" || kind === "upcoming";
-    })
+    .filter((task) => checkTiming(task.derived_status, task.due_at, now, task.scheduled_for).chartable)
     .sort((a, b) => a.due_at.localeCompare(b.due_at));
   return open[0] ?? null;
+}
+
+/** With nothing to chart now, the next check that opens later (the header says when). */
+export function nextOpeningCheck(tasks: readonly FloorTaskApiRow[], now: Date): FloorTaskApiRow | null {
+  const later = tasks
+    .filter((task) => {
+      const timing = checkTiming(task.derived_status, task.due_at, now, task.scheduled_for);
+      return timing.kind === "upcoming" && !timing.chartable && Boolean(task.scheduled_for);
+    })
+    .sort((a, b) => (a.scheduled_for ?? a.due_at).localeCompare(b.scheduled_for ?? b.due_at));
+  return later[0] ?? null;
 }
