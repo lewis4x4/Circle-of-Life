@@ -3,7 +3,7 @@ import { test } from "node:test";
 import {
   classifyDeploy, initialState, reduceObservation, renderIncident, validateState,
   planRunAudit, reduceRunAudit, reconcileEffects, replayLifecycle, finalizeReplay,
-  createGithubAdapter, collectProvider,
+  createGithubAdapter, collectProvider, normalizeRun,
 } from "./netlify-production-failure-alert.mjs";
 
 // These fixtures are synthetic. No test performs provider or GitHub network I/O.
@@ -376,6 +376,22 @@ test("HL08: unproved dispatch mode and arbitrary run names cannot suppress start
   const result = audit(state(), "observer", [ambiguous]);
   assert.equal(result.coverageComplete, false);
   assert.equal(result.effects.some((effect) => effect.type === "recovery"), false);
+});
+
+test("COL-870: primary dispatch failure and success reach the existing main CI observer", () => {
+  const options = { source: "main-ci", workflowId: 20, repository: REPOSITORY, now: NOW };
+  const failed = run("main-ci", { event: "workflow_dispatch" });
+  assert.equal(normalizeRun(failed, options), failed, "raw API attempt needs no provider-observer mode");
+  const failure = audit(state(), "main-ci", [failed]);
+  assert.equal(failure.effects.filter((e) => e.type === "failure").length, 1);
+  const success = run("main-ci", { id: 101, event: "workflow_dispatch", conclusion: "success", updated_at: iso(-1) });
+  assert.equal(normalizeRun(success, options), success);
+  const recovery = audit(failure.state, "main-ci", [failed, success]);
+  assert.equal(recovery.coverageComplete, true);
+  assert.equal(recovery.effects.some((e) => e.type === "recovery"), true);
+  for (const invalid of [{ head_branch: "feature" }, { head_repository: { full_name: "fork/repo" } }, { workflow_id: 10 }, { path: ".github/workflows/netlify-production-failure-alert.yml" }]) {
+    assert.equal(normalizeRun({ ...failed, ...invalid }, options), null);
+  }
 });
 
 test("SEC04/RP01–RP04: finite replay uses the routing adapter without touching a live provider", async () => {

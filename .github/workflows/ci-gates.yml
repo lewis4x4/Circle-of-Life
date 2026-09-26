@@ -1,4 +1,5 @@
 name: CI — segment gates
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Main CI for {0} from {1}', inputs.expected_sha, inputs.base_sha) || 'CI — segment gates' }}
 
 on:
   push:
@@ -6,6 +7,16 @@ on:
   pull_request:
   # GitHub merge queue: the queue tests each PR on top of the ones ahead of it.
   merge_group:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact main revision to verify
+        required: true
+        type: string
+      base_sha:
+        description: First parent of the expected revision
+        required: true
+        type: string
 
 concurrency:
   group: haven-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -28,11 +39,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate dispatched main revision
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/ci/dispatch-main-ci.mjs validate
+        env:
+          EXPECTED_MAIN_SHA: ${{ inputs.expected_sha }}
+          EXPECTED_BASE_SHA: ${{ inputs.base_sha }}
+
       - name: Classify changed paths
         id: risk
         run: node scripts/ci/classify-changes.mjs
         env:
-          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          CI_DIFF_BASE: ${{ inputs.base_sha || github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
           CI_DIFF_MODE: ${{ github.event_name == 'pull_request' && 'merge-base' || 'range' }}
 
@@ -98,7 +116,7 @@ jobs:
         run: npm ci
 
       - name: Gate failure regression tests
-        run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs scripts/perf/route-load-budget.test.mjs
+        run: node --test scripts/ci/dispatch-main-ci.test.mjs scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs scripts/perf/route-load-budget.test.mjs
 
       - uses: denoland/setup-deno@v2
         if: needs.classify.outputs.policy_only != 'true'

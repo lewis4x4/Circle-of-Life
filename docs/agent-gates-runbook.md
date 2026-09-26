@@ -57,6 +57,25 @@ Changes confined to the explicit CI-policy allowlist (`.github/workflows/**`, `s
 
 ## Tested-tree release proof
 
+### Automatic post-merge primary CI
+
+The existing `main-ci-failure-alert.yml` monitor reconciles primary CI after PR
+completion and on its five-minute schedule. `scripts/ci/dispatch-main-ci.mjs`
+reads the current main SHA and first parent, then explicitly dispatches
+`ci-gates.yml` with the existing Actions token when that revision has no run.
+This avoids GitHub's suppression of push workflows after a token-driven merge.
+It does not change branch protection or add a service credential.
+
+Dispatched CI stays on `ref: main`, so native checks and the existing failure
+observer identify the same revision. Before classification, it requires the
+captured `github.sha` to equal the requested SHA and validates the first-parent
+diff boundary. A main advance makes that run fail before any gates execute;
+the reconciler retries the new tip, at most three times. A mismatched dispatch
+cannot supply proof for the newer revision. Existing pending, successful, or
+failed runs are retained instead of repeating their gates; failure alerting
+continues to observe actual primary runs. Dispatch/readback failure is a failed
+monitor job, not evidence of healthy CI.
+
 ### Netlify production failure observation
 
 `scripts/ci/netlify-production-failure-alert.mjs` serves the production observer,
