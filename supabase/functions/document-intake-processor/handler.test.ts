@@ -1,6 +1,7 @@
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { proposalResultProblems, type ProposalResult } from "../_shared/document-intake-contract.ts";
 import {
+  buildReaderPrompt,
   type CatalogRow,
   type Claim,
   handleProcessorRequest,
@@ -17,6 +18,8 @@ const FENCE = "12000000-0000-4000-8000-000000000001";
 const JANE_A = "20000000-0000-4000-8000-000000000001";
 const JANE_B = "20000000-0000-4000-8000-000000000002";
 const JOHN = "20000000-0000-4000-8000-000000000003";
+const EXAMPLE = "20000000-0000-4000-8000-000000000004";
+const SISTER = "00000000-0000-0000-0000-000000000302";
 // Synthetic fixture built at runtime so secret scanners never see a literal.
 const SECRET = "p".repeat(40);
 
@@ -44,6 +47,8 @@ function catalogRow(overrides: Partial<CatalogRow> & { code: string }): CatalogR
 const CATALOG: CatalogRow[] = [
   catalogRow({ code: "form_1823", label: "AHCA Form 1823", reader_hint: "Completed and signed by a physician." }),
   catalogRow({ code: "vendor_coi", label: "Vendor certificate of insurance", subject_kind: "facility", destination_kind: "facility_document", contains_phi: false }),
+  catalogRow({ code: "facility_license", label: "Facility license", subject_kind: "facility", destination_kind: "facility_document", contains_phi: false }),
+  catalogRow({ code: "face_sheet", label: "Face sheet" }),
   catalogRow({ code: "payment_evidence", label: "Check / deposit", subject_kind: "none", destination_kind: "none", jev_enabled: false, reader_enabled: false }),
   catalogRow({ code: "unknown", label: "Not sure yet", subject_kind: "none", destination_kind: "none" }),
 ];
@@ -336,7 +341,7 @@ Deno.test("Jev answers and probabilities are stored verbatim; Jev sees only the 
   const answers = {
     destination: { type: "choice", choice: "c0", probabilities: { c0: 0.8731, none: 0.1269 }, confidence: 0.61 },
     legible_complete: { type: "noul", noul: 0.912 },
-    signed: { type: "noul", noul: 0.5 },
+    examiner_signed: { type: "noul", noul: 0.5 },
   } as const;
   let sent: Record<string, unknown> = {};
   const h = harness({
@@ -351,15 +356,24 @@ Deno.test("Jev answers and probabilities are stored verbatim; Jev sees only the 
   assertEquals(summary.proposed, 1);
   const [result] = h.published();
   assertValid(result);
-  assertEquals(result.jev as unknown, { model: "jev-2026-09", questions_version: "intake-v1", answers });
+  assertEquals(result.jev as unknown, { model: "jev-2026-09", questions_version: "intake-v2/form_1823.1", answers });
   assertEquals(result.stage_status.jev, { state: "ran" });
   assertEquals(result.proposed_candidate, 0);
   const legible = result.checks.find((c) => c.code === "jev_legible_complete")!;
-  assertEquals([legible.result, legible.detail, legible.source], ["pass", "Jev probability of yes: 0.912", "jev"]);
-  assertEquals(result.checks.find((c) => c.code === "jev_signed")!.result, "unknown");
+  assertEquals([legible.result, legible.detail, legible.source], ["pass", "Jev probability of yes: 0.91", "jev"]);
+  assertEquals(result.checks.find((c) => c.code === "jev_examiner_signed")!.result, "unknown");
   // Only the one matching resident label goes to Jev, never the roster.
   assertEquals((sent.state as Record<string, unknown>).candidates, ["Jane Doe"]);
-  assertEquals(Object.keys(sent.questions as object).sort(), ["destination", "legible_complete", "signed"]);
+  assertEquals(Object.keys(sent.questions as object).sort(), [
+    "alf_needs_met",
+    "communicable_disease",
+    "destination",
+    "examiner_credential",
+    "examiner_signed",
+    "legible_complete",
+    "sections_complete",
+    "type_matches",
+  ]);
   const order = h.events.filter((e) => e.includes("dispatch") || e.startsWith("fetch:") || e.includes("returned"));
   assertEquals(order, [
     "rpc:document_intake_worker_dispatch",
@@ -440,4 +454,275 @@ Deno.test("requests without the cron secret are refused", async () => {
   assertEquals(allowed.status, 200);
   const body = await allowed.json();
   assertEquals([body.ok, body.claimed, body.blocked], [true, 1, 0]);
+});
+
+// ── Jev full strength (COL-771, DI-09): evidence, per-type questions, checks ──
+// Synthetic, PHI-free fixtures: "Resident Example", 1940-01-01, "Example Lodge".
+
+const EXAMPLE_FACILITY = {
+  id: FACILITY,
+  name: "Example Lodge",
+  legal_name: "Example Lodge Holdings LLC",
+  dba: "Example Lodge ALF",
+  city: "Exampleton",
+  ahca_license_number: "12345",
+  ahca_license_expiration: "2027-06-30",
+  total_licensed_beds: 36,
+};
+
+const SUBJECTS_EXAMPLE = {
+  residents: [
+    { id: EXAMPLE, first_name: "Resident", last_name: "Example", preferred_name: null, date_of_birth: "1940-01-01", admission_date: "2026-09-15", status: "active" },
+  ],
+  staff: [],
+  medicaid_cases: [],
+  facility: EXAMPLE_FACILITY,
+  org_facilities: [
+    { id: FACILITY, name: "Example Lodge", legal_name: "Example Lodge Holdings LLC", dba: "Example Lodge ALF", city: "Exampleton" },
+    { id: SISTER, name: "Sister Oaks", legal_name: "Sister Oaks Holdings LLC", dba: null, city: "Othertown" },
+  ],
+};
+
+function exampleReader(overrides: Record<string, unknown> = {}) {
+  return readerJson({
+    suggested_title: "AHCA Form 1823 - Resident Example - 2026-09-10",
+    summary: "Health assessment for Resident Example.",
+    document_date: "2026-09-10",
+    subject_hints: { person_names: ["Resident Example"], date_of_birth: "1940-01-01", employee_names: [], vendor_names: [], agency: null },
+    evidence: {
+      exam_date: "2026-09-10",
+      examiner_signature_date: "2026-09-10",
+      examiner_line: "Example Examiner, MD",
+      examiner_signature: "The examiner line carries a printed name and no signature.",
+      stated_total_pages: 2,
+    },
+    ...overrides,
+  });
+}
+
+function jevOk(answers: Record<string, unknown>, capture?: (body: Record<string, unknown>) => void) {
+  return (body: unknown) => {
+    capture?.(body as Record<string, unknown>);
+    return new Response(JSON.stringify({ model: "jev-2026-09", answers }), { status: 200 });
+  };
+}
+
+Deno.test("vendor COI with a lapsed workers comp date: the code check fails; evidence is stored masked", async () => {
+  const h = harness({
+    claim: await claim({ policy: policy({ enabled: true, jev_enabled: false }) }),
+    anthropic: () =>
+      anthropicOk(readerJson({
+        catalog_code: "vendor_coi",
+        suggested_title: "Vendor certificate of insurance",
+        summary: "Certificate of insurance for Example Plumbing.",
+        subject_hints: { person_names: [], date_of_birth: null, employee_names: [], vendor_names: ["Example Plumbing"], agency: null },
+        evidence: {
+          certificate_holder_excerpt: "Example Lodge, account 123456789012",
+          gl_policy_end: "2027-03-01",
+          wc_policy_end: "2026-08-31",
+          auto_policy_end: "not a date",
+        },
+      })),
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(h.deps);
+  const [result] = h.published();
+  assertValid(result);
+  const coi = result.checks.find((c) => c.code === "coi_coverage_current")!;
+  assertEquals([coi.result, coi.source, coi.detail], ["fail", "code", "Expired: Workers compensation 2026-08-31"]);
+  const evidence = result.reader.evidence as Record<string, unknown>;
+  assertEquals(evidence.certificate_holder_excerpt, "Example Lodge, account ****9012");
+  assertEquals(evidence.auto_policy_end, null);
+  assert(result.warnings.some((w) => w.code === "identifier_masked"));
+  const invalid = result.warnings.filter((w) => w.code === "reader_evidence_invalid");
+  assertEquals(invalid.length, 1);
+  assert(invalid[0].message.includes("auto_policy_end"));
+  assert(!invalid[0].message.includes("not a date"));
+  // The facility itself is the destination; subjects load for facility types.
+  assertEquals(h.rpcArgs("document_intake_worker_subjects").length, 1);
+  assertEquals(result.candidates[0].subject_id, FACILITY);
+});
+
+Deno.test("facility license naming a sister facility: the Jev check fails with a note; Jev sees facility names only", async () => {
+  let sent: Record<string, unknown> = {};
+  const h = harness({
+    claim: await claim({ policy: policy({ enabled: true, jev_enabled: true, jev_phi_enabled: false }) }),
+    anthropic: () =>
+      anthropicOk(readerJson({
+        catalog_code: "facility_license",
+        suggested_title: "Facility license",
+        summary: "AHCA assisted living facility license.",
+        subject_hints: { person_names: [], date_of_birth: null, employee_names: [], vendor_names: [], agency: "AHCA" },
+        evidence: { licensee_excerpt: "Sister Oaks Holdings LLC, Othertown", license_number: "AL 099999", effective_date: "2026-01-01" },
+      })),
+    typesafe: jevOk({
+      type_matches: { type: "noul", noul: 0.95 },
+      legible_complete: { type: "noul", noul: 0.9 },
+      license_kind: { type: "choice", choice: "ahca_alf_license", probabilities: { ahca_alf_license: 0.9, other_permit: 0.1 } },
+      names_this_facility: { type: "choice", choice: "sister_facility", probabilities: { sister_facility: 0.85, this_facility: 0.15 } },
+    }, (body) => (sent = body)),
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(h.deps);
+  const [result] = h.published();
+  assertValid(result);
+  assertEquals(result.stage_status.jev, { state: "ran" });
+  assertEquals(result.jev.questions_version, "intake-v2/facility_license.1");
+  assertEquals(result.checks.find((c) => c.code === "jev_names_this_facility")!.result, "fail");
+  assert(result.warnings.some((w) => w.code === "jev_names_this_facility_sister_facility"));
+  // Code compares the license number Jev classified as an AHCA ALF license.
+  assertEquals(result.checks.find((c) => c.code === "license_number_matches")!.result, "fail");
+  const state = sent.state as Record<string, unknown>;
+  assertEquals(state.receiving_facility, { name: "Example Lodge", legal_name: "Example Lodge Holdings LLC", dba: "Example Lodge ALF", city: "Exampleton" });
+  assertEquals(state.other_col_facilities, [{ name: "Sister Oaks", legal_name: "Sister Oaks Holdings LLC", dba: null, city: "Othertown" }]);
+  assertEquals(state.file_page_count, 2);
+  assert(!JSON.stringify(sent).includes(FACILITY) && !JSON.stringify(sent).includes(SISTER));
+});
+
+Deno.test("Form 1823 with jev_phi_enabled off: Jev skipped, per-type code checks still present", async () => {
+  const h = harness({
+    claim: await claim({ policy: policy({ enabled: true, jev_enabled: true, jev_phi_enabled: false }) }),
+    anthropic: () => anthropicOk(exampleReader()),
+    typesafe: () => new Response("{}", { status: 200 }),
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(h.deps);
+  assert(!h.events.includes("fetch:typesafe"));
+  const [result] = h.published();
+  assertValid(result);
+  assertEquals(result.stage_status.jev.state, "not_authorized");
+  assertEquals(result.jev, {});
+  assertEquals(result.proposed_candidate, 0);
+  const byCode = new Map(result.checks.map((c) => [c.code, c]));
+  assertEquals(byCode.get("form_1823_exam_timing")!.result, "pass");
+  assertEquals(byCode.get("form_1823_signature_date")!.result, "pass");
+  assertEquals(byCode.get("dob_matches")!.result, "pass");
+  assertEquals(byCode.get("page_marker_complete")!.result, "pass");
+  assert(!result.checks.some((c) => c.source === "jev"));
+});
+
+Deno.test("Form 1823 with jev_phi_enabled on and an unsigned examiner line: jev_examiner_signed fails", async () => {
+  const h = harness({
+    claim: await claim(),
+    anthropic: () => anthropicOk(exampleReader()),
+    typesafe: jevOk({
+      destination: { type: "choice", choice: "c0", probabilities: { c0: 0.9, none: 0.1 } },
+      type_matches: { type: "noul", noul: 0.93 },
+      legible_complete: { type: "noul", noul: 0.9 },
+      examiner_signed: { type: "noul", noul: 0.08 },
+    }),
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(h.deps);
+  const [result] = h.published();
+  assertValid(result);
+  const signed = result.checks.find((c) => c.code === "jev_examiner_signed")!;
+  assertEquals([signed.result, signed.source], ["fail", "jev"]);
+  assert(result.warnings.some((w) => w.code === "jev_examiner_signed"));
+  assertEquals(result.jev.questions_version, "intake-v2/form_1823.1");
+  assertEquals(result.proposed_candidate, 0);
+  // Code checks run alongside Jev's.
+  assertEquals(result.checks.find((c) => c.code === "form_1823_exam_timing")!.result, "pass");
+});
+
+Deno.test("a Jev destination pick is not pre-selected when Jev doubts the type, nor when the date of birth conflicts", async () => {
+  const doubts = harness({
+    claim: await claim(),
+    anthropic: () => anthropicOk(exampleReader()),
+    typesafe: jevOk({
+      destination: { type: "choice", choice: "c0", probabilities: { c0: 0.95, none: 0.05 } },
+      type_matches: { type: "noul", noul: 0.1 },
+    }),
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(doubts.deps);
+  const doubtsResult = doubts.published()[0];
+  assertValid(doubtsResult);
+  // Code alone would have picked c0; a blocked pick never falls back to it.
+  assertEquals(doubtsResult.proposed_candidate, null);
+  const blocked = doubtsResult.warnings.find((w) => w.code === "jev_preselect_blocked")!;
+  assert(blocked.message.includes("Jev doubts the document type"));
+  assertEquals(doubtsResult.checks.find((c) => c.code === "jev_type_matches")!.result, "fail");
+
+  const conflict = harness({
+    claim: await claim(),
+    anthropic: () =>
+      anthropicOk(exampleReader({
+        subject_hints: { person_names: ["Resident Example"], date_of_birth: "1941-02-02", employee_names: [], vendor_names: [], agency: null },
+      })),
+    typesafe: jevOk({
+      destination: { type: "choice", choice: "c0", probabilities: { c0: 0.95, none: 0.05 } },
+      type_matches: { type: "noul", noul: 0.95 },
+    }),
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(conflict.deps);
+  const conflictResult = conflict.published()[0];
+  assertValid(conflictResult);
+  assertEquals(conflictResult.proposed_candidate, null);
+  assert(conflictResult.warnings.find((w) => w.code === "jev_preselect_blocked")!.message.includes("date of birth"));
+  const dob = conflictResult.checks.filter((c) => c.code === "dob_matches");
+  assertEquals(dob.length, 1);
+  assertEquals(dob[0].result, "fail");
+  assert(!JSON.stringify(conflictResult.warnings).includes("1941-02-02"));
+});
+
+Deno.test("per-type Jev margin overrides the global margin; out-of-range values are ignored", async () => {
+  // Jev says "none" by 0.1: clear under a 0.05 margin, not under 0.2.
+  const answers = { destination: { type: "choice", choice: "none", probabilities: { c0: 0.45, none: 0.55 } }, type_matches: { type: "noul", noul: 0.9 } };
+  const run = async (routing: Policy["routing"]) => {
+    const h = harness({ claim: await claim({ policy: policy(routing) }), anthropic: () => anthropicOk(exampleReader()), typesafe: jevOk(answers), subjects: SUBJECTS_EXAMPLE });
+    await runProcessorTick(h.deps);
+    return h.published()[0];
+  };
+  const base = { enabled: true, jev_enabled: true, jev_phi_enabled: true, jev_margin: 0.2 };
+  const global = await run(base);
+  assertEquals(global.proposed_candidate, 0);
+  const perType = await run({ ...base, jev_margin_by_type: { form_1823: 0.05, vendor_coi: 0.9 } });
+  assertEquals(perType.proposed_candidate, null);
+  assert(perType.warnings.some((w) => w.code === "jev_no_destination"));
+  const outOfRange = await run({ ...base, jev_margin_by_type: { form_1823: 5 } });
+  assertEquals(outOfRange.proposed_candidate, 0);
+  const otherType = await run({ ...base, jev_margin_by_type: { vendor_coi: 0.05 } });
+  assertEquals(otherType.proposed_candidate, 0);
+});
+
+Deno.test("no date of birth reaches Jev, from the reader's hints or from the evidence", async () => {
+  let raw = "";
+  const h = harness({
+    claim: await claim(),
+    anthropic: () =>
+      anthropicOk(readerJson({
+        catalog_code: "face_sheet",
+        suggested_title: "Face sheet - Resident Example",
+        summary: "Face sheet for Resident Example.",
+        subject_hints: { person_names: ["Resident Example"], date_of_birth: "1940-01-01", employee_names: [], vendor_names: [], agency: null },
+        evidence: { date_of_birth: "1940-01-01", admission_date: "2026-09-15", source_excerpt: "Example Lodge" },
+      })),
+    typesafe: (body) => {
+      raw = JSON.stringify(body);
+      return new Response(JSON.stringify({ model: "jev-2026-09", answers: { type_matches: { type: "noul", noul: 0.9 } } }), { status: 200 });
+    },
+    subjects: SUBJECTS_EXAMPLE,
+  });
+  await runProcessorTick(h.deps);
+  assert(raw.length > 0);
+  assert(!raw.includes("date_of_birth"));
+  assert(!raw.includes("1940-01-01"));
+  const [result] = h.published();
+  assertValid(result);
+  assertEquals(result.jev.questions_version, "intake-v2/face_sheet.1");
+  // Code still compares both dates against Haven.
+  assertEquals(result.checks.find((c) => c.code === "dob_matches")!.result, "pass");
+  assertEquals(result.checks.find((c) => c.code === "admission_date_matches")!.result, "pass");
+  assertEquals((result.reader.evidence as Record<string, unknown>).date_of_birth, "1940-01-01");
+});
+
+Deno.test("the reader prompt asks for evidence per type, never for payment evidence", () => {
+  const prompt = buildReaderPrompt(CATALOG);
+  assert(prompt.includes('"evidence": {'));
+  assert(prompt.includes("EVIDENCE: return `evidence`"));
+  assert(prompt.includes("\nvendor_coi:\n"));
+  assert(!prompt.includes("\npayment_evidence:\n"));
+  assert(prompt.includes("at most the last four digits"));
 });
