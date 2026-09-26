@@ -104,7 +104,7 @@ export const KIOSK_SIGN_IN_COPY = {
 
 export const KIOSK_LEAVING_COPY = {
   title: "Sign out",
-  nameLabel: "Your first name",
+  nameLabel: "Your first or last name",
   nameHelper: "Type at least 3 letters.",
   hint: "Tap your name.",
   none: "No open visit under that name. Ask the front desk to sign you out.",
