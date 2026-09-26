@@ -16,9 +16,18 @@ import type { CensusReasonOption } from '@/lib/operating-rules/operating-rules'
 export const STAND_UP_ROSTER_CENSUS_STATUSES = ['active', 'hospital_hold', 'loa'] as const
 export type RosterCensusStatus = typeof STAND_UP_ROSTER_CENSUS_STATUSES[number]
 
-/** The two Stand Up figures the roster can suggest. */
-export const ROSTER_FIELD_KEYS = ['current_total_census', 'hospital_and_rehab_total'] as const satisfies readonly MetricKey[]
+/** The two Stand Up figures the resident roster suggests. */
+export const CENSUS_ROSTER_KEYS = ['current_total_census', 'hospital_and_rehab_total'] as const satisfies readonly MetricKey[]
+/**
+ * COL-374: the four bed figures Haven's rooms and beds suggest
+ * (public.stand_up_roster_beds, migration 555; rule in bed-classification.ts).
+ */
+export const BED_ROSTER_KEYS = ['sp_female_beds_open', 'sp_male_beds_open', 'sp_flexible_beds_open', 'private_beds_open'] as const satisfies readonly MetricKey[]
+/** Every figure the server compares with Haven's own records before it saves. */
+export const ROSTER_FIELD_KEYS = [...CENSUS_ROSTER_KEYS, ...BED_ROSTER_KEYS] as const
 export type RosterFieldKey = typeof ROSTER_FIELD_KEYS[number]
+export type BedRosterKey = typeof BED_ROSTER_KEYS[number]
+export const isBedRosterKey = (key: string): key is BedRosterKey => (BED_ROSTER_KEYS as readonly string[]).includes(key)
 export const isRosterFieldKey = (key: string): key is RosterFieldKey => (ROSTER_FIELD_KEYS as readonly string[]).includes(key)
 
 /** Result of the `roster` Stand Up command (public.stand_up_roster_census). */
@@ -34,6 +43,16 @@ export type RosterCensus = {
   hospital_count?: number
   rehab_count?: number
   bed_hold_type_not_recorded_count?: number
+  /** Bed counts (migration 555). Absent from a server that predates it, which reads as no bed roster. */
+  sp_female_open?: number
+  sp_male_open?: number
+  sp_flexible_open?: number
+  private_open?: number
+  unclassified_open?: number
+  out_of_service_open?: number
+  reserved_count?: number
+  bed_count_in_haven?: number
+  beds_as_of?: string | null
   server_now?: string
 }
 
@@ -68,10 +87,25 @@ export type RosterConfirmations = Partial<Record<RosterFieldKey, RosterConfirmat
 export type RosterPayload = Record<RosterFieldKey, { override_reason?: OverrideReason }>
 
 export const NO_ROSTER_TEXT = 'No roster in Haven for this facility'
+export const NO_BED_ROSTER_TEXT = 'No rooms and beds in Haven for this facility'
 
 /** A facility with no residents in Haven gets no suggestion at all. */
 export function hasRoster(roster: RosterCensus | null | undefined): roster is RosterCensus {
   return !!roster && roster.resident_count_in_haven > 0
+}
+
+/** A facility with no beds in Haven gets no bed suggestion. */
+export function hasBedRoster(roster: RosterCensus | null | undefined): roster is RosterCensus {
+  return !!roster && (roster.bed_count_in_haven ?? 0) > 0
+}
+
+/** Whether Haven has the records to suggest this particular figure. */
+export function hasRosterFor(roster: RosterCensus | null | undefined, key: RosterFieldKey): roster is RosterCensus {
+  return isBedRosterKey(key) ? hasBedRoster(roster) : hasRoster(roster)
+}
+
+const BED_COUNT_FIELD: Record<BedRosterKey, 'sp_female_open' | 'sp_male_open' | 'sp_flexible_open' | 'private_open'> = {
+  sp_female_beds_open: 'sp_female_open', sp_male_beds_open: 'sp_male_open', sp_flexible_beds_open: 'sp_flexible_open', private_beds_open: 'private_open',
 }
 
 /** Point in time: residents currently at hospital or rehab, whose bed is held. */
@@ -80,8 +114,30 @@ export function selectHospitalSuggestion(roster: RosterCensus | null | undefined
 }
 
 export function rosterSuggestion(roster: RosterCensus | null | undefined, key: RosterFieldKey): number | null {
-  if (!hasRoster(roster)) return null
+  if (!hasRosterFor(roster, key)) return null
+  if (isBedRosterKey(key)) return roster[BED_COUNT_FIELD[key]] ?? 0
   return key === 'current_total_census' ? roster.roster_census_count : selectHospitalSuggestion(roster)
+}
+
+const BED_WORD: Record<BedRosterKey, string> = { sp_female_beds_open: 'female', sp_male_beds_open: 'male', sp_flexible_beds_open: 'flexible', private_beds_open: 'private' }
+
+/** One bed figure's suggestion line. */
+export function formatRosterBeds(roster: RosterCensus, key: BedRosterKey): string {
+  return `Haven's rooms: ${(rosterSuggestion(roster, key) ?? 0).toLocaleString('en-US')} ${BED_WORD[key]} open`
+}
+
+/**
+ * The whole bed picture, said once above the four figures, so an administrator
+ * sees what Haven could not place and what is open but cannot be sold today.
+ */
+export function formatBedSummary(roster: RosterCensus): string {
+  const n = (value: number | undefined) => (value ?? 0).toLocaleString('en-US')
+  const open = (roster.sp_female_open ?? 0) + (roster.sp_male_open ?? 0) + (roster.sp_flexible_open ?? 0) + (roster.private_open ?? 0) + (roster.unclassified_open ?? 0)
+  const parts = [`Haven's rooms show ${n(open)} open ${open === 1 ? 'bed' : 'beds'}`]
+  if ((roster.unclassified_open ?? 0) > 0) parts.push(`${n(roster.unclassified_open)} Haven cannot place because a roommate's sex is not recorded — count ${roster.unclassified_open === 1 ? 'it' : 'them'} yourself`)
+  if ((roster.out_of_service_open ?? 0) > 0) parts.push(`${n(roster.out_of_service_open)} of the open beds ${roster.out_of_service_open === 1 ? 'is' : 'are'} out of service`)
+  if ((roster.reserved_count ?? 0) > 0) parts.push(`${n(roster.reserved_count)} reserved, not open`)
+  return `${parts.join('; ')}.`
 }
 
 /** The total is never shown without its components. */
@@ -103,11 +159,13 @@ export function formatRosterHospital(roster: RosterCensus): string {
 }
 
 /** Neutral text, no staleness colour, no invented day threshold. */
-export function rosterAsOfLine(roster: RosterCensus): string {
-  if (!roster.roster_as_of) return 'Roster has no recorded status change'
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(new Date(roster.roster_as_of))
+export function rosterAsOfLine(roster: RosterCensus, key?: RosterFieldKey): string {
+  const beds = !!key && isBedRosterKey(key)
+  const stamp = beds ? roster.beds_as_of ?? null : roster.roster_as_of
+  if (!stamp) return beds ? 'Beds have no recorded change' : 'Roster has no recorded status change'
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(new Date(stamp))
   const part = (type: string) => parts.find(item => item.type === type)?.value ?? ''
-  return `Roster last changed ${part('month')} ${part('day')}, ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase() === 'am' ? 'a.m.' : 'p.m.'}`
+  return `${beds ? 'Beds last changed' : 'Roster last changed'} ${part('month')} ${part('day')}, ${part('hour')}:${part('minute')} ${part('dayPeriod').toLowerCase() === 'am' ? 'a.m.' : 'p.m.'}`
 }
 
 /** The source the server will record for a typed figure, so the form can ask for a reason before saving. */

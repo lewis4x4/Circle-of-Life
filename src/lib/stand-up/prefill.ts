@@ -39,7 +39,7 @@ export type PrefillConfirmation = {
   source: PrefillSource; haven_value: number | null; confirmed: number
   override_reason: PrefillOverrideReason | null; haven_source: string | null; computed_at: string; confirmed_at: string
 }
-export type PrefillConfirmations = Partial<Record<PrefillKey, PrefillConfirmation>>
+export type PrefillConfirmations = Partial<Record<MetricKey, PrefillConfirmation>>
 
 /** The client's part of a save: a reason per figure that differs. The server decides the source. */
 export type PrefillPayload = Partial<Record<PrefillKey, { override_reason: PrefillOverrideReason }>>

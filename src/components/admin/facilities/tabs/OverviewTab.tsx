@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Loader2, Phone, Mail, CircleCheck } from "lucide-react";
 
-import { useFacilityBedAvailability } from "@/hooks/useFacilityBedAvailability";
+import { useFacilityBedAvailability, type FacilityBedAvailabilityRow } from "@/hooks/useFacilityBedAvailability";
+import { BED_CATEGORY_LABELS } from "@/lib/stand-up/bed-classification";
 import type { FacilityDetailRow } from "@/types/facility";
 import { OccupancyGauge } from "../shared/OccupancyGauge";
 import { formatColLabel } from "@/lib/col-labels";
@@ -32,18 +33,19 @@ interface OverviewTabProps {
   enableBedAvailability?: boolean;
 }
 
-const STANDUP_CLASS_LABELS: Record<"private" | "sp_female" | "sp_male" | "sp_flexible", string> = {
-  private: formatColLabel("private"),
-  sp_female: "Companion (women)",
-  sp_male: "Companion (men)",
-  sp_flexible: "Companion (any)",
-};
-
-function getBedStatusLabel(bed: { current_resident_id: string | null; is_temporarily_blocked: boolean; status: string }) {
-  if (bed.current_resident_id) return "Occupied";
-  if (bed.is_temporarily_blocked) return "Blocked";
-  if (bed.status === "available") return "Open";
+function getBedStatusLabel(bed: FacilityBedAvailabilityRow) {
+  if (bed.classification?.state === "held") return "Occupied";
+  if (bed.classification?.state === "reserved") return "Reserved";
+  if (bed.classification?.state === "open") return bed.classification.outOfService ? "Open, out of service" : "Open";
   return formatColLabel(bed.status, { fallback: "sentence" });
+}
+
+function bedCategoryLabel(bed: FacilityBedAvailabilityRow) {
+  const classified = bed.classification;
+  if (!classified) return "Room not recorded";
+  if (classified.state === "held") return "Occupied";
+  if (classified.state === "reserved") return "Reserved, not open";
+  return BED_CATEGORY_LABELS[classified.category];
 }
 
 export function OverviewTab({
@@ -116,29 +118,26 @@ export function OverviewTab({
   }, [beds]);
 
   const bedSummary = useMemo(() => {
-    const openBeds = beds.filter((bed) => !bed.current_resident_id && !bed.is_temporarily_blocked && bed.status === "available");
+    const openBeds = beds.filter((bed) => bed.classification?.state === "open");
     const openAssignable = openBeds.length;
     return {
       openAssignable,
-      private: openBeds.filter((bed) => bed.standup_availability_class === "private").length,
-      spFemale: openBeds.filter((bed) => bed.standup_availability_class === "sp_female").length,
-      spMale: openBeds.filter((bed) => bed.standup_availability_class === "sp_male").length,
-      spFlexible: openBeds.filter((bed) => bed.standup_availability_class === "sp_flexible").length,
+      private: openBeds.filter((bed) => bed.classification?.state === "open" && bed.classification.category === "private").length,
+      spFemale: openBeds.filter((bed) => bed.classification?.state === "open" && bed.classification.category === "sp_female").length,
+      spMale: openBeds.filter((bed) => bed.classification?.state === "open" && bed.classification.category === "sp_male").length,
+      spFlexible: openBeds.filter((bed) => bed.classification?.state === "open" && bed.classification.category === "sp_flexible").length,
       blocked: beds.filter((bed) => bed.is_temporarily_blocked).length,
-      unclassified: openBeds.filter((bed) => !bed.standup_availability_class).length,
+      unclassified: openBeds.filter((bed) => bed.classification?.state === "open" && bed.classification.category === "unclassified").length,
     };
   }, [beds]);
 
   const filteredBeds = useMemo(() => {
     return beds.filter((bed) => {
-      if (bedFilter === "open") return !bed.current_resident_id && !bed.is_temporarily_blocked && bed.status === "available";
+      if (bedFilter === "open") return bed.classification?.state === "open";
       if (bedFilter === "blocked") return bed.is_temporarily_blocked;
       if (bedFilter === "unclassified")
         return (
-          !bed.current_resident_id &&
-          !bed.is_temporarily_blocked &&
-          bed.status === "available" &&
-          !bed.standup_availability_class
+          bed.classification?.state === "open" && bed.classification.category === "unclassified"
         );
       return true;
     });
@@ -157,7 +156,6 @@ export function OverviewTab({
         const latest = bedsRef.current.find((b) => b.id === bedId);
         if (!latest) return;
         void updateBed(bedId, {
-          standup_availability_class: latest.standup_availability_class,
           is_temporarily_blocked: latest.is_temporarily_blocked,
           blocked_reason: draft === "" ? null : draft,
         });
@@ -402,7 +400,7 @@ export function OverviewTab({
                       <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Room</th>
                       <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Bed</th>
                       <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Status</th>
-                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Availability type</th>
+                      <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Stand Up category</th>
                       <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Blocked</th>
                       <th className="px-3 py-2 text-[12px] font-medium text-muted-foreground">Reason</th>
                     </tr>
@@ -414,27 +412,7 @@ export function OverviewTab({
                         <td className="px-3 py-3 tabular-nums text-foreground">{bed.bed_label}</td>
                         <td className="px-3 py-3 text-muted-foreground">{getBedStatusLabel(bed)}</td>
                         <td className="px-3 py-3">
-                          <select
-                            className="w-full rounded-[8px] border border-border bg-background px-3 py-2 text-sm text-foreground"
-                            value={bed.standup_availability_class ?? ""}
-                            disabled={!canEdit || bedsSaving}
-                            onChange={(event) =>
-                              void updateBed(bed.id, {
-                                standup_availability_class:
-                                  event.target.value === ""
-                                    ? null
-                                    : (event.target.value as "private" | "sp_female" | "sp_male" | "sp_flexible"),
-                                is_temporarily_blocked: bed.is_temporarily_blocked,
-                                blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
-                              })
-                            }
-                          >
-                            <option value="">Needs assignment</option>
-                            <option value="private">{STANDUP_CLASS_LABELS.private}</option>
-                            <option value="sp_female">{STANDUP_CLASS_LABELS.sp_female}</option>
-                            <option value="sp_male">{STANDUP_CLASS_LABELS.sp_male}</option>
-                            <option value="sp_flexible">{STANDUP_CLASS_LABELS.sp_flexible}</option>
-                          </select>
+                          <span className="text-sm text-foreground">{bedCategoryLabel(bed)}</span>
                         </td>
                         <td className="px-3 py-3">
                           <label className="inline-flex items-center gap-2 text-sm text-foreground">
@@ -445,7 +423,6 @@ export function OverviewTab({
                               disabled={!canEdit || bedsSaving}
                               onChange={(event) =>
                                 void updateBed(bed.id, {
-                                  standup_availability_class: bed.standup_availability_class,
                                   is_temporarily_blocked: event.target.checked,
                                   blocked_reason: blockedReasonDrafts[bed.id] ?? bed.blocked_reason,
                                 })

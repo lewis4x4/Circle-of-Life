@@ -6,29 +6,31 @@ import { METRICS, type MetricKey, type SectionKey } from './model'
  * Source of truth: the Stand Up reporting contract recorded in
  * `docs/specs/24-stand-up-pilot.md` and its authoritative context,
  * `Haven Drive Discovery 2026-09-10/STAND-UP-CONTRACT.md`. The owner settled
- * twelve of the fourteen open counting rules on 2026-09-15 (COL-374); the
- * wording below is those rulings, not an engineering interpretation of them.
+ * twelve of the fourteen open counting rules on 2026-09-15 (COL-374), Brian
+ * Lewis settled the open-bed rules on 2026-09-21 (DEC-2026-09-21-03) and
+ * Michelle Norris the rest on 2026-09-22 (DEC-2026-09-22-01). The wording
+ * below is those rulings, not an engineering interpretation of them.
  *
  * One short sentence each. A figure Haven still cannot check against anything
  * is named in `UNCHECKED_FIGURES`, not explained under its input.
  */
 export const FIELD_DEFINITIONS: Record<MetricKey, string> = {
-  monthly_rent_roll_cents: 'Current monthly rent roll — the workbook’s Current AR — as it stands Monday morning.',
+  monthly_rent_roll_cents: 'Current monthly rent roll — the workbook’s Current AR — as it stands when you enter the report, Sunday or Monday morning.',
   current_total_census: 'Residents holding a bed Monday morning, including anyone away whose bed is held.',
   hospital_and_rehab_total: 'Residents away at a hospital or in rehab Monday morning. Their bed is held, so they stay on census.',
-  sp_female_beds_open: 'Open semi-private beds in a room whose other resident is a woman.',
-  sp_male_beds_open: 'Open semi-private beds in a room whose other resident is a man.',
-  sp_flexible_beds_open: 'Open semi-private beds in a room with no resident, so either a man or a woman could take one.',
-  private_beds_open: 'Open private beds. A bed opens when its resident is discharged; reserved, maintenance and offline beds are not open.',
+  sp_female_beds_open: 'Open semi-private beds in a room where a woman holds, or is reserved for, the other bed.',
+  sp_male_beds_open: 'Open semi-private beds in a room where a man holds, or is reserved for, the other bed.',
+  sp_flexible_beds_open: 'Open semi-private beds in a room with no resident and nobody reserved, so either a man or a woman could take one. Who was in the room last does not make it a female or male room.',
+  private_beds_open: 'Open private beds. A bed opens when its resident is discharged. A bed reserved for someone moving in is not open; a bed out of service is still open.',
   admissions_expected: 'Admissions you expect this week, not admissions already made.',
   expected_discharges: 'Discharges you expect this week, where notice has been given or the decision is known.',
-  callouts_last_week: 'Scheduled shifts missed to a callout in the completed payroll week. Approved time off is not a callout, and leaving early is not a missed shift.',
+  callouts_last_week: 'Scheduled shifts missed to a callout in the completed payroll week. One person calling out three times is three. Approved time off is not a callout, and leaving early is not a missed shift.',
   terminations_last_week: 'Terminations in the completed payroll week, by the effective separation date on the employee record.',
   current_open_positions: 'Budgeted positions still unfilled Monday morning. A seat covered by agency or PRN staff is still open.',
   overtime_reported: 'Overtime in the completed payroll week, as whole hours and minutes. For example: 17 hours, 15 minutes.',
   tours_expected: 'Tours you expect this week.',
-  provider_activities_expected: 'Home-health provider marketing activities on this week’s calendar — in-services, screenings and health fairs. Not clinical visits to residents.',
-  outreach_engagements: 'In-person outreach and engagements with providers, facilities and events this week. Emails and calls are not counted.',
+  provider_activities_expected: 'Activities a home-health company runs in the building this week — bingo, games, crafts, in-services, screenings. Each activity counts once. Not clinical visits to residents.',
+  outreach_engagements: 'Outings and events you take part in this week — job fairs, fall festivals, provider and facility events. Each event counts once. Emails and calls are not counted.',
 }
 
 /**
@@ -48,7 +50,7 @@ export const UNCHECKED_FIGURES: Partial<Record<MetricKey, string>> = {
 
 /** A rule the company has agreed that governs a whole section, stated once. */
 export const SECTION_NOTES: Partial<Record<SectionKey, string>> = {
-  beds: 'Total open beds adds these four figures, so count each open bed in one category only.',
+  beds: 'Total open beds adds these four figures, so count each open bed in one category only. Haven suggests each figure from who is in each room now.',
 }
 
 /** A derived figure, named for what it actually is, with its calculation. */

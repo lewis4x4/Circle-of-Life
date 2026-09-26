@@ -4,13 +4,15 @@ import { easternDateInputValue, monthsAgoEastern } from "@/lib/registers/registe
 /**
  * The survey print pack.
  *
- * What a surveyor asks for at the door: who moved in and out, what the census
- * was, and who has been in the building. Printed from Haven, stamped with who
+ * What a surveyor asks for at the door: who is in which room right now, who
+ * moved in and out, what the census was, and who has been in the building. Printed from Haven, stamped with who
  * printed it, and recorded as an audit event so there is a record of what was
  * handed over. No PDF library: it is a Haven page with print styles.
  */
 
 export const SURVEY_PACK_SECTIONS = [
+  // First because it is the first thing asked for, and the sheet a fire crew needs (DEC-2026-09-22-10).
+  { id: "room_census", label: "Current census by room" },
   { id: "register", label: "Admission and discharge register" },
   { id: "census", label: "Census record" },
   { id: "visitors", label: "Visitor log" },
@@ -32,7 +34,7 @@ export type SurveyPackRequest = {
 /** The prior six months ending today, which is what a walk in usually asks for. */
 export function defaultSurveyPackRequest(now: Date = new Date()): SurveyPackRequest {
   return {
-    sections: ["register", "census", "visitors"],
+    sections: ["room_census", "register", "census", "visitors"],
     includeHolds: true,
     from: monthsAgoEastern(SURVEY_PACK_DEFAULT_MONTHS, now),
     to: easternDateInputValue(now),

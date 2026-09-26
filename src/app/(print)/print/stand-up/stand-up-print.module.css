@@ -1,0 +1,30 @@
+/*
+ * The Weekly Stand Up printout (A6). No app shell in the (print) group, so what
+ * is on screen is what prints: one building, one week, letter paper, rows that
+ * never split across a page, and a sign-off block for the binder copy.
+ */
+.sheet { background: #fff; color: #000; margin: 0 auto; max-width: 8.5in; padding: 0.5in; font-size: 0.8125rem; }
+.header { border-bottom: 2px solid #000; margin-bottom: 1rem; padding-bottom: 0.5rem; }
+.title { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.meta { margin: 0.125rem 0 0; }
+.section { break-inside: avoid; margin-bottom: 1.25rem; }
+.sectionTitle { font-size: 0.9375rem; font-weight: 700; margin: 0; }
+.period { font-size: 0.75rem; margin: 0 0 0.375rem; }
+.tableViewport { overflow-x: auto; }
+.table { border-collapse: collapse; width: 100%; }
+.table th, .table td { border: 1px solid #000; padding: 0.25rem 0.375rem; text-align: left; vertical-align: top; }
+.table th { background: #f2f2f2; font-weight: 600; }
+.table tr { break-inside: avoid; }
+.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.definition { font-size: 0.6875rem; margin-top: 0.125rem; }
+.signoff { break-inside: avoid; display: grid; gap: 1.25rem; grid-template-columns: 2fr 1fr; margin-top: 1.5rem; }
+.line { border-top: 1px solid #000; padding-top: 0.25rem; font-size: 0.75rem; }
+.footer { font-size: 0.6875rem; margin-top: 1rem; }
+.actions { margin-bottom: 1rem; display: flex; gap: 0.5rem; }
+@media print {
+  .actions { display: none; }
+  .tableViewport { overflow: visible; }
+  .scroll [data-slot="horizontal-scroll-shade-start"], .scroll [data-slot="horizontal-scroll-shade-end"] { display: none; }
+  .sheet { padding: 0; max-width: none; }
+  @page { size: letter; margin: 0.5in; }
+}

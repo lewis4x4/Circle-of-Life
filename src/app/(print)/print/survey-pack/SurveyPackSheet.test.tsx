@@ -8,11 +8,12 @@ import { SurveyPackSheet } from "./SurveyPackSheet";
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   kioskDetails: vi.fn(),
+  from: vi.fn(),
   searchParams: new URLSearchParams("from=2026-01-01&to=2026-06-30&sections=register,census,visitors&holds=1"),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
-  createClient: () => ({ rpc: mocks.rpc, from: () => ({ select: () => ({ in: mocks.kioskDetails }) }) }),
+  createClient: () => ({ rpc: mocks.rpc, from: mocks.from }),
 }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => mocks.searchParams }));
 
@@ -68,6 +69,8 @@ function routeRpc(name: string) {
 }
 
 beforeEach(() => {
+  mocks.from.mockReset();
+  mocks.from.mockImplementation(() => ({ select: () => ({ in: mocks.kioskDetails }) }));
   mocks.kioskDetails.mockReset();
   mocks.kioskDetails.mockResolvedValue({ data: [], error: null });
   mocks.rpc.mockReset();
@@ -239,5 +242,31 @@ describe("only the chosen sections", () => {
     mocks.searchParams = new URLSearchParams(
       "from=2026-01-01&to=2026-06-30&sections=register,census,visitors&holds=1",
     );
+  });
+});
+
+describe("current census by room (DEC-2026-09-22-10)", () => {
+  it("prints everyone holding a bed in room order, who is in the building, and records the section", async () => {
+    const tables: Record<string, unknown[]> = {
+      residents: [
+        { id: "r1", first_name: "Resident A", last_name: "Test", status: "active", bed_id: "b12b" },
+        { id: "r2", first_name: "Resident B", last_name: "Test", status: "hospital_hold", bed_id: "b2" },
+      ],
+      beds: [{ id: "b12b", bed_label: "B", room_id: "room12" }, { id: "b2", bed_label: "A", room_id: "room2" }],
+      rooms: [{ id: "room12", room_number: "12" }, { id: "room2", room_number: "2" }],
+    };
+    mocks.from.mockImplementation((table: string) => {
+      const chain = { select: () => chain, eq: () => chain, is: () => chain, in: () => chain, limit: () => Promise.resolve({ data: tables[table] ?? [], error: null }) };
+      return chain;
+    });
+    mocks.rpc.mockResolvedValue({ data: null, error: null });
+    mocks.searchParams = new URLSearchParams("from=2026-01-01&to=2026-06-30&sections=room_census&holds=1");
+    render(<SurveyPackSheet organizationId="org" facilityId="fac" facilityName="Homewood Lodge" printedByName="Review clerk" />);
+    expect(await screen.findByRole("heading", { name: "Current census by room" })).toBeInTheDocument();
+    const cells = screen.getAllByRole("row").slice(1, 3).map((row) => row.textContent);
+    expect(cells).toEqual(["2AResident B TestHospital or rehab", "12BResident A TestIn building"]);
+    expect(screen.getByText(/1 in the building · 1 away \(hospital, rehab or leave\), bed held\./)).toBeInTheDocument();
+    expect(mocks.rpc).toHaveBeenCalledWith("survey_print_pack_record", expect.objectContaining({ p_sections: ["room_census"] }));
+    expect(JSON.stringify(mocks.rpc.mock.calls)).not.toContain("Resident A");
   });
 });
