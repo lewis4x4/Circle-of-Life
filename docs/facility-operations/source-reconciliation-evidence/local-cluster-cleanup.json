@@ -1,0 +1,27 @@
+{
+  "scope": "Only this run-created, stopped PostgreSQL cluster",
+  "files_removed": 983,
+  "directories_removed": 27,
+  "validation": [
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-source-reconcile-20260913/cleanup-pg-files-0.json",
+      "result": "{\"planned_count\": 900, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-source-reconcile-20260913/cleanup-pg-files-1.json",
+      "result": "{\"planned_count\": 83, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-source-reconcile-20260913/cleanup-pg-dirs-10.json",
+      "result": "{\"planned_count\": 9, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-source-reconcile-20260913/cleanup-pg-dirs-9.json",
+      "result": "{\"planned_count\": 17, \"removed_count\": 0, \"status\": \"planned\"}"
+    },
+    {
+      "manifest": "/Users/brianlewis/.hermes/tmp/agent-runs/hfo-source-reconcile-20260913/cleanup-pg-dirs-8.json",
+      "result": "{\"planned_count\": 1, \"removed_count\": 0, \"status\": \"planned\"}"
+    }
+  ]
+}
