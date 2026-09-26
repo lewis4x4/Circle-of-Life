@@ -146,12 +146,12 @@ Routes under `src/app/kiosk/` (no session), forced light. `/kiosk/setup` enrolls
 
 | Entry | Fields | `visitor_type` |
 |---|---|---|
-| Visiting a resident | name, phone (optional), who you are visiting (typed), feeling sick today | `family_friend` |
-| Healthcare provider | name, agency or practice (required), resident you are seeing (typed), feeling sick today | `healthcare_provider` |
+| Visiting a resident | name, phone (optional), resident you are seeing (picked, or typed behind "Not listed?"; required), feeling sick today | `family_friend` |
+| Healthcare provider | name, agency or practice (required), resident you are seeing (picked or typed, optional), feeling sick today | `healthcare_provider` |
 | Vendor or contractor | name, company (required), purpose | `vendor_contractor` |
 | Inspector or official | name, agency (required) | `surveyor_regulator` |
 
-"Yes" to feeling sick records the entry with `screening_passed = false` and shows "Please see the front desk before you go in." The administrator Home gets a banner while a `surveyor_regulator` visit is open at that facility. The staff visitor log shows the typed name with a Match resident action (`visitor_match_resident`).
+"Yes" to feeling sick records the entry with `screening_passed = false` and shows "Please see the front desk before you go in." The administrator Home gets a banner while a `surveyor_regulator` visit is open at that facility. The resident field is a type-ahead (`visitor_kiosk_resident_matches`, migration 551): nothing before 3 letters, at most 6 current residents of the kiosk's building as first name, last initial and room; a pick is stored as `resident_id` with `visiting_type = 'resident'`. "Not listed? Type their name" records `visiting_name_text` instead, and the staff visitor log shows that typed name with a Match resident action (`visitor_match_resident`).
 
 ## 8. Smart Rounding owner from punches
 

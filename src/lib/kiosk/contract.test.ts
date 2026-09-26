@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { KIOSK_KINDS, KIOSK_SICK_QUESTION, KIOSK_VISITOR_COPY, KIOSK_VISITOR_TYPE, kioskPrefixLetterCount, validateKioskSignIn } from "./contract";
+import {
+  KIOSK_KINDS,
+  KIOSK_SICK_QUESTION,
+  KIOSK_VISITOR_COPY,
+  KIOSK_VISITOR_TYPE,
+  kioskPrefixLetterCount,
+  kioskResidentPickedLabel,
+  kioskRoomLabel,
+  validateKioskSignIn,
+} from "./contract";
+
+const RESIDENT = "84ad69f3-911e-4069-9b4f-24aebe591a79";
 
 describe("kiosk visitor kinds (spec 40 §7)", () => {
   it("maps each kiosk kind to its visitor_type", () => {
@@ -17,9 +28,17 @@ describe("kiosk visitor kinds (spec 40 §7)", () => {
     expect(asks).toEqual(["visitor", "provider"]);
   });
 
-  it("never offers a resident picker: who they visit is typed text", () => {
-    for (const kind of Object.values(KIOSK_KINDS)) {
-      expect(kind.fields.map((f) => f.name)).not.toContain("resident_id");
+  it("asks who they are seeing on the visit (required) and provider (optional) forms only", () => {
+    const asks = Object.values(KIOSK_KINDS).flatMap((k) => k.fields.filter((f) => f.name === "visiting_name").map((f) => [k.kind, f.required]));
+    expect(asks).toEqual([
+      ["visitor", true],
+      ["provider", false],
+    ]);
+    for (const kind of ["visitor", "provider"] as const) {
+      expect(KIOSK_KINDS[kind].fields.find((f) => f.name === "visiting_name")).toMatchObject({
+        label: "Resident you are seeing",
+        placeholder: "Start typing their first or last name",
+      });
     }
   });
 });
@@ -43,7 +62,8 @@ describe("kiosk copy is the approved prototype's (DESIGN §1, one source for scr
     expect(KIOSK_SICK_QUESTION).toBe("Do you have a fever, cough or feel sick today?");
     expect(KIOSK_KINDS.visitor.fields.find((f) => f.name === "phone")).toMatchObject({ label: "Phone", placeholder: "Optional" });
     expect(KIOSK_VISITOR_COPY.visitorLogLine).toBe("Your name and times go in the facility visitor log.");
-    expect(KIOSK_VISITOR_COPY.signOutHint).toBe("Type the first 3 letters of your first name");
+    expect(KIOSK_VISITOR_COPY.signOutPrompt).toBe("Leaving? Sign out");
+    expect(Object.values(KIOSK_VISITOR_COPY.signOutReminder).join("")).toBe("When you leave, tap Sign out on the home screen.");
   });
 
   it("says what is missing in plain words", () => {
@@ -52,7 +72,7 @@ describe("kiosk copy is the approved prototype's (DESIGN §1, one source for scr
     if (!result.ok) {
       expect(result.errors).toEqual({
         name: "Enter your name.",
-        visiting_name: "Enter the name of the person you are visiting.",
+        visiting_name: "Pick the resident you are seeing, or tap Not listed.",
         symptoms: "Choose Yes or No.",
       });
     }
@@ -63,8 +83,19 @@ describe("validateKioskSignIn", () => {
   it("trims and normalizes a valid visit", () => {
     expect(validateKioskSignIn("visitor", { name: " Jordan Visitor ", phone: " 555-0100 ", visiting_name: "Test Resident", symptoms: true })).toEqual({
       ok: true,
-      value: { visitor_type: "family_friend", name: "Jordan Visitor", phone: "555-0100", company: null, visiting_name: "Test Resident", purpose: null, symptoms: true },
+      value: { visitor_type: "family_friend", name: "Jordan Visitor", phone: "555-0100", company: null, visiting_name: "Test Resident", purpose: null, symptoms: true, resident_id: null },
     });
+  });
+
+  it("takes a picked resident in place of a typed name, never both, and only where the form asks", () => {
+    const picked = validateKioskSignIn("visitor", { name: "A B", resident_id: RESIDENT, symptoms: false });
+    expect(picked).toMatchObject({ ok: true, value: { resident_id: RESIDENT, visiting_name: null } });
+    expect(validateKioskSignIn("provider", { name: "A B", company: "C", resident_id: RESIDENT, symptoms: false }).ok).toBe(true);
+    const both = validateKioskSignIn("visitor", { name: "A B", resident_id: RESIDENT, visiting_name: "Typed", symptoms: false });
+    expect(both.ok).toBe(false);
+    if (!both.ok) expect(both.errors.visiting_name).toBe("Pick the resident or type their name, not both.");
+    expect(validateKioskSignIn("vendor", { name: "A B", company: "C", resident_id: RESIDENT }).ok).toBe(false);
+    expect(validateKioskSignIn("visitor", { name: "A B", resident_id: "not-a-uuid", symptoms: false }).ok).toBe(false);
   });
 
   it("requires company for providers, vendors and inspectors, and refuses it for a family visit", () => {
@@ -94,5 +125,14 @@ describe("kioskPrefixLetterCount", () => {
     expect(kioskPrefixLetterCount("Jo")).toBe(2);
     expect(kioskPrefixLetterCount("J-o 1")).toBe(2);
     expect(kioskPrefixLetterCount("José")).toBe(4);
+  });
+});
+
+describe("resident picker labels", () => {
+  it("reads Room 12 and Martha J. · Room 12, and leaves the room off when there is none", () => {
+    expect(kioskRoomLabel("12")).toBe("Room 12");
+    expect(kioskRoomLabel(null)).toBe("");
+    expect(kioskResidentPickedLabel({ resident_id: RESIDENT, display_name: "Martha J.", room: "12" })).toBe("Martha J. · Room 12");
+    expect(kioskResidentPickedLabel({ resident_id: RESIDENT, display_name: "Martha J.", room: null })).toBe("Martha J.");
   });
 });

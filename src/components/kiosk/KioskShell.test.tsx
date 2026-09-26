@@ -92,7 +92,7 @@ describe("KioskHome", () => {
     expect(screen.getByRole("link", { name: /Healthcare provider/ })).toHaveAttribute("href", "/kiosk/sign-in/provider");
     expect(screen.getByRole("link", { name: /Vendor or contractor/ })).toHaveAttribute("href", "/kiosk/sign-in/vendor");
     expect(screen.getByRole("link", { name: /Inspector or official/ })).toHaveAttribute("href", "/kiosk/sign-in/inspector");
-    expect(screen.getByRole("link", { name: "Leaving? Sign out here" })).toHaveAttribute("href", "/kiosk/leaving");
+    expect(screen.getByRole("link", { name: "Leaving? Sign out" })).toHaveAttribute("href", "/kiosk/leaving");
   });
 });
 

@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     visiting_name: optionalText(body.visiting_name),
     purpose: optionalText(body.purpose),
     symptoms: typeof body.symptoms === "boolean" ? body.symptoms : null,
+    resident_id: optionalText(body.resident_id),
   });
   if (!validated.ok) return kioskVisitorError("invalid_input", validated.errors);
   const form = validated.value;
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
     p_visiting_name_text: form.visiting_name,
     p_purpose: form.purpose,
     p_symptoms_reported: form.symptoms,
+    p_resident_id: form.resident_id,
   });
   if (error) {
     logError("kiosk.visitor.sign_in", error, { action: "sign_in", kind: body.kind });

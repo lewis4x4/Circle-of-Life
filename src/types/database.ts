@@ -21747,7 +21747,11 @@ export type Database = {
         Returns: Json
       }
       visitor_kiosk_sign_in: {
-        Args: { p_device_token: string; p_client_entry_id: string; p_visitor_type: string; p_visitor_name: string; p_visitor_phone: string | null; p_visitor_company: string | null; p_visiting_name_text: string | null; p_purpose: string | null; p_symptoms_reported: boolean }
+        Args: { p_device_token: string; p_client_entry_id: string; p_visitor_type: string; p_visitor_name: string; p_visitor_phone: string | null; p_visitor_company: string | null; p_visiting_name_text: string | null; p_purpose: string | null; p_symptoms_reported: boolean; p_resident_id?: string | null }
+        Returns: Json
+      }
+      visitor_kiosk_resident_matches: {
+        Args: { p_device_token: string; p_prefix: string }
         Returns: Json
       }
       visitor_kiosk_open_matches: {
