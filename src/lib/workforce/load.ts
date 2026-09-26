@@ -10,6 +10,10 @@ import type { Database } from "@/types/database";
 import { ASSIGNMENT_SNAPSHOT_SELECT } from "@/lib/schedules/assignment-context";
 import { enumLabel } from "@/lib/display/enum-label";
 
+type AssignedRosterRow = { staff_id: string; facility_id: string; first_name: string; last_name: string; staff_role: string };
+type AssignedRosterStaff = { id: string; name: string; role: string };
+type VisibleWorkforceStaff = EmployeeSummary | AssignedRosterStaff;
+
 async function allRows<T>(query: (from: number, to: number) => PromiseLike<{ data: unknown; count: number | null; error: { message: string } | null }>): Promise<T[]> {
   const { data } = await readAllPages<T>(async (from, to) => {
     const page = await query(from, to);
@@ -28,7 +32,7 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
   const [enabled, settings, staff, definitions, schedules, assignments, requirements, records] = await Promise.all([
     loadFacilityTimeclockEnabled(client, facility.id),
     loadOrganizationPayPeriod(client, organizationId),
-    allRows<EmployeeSummary>((from, to) => client.from("staff").select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).order("id").range(from, to)),
+    loadWorkforceStaff(client, [facility.id]),
     fetchFacilityShiftDefinitions(client, [facility.id]),
     allRows<{ id: string; week_start_date: string; status: string; published_at: string | null }>((from, to) => client.from("schedules").select("id, week_start_date, status, published_at", { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).gte("week_start_date", addFacilityCalendarDays(weekStart, -7)).lt("week_start_date", horizon).order("id").range(from, to)),
     allRows<WorkforceAssignment>((from, to) => client.from("shift_assignments").select(`id, staff_id, schedule_id, shift_date, shift_type, status, custom_start_time, custom_end_time, ${ASSIGNMENT_SNAPSHOT_SELECT}`, { count: "exact" }).eq("facility_id", facility.id).is("deleted_at", null).gte("shift_date", addFacilityCalendarDays(weekStart, -1)).lt("shift_date", horizon).order("id").range(from, to)),
@@ -43,7 +47,7 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
   const publishedAssignments = assignments.filter((a) => published.has(a.schedule_id) || (a.shift_date < thisWeek && archivedPublished.has(a.schedule_id)));
   const shifts = definitions.get(facility.id) ?? [];
   type ScheduledPerson = Pick<EmployeeSummary, "id" | "first_name" | "last_name" | "staff_role" | "employment_status">;
-  const staffById = new Map<string, EmployeeSummary | TimeclockStaff | ScheduledPerson>(staff.map((s) => [s.id, s]));
+  const staffById = new Map<string, VisibleWorkforceStaff | TimeclockStaff | ScheduledPerson>(staff.people.map((s) => [s.id, s]));
   // Visiting staff with punches still appear, but their personnel file is never inferred.
   for (const s of ledger.staff) if (!staffById.has(s.id)) staffById.set(s.id, s);
   // Published visitors may not have clocked in yet. Resolve only their work
@@ -86,7 +90,8 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
       return date && date <= dueThrough ? [{ title: a.requirement.title, date }] : [];
     });
     return {
-      id: s.id, name: "first_name" in s ? `${s.first_name} ${s.last_name}` : s.name, role: "staff_role" in s ? enumLabel(s.staff_role) : "Visiting staff", status: clock.state, since: clock.since?.toISOString() ?? null,
+      id: s.id, name: "first_name" in s ? `${s.first_name} ${s.last_name}` : s.name, role: "staff_role" in s ? enumLabel(s.staff_role) : "role" in s ? enumLabel(s.role) : "Visiting staff", status: clock.state, since: clock.since?.toISOString() ?? null,
+      profileAvailable: "hire_date" in s,
       currentShift: current?.span?.label ?? (unknownToday ? "Shift times not configured" : null),
       nextShift: unknownNext && (!next || unknownNext.shift_date <= next.assignment.shift_date) ? `${unknownNext.shift_date} · Shift times not configured` : next ? `${next.assignment.shift_date} · ${next.span!.label}` : null,
       scheduleId: current?.assignment.schedule_id ?? unknownToday?.schedule_id ?? next?.assignment.schedule_id ?? unknownNext?.schedule_id ?? null,
@@ -101,4 +106,86 @@ export async function loadWorkforce(client: SupabaseClient<Database>, facility: 
   }).sort((a, b) => a.name.localeCompare(b.name));
   const nextSchedules = schedules.filter((s) => s.week_start_date === nextWeekStart);
   return { facilityId: facility.id, facilityName: facility.name, generatedAt: now.toISOString(), timeclockEnabled: enabled, weekStart, weekEnd: addFacilityCalendarDays(thisWeek, -1), nextWeekStart, scheduleStatus: nextSchedules.length === 0 ? "Not started" : nextSchedules.every((s) => s.status === "published") ? "Published" : "Draft", people, payrollStatus: "Prepare payroll packet", payrollRulesConfigured: !!settings?.timeclock_pay_period };
+}
+
+/** Home employees use existing RLS; visitors come from a narrow, current-authority roster projection. */
+async function loadWorkforceStaff(client: SupabaseClient<Database>, facilityIds: string[]): Promise<{
+  people: VisibleWorkforceStaff[];
+  assignments: AssignedRosterRow[];
+}> {
+  if (facilityIds.length === 0) return { people: [], assignments: [] };
+  const [homeStaff, assignments] = await Promise.all([
+    allRows<EmployeeSummary>((from, to) => client.from("staff")
+      .select("id, first_name, last_name, staff_role, hire_date, employment_status, facility_id, user_id", { count: "exact" })
+      .in("facility_id", facilityIds)
+      .is("deleted_at", null)
+      .order("id")
+      .range(from, to)),
+    allRows<AssignedRosterRow>((from, to) => client
+      .rpc("workforce_assigned_roster" as never, { p_facility_ids: facilityIds } as never, { count: "exact" })
+      .order("staff_id")
+      .order("facility_id")
+      .range(from, to)),
+  ]);
+  const people = new Map<string, VisibleWorkforceStaff>(homeStaff.map((person) => [person.id, person]));
+  for (const assignment of assignments) {
+    if (!people.has(assignment.staff_id)) {
+      people.set(assignment.staff_id, {
+        id: assignment.staff_id,
+        name: `${assignment.first_name} ${assignment.last_name}`,
+        role: assignment.staff_role,
+      });
+    }
+  }
+  return { people: [...people.values()], assignments };
+}
+
+/** One row per person for the People page while the shell is scoped to All Facilities. */
+export async function loadAllFacilitiesWorkforce(client: SupabaseClient<Database>, organizationId: string, now = new Date()): Promise<WorkforceSnapshot> {
+  const facilities = await allRows<{ id: string; name: string }>((from, to) => client.from("facilities")
+    .select("id, name", { count: "exact" })
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .order("name")
+    .range(from, to));
+  if (facilities.length === 0) {
+    const thisWeek = todayFacilityDateIso(workweekStart(now));
+    return { facilityId: null, facilityName: "All Facilities", allFacilities: true, generatedAt: now.toISOString(), timeclockEnabled: false, weekStart: addFacilityCalendarDays(thisWeek, -7), weekEnd: addFacilityCalendarDays(thisWeek, -1), nextWeekStart: addFacilityCalendarDays(thisWeek, 7), scheduleStatus: "Facility-specific", people: [], payrollStatus: "Facility-specific", payrollRulesConfigured: false };
+  }
+  const roster = await loadWorkforceStaff(client, facilities.map((facility) => facility.id));
+  const facilityNamesById = new Map(facilities.map((facility) => [facility.id, facility.name]));
+  const assignedFacilities = new Map<string, Set<string>>();
+  for (const assignment of roster.assignments) {
+    const names = assignedFacilities.get(assignment.staff_id) ?? new Set<string>();
+    const name = facilityNamesById.get(assignment.facility_id);
+    if (name) names.add(name);
+    assignedFacilities.set(assignment.staff_id, names);
+  }
+  const people: WorkforcePerson[] = roster.people.map((person) => {
+    const names = assignedFacilities.get(person.id) ?? new Set<string>();
+    const homeName = "facility_id" in person ? facilityNamesById.get(person.facility_id) : null;
+    if (homeName) names.add(homeName);
+    return {
+      id: person.id,
+      name: "first_name" in person ? `${person.first_name} ${person.last_name}` : person.name,
+      role: enumLabel("staff_role" in person ? person.staff_role : person.role),
+      facilityNames: [...names].sort((a, b) => a.localeCompare(b)),
+      profileAvailable: "hire_date" in person,
+      status: "out",
+      since: null,
+      currentShift: null,
+      nextShift: null,
+      scheduleId: null,
+      attendance: "off" as const,
+      scheduledMinutes: null,
+      workedMinutes: null,
+      exceptions: 0,
+      fileStatus: "Open employee file",
+      due: [],
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+  const thisWeek = todayFacilityDateIso(workweekStart(now));
+  const weekStart = addFacilityCalendarDays(thisWeek, -7);
+  const nextWeekStart = addFacilityCalendarDays(thisWeek, 7);
+  return { facilityId: null, facilityName: "All Facilities", allFacilities: true, generatedAt: now.toISOString(), timeclockEnabled: false, weekStart, weekEnd: addFacilityCalendarDays(thisWeek, -1), nextWeekStart, scheduleStatus: "Facility-specific", people, payrollStatus: "Facility-specific", payrollRulesConfigured: false };
 }

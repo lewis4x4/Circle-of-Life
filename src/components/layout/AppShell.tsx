@@ -94,6 +94,10 @@ import { cn } from "@/lib/utils";
 /** Controls on `--background` top strips (Mercury: canvas workspace rail, distinct from dark sidebar chrome). */
 const WORKSPACE_WELL =
   "border border-border bg-muted/50 text-foreground/80 transition-colors hover:bg-muted/70 hover:text-foreground";
+const WorkforcePeopleNav = dynamic(
+  () => import("@/components/workforce/WorkforcePeopleNav").then((module) => module.WorkforcePeopleNav),
+  { ssr: false },
+);
 const WORKSPACE_KBD =
   "rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground";
 const WORKSPACE_ICON_LG =
@@ -440,7 +444,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     : safeSelectedFacilityId === null
       ? "All facilities"
       : (currentFacility?.name ?? "Select facility");
-
   // One lit item per route (COL-655): the catalog entry that owns the path.
   // When a role's home aliases an existing destination (for example an owner
   // landing on Executive), the role-home item owns that whole tree instead of
@@ -824,6 +827,15 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     return { ...pillar, items: [...pillar.items, navAnchor.item] };
   }, [activeItemKey, appRole, navAnchor, roleConfig.visibleItemKeys, visiblePillars]);
 
+  const showWorkforcePeopleNav =
+    activePillar?.id === "workforce" &&
+    (pathname === "/admin/staff" ||
+      pathname.startsWith("/admin/staff/") ||
+      pathname === "/admin/training" ||
+      pathname.startsWith("/admin/training/") ||
+      pathname === "/admin/certifications" ||
+      pathname.startsWith("/admin/certifications/"));
+
   // Keep the current pillar visible in the phone strip (COL-657).
   useEffect(() => {
     const current = mobilePillarStripRef.current?.querySelector<HTMLElement>('a[aria-current="page"]');
@@ -1019,7 +1031,23 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
               content (settings forms, etc.) apply max-w on an inner block,
               not on this wrapper. */}
           <div className="w-full px-5 py-5 lg:px-6 lg:py-6 2xl:px-8 2xl:py-8 [--haven-page-chrome-y:40px] lg:[--haven-page-chrome-y:48px] 2xl:[--haven-page-chrome-y:64px]">
-            {activePillar?.id === "workforce" ? <WorkforceContext>{children}</WorkforceContext> : children}
+            {activePillar?.id === "workforce" ? (
+              <WorkforceContext
+                sectionNavigation={
+                  showWorkforcePeopleNav ? (
+                    <WorkforcePeopleNav
+                      pathname={pathname}
+                      facilities={visibleFacilities}
+                      selectedFacilityId={safeSelectedFacilityId}
+                      pending={facilityControlLoading}
+                      onFacilityChange={handleFacilityScopeChange}
+                    />
+                  ) : null
+                }
+              >
+                {children}
+              </WorkforceContext>
+            ) : children}
           </div>
         </main>
       </div>
