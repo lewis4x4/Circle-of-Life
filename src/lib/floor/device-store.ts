@@ -102,6 +102,32 @@ export function createIndexedDbFloorDeviceStore(): FloorDeviceStore {
   };
 }
 
+/**
+ * A non-secret value kept beside the device token in the same IndexedDB store
+ * (its own key, so no schema upgrade). Used for building configuration only,
+ * never for anything about a resident or a person.
+ */
+export async function readFloorDeviceValue<T>(key: string): Promise<T | null> {
+  if (typeof indexedDB === "undefined" || key === DEVICE_KEY) return null;
+  try {
+    const row = await withDeviceStore<{ key: string; value: T } | undefined>("readonly", (store) => store.get(key) as IDBRequest<{ key: string; value: T } | undefined>);
+    return row?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function writeFloorDeviceValue<T>(key: string, value: T): Promise<void> {
+  if (typeof indexedDB === "undefined" || key === DEVICE_KEY) return;
+  try {
+    await withDeviceStore("readwrite", (store) => {
+      store.put({ key, value });
+    });
+  } catch {
+    // Only costs the offline convenience it backs.
+  }
+}
+
 let defaultStore: FloorDeviceStore | null = null;
 
 export function resolveFloorDeviceStore(store?: FloorDeviceStore): FloorDeviceStore {

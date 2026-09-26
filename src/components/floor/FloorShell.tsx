@@ -11,11 +11,14 @@ import type { FloorInactiveReason, FloorLockReason } from "@/lib/floor/contract"
 import { resolveFloorDeviceStore, type FloorDevice } from "@/lib/floor/device-store";
 import { clearBrowserSessionCookies, floorLockHref, forgetFloorPerson, sendFloorLock } from "@/lib/floor/lock-client";
 import { currentRetryOwner } from "@/lib/floor/check-submit";
+import { fetchFloorCheckVocab } from "@/lib/floor/floor-data";
+import { writeFloorCache } from "@/lib/floor/memory-cache";
 import { replayFloorQueues } from "@/lib/floor/replay";
 import { startFloorReplayScheduler } from "@/lib/floor/replay-scheduler";
 import { resolveFloorRetryOwner } from "@/lib/floor/retry-owner";
 import { currentFloorUnlockId } from "@/lib/floor/session-context";
 import { currentFloorUnlockProfile, type FloorUnlockProfile } from "@/lib/floor/unlock-profile";
+import { saveFloorVocab } from "@/lib/floor/vocab-store";
 import { formatDisplayTime } from "@/lib/format/datetime";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -217,6 +220,19 @@ export function FloorShell({ children }: { children: ReactNode }) {
     });
     return () => scheduler.stop();
   }, [readyUserId, refreshSync]);
+
+  // Read the check choices once at unlock and keep them on the tablet, so the first
+  // check of this unlock can be charted even if the Wi-Fi drops in the room.
+  const readyFacilityId = ready?.facility.facilityId ?? null;
+  useEffect(() => {
+    if (!readyFacilityId) return;
+    void fetchFloorCheckVocab(supabase, readyFacilityId)
+      .then((catalog) => {
+        writeFloorCache(`vocab:${readyFacilityId}`, catalog);
+        void saveFloorVocab(readyFacilityId, catalog);
+      })
+      .catch(() => undefined);
+  }, [readyFacilityId, supabase]);
 
   useFloorLockTriggers({
     enabled: Boolean(unlocked),

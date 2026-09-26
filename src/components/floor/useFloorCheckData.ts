@@ -3,6 +3,7 @@
 import { fetchFloorCensus, fetchFloorCheckVocab, fetchFloorTasks } from "@/lib/floor/floor-data";
 import { residentNameOf, type FloorTaskApiRow } from "@/lib/floor/now-rows";
 import { readFloorCache, writeFloorCache } from "@/lib/floor/memory-cache";
+import { readFloorVocab, saveFloorVocab } from "@/lib/floor/vocab-store";
 import { emptyObservationVocabCatalog, type ObservationVocabCatalog } from "@/lib/rounding/observation-chips";
 
 import { useFloorSession } from "./FloorContext";
@@ -40,15 +41,17 @@ export function useFloorCheckData(taskId: string) {
           if (cached && cached.length > 0) return cached;
           throw error;
         }),
-        // Offline, the choices an earlier check on this unlock read still stand.
+        // Offline, the choices read earlier stand: this unlock's, else the ones kept on
+        // the tablet from an earlier unlock (building configuration, no resident data).
         fetchFloorCheckVocab(supabase, facilityId)
           .then((catalog) => {
             writeFloorCache(vocabKey, catalog);
+            void saveFloorVocab(facilityId, catalog);
             return catalog;
           })
-          .catch((error: unknown) => {
+          .catch(async (error: unknown) => {
             console.error("[floor] check choices", error);
-            return readFloorCache<ObservationVocabCatalog>(vocabKey, VOCAB_MAX_AGE_MS);
+            return readFloorCache<ObservationVocabCatalog>(vocabKey, VOCAB_MAX_AGE_MS) ?? (await readFloorVocab(facilityId));
           }),
       ]);
       const task = rows[0];

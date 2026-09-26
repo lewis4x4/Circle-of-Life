@@ -2,7 +2,8 @@
 
 import { useId, useMemo, useState } from "react";
 
-import { fetchFloorCensus, fetchResidentStatusSignals, flagFor } from "@/lib/floor/floor-data";
+import { fetchFloorCensus, fetchFloorResidentActivity, fetchResidentStatusSignals, flagFor } from "@/lib/floor/floor-data";
+import { formatDisplayTime } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 
 import { useFloorSession } from "./FloorContext";
@@ -14,13 +15,17 @@ import { useFloorQuery } from "./useFloorQuery";
 
 /**
  * `/floor/residents`: everyone in the building in room order, in the rail's
- * tile language, with a filter by name or room.
+ * tile language, with a filter by name or room. A resident with nothing to
+ * flag shows when they were last checked (or that nobody has in 24 hours), and
+ * any resident with a visitor signed in for them says so.
  */
 export function FloorResidentsScreen() {
   const { supabase, facility, timeZone } = useFloorSession();
   const facilityId = facility.facilityId;
   const census = useFloorQuery(`census:${facilityId}`, () => fetchFloorCensus(supabase, facilityId), 5 * 60_000);
   const signals = useFloorQuery(`signals:${facilityId}`, () => fetchResidentStatusSignals(supabase, facilityId), 60_000);
+  const activity = useFloorQuery(`activity:${facilityId}`, () => fetchFloorResidentActivity(supabase, facilityId), 60_000);
+  const activityData = activity.state.status === "success" ? activity.state.data : null;
   const [query, setQuery] = useState("");
   const searchId = useId();
 
@@ -82,7 +87,7 @@ export function FloorResidentsScreen() {
                     room={resident.room}
                     name={resident.name}
                     flag={known}
-                    note={railNote(resident, known, signalData, null, timeZone)}
+                    note={residentListNote(railNote(resident, known, signalData, null, timeZone), resident.id, resident.status, activityData, timeZone)}
                   />
                 </li>
               );
@@ -92,4 +97,19 @@ export function FloorResidentsScreen() {
       </div>
     </div>
   );
+}
+
+/** The flag's note when there is one, else when they were last checked; then "Visitor here". */
+function residentListNote(
+  flagNote: string | null,
+  residentId: string,
+  status: string,
+  activity: Awaited<ReturnType<typeof fetchFloorResidentActivity>> | null,
+  timeZone: string,
+): string | null {
+  if (!activity) return flagNote;
+  const lastCheck = activity.lastCheckAt.get(residentId);
+  const checkNote = status !== "active" ? null : lastCheck ? `Checked ${formatDisplayTime(lastCheck, { timeZone })}` : "No check in 24 hours";
+  const parts = [flagNote ?? checkNote, activity.visitorHere.has(residentId) ? "Visitor here" : null].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
