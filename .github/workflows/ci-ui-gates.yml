@@ -20,6 +20,10 @@ on:
       - "scripts/a11y-axe-routes.mjs"
       - "scripts/screenshot-dashboard.mjs"
 
+concurrency:
+  group: haven-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   bundle:
     name: Bundle size budget
