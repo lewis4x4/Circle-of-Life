@@ -7,7 +7,7 @@ GRANT USAGE ON SCHEMA auth TO authenticated;
 GRANT SELECT ON public.residents,public.resident_status_history,public.family_resident_links TO authenticated;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 CREATE TEMP TABLE rc_fixture AS SELECT gen_random_uuid() actor,gen_random_uuid() session,gen_random_uuid() org,gen_random_uuid() ent,
- gen_random_uuid() fac_roster,gen_random_uuid() fac_empty,gen_random_uuid() fac_other,gen_random_uuid() returned,haven.stand_up_week() week;
+ gen_random_uuid() fac_roster,gen_random_uuid() fac_empty,gen_random_uuid() fac_other,gen_random_uuid() returned,haven.stand_up_open_week(NULL) week;
 INSERT INTO public.organizations(id,name) SELECT org,'Roster census probe' FROM rc_fixture;
 INSERT INTO public.entities(id,organization_id,name) SELECT ent,org,'Roster census entity' FROM rc_fixture;
 INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)

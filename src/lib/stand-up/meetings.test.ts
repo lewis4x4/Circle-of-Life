@@ -11,11 +11,11 @@ const baseline = { revision_id: 'm', submitted_at: '2026-09-21T12:40:00Z', value
 
 describe('meeting schedule wording comes from the schedule, not from code', () => {
   it('words Thursday from the rows the server returned', () => {
-    expect(meetingWindowLine(schedule, 'thursday')).toBe('Opens at Monday’s call · Due Thursday 8:45 a.m. · Call 9:15 a.m. Eastern')
+    expect(meetingWindowLine(schedule, 'thursday')).toBe('Entry available anytime · Due Thursday 8:45 a.m. · Record locks Thursday 9:15 a.m. Eastern')
   })
   it('follows a changed schedule', () => {
     const moved: MeetingScheduleEntry[] = [schedule[0], { ...schedule[1], weekday: 5, entry_due_local: '13:30', call_local: '14:00' }]
-    expect(meetingWindowLine(moved, 'thursday')).toBe('Opens at Monday’s call · Due Friday 1:30 p.m. · Call 2:00 p.m. Eastern')
+    expect(meetingWindowLine(moved, 'thursday')).toBe('Entry available anytime · Due Friday 1:30 p.m. · Record locks Friday 2:00 p.m. Eastern')
     expect(meetingWindowLine([schedule[0]], 'thursday')).toBeNull()
   })
   it('reads wall-clock times', () => {

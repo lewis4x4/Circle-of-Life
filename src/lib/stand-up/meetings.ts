@@ -73,17 +73,11 @@ export const weekdayName = (weekday: number): string => WEEKDAYS[(weekday - 1) %
 /** The time-zone name a staff member reads. Eastern is the only zone Circle of Life keeps. */
 export const zoneLabel = (zone: string): string => zone === 'America/New_York' ? 'Eastern' : zone
 
-/**
- * "Opens at Monday’s call · Due Thursday 8:45 a.m. · Call 9:15 a.m. Eastern",
- * built from the schedule the server returned. Null when the meeting is not on it.
- */
+/** Entry is always available; each meeting record locks at its own scheduled call. */
 export function meetingWindowLine(schedule: MeetingScheduleEntry[], day: MeetingDay): string | null {
   const own = schedule.find(entry => entry.meeting_day === day)
   if (!own) return null
-  const earlier = [...schedule].filter(entry => entry.meeting_day !== day)
-    .sort((a, b) => Number(b.weekday < own.weekday) - Number(a.weekday < own.weekday) || b.weekday - a.weekday)[0]
-  const opens = earlier ? `Opens at ${weekdayName(earlier.weekday)}’s call` : `Opens at last ${weekdayName(own.weekday)}’s call`
-  return `${opens} · Due ${weekdayName(own.weekday)} ${wallClock(own.entry_due_local)} · Call ${wallClock(own.call_local)} ${zoneLabel(own.time_zone)}`
+  return `Entry available anytime · Due ${weekdayName(own.weekday)} ${wallClock(own.entry_due_local)} · Record locks ${weekdayName(own.weekday)} ${wallClock(own.call_local)} ${zoneLabel(own.time_zone)}`
 }
 
 /** A Thursday figure for reading: dollars for A/R, a count otherwise. */

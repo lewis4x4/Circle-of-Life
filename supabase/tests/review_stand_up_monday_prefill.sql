@@ -8,7 +8,7 @@ GRANT SELECT ON public.residents,public.resident_status_history,public.family_re
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(auth.jwt()->>'sub','')::uuid $$;
 CREATE TEMP TABLE pf AS SELECT gen_random_uuid() actor,gen_random_uuid() session,gen_random_uuid() org,gen_random_uuid() ent,
  gen_random_uuid() fac,gen_random_uuid() fac_empty,gen_random_uuid() fac_other,gen_random_uuid() room,gen_random_uuid() resident,
- gen_random_uuid() staff_id,haven.stand_up_week() week;
+ gen_random_uuid() staff_id,haven.stand_up_open_week(NULL) week;
 INSERT INTO public.organizations(id,name) SELECT org,'Prefill probe' FROM pf;
 INSERT INTO public.entities(id,organization_id,name) SELECT ent,org,'Prefill entity' FROM pf;
 INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,zip,total_licensed_beds)
