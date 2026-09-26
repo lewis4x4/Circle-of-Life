@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { NO_ROSTER_TEXT, ROSTER_FIELD_KEYS, STAND_UP_ROSTER_CENSUS_STATUSES, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, recordedConfirmationLine, rosterAsOfLine, rosterSourceSuffix, rosterSuggestion, selectHospitalSuggestion, type RosterCensus } from './roster-census'
+
+import { BED_ROSTER_KEYS, NO_BED_ROSTER_TEXT, formatBedSummary, formatRosterBeds, hasBedRoster, hasRosterFor, NO_ROSTER_TEXT, ROSTER_FIELD_KEYS, STAND_UP_ROSTER_CENSUS_STATUSES, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, recordedConfirmationLine, rosterAsOfLine, rosterSourceSuffix, rosterSuggestion, selectHospitalSuggestion, type RosterCensus } from './roster-census'
 
 const roster: RosterCensus = { facility_id: 'a', in_house_count: 32, hospital_hold_count: 1, loa_count: 1, roster_census_count: 34, resident_count_in_haven: 40, roster_as_of: '2026-09-16T18:14:00Z' }
 const empty: RosterCensus = { facility_id: 'b', in_house_count: 0, hospital_hold_count: 0, loa_count: 0, roster_census_count: 0, resident_count_in_haven: 0, roster_as_of: null }
@@ -16,7 +17,9 @@ describe('roster census suggestion', () => {
     expect(asOf).toContain(`status IN('${STAND_UP_ROSTER_CENSUS_STATUSES.join("','")}')`)
     const billable = readFileSync(resolve(process.cwd(), 'supabase/migrations/217_col_v2_status_and_medicaid_provider_foundation.sql'), 'utf8')
     expect(billable).toContain(`r.status IN ('${STAND_UP_ROSTER_CENSUS_STATUSES.join("', '")}') THEN true`)
-    expect([...ROSTER_FIELD_KEYS]).toEqual(['current_total_census', 'hospital_and_rehab_total'])
+    expect([...ROSTER_FIELD_KEYS]).toEqual(['current_total_census', 'hospital_and_rehab_total', 'sp_female_beds_open', 'sp_male_beds_open', 'sp_flexible_beds_open', 'private_beds_open'])
+    const beds = readFileSync(resolve(process.cwd(), 'supabase/migrations/555_stand_up_beds_from_rooms.sql'), 'utf8')
+    expect(beds).toContain(`ARRAY['${ROSTER_FIELD_KEYS.join("','")}']::text[]`)
   })
   it('always shows the total with its components', () => {
     expect(formatRosterCensusBreakdown(roster)).toBe('Roster: 34 (32 in house, 1 hospital or rehab, 1 leave)')
@@ -73,5 +76,39 @@ describe('roster census suggestion', () => {
     expect(recordedConfirmationLine(overridden)).toBe('Roster suggested 34 · override: Roster not updated yet')
     expect(recordedConfirmationLine(typed)).toBe('Entered without a Haven roster')
     expect(recordedConfirmationLine(undefined)).toBeNull()
+  })
+})
+
+describe('bed figures from Haven rooms (COL-374)', () => {
+  const beds: RosterCensus = { ...roster, sp_female_open: 2, sp_male_open: 1, sp_flexible_open: 6, private_open: 2, unclassified_open: 2, out_of_service_open: 2, reserved_count: 2, bed_count_in_haven: 19, beds_as_of: '2026-09-22T13:05:00Z' }
+  it('suggests each bed figure from its own count', () => {
+    expect(rosterSuggestion(beds, 'sp_female_beds_open')).toBe(2)
+    expect(rosterSuggestion(beds, 'sp_male_beds_open')).toBe(1)
+    expect(rosterSuggestion(beds, 'sp_flexible_beds_open')).toBe(6)
+    expect(rosterSuggestion(beds, 'private_beds_open')).toBe(2)
+    expect(formatRosterBeds(beds, 'sp_flexible_beds_open')).toBe("Haven's rooms: 6 flexible open")
+  })
+  it('says once what Haven could not place, what is out of service and what is reserved', () => {
+    expect(formatBedSummary(beds)).toBe("Haven's rooms show 13 open beds; 2 Haven cannot place because a roommate's sex is not recorded — count them yourself; 2 of the open beds are out of service; 2 reserved, not open.")
+    expect(formatBedSummary({ ...beds, unclassified_open: 0, out_of_service_open: 0, reserved_count: 0, sp_female_open: 0, sp_male_open: 0, sp_flexible_open: 1, private_open: 0 })).toBe("Haven's rooms show 1 open bed.")
+  })
+  it('keeps census and bed suggestions independent', () => {
+    // Residents but no beds recorded: census is suggested, beds are typed.
+    expect(hasRosterFor(roster, 'current_total_census')).toBe(true)
+    expect(hasBedRoster(roster)).toBe(false)
+    for (const key of BED_ROSTER_KEYS) {
+      expect(rosterSuggestion(roster, key)).toBeNull()
+      expect(expectedSource(roster, key, 3)).toBe('entered_no_roster')
+    }
+    expect(NO_BED_ROSTER_TEXT).toBe('No rooms and beds in Haven for this facility')
+  })
+  it('asks for a reason when a typed bed figure differs from the rooms', () => {
+    expect(expectedSource(beds, 'sp_female_beds_open', 2)).toBe('roster_confirmed')
+    expect(expectedSource(beds, 'sp_female_beds_open', 3)).toBe('overridden')
+  })
+  it('dates the bed suggestion by the last bed change', () => {
+    expect(rosterAsOfLine(beds, 'private_beds_open')).toBe('Beds last changed Sep 22, 9:05 a.m.')
+    expect(rosterAsOfLine({ ...beds, beds_as_of: null }, 'private_beds_open')).toBe('Beds have no recorded change')
+    expect(rosterAsOfLine(beds, 'current_total_census')).toBe('Roster last changed Sep 16, 2:14 p.m.')
   })
 })

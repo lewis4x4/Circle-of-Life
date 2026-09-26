@@ -54,11 +54,14 @@ afterEach(() => vi.useRealTimers());
 
 describe("Executive Stand Up reads Monday's submitted figures (COL-753)", () => {
   it("takes every Monday figure from the latest submission, never from a second computation", async () => {
-    // Invoices and residents that would compute different figures are ignored for Monday's figures.
+    // Live invoices, residents and beds can differ from the administrator's
+    // verified Monday figures; COL-585 classification does not recompute this report.
     const tables: Tables = {
       facilities: [facility(1, "Homewood")],
       invoices: [{ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "draft", balance_due: 999, due_date: "2026-05-15", total: 999, period_start: null }],
       residents: [{ facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "active", monthly_total_rate: 5000 }],
+      rooms: [{ id: "private-room", facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, room_type: "private" }],
+      beds: [{ id: "open-bed", room_id: "private-room", facility_id: facilityId(1), organization_id: organizationId, deleted_at: null, status: "available", current_resident_id: null }],
     };
     const mock = client(tables, undefined, { data: [submission(1)], error: null });
     const result = await fetchExecutiveStandupLive(mock.supabase, organizationId, null);
@@ -71,6 +74,11 @@ describe("Executive Stand Up reads Monday's submitted figures (COL-753)", () => 
     // Overtime is stored as the legacy hours.minutes notation: 17 h 15 min.
     expect(homewood.metrics.overtime_hours.valueNumeric).toBe(17.25);
     expect(homewood.metrics.total_beds_open.valueNumeric).toBe(6);
+    expect(homewood.metrics.sp_female_beds_open.valueNumeric).toBe(1);
+    expect(homewood.metrics.sp_male_beds_open.valueNumeric).toBe(0);
+    expect(homewood.metrics.sp_flexible_beds_open.valueNumeric).toBe(2);
+    expect(homewood.metrics.private_beds_open.valueNumeric).toBe(3);
+    expect(homewood.metrics.private_beds_open.sourceRefJson).toEqual([{ table: "stand_up_revisions", revision_id: "rev-1", week_start: "2026-09-21", field: "private_beds_open" }]);
     expect(homewood.metrics.current_ar_cents.sourceRefJson).toEqual([{ table: "stand_up_revisions", revision_id: "rev-1", week_start: "2026-09-21", field: "monthly_rent_roll_cents" }]);
     expect(homewood.metrics.current_ar_cents.overrideNote).toBe("As submitted for the Monday Stand Up of 2026-09-21.");
     expect(homewood.metrics.current_ar_cents.freshnessAt).toBe("2026-09-21T12:40:00Z");

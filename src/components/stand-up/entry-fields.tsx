@@ -5,7 +5,7 @@ import { DERIVED_NOTES, SECTION_NOTES, fieldHelp, uncheckedNote, sectionUnchecke
 import { legacyOvertimeToMinutes, overtimeMinuteParts, overtimePartsToLegacy } from '@/lib/stand-up/duration';
 import { PREFILL_OVERRIDE_REASONS, expectedPrefillSource, isPrefillKey, isPrefillOverrideReason, prefillIssueMessage, prefillLine, prefillValue, recordedPrefillLine, type MondayPrefill, type PrefillConfirmations, type PrefillKey, type PrefillOverrideReason } from '@/lib/stand-up/prefill';
 import type { CensusReasonOption } from '@/lib/operating-rules/operating-rules';
-import { NO_ROSTER_TEXT, expectedSource, formatRosterCensusBreakdown, formatRosterHospital, hasRoster, isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterAsOfLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterConfirmations, type RosterFieldKey } from '@/lib/stand-up/roster-census';
+import { NO_BED_ROSTER_TEXT, NO_ROSTER_TEXT, expectedSource, formatBedSummary, formatRosterBeds, formatRosterCensusBreakdown, formatRosterHospital, hasBedRoster, hasRosterFor, isBedRosterKey, isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterAsOfLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterConfirmations, type RosterFieldKey } from '@/lib/stand-up/roster-census';
 
 /**
  * The roster suggestion for the open reporting period. `data` is undefined
@@ -34,7 +34,7 @@ export const prefillReasonId = (key: PrefillKey) => `${key}-prefill-reason`;
 export const prefillIssueId = (key: PrefillKey) => `${key}-prefill-issue`;
 export const rosterReasonId = (key: RosterFieldKey) => `${key}-roster-reason`;
 export const rosterIssueId = (key: RosterFieldKey) => `${key}-roster-issue`;
-export function rosterFieldLabel(key: RosterFieldKey): string { return key === 'current_total_census' ? 'Current census' : 'Residents at hospital or rehab'; }
+export function rosterFieldLabel(key: RosterFieldKey): string { return METRICS.find(metric => metric.key === key)!.label; }
 /** The message that blocks a save while a differing figure has no reason. */
 export function rosterIssueMessage(key: RosterFieldKey, suggested: number): string { return `${rosterFieldLabel(key)} differs from the roster (${suggested.toLocaleString('en-US')}). Choose why it is different, or use the roster figure.`; }
 
@@ -112,17 +112,17 @@ export function EntryQuestions({ fields, onChange, disabled, readOnly = false, w
   const typed = (key: RosterFieldKey): number | null => { const raw = fields[key].trim(); if (raw === '') return null; const value = Number(raw); return Number.isFinite(value) ? value : null; };
   // The suggestion never writes the figure; the administrator presses Use roster or types.
   const rosterLines = (key: RosterFieldKey) => {
-    if (!roster) { const line = recordedConfirmationLine(recorded?.[key]); return line ? <span className="block text-xs text-muted-foreground">{line}</span> : null; }
+    if (!roster) { const line = recordedConfirmationLine(recorded?.[key]) ?? recordedPrefillLine(key, recordedPrefill?.[key]); return line ? <span className="block text-xs text-muted-foreground">{line}</span> : null; }
     if (roster.error) return <span className="block text-xs text-muted-foreground">Roster unavailable: {roster.error}</span>;
     if (!roster.data) return roster.loading ? <span role="status" className="block text-xs text-muted-foreground">Checking the Haven roster…</span> : null;
-    if (!hasRoster(roster.data)) return <span className="block text-xs text-muted-foreground">{NO_ROSTER_TEXT}</span>;
+    if (!hasRosterFor(roster.data, key)) return <span className="block text-xs text-muted-foreground">{isBedRosterKey(key) ? NO_BED_ROSTER_TEXT : NO_ROSTER_TEXT}</span>;
     const suggested = rosterSuggestion(roster.data, key)!;
     const differs = expectedSource(roster.data, key, typed(key)) === 'overridden';
     const reason = roster.reasons[key];
     return <>
-      <span className="flex flex-wrap items-baseline gap-x-3 text-xs"><span>{key === 'current_total_census' ? formatRosterCensusBreakdown(roster.data) : formatRosterHospital(roster.data)}</span>
+      <span className="flex flex-wrap items-baseline gap-x-3 text-xs"><span>{isBedRosterKey(key) ? formatRosterBeds(roster.data, key) : key === 'current_total_census' ? formatRosterCensusBreakdown(roster.data) : formatRosterHospital(roster.data)}</span>
         {!readOnly && <button type="button" disabled={disabled} onClick={() => roster.onUseRoster(key)} className="rounded font-medium underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">Use roster<span className="sr-only"> for {rosterFieldLabel(key)}</span></button>}</span>
-      <span className="block text-xs text-muted-foreground">{rosterAsOfLine(roster.data)}</span>
+      <span className="block text-xs text-muted-foreground">{rosterAsOfLine(roster.data, key)}</span>
       {differs && <span className="block space-y-1 pt-1">
         <label htmlFor={rosterReasonId(key)} className="block text-xs font-medium">Why is this different?</label>
         <select id={rosterReasonId(key)} disabled={disabled || readOnly} value={reason ?? ''} aria-invalid={reason ? undefined : true} aria-describedby={reason ? undefined : rosterIssueId(key)} onChange={event => roster.onReason(key, isOverrideReason(event.target.value, roster.reasonOptions) ? event.target.value : null)} className="block min-h-10 w-full max-w-sm rounded border border-border bg-background px-3 text-sm">
@@ -157,7 +157,7 @@ export function EntryQuestions({ fields, onChange, disabled, readOnly = false, w
       </span>}
     </>;
   };
-  const rosterInvalid = (key: RosterFieldKey) => !!roster?.data && hasRoster(roster.data) && expectedSource(roster.data, key, typed(key)) === 'overridden' && !roster.reasons[key];
+  const rosterInvalid = (key: RosterFieldKey) => !!roster?.data && hasRosterFor(roster.data, key) && expectedSource(roster.data, key, typed(key)) === 'overridden' && !roster.reasons[key];
   return <div className="space-y-6">{SECTIONS.map((section, index) => {
     const metrics = sectionMetrics(section.key);
     return <fieldset id={sectionDomId(section.key)} tabIndex={-1} disabled={disabled} key={section.key} className={`space-y-3 border-t border-border pt-5 outline-none ${SECTION_SCROLL}`}>
@@ -165,6 +165,7 @@ export function EntryQuestions({ fields, onChange, disabled, readOnly = false, w
       <p className="clear-both text-sm font-medium">{sectionPeriodLabel(section, week, asOf, open)}</p>
       {section.period === 'expected' && <p className="text-xs text-muted-foreground">Enter what you expect, not what has already happened.</p>}
       {SECTION_NOTES[section.key] && <p className="text-xs text-muted-foreground">{SECTION_NOTES[section.key]}</p>}
+      {section.key === 'beds' && roster?.data && hasBedRoster(roster.data) && <p className="text-xs text-muted-foreground">{formatBedSummary(roster.data)}</p>}
       <div className={`grid gap-x-5 gap-y-4 pt-1 ${metrics.length > 2 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
         {metrics.map(metric => metric.key === 'overtime_reported' ? <div key={metric.key} className="space-y-1.5">
           <p id="overtime-label" className="text-sm font-medium">Overtime last week</p><div role="group" aria-labelledby="overtime-label" className="grid max-w-sm grid-cols-2 gap-3">

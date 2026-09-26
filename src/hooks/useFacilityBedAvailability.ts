@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHavenAuth } from "@/contexts/haven-auth-context";
 import { formatBedAvailabilityRoomNumber } from "@/lib/facilities/bed-availability-display-copy";
 import { createClient } from "@/lib/supabase/client";
+import { classifyBeds, type ClassifiedBed } from "@/lib/stand-up/bed-classification";
 
 export type FacilityBedAvailabilityRow = {
   id: string;
@@ -13,7 +14,12 @@ export type FacilityBedAvailabilityRow = {
   bed_label: string;
   status: string;
   current_resident_id: string | null;
-  standup_availability_class: "private" | "sp_female" | "sp_male" | "sp_flexible" | null;
+  /**
+   * COL-374: the bed's Stand Up place, derived from who is in the room now by
+   * the same rule the Stand Up form is checked against. Null for a bed whose
+   * room Haven does not hold.
+   */
+  classification: ClassifiedBed | null;
   is_temporarily_blocked: boolean;
   blocked_reason: string | null;
 };
@@ -40,7 +46,7 @@ export function useFacilityBedAvailability(
     try {
       const bedsRes = (await supabase
         .from("beds" as never)
-        .select("id, room_id, bed_label, status, current_resident_id, standup_availability_class, is_temporarily_blocked, blocked_reason")
+        .select("id, room_id, bed_label, status, current_resident_id, is_temporarily_blocked, blocked_reason")
         .eq("facility_id", facilityId)
         .is("deleted_at", null)
         .order("bed_label", { ascending: true })) as unknown as {
@@ -50,7 +56,6 @@ export function useFacilityBedAvailability(
           bed_label: string;
           status: string;
           current_resident_id: string | null;
-          standup_availability_class: FacilityBedAvailabilityRow["standup_availability_class"];
           is_temporarily_blocked: boolean | null;
           blocked_reason: string | null;
         }> | null;
@@ -62,14 +67,30 @@ export function useFacilityBedAvailability(
       const roomsRes = roomIds.length
         ? ((await supabase
             .from("rooms" as never)
-            .select("id, room_number")
+            .select("id, room_number, room_type")
             .in("id", roomIds)
             .is("deleted_at", null)) as unknown as {
-            data: Array<{ id: string; room_number: string }> | null;
+            data: Array<{ id: string; room_number: string; room_type: string | null }> | null;
             error: QueryError | null;
           })
         : { data: [], error: null };
       if (roomsRes.error) throw roomsRes.error;
+
+      // Who holds or is reserved for each bed decides its category; no names are read.
+      const residentsRes = (await supabase
+        .from("residents" as never)
+        .select("id, bed_id, status, gender")
+        .eq("facility_id", facilityId)
+        .is("deleted_at", null)) as unknown as {
+        data: Array<{ id: string; bed_id: string | null; status: string | null; gender: string | null }> | null;
+        error: QueryError | null;
+      };
+      if (residentsRes.error) throw residentsRes.error;
+      const classified = classifyBeds(
+        (bedsRes.data ?? []).map((row) => ({ id: row.id, room_id: row.room_id, status: row.status, current_resident_id: row.current_resident_id, is_temporarily_blocked: row.is_temporarily_blocked })),
+        roomsRes.data ?? [],
+        residentsRes.data ?? [],
+      );
 
       const roomById = new Map((roomsRes.data ?? []).map((row) => [row.id, row.room_number] as const));
       setRows(
@@ -81,7 +102,7 @@ export function useFacilityBedAvailability(
             bed_label: row.bed_label,
             status: row.status,
             current_resident_id: row.current_resident_id,
-            standup_availability_class: row.standup_availability_class,
+            classification: classified.get(row.id) ?? null,
             is_temporarily_blocked: Boolean(row.is_temporarily_blocked),
             blocked_reason: row.blocked_reason,
           }))
@@ -118,7 +139,7 @@ export function useFacilityBedAvailability(
   const updateBed = useCallback(
     async (
       bedId: string,
-      patch: Partial<Pick<FacilityBedAvailabilityRow, "standup_availability_class" | "is_temporarily_blocked" | "blocked_reason">>,
+      patch: Partial<Pick<FacilityBedAvailabilityRow, "is_temporarily_blocked" | "blocked_reason">>,
     ) => {
       setIsSaving(true);
       setError(null);
@@ -126,7 +147,6 @@ export function useFacilityBedAvailability(
         const res = (await supabase
           .from("beds" as never)
           .update({
-            standup_availability_class: patch.standup_availability_class,
             is_temporarily_blocked: patch.is_temporarily_blocked,
             blocked_reason: patch.blocked_reason,
           } as never)

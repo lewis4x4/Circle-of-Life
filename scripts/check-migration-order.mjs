@@ -21,8 +21,6 @@ export const ALLOWED_GAPS = {
   546: "claimed by open PR #913 (546_document_intake_schedules.sql); already applied to production and staging",
   547: "claimed by open PR #913 (547_document_intake_facility_enablement.sql); already applied to production and staging",
   548: "claimed by open PR #913 (548_document_intake_facility_mailboxes.sql); already applied to production and staging",
-  // Delete when #924 merges.
-  555: "claimed by open PR #924; 556 (COL-864) was applied to production and staging first",
   // Delete when #926 merges.
   557: "claimed by open PR #926 (557_stand_up_continuous_entry.sql); 558 (Medicaid review fixes) was applied ahead of it",
 };

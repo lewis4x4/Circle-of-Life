@@ -15,7 +15,7 @@ describe("the default pack", () => {
     const request = defaultSurveyPackRequest(new Date("2026-09-16T16:00:00Z"));
     expect(request.from).toBe("2026-03-16");
     expect(request.to).toBe("2026-09-16");
-    expect(request.sections).toEqual(["register", "census", "visitors"]);
+    expect(request.sections).toEqual(["room_census", "register", "census", "visitors"]);
     expect(request.includeHolds).toBe(true);
   });
 });

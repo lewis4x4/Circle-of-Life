@@ -19,26 +19,38 @@ describe('Stand Up field definitions', () => {
   // Census is the beds: matches haven.resident_status_holds_bed in migration 388.
   expect(FIELD_DEFINITIONS.current_total_census).toBe('Residents holding a bed Monday morning, including anyone away whose bed is held.')
   expect(FIELD_DEFINITIONS.hospital_and_rehab_total).toContain('Their bed is held, so they stay on census.')
-  // A bed opens on discharge; a reserved or out-of-service bed is not open.
+  // A bed opens on discharge. DEC-2026-09-21-03 (Brian, 2026-09-21) supersedes the
+  // 2026-09-15 wording: a reserved bed is not open, an out-of-service bed is.
   expect(FIELD_DEFINITIONS.private_beds_open).toContain('opens when its resident is discharged')
-  expect(FIELD_DEFINITIONS.private_beds_open).toContain('reserved, maintenance and offline beds are not open')
-  // Semi-private is decided by the roommate's sex; COL does not place mixed-sex pairs,
-  // so there is no mixed category, and suitability stays a placement judgment.
-  expect(FIELD_DEFINITIONS.sp_female_beds_open).toBe('Open semi-private beds in a room whose other resident is a woman.')
-  expect(FIELD_DEFINITIONS.sp_male_beds_open).toBe('Open semi-private beds in a room whose other resident is a man.')
+  expect(FIELD_DEFINITIONS.private_beds_open).toContain('reserved for someone moving in is not open')
+  expect(FIELD_DEFINITIONS.private_beds_open).toContain('out of service is still open')
+  // Semi-private is decided by the roommate's sex now (DEC-2026-09-22-01); COL does not
+  // place mixed-sex pairs, so there is no mixed category, and suitability stays a placement judgment.
+  expect(FIELD_DEFINITIONS.sp_female_beds_open).toBe('Open semi-private beds in a room where a woman holds, or is reserved for, the other bed.')
+  expect(FIELD_DEFINITIONS.sp_male_beds_open).toBe('Open semi-private beds in a room where a man holds, or is reserved for, the other bed.')
   expect(FIELD_DEFINITIONS.sp_flexible_beds_open).toContain('a room with no resident')
+  expect(FIELD_DEFINITIONS.sp_flexible_beds_open).toContain('Who was in the room last does not make it a female or male room.')
   for (const key of ['sp_female_beds_open', 'sp_male_beds_open', 'sp_flexible_beds_open', 'private_beds_open'] as const) {
    expect(FIELD_DEFINITIONS[key]).not.toMatch(/mixed|couple|dementia|smok/i)
   }
   // A callout is a missed scheduled shift, and leaving early is not one.
   expect(FIELD_DEFINITIONS.callouts_last_week).toContain('Scheduled shifts missed to a callout')
   expect(FIELD_DEFINITIONS.callouts_last_week).toContain('leaving early is not a missed shift')
+  // Michelle Norris, 2026-09-22: three callouts by one person are three shifts.
+  expect(FIELD_DEFINITIONS.callouts_last_week).toContain('One person calling out three times is three.')
   expect(FIELD_DEFINITIONS.terminations_last_week).toContain('effective separation date')
   expect(FIELD_DEFINITIONS.expected_discharges).toContain('notice has been given')
   expect(FIELD_DEFINITIONS.current_open_positions).toContain('agency or PRN')
   // Marketing counts relationship activity, not clinical visit volume.
   expect(FIELD_DEFINITIONS.provider_activities_expected).toContain('Not clinical visits to residents.')
   expect(FIELD_DEFINITIONS.outreach_engagements).toContain('Emails and calls are not counted.')
+  // Michelle Norris, 2026-09-22: each activity or event counts once, with the examples she gave.
+  expect(FIELD_DEFINITIONS.provider_activities_expected).toContain('bingo, games, crafts')
+  expect(FIELD_DEFINITIONS.provider_activities_expected).toContain('Each activity counts once.')
+  expect(FIELD_DEFINITIONS.outreach_engagements).toContain('job fairs, fall festivals')
+  expect(FIELD_DEFINITIONS.outreach_engagements).toContain('Each event counts once.')
+  expect(FIELD_DEFINITIONS.monthly_rent_roll_cents).toContain('Sunday or Monday morning')
+  expect(SECTION_NOTES.beds).toContain('who is in each room now')
  })
  it('leaves only the two figures Haven has no record to check', () => {
   // Open positions waits on the budgeted establishment (COL-416); overtime waits

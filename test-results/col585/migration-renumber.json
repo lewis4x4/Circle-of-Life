@@ -1,0 +1,7 @@
+{
+  "from": 553,
+  "to": 555,
+  "reason": "Concurrent kiosk PR921 claims553 and PR922 claims554",
+  "identical_sql_except_number_in_comment": true,
+  "sha256": "1c97bd49a2cb68e9b3e71f76349bc2fa07ffebf55e6f743d829e3069a105ffde"
+}

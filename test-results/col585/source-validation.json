@@ -1,0 +1,52 @@
+{
+  "mission_alignment": "pass",
+  "typecheck": "pass",
+  "focused_behavior_suite": {
+    "files": 10,
+    "tests": 157,
+    "result": "pass"
+  },
+  "renumber_and_classification_suite": {
+    "files": 2,
+    "tests": 23,
+    "result": "pass"
+  },
+  "migration_order_tests": {
+    "tests": 5,
+    "result": "pass"
+  },
+  "historical_print_tests": {
+    "tests": 4,
+    "result": "pass"
+  },
+  "source_review": "No remaining actionable defects after stale-pointer and mixed-reservation fixes",
+  "browser_proof": "Synthetic data only; actual StandUpPrintSheet renders 16 rows at1440px, no horizontal overflow",
+  "authenticated_browser": "Existing signed-in Chrome session verified; production flow will be checked after deploy",
+  "backup_path": "/Users/brianlewis/Circle of Life/Haven Release Backups/COL-585-2026-09-25/functions-before.json",
+  "native_sql_replay": {
+    "result": "pass",
+    "migrations": 556,
+    "probes": 164,
+    "acceptance_suites": 7,
+    "level_parity": true
+  },
+  "segment_gates": "test-results/agent-gates/2026-09-26T02-46-15-501Z-COL-585.json",
+  "duplicate_replay_skipped_in_second_segment_run": "Separate corrected native replay passed; no duplicate full replay in the passing segment run",
+  "historical_form_regression": "pass",
+  "rebased_on": "c45e5d87efe801313a80cceffd7947396c91b744",
+  "ci_guard_corrections": {
+    "files": 5,
+    "tests": 94,
+    "result": "pass",
+    "changes": "Shared First Last formatter; HorizontalScroll with print overrides"
+  },
+  "visual_verdict": {
+    "score": 100,
+    "verdict": "pass",
+    "category_match": true,
+    "differences": [],
+    "suggestions": [],
+    "reasoning": "Desktop binder layout remains visually unchanged after adding HorizontalScroll; all16 rows and five section tables remain readable without page overflow."
+  },
+  "native_replay_scope": "Original integrated standalone555 + main0e159:556 files; current-main558 replay is required in refreshed PR CI"
+}

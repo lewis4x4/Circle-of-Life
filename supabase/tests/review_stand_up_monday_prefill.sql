@@ -24,7 +24,7 @@ INSERT INTO public.user_facility_access(user_id,facility_id,organization_id) SEL
 INSERT INTO public.residents(id,facility_id,organization_id,first_name,last_name,gender,status,discharge_target_date)
  SELECT resident,fac,org,'Test Resident','A','prefer_not_to_say'::gender,'active'::resident_status,week+2 FROM pf
  UNION ALL SELECT gen_random_uuid(),fac,org,'Test Resident','B','prefer_not_to_say','hospital_hold',NULL FROM pf;
-INSERT INTO public.rooms(id,facility_id,organization_id,room_number) SELECT room,fac,org,'101' FROM pf;
+INSERT INTO public.rooms(id,facility_id,organization_id,room_number,room_type) SELECT room,fac,org,'101','semi_private' FROM pf;
 INSERT INTO public.beds(room_id,facility_id,organization_id,bed_label,status,standup_availability_class)
  SELECT room,fac,org,l,'available',c::standup_bed_availability_class FROM pf, (VALUES ('A','private'),('B','sp_female'),('C','sp_female')) v(l,c);
 INSERT INTO public.invoices(resident_id,facility_id,organization_id,entity_id,invoice_number,invoice_date,due_date,period_start,period_end,status,subtotal,total,balance_due)
@@ -74,7 +74,7 @@ DO $$ DECLARE p jsonb; e jsonb; BEGIN
  -- Draft 10,000 + sent 5,000 + partial 1,500; paid and void are not owed.
  IF (p->'fields'->'monthly_rent_roll_cents'->>'value')::bigint<>1650000 OR p->'fields'->'monthly_rent_roll_cents'->>'source' IS NULL THEN RAISE EXCEPTION 'Current AR wrong: %',p->'fields'->'monthly_rent_roll_cents'; END IF;
  IF (p->'fields'->'current_total_census'->>'value')::int<>2 OR (p->'fields'->'hospital_and_rehab_total'->>'value')::int<>1 THEN RAISE EXCEPTION 'Roster figures wrong: %',p; END IF;
- IF (p->'fields'->'private_beds_open'->>'value')::int<>1 OR (p->'fields'->'sp_female_beds_open'->>'value')::int<>2 OR (p->'fields'->'sp_male_beds_open'->>'value')::int<>0 THEN RAISE EXCEPTION 'Beds wrong: %',p; END IF;
+ IF (p->'fields'->'private_beds_open'->>'value')::int<>0 OR (p->'fields'->'sp_female_beds_open'->>'value')::int<>0 OR (p->'fields'->'sp_flexible_beds_open'->>'value')::int<>3 OR (p->'fields'->'sp_male_beds_open'->>'value')::int<>0 THEN RAISE EXCEPTION 'Beds wrong: %',p; END IF;
  IF (p->'fields'->'admissions_expected'->>'value')::int<>1 OR (p->'fields'->'expected_discharges'->>'value')::int<>1 THEN RAISE EXCEPTION 'Forecasts wrong: %',p; END IF;
  IF (p->'fields'->'callouts_last_week'->>'value')::int<>2 OR (p->'fields'->'terminations_last_week'->>'value')::int<>1 THEN RAISE EXCEPTION 'Last week wrong: %',p; END IF;
  IF p->'fields'->'current_open_positions'->'value'<>'null'::jsonb OR p->'fields'->'overtime_reported'->'value'<>'null'::jsonb
@@ -87,11 +87,11 @@ DO $$ DECLARE p jsonb; e jsonb; BEGIN
   RAISE EXCEPTION 'A facility with nothing in Haven must get blanks with reasons, not zeros: %',e; END IF;
 END $$;
 
--- An open bed with no Stand Up class blanks the four bed figures rather than miscounting them.
+-- An empty room stays flexible regardless of stale stored Stand Up class.
 INSERT INTO public.beds(room_id,facility_id,organization_id,bed_label,status) SELECT room,fac,org,'D','available' FROM pf;
 DO $$ BEGIN
- IF haven.stand_up_monday_prefill((SELECT org FROM pf),(SELECT fac FROM pf),(SELECT week FROM pf))->'fields'->'private_beds_open'->'value'<>'null'::jsonb THEN
-  RAISE EXCEPTION 'An unclassified open bed must blank the bed figures'; END IF;
+ IF haven.stand_up_monday_prefill((SELECT org FROM pf),(SELECT fac FROM pf),(SELECT week FROM pf))->'fields'->'sp_flexible_beds_open'->'value'<>'4'::jsonb THEN
+  RAISE EXCEPTION 'An empty room must derive four flexible beds'; END IF;
 END $$;
 DELETE FROM public.beds WHERE bed_label='D' AND facility_id=(SELECT fac FROM pf);
 
@@ -107,7 +107,7 @@ INSERT INTO pf_results SELECT 'confirmed',public.stand_up_command('save',value) 
 DO $$ DECLARE r jsonb; BEGIN
  SELECT value INTO r FROM pf_results WHERE name='confirmed';
  IF r->'prefill_confirmations'->'monthly_rent_roll_cents'->>'source'<>'haven_confirmed' OR (r->'prefill_confirmations'->'monthly_rent_roll_cents'->>'haven_value')::bigint<>1650000
-  OR r->'prefill_confirmations'->'callouts_last_week'->>'source'<>'haven_confirmed' OR r->'prefill_confirmations'->'private_beds_open'->>'source'<>'haven_confirmed'
+  OR r->'prefill_confirmations'->'callouts_last_week'->>'source'<>'haven_confirmed' OR r->'roster_confirmations'->'private_beds_open'->>'source'<>'roster_confirmed'
   OR r->'prefill_confirmations' ? 'current_total_census' OR r->'prefill_confirmations' ? 'current_open_positions'
   OR r->'roster_confirmations'->'current_total_census'->>'source'<>'roster_confirmed' THEN RAISE EXCEPTION 'Unchanged save not recorded as Haven-confirmed: %',r; END IF;
 END $$;
@@ -152,8 +152,8 @@ RESET ROLE;
 -- Append only, and a historical correction records nothing.
 SELECT pg_temp.pf_fail('UPDATE public.stand_up_prefill_confirmations SET confirmed_value=99 WHERE facility_id='''||(SELECT fac FROM pf)||'''','immutable');
 DO $$ BEGIN
- IF (SELECT count(*) FROM public.stand_up_prefill_confirmations c JOIN public.stand_up_revisions v ON v.id=c.revision_id WHERE c.facility_id=(SELECT fac FROM pf) AND v.version=4)<>14 THEN
-  RAISE EXCEPTION 'Revision 4 must record the 14 non-roster figures it carried'; END IF;
+ IF (SELECT count(*) FROM public.stand_up_prefill_confirmations c JOIN public.stand_up_revisions v ON v.id=c.revision_id WHERE c.facility_id=(SELECT fac FROM pf) AND v.version=4)<>10 THEN
+  RAISE EXCEPTION 'Revision 4 must record the 10 non-roster figures it carried'; END IF;
 END $$;
 
 -- Monday's publishers and exports are unchanged: none reads the new record.

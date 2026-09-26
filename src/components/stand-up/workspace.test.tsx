@@ -407,7 +407,7 @@ describe('Stand Up report meaning', () => {
     // A settled rule reads as an instruction; only what Haven cannot check is qualified.
     expect(within(staffing).getByText(/^Budgeted positions still unfilled Monday morning\./)).toHaveTextContent('Haven does not record how many positions each facility is budgeted for.');
     // A rule shared by the whole section is stated once, above the fields.
-    expect(screen.getByText('Total open beds adds these four figures, so count each open bed in one category only.')).toBeInTheDocument();
+    expect(screen.getByText('Total open beds adds these four figures, so count each open bed in one category only. Haven suggests each figure from who is in each room now.')).toBeInTheDocument();
     // Development notes and unfinished questions never reach ordinary field help.
     expect(screen.queryByText(/carried-over/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/pending|not settled/i)).not.toBeInTheDocument();
@@ -651,7 +651,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     save(); await screen.findByText(/Saved Sep 14/);
     const saved = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1] as { values: StandUpReport['values']; roster: Record<string, unknown> };
     expect(saved.values.current_total_census).toBe(34);
-    expect(saved.roster).toEqual({ current_total_census: {}, hospital_and_rehab_total: {} });
+    expect(saved.roster).toEqual({ current_total_census: {}, hospital_and_rehab_total: {}, sp_female_beds_open: {}, sp_male_beds_open: {}, sp_flexible_beds_open: {}, private_beds_open: {} });
     expect(mocks.request.mock.calls.filter(call => call[0] === 'roster').length).toBeGreaterThanOrEqual(2);
   });
   it('blocks a differing figure until a reason is chosen, then saves it as overridden', async () => {
@@ -673,7 +673,28 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     expect(select).not.toHaveAttribute('aria-invalid');
     save(); await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     const saved = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1] as { roster: Record<string, unknown> };
-    expect(saved.roster).toEqual({ current_total_census: { override_reason: 'roster_not_current' }, hospital_and_rehab_total: {} });
+    expect(saved.roster).toEqual({ current_total_census: { override_reason: 'roster_not_current' }, hospital_and_rehab_total: {}, sp_female_beds_open: {}, sp_male_beds_open: {}, sp_flexible_beds_open: {}, private_beds_open: {} });
+  });
+  it('suggests the four bed figures from Haven rooms, says what it could not place, and asks a reason for a differing bed figure (COL-374)', async () => {
+    const beds = { ...roster, sp_female_open: 2, sp_male_open: 1, sp_flexible_open: 6, private_open: 2, unclassified_open: 2, out_of_service_open: 2, reserved_count: 2, bed_count_in_haven: 19, beds_as_of: '2026-09-14T11:30:00Z' };
+    withRoster({ a: beds, b: noRoster }, payload => report({ values: payload.values as StandUpReport['values'] }));
+    await start(); await choose();
+    expect(await screen.findByText("Haven's rooms: 6 flexible open")).toBeInTheDocument();
+    expect(screen.getByText("Haven's rooms: 2 female open")).toBeInTheDocument();
+    expect(screen.getByText("Haven's rooms: 1 male open")).toBeInTheDocument();
+    expect(screen.getByText("Haven's rooms: 2 private open")).toBeInTheDocument();
+    expect(screen.getByText("Haven's rooms show 13 open beds; 2 Haven cannot place because a roommate's sex is not recorded — count them yourself; 2 of the open beds are out of service; 2 reserved, not open.")).toBeInTheDocument();
+    expect(screen.getAllByText('Beds last changed Sep 14, 7:30 a.m.')).toHaveLength(4);
+    fireEvent.click(screen.getByRole('button', { name: 'Use roster for Semi-private flexible beds open' }));
+    expect(screen.getByLabelText('Semi-private flexible beds open')).toHaveValue(6);
+    fireEvent.change(screen.getByLabelText('Semi-private female beds open'), { target: { value: '3' } });
+    expect(screen.getByText('Semi-private female beds open differs from the roster (2). Choose why it is different, or use the roster figure.')).toBeInTheDocument();
+  });
+  it('shows the no-beds line when a facility has residents but no rooms in Haven', async () => {
+    withRoster({ a: roster, b: noRoster });
+    await start(); await choose();
+    expect((await screen.findAllByText('No rooms and beds in Haven for this facility')).length).toBe(4);
+    expect(screen.queryByRole('button', { name: 'Use roster for Private beds open' })).not.toBeInTheDocument();
   });
   it('shows the no-roster line for a facility without residents and still lets the figure be typed and saved', async () => {
     withRoster(undefined, payload => report({ facility_id: 'b', values: payload.values as StandUpReport['values'], roster_confirmations: { current_total_census: confirmed({ source: 'entered_no_roster', suggested: null, confirmed: 12, roster_as_of: null }) } }));
@@ -683,7 +704,7 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     changeCensus('12'); expect(screen.queryByLabelText('Why is this different?')).not.toBeInTheDocument();
     save(); await screen.findByText(/Saved Sep 14/);
     const saved = mocks.request.mock.calls.find(call => call[0] === 'save')?.[1] as { facility_id: string; roster: Record<string, unknown> };
-    expect(saved).toMatchObject({ facility_id: 'b', roster: { current_total_census: {}, hospital_and_rehab_total: {} } });
+    expect(saved).toMatchObject({ facility_id: 'b', roster: { current_total_census: {}, hospital_and_rehab_total: {}, sp_female_beds_open: {}, sp_male_beds_open: {}, sp_flexible_beds_open: {}, private_beds_open: {} } });
   });
   it('removes the editable surface when the roster read says the grant is gone', async () => {
     mocks.request.mockImplementation(async action => { if (action === 'workspace') return workspace; if (action === 'roster') throw new StandUpRequestError('Stand Up access denied', 403); throw new Error('Unexpected operation'); });
@@ -694,7 +715,8 @@ describe('Stand Up census and hospital from the roster (COL-351)', () => {
     withRoster({ a: roster }, payload => report({ values: payload.values as StandUpReport['values'] }));
     mocks.request.mockImplementation(async (action, payload) => { if (action === 'workspace') return workspace; if (action === 'roster') throw new Error('Roster read timed out'); if (action === 'save') return report({ values: (payload as { values: StandUpReport['values'] }).values }); throw new Error('Unexpected operation'); });
     await start(); await choose();
-    expect((await screen.findAllByText('Roster unavailable: Roster read timed out')).length).toBe(2);
+    // Census, hospital and the four bed figures all read the same roster command (COL-374).
+    expect((await screen.findAllByText('Roster unavailable: Roster read timed out')).length).toBe(6);
     changeCensus('9'); save(); await screen.findByText(/Saved Sep 14/);
     expect(mocks.request.mock.calls.find(call => call[0] === 'save')?.[1]).not.toHaveProperty('roster');
   });
@@ -885,11 +907,12 @@ describe('Monday arrives prefilled from Haven (COL-753)', () => {
 
   it('shows what a saved report recorded instead of recomputing Haven for a past meeting', async () => {
     const past = report({ week_start: '2026-09-07', status: 'ready', last_submitted_at: '2026-09-07T12:40:00Z', values: { ...emptyValues(), callouts_last_week: 6 },
-      prefill_confirmations: { callouts_last_week: { source: 'overridden', haven_value: 4, confirmed: 6, override_reason: 'haven_not_current', haven_source: 'Attendance records', computed_at: '2026-09-07T12:00:00Z', confirmed_at: '2026-09-07T12:40:00Z' } } });
+      prefill_confirmations: { callouts_last_week: { source: 'overridden', haven_value: 4, confirmed: 6, override_reason: 'haven_not_current', haven_source: 'Attendance records', computed_at: '2026-09-07T12:00:00Z', confirmed_at: '2026-09-07T12:40:00Z' }, sp_flexible_beds_open: { source: 'haven_confirmed', haven_value: 6, confirmed: 6, override_reason: null, haven_source: 'Historical bed category', computed_at: '2026-09-07T12:00:00Z', confirmed_at: '2026-09-07T12:40:00Z' } } });
     mocks.request.mockImplementation(async (action: string) => { if (action === 'workspace') return { ...workspace, reports: [past] }; if (action === 'roster') return roster; if (action === 'prefill') return prefill; throw new Error('Unexpected operation'); });
     await start(); await choose();
     fireEvent.change(screen.getByLabelText('Meeting date'), { target: { value: '2026-09-07' } });
     expect(await screen.findByText('Haven had 4 · override: Haven is not up to date')).toBeInTheDocument();
+    expect(screen.getByText('Confirmed from Haven (6)')).toBeInTheDocument();
   });
 });
 

@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   fetchCensusRecord,
   fetchRegister,
+  fetchRoomCensus,
   fetchVisitorLog,
   recordSurveyPackPrint,
   type CensusRecordRow,
@@ -40,6 +41,7 @@ import {
   visitorTypeLabel,
   type VisitorLogRow,
 } from "@/lib/registers/visitor-log";
+import { roomCensusSummary, type RoomCensus } from "@/lib/registers/room-census";
 
 import styles from "./survey-pack-print.module.css";
 
@@ -51,6 +53,7 @@ type Props = {
 };
 
 type Pack = {
+  roomCensus: RoomCensus | null;
   register: RegisterRow[];
   census: CensusRecordRow[];
   visitors: VisitorLogRow[];
@@ -102,7 +105,10 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
       try {
         const from = easternDayStartIso(request.from);
         const to = easternDayEndIso(request.to);
-        const [register, census, visitors] = await Promise.all([
+        const [roomCensus, register, census, visitors] = await Promise.all([
+          request.sections.includes("room_census")
+            ? fetchRoomCensus(supabase, { organizationId, facilityId })
+            : Promise.resolve(null),
           request.sections.includes("register")
             ? fetchRegister(supabase, {
                 organizationId,
@@ -130,7 +136,7 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
               })
             : Promise.resolve([] as VisitorLogRow[]),
         ]);
-        return { pack: { register, census, visitors }, error: null };
+        return { pack: { roomCensus, register, census, visitors }, error: null };
       } catch {
         return { pack: null, error: "The pack could not be built." };
       }
@@ -195,6 +201,44 @@ export function SurveyPackSheet({ organizationId, facilityId, facilityName, prin
       </div>
 
       <article className={styles.sheet}>
+        {request.sections.includes("room_census") && pack.roomCensus ? (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>{surveyPackSectionLabel("room_census")}</h2>
+            <p className={styles.sectionMeta}>
+              {facilityName} · as of {formatRegisterEventTime(printedAt.current.toISOString())} · {roomCensusSummary(pack.roomCensus)}
+            </p>
+            {pack.roomCensus.rows.length === 0 ? (
+              <p className={styles.empty}>No residents are holding a bed in Haven for this facility.</p>
+            ) : (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Room</th>
+                    <th scope="col">Bed</th>
+                    <th scope="col">Resident</th>
+                    <th scope="col">Where now</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pack.roomCensus.rows.map((row) => (
+                    <tr key={row.residentId}>
+                      <td>{row.room || "Not recorded"}</td>
+                      <td>{row.bed}</td>
+                      <td>{row.name}</td>
+                      <td>{row.place}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={4}>{stamp}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            )}
+          </section>
+        ) : null}
+
         {request.sections.includes("register") ? (
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{surveyPackSectionLabel("register")}</h2>

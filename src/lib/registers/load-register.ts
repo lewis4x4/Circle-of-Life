@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { RegisterEventType, RegisterRow } from "@/lib/registers/register";
+import { buildRoomCensus, type RoomCensus, type RoomCensusBed, type RoomCensusResident, type RoomCensusRoom } from "@/lib/registers/room-census";
 import type { Database } from "@/types/database";
 
 type Client = SupabaseClient<Database>;
@@ -258,4 +259,39 @@ export async function fetchOpenVisitors(
   } as never);
   if (error) throw new Error(error.message);
   return withKioskDetails(supabase, ((data ?? []) as unknown as VisitorDbRow[]).map(visitorRow));
+}
+
+/**
+ * Everyone holding a bed right now with their room and bed, for the current
+ * census by room (DEC-2026-09-22-10). Names are read here because the sheet is
+ * the name-to-room list; the audit row written before printing carries none.
+ */
+export async function fetchRoomCensus(
+  supabase: Client,
+  args: { organizationId: string; facilityId: string },
+): Promise<RoomCensus> {
+  const residents = (await supabase
+    .from("residents" as never)
+    .select("id, first_name, last_name, status, bed_hold_stay_type, bed_id")
+    .eq("organization_id", args.organizationId)
+    .eq("facility_id", args.facilityId)
+    .is("deleted_at", null)
+    .in("status", ["active", "hospital_hold", "loa"])
+    .limit(5000)) as unknown as { data: RoomCensusResident[] | null; error: { message: string } | null };
+  if (residents.error) throw new Error(residents.error.message);
+  const beds = (await supabase
+    .from("beds" as never)
+    .select("id, bed_label, room_id")
+    .eq("facility_id", args.facilityId)
+    .is("deleted_at", null)
+    .limit(5000)) as unknown as { data: RoomCensusBed[] | null; error: { message: string } | null };
+  if (beds.error) throw new Error(beds.error.message);
+  const rooms = (await supabase
+    .from("rooms" as never)
+    .select("id, room_number")
+    .eq("facility_id", args.facilityId)
+    .is("deleted_at", null)
+    .limit(5000)) as unknown as { data: RoomCensusRoom[] | null; error: { message: string } | null };
+  if (rooms.error) throw new Error(rooms.error.message);
+  return buildRoomCensus(residents.data ?? [], beds.data ?? [], rooms.data ?? []);
 }

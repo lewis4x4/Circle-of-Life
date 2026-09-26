@@ -21,7 +21,9 @@ import { reportFigureLine, thursdayPrefill, thursdayPrintHref, type FacilityRepo
 import { ThursdayReportSections } from './ThursdayReportSections';
 import { CensusBridge } from './CensusBridge';
 import { useCensusReasonOptions } from './useCensusReasonOptions';
-import { isOverrideReason, isRosterFieldKey, recordedConfirmationLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey } from '@/lib/stand-up/roster-census';
+import { CENSUS_ROSTER_KEYS, isOverrideReason, recordedConfirmationLine, rosterSuggestion, type OverrideReason, type RosterCensus, type RosterFieldKey } from '@/lib/stand-up/roster-census';
+
+const isThursdayRosterKey = (key: string): key is Extract<RosterFieldKey, ThursdayKey> => (CENSUS_ROSTER_KEYS as readonly string[]).includes(key);
 
 type Fields = Record<ThursdayKey, string>;
 const fieldsFor = (values: ThursdayValues = emptyThursdayValues()): Fields =>
@@ -239,7 +241,7 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
       .catch(() => { if (live) setRoster(null); });
     return () => { live = false; };
   }, [current, editable, facility.id, rosterTick]);
-  const differsFromRoster = (key: RosterFieldKey): number | null => {
+  const differsFromRoster = (key: Extract<RosterFieldKey, ThursdayKey>): number | null => {
     const suggested = rosterSuggestion(roster, key);
     const value = typed ? typed[key] : null;
     return suggested !== null && value !== null && value !== suggested ? suggested : null;
@@ -266,12 +268,12 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
     if (!typed) { setProblem(parseError); return; }
     if (historical && !reason.trim()) { setProblem('A past meeting needs a written reason for the change.'); return; }
     const chosen = reasonsOverride ?? rosterReasons;
-    const unexplained = current ? (['current_total_census', 'hospital_and_rehab_total'] as RosterFieldKey[]).filter(key => differsFromRoster(key) !== null && !chosen[key]) : [];
+    const unexplained = current ? CENSUS_ROSTER_KEYS.filter(key => differsFromRoster(key) !== null && !chosen[key]) : [];
     if (status === 'ready' && unexplained.length) {
       setProblem(unexplained.map(key => `${key === 'current_total_census' ? 'Current census' : 'Residents at hospital or rehab'} differs from the roster (${differsFromRoster(key)}). Choose why it is different, or use the roster figure.`).join(' '));
       return;
     }
-    const rosterBlock = current ? Object.fromEntries((['current_total_census', 'hospital_and_rehab_total'] as RosterFieldKey[])
+    const rosterBlock = current ? Object.fromEntries(CENSUS_ROSTER_KEYS
       .filter(key => differsFromRoster(key) !== null && chosen[key]).map(key => [key, { override_reason: chosen[key] }])) : {};
     const payload: Record<string, unknown> = { meeting_day: day, facility_id: facility.id, week_start: week, expected_version: saved?.version ?? 0, status, values: typed, ...(historical ? { reason: reason.trim() } : {}), ...(Object.keys(rosterBlock).length ? { roster: rosterBlock } : {}) };
     // The same attempt keeps its request id so a retried save returns its receipt instead of saving twice.
@@ -325,14 +327,14 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
             <td className="p-3">{editable
               ? <Input aria-label={figure.label} inputMode={figure.money ? 'decimal' : 'numeric'} value={fields[figure.key]} disabled={busy} onChange={e => { const value = e.target.value; setFields(current => ({ ...current, [figure.key]: value })); setChanged(true); setMessage(''); }} />
               : <span className="tabular-nums">{thursdayDisplay(figure.key, saved?.values[figure.key])}</span>}
-              {isRosterFieldKey(figure.key) && editable && week === openWeek && differsFromRoster(figure.key) !== null && <span className="mt-2 block space-y-1">
+              {isThursdayRosterKey(figure.key) && editable && week === openWeek && differsFromRoster(figure.key) !== null && <span className="mt-2 block space-y-1">
                 <label htmlFor={`thursday-${figure.key}-reason`} className="block text-xs font-medium">Why is this different from the roster ({differsFromRoster(figure.key)})?</label>
                 <select id={`thursday-${figure.key}-reason`} disabled={busy} value={rosterReasons[figure.key] ?? ''} className="block min-h-10 w-full max-w-xs rounded border border-border bg-background px-3 text-sm"
                   onChange={e => { const value = e.target.value; setRosterReasons(prev => ({ ...prev, [figure.key]: isOverrideReason(value, reasonOptions) ? value : undefined })); setChanged(true); setMessage(''); }}>
                   <option value="">{reasonOptions ? 'Choose a reason' : 'Reasons could not be loaded'}</option>{(reasonOptions ?? []).map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
                 </select>
               </span>}
-              {isRosterFieldKey(figure.key) && recordedConfirmationLine(saved?.roster_confirmations?.[figure.key]) && <span className="mt-1 block text-xs text-muted-foreground">{recordedConfirmationLine(saved?.roster_confirmations?.[figure.key])}</span>}</td>
+              {isThursdayRosterKey(figure.key) && recordedConfirmationLine(saved?.roster_confirmations?.[figure.key]) && <span className="mt-1 block text-xs text-muted-foreground">{recordedConfirmationLine(saved?.roster_confirmations?.[figure.key])}</span>}</td>
             <td className="whitespace-nowrap p-3 tabular-nums">{comparison.monday}</td>
             <td className="whitespace-nowrap p-3 tabular-nums">{comparison.change ?? '—'}</td>
           </tr>

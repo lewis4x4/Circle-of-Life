@@ -37,7 +37,7 @@ describe('Monday prefill (COL-753)', () => {
   it('leaves census and hospital to the roster confirmation', () => {
     expect(PREFILL_KEYS).not.toContain('current_total_census')
     expect(PREFILL_KEYS).not.toContain('hospital_and_rehab_total')
-    expect(PREFILL_KEYS).toHaveLength(14)
+    expect(PREFILL_KEYS).toHaveLength(10)
   })
 
   it('opens an unstarted report with Haven’s figures and leaves what Haven cannot compute blank, never 0', () => {
