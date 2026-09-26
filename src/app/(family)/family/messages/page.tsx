@@ -24,6 +24,7 @@ import type { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { FamilySectionIntro } from "@/components/family/FamilySectionIntro";
 import { FamilyPortalUpdateLog } from "@/components/family-portal/FamilyPortalUpdateLog";
+import { FamilyResidentVisits } from "@/components/family/FamilyResidentVisits";
 
 type SupabaseDb = SupabaseClient<Database>;
 
@@ -172,12 +173,17 @@ export default function FamilyMessagesPage() {
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
-        <ResidentUpdateLog
-          key={selectedResidentId}
-          supabase={supabase}
-          residentId={selectedResidentId}
-          residentName={selectedResident?.displayName ?? null}
-        />
+        <div className="flex min-w-0 flex-col gap-6">
+          <ResidentUpdateLog
+            key={selectedResidentId}
+            supabase={supabase}
+            residentId={selectedResidentId}
+            residentName={selectedResident?.displayName ?? null}
+          />
+          {selectedResidentId ? (
+            <FamilyResidentVisits key={`visits-${selectedResidentId}`} supabase={supabase} residentId={selectedResidentId} />
+          ) : null}
+        </div>
 
         <aside
           aria-label="Update visibility"

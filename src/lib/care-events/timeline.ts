@@ -1,8 +1,9 @@
 /**
  * Pure helpers for the resident Timeline tab (spec 07A §6.2 `v_resident_timeline`,
  * §6.3 "Resident profile Timeline tab", §7 Tier 3). The view unions care events,
- * pre-launch incidents, condition changes, behavior logs, shift notes, and
- * every safety check; these helpers group and label rows for the screen.
+ * pre-launch incidents, condition changes, behavior logs, shift notes, every
+ * safety check, and every visit; these helpers group, filter and label rows
+ * for the screen.
  * No raw `level_n` ever leaves this file: level words go through formatLevelWord.
  */
 
@@ -39,7 +40,7 @@ export type TimelineLink = { label: string; href: string };
 export const TIMELINE_UNKNOWN_DAY_KEY = "unknown";
 export const TIMELINE_NO_TIME_COPY = "No time posted";
 export const TIMELINE_EMPTY_COPY =
-  "No entries yet. Care events, safety checks, shift notes, and observation exceptions will appear here.";
+  "No entries yet. Care events, safety checks, shift notes, observation exceptions, and visits will appear here.";
 export const TIMELINE_PAGE_SIZE = 200;
 
 const SOURCE_WORDS: Record<string, string> = {
@@ -50,10 +51,39 @@ const SOURCE_WORDS: Record<string, string> = {
   daily_log: "Shift note",
   observation_exception: "Observation exception",
   safety_check: "Safety check",
+  visit: "Visit",
 };
 
 /** The view's source for a routine Smart Rounding safety check (migration 556). */
 export const TIMELINE_SAFETY_CHECK_SOURCE = "safety_check";
+
+/** The view's source for a visit to the resident (migration 562, COL-871). */
+export const TIMELINE_VISIT_SOURCE = "visit";
+
+/** What the Timeline can be narrowed to. Each filter is a set of view sources. */
+export const TIMELINE_FILTERS = [
+  { id: "all", label: "All entries", sources: null },
+  { id: "care", label: "Care events and incidents", sources: ["care_event", "incident", "condition_change", "behavior"] },
+  { id: "checks", label: "Safety checks", sources: ["safety_check", "observation_exception"] },
+  { id: "notes", label: "Shift notes", sources: ["daily_log"] },
+  { id: "visits", label: "Visits", sources: [TIMELINE_VISIT_SOURCE] },
+] as const satisfies readonly { id: string; label: string; sources: readonly string[] | null }[];
+
+export type TimelineFilterId = (typeof TIMELINE_FILTERS)[number]["id"];
+
+/** Rows the filter keeps; "all" keeps every row, including sources no filter names. */
+export function filterTimelineRows(rows: readonly ResidentTimelineRow[], filterId: TimelineFilterId): ResidentTimelineRow[] {
+  const filter = TIMELINE_FILTERS.find((entry) => entry.id === filterId);
+  const sources: readonly string[] | null = filter?.sources ?? null;
+  if (!sources) return [...rows];
+  return rows.filter((row) => row.source != null && sources.includes(row.source));
+}
+
+/** Said when a filter leaves nothing but the resident has other entries. */
+export function timelineFilterEmptyCopy(filterId: TimelineFilterId): string {
+  const label = TIMELINE_FILTERS.find((entry) => entry.id === filterId)?.label ?? "entries";
+  return `No ${label.toLowerCase()} on this timeline yet. Choose All entries to see everything else.`;
+}
 
 function parseIso(value: string | null | undefined): Date | null {
   if (!value) return null;

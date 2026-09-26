@@ -40,11 +40,16 @@ describe("formatCommunicationStripOpenVisitorSessions", () => {
     expect(formatCommunicationStripOpenVisitorSessions(true)).not.toBe(EM_DASH);
   });
 
-  it("names the visitor session telemetry gap when loaded", () => {
-    expect(formatCommunicationStripOpenVisitorSessions(false)).toBe(
+  it("names the gap when the count could not be read, never zero", () => {
+    expect(formatCommunicationStripOpenVisitorSessions(false, null)).toBe(
       COMMUNICATION_STRIP_NO_OPEN_VISITOR_SESSIONS_COPY,
     );
     expect(formatCommunicationStripOpenVisitorSessions(false)).not.toBe(EM_DASH);
+  });
+
+  it("shows the real count of visitors in the building (COL-871)", () => {
+    expect(formatCommunicationStripOpenVisitorSessions(false, 0)).toBe("0");
+    expect(formatCommunicationStripOpenVisitorSessions(false, 3)).toBe("3");
   });
 });
 

@@ -52,7 +52,7 @@ export default function CaregiverResidentTimelinePage() {
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">Timeline</h2>
             <p className="text-sm text-muted-foreground">
-              Care events, shift notes, and observation exceptions for this resident, newest first.
+              Care events, safety checks, shift notes, and visits for this resident, newest first.
             </p>
           </div>
         </div>

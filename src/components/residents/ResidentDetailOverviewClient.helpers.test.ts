@@ -59,6 +59,7 @@ function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOvervi
     contacts: [],
     recentDailyNotes: [],
     recentSafetyChecks: [],
+    recentVisits: [],
     recentAdl: [],
     recentBehavior: [],
     recentConditionChanges: [],
@@ -266,5 +267,39 @@ describe("activity feed items", () => {
     expect(items.map((i) => `${i.kind}:${i.id}`)).toEqual(["check:c1", "behavior:b1"]);
     const check = items[0];
     expect(check.kind === "check" && check.content.chartedByLabel).toBe("Abbigail H");
+  });
+
+  it("includes visits to the resident in time order (COL-871)", () => {
+    const items = buildFeedItems(
+      detail({
+        recentVisits: [
+          {
+            id: "v1",
+            visitorName: "Jordan Pierce",
+            visitorCompany: null,
+            typeLabel: "Family or friend",
+            arrivedLabel: "Sep 25, 7:17 PM",
+            arrivedAtIso: "2026-09-25T23:17:42Z",
+            leftLabel: "Sep 25, 8:05 PM",
+            purpose: null,
+            symptomsReported: false,
+          },
+        ],
+        recentSafetyChecks: [
+          {
+            id: "c1",
+            observedLabel: "Sep 25, 9:59 PM",
+            observedAtIso: "2026-09-26T01:59:31Z",
+            summary: "Calm.",
+            note: null,
+            somethingWrong: false,
+            chartedByLabel: "Abbigail H",
+          },
+        ],
+      }),
+    );
+    expect(items.map((i) => `${i.kind}:${i.id}`)).toEqual(["check:c1", "visit:v1"]);
+    const visit = items[1];
+    expect(visit.kind === "visit" && visit.content.typeLabel).toBe("Family or friend");
   });
 });

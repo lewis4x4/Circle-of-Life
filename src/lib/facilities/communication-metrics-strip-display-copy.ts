@@ -13,7 +13,7 @@ export const COMMUNICATION_STRIP_LOADING_LAST_CHANGE_COPY = "Loading last change
 export const COMMUNICATION_STRIP_NO_LAST_FAMILY_NOTIFICATION_COPY =
   "No last family notification sent posted";
 export const COMMUNICATION_STRIP_NO_OPEN_VISITOR_SESSIONS_COPY =
-  "No open visitor sessions posted";
+  "Visitor count unavailable";
 export const COMMUNICATION_STRIP_NO_LISTING_HEALTH_COPY = "No online listing health posted";
 export const COMMUNICATION_STRIP_NO_LAST_CHANGE_COPY = "No last change posted";
 
@@ -29,10 +29,14 @@ export function formatCommunicationStripLastFamilyNotification(isLoading: boolea
   return COMMUNICATION_STRIP_NO_LAST_FAMILY_NOTIFICATION_COPY;
 }
 
-/** Open visitor sessions tile — session tracking not wired; loading and gap copy only. */
-export function formatCommunicationStripOpenVisitorSessions(isLoading: boolean): string {
+/**
+ * Visitors signed in and not yet signed out (COL-871): the same "in the building now" the
+ * Front Desk shows. A failed read names the gap; it never shows 0.
+ */
+export function formatCommunicationStripOpenVisitorSessions(isLoading: boolean, count: number | null = null): string {
   if (isLoading) return COMMUNICATION_STRIP_LOADING_OPEN_VISITOR_SESSIONS_COPY;
-  return COMMUNICATION_STRIP_NO_OPEN_VISITOR_SESSIONS_COPY;
+  if (count === null) return COMMUNICATION_STRIP_NO_OPEN_VISITOR_SESSIONS_COPY;
+  return String(count);
 }
 
 /** Last settings change tile — formatted NY datetime when posted, named gaps otherwise. */

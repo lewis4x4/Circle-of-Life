@@ -4,7 +4,7 @@ import { formatDisplayDate } from "@/lib/format/datetime";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Brain, FileText, NotebookPen, ShieldCheck, Stethoscope, User } from "lucide-react";
+import { Brain, DoorOpen, FileText, NotebookPen, ShieldCheck, Stethoscope, User } from "lucide-react";
 
 import { AdminLiveDataFallbackNotice, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
 import { BehaviorLogModal, ConditionLogModal, GeneralNoteModal } from "@/components/admin/resident-log-modals";
@@ -284,7 +284,8 @@ type FeedItem =
   | { kind: "behavior"; id: string; atIso: string; label: string; content: BehaviorEventContent }
   | { kind: "adl"; id: string; atIso: string; label: string; content: ADLEventContent }
   | { kind: "note"; id: string; atIso: string; label: string; content: { snippet: string; shift: string; loggedByLabel: string } }
-  | { kind: "check"; id: string; atIso: string; label: string; content: SafetyCheckContent };
+  | { kind: "check"; id: string; atIso: string; label: string; content: SafetyCheckContent }
+  | { kind: "visit"; id: string; atIso: string; label: string; content: ResidentOverviewDetail["recentVisits"][number] };
 
 function feedItemTime(item: FeedItem): number {
   const iso = /^\d{4}-\d{2}-\d{2}$/.test(item.atIso) ? `${item.atIso}T12:00:00` : item.atIso;
@@ -326,6 +327,13 @@ export function buildFeedItems(detail: ResidentOverviewDetail): FeedItem[] {
       atIso: c.observedAtIso,
       label: c.observedLabel,
       content: c,
+    })),
+    ...(detail.recentVisits ?? []).map((v) => ({
+      kind: "visit" as const,
+      id: v.id,
+      atIso: v.arrivedAtIso,
+      label: v.arrivedLabel,
+      content: v,
     })),
   ];
   return items.sort((a, b) => feedItemTime(b) - feedItemTime(a));
@@ -945,8 +953,8 @@ export function ResidentDetailOverviewClient({
               <div className="flex flex-col items-start gap-3 py-2" role="status">
                 <p className="text-[13px] font-medium text-foreground">{activityFeedEmptyCopy(feedWindow)}</p>
                 <p className="text-[12px] leading-relaxed text-muted-foreground">
-                  Safety checks, behavior logs, condition changes, ADL refusals and general notes recorded for {detail.fullName} appear
-                  here. Nothing recorded in this period does not confirm an uneventful period.
+                  Safety checks, behavior logs, condition changes, ADL refusals, general notes and visits recorded for {detail.fullName}{" "}
+                  appear here. Nothing recorded in this period does not confirm an uneventful period.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <ResidentDocumentationActions
@@ -1372,6 +1380,37 @@ function renderFeedItem(item: FeedItem, idx: number) {
           <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">{c.summary}</p>
           {c.note ? <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">Note: {c.note}</p> : null}
           <p className="text-[11px] text-muted-foreground">Charted by {c.chartedByLabel}</p>
+        </div>
+      </div>
+    );
+  }
+  if (item.kind === "visit") {
+    const v = item.content;
+    return (
+      <div key={`visit-${v.id}-${idx}`} className="flex gap-4">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <DoorOpen className="size-4" aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1 rounded-[8px] border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+          <div className="mb-1 flex flex-wrap items-start justify-between gap-2">
+            <span className="text-[13px] font-semibold text-foreground">
+              Visit <span className="ml-1 text-[11px] font-semibold text-muted-foreground">({v.typeLabel})</span>
+            </span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">{item.label}</span>
+          </div>
+          <p className="mb-2 text-[12px] leading-relaxed text-muted-foreground">
+            {v.visitorCompany ? `${v.visitorName} · ${v.visitorCompany}` : v.visitorName}
+            {v.purpose ? ` · ${v.purpose}` : null}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {v.leftLabel ? `Left ${v.leftLabel}` : "Not signed out"}
+            {v.symptomsReported ? (
+              <>
+                {" "}
+                · <span className="font-semibold text-warning">reported symptoms at sign-in</span>
+              </>
+            ) : null}
+          </p>
         </div>
       </div>
     );

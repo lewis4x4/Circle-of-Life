@@ -83,6 +83,7 @@ function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOvervi
     ],
     recentDailyNotes: [],
     recentSafetyChecks: [],
+    recentVisits: [],
     recentAdl: [],
     recentBehavior: [],
     recentConditionChanges: [],

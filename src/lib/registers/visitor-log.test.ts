@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   EMPTY_VISITOR_DRAFT,
   VISITABLE_RESIDENT_STATUSES,
+  filterVisitsToResident,
+  visitorLogResidentEmptyCopy,
+  visitorLogResidentOptions,
   inTheBuildingNow,
   openVisitorCount,
   signOutEveryoneConfirmation,
@@ -111,5 +114,32 @@ describe("who can be visited", () => {
     expect([...VISITABLE_RESIDENT_STATUSES]).toEqual(["active", "hospital_hold", "loa"]);
     expect(VISITABLE_RESIDENT_STATUSES).not.toContain("discharged");
     expect(VISITABLE_RESIDENT_STATUSES).not.toContain("deceased");
+  });
+});
+
+describe("Front Desk log by resident (COL-871)", () => {
+  const rows = [
+    entry({ id: "a", visitingResidentId: "r1", visitingResidentName: "Ada Brown" }),
+    entry({ id: "b", visitingResidentId: "r2", visitingResidentName: "Cal Adams" }),
+    entry({ id: "c", visitingResidentId: null, visitingResidentName: null, visitingType: "facility" }),
+    entry({ id: "d", visitingResidentId: "r9", visitingResidentName: "Dee Zane" }),
+  ];
+  const residents = [
+    { id: "r1", firstName: "Ada", lastName: "Brown" },
+    { id: "r2", firstName: "Cal", lastName: "Adams" },
+  ];
+
+  it("offers current residents plus anyone a visit in range was for, by last name", () => {
+    expect(visitorLogResidentOptions(residents, rows)).toEqual([
+      { id: "r2", name: "Adams, Cal" },
+      { id: "r1", name: "Brown, Ada" },
+      { id: "r9", name: "Dee Zane" },
+    ]);
+  });
+
+  it("keeps only that resident's visits, or everything with no resident chosen", () => {
+    expect(filterVisitsToResident(rows, "r1").map((r) => r.id)).toEqual(["a"]);
+    expect(filterVisitsToResident(rows, "")).toHaveLength(4);
+    expect(visitorLogResidentEmptyCopy("Brown, Ada")).toBe("No visits to Brown, Ada in this range.");
   });
 });
