@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, reportHasFigures, fieldState, fieldDisplay, overtimeNeedsReview, easternStamp, periodRange, sectionPeriodLabel, metricSection, sectionMetrics, METRIC_KEYS, SECTIONS, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, getStandUpEntryWindow, standUpEntryOpensAt, standUpOpenWeek, entryOpenLabel, entryOpensStamp, entryWindowLine, easternInstant, type StandUpReport } from './model'
 describe('Stand Up reporting contract', () => {
- it('opens upcoming Monday exactly at the prior Monday call', () => {
+ it('keeps the shared calendar period separate from the next editable meeting', () => {
   expect(reportingWeek(new Date('2026-09-14T13:14:59Z'))).toBe('2026-09-14')
-  expect(reportingWeek(new Date('2026-09-14T13:15:00Z'))).toBe('2026-09-21')
+  expect(reportingWeek(new Date('2026-09-14T13:15:00Z'))).toBe('2026-09-14')
+  expect(reportingWeek(new Date('2026-09-18T20:00:00Z'))).toBe('2026-09-14')
+  expect(standUpOpenWeek({ now: new Date('2026-09-14T13:15:00Z') })).toBe('2026-09-21')
   expect(reportingWeek(new Date('2026-11-01T06:30:00Z'))).toBe('2026-11-02')
  })
  it('keeps blanks distinct from zero and rejects implicit coercion and unknown metrics', () => {

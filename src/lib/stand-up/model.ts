@@ -196,8 +196,8 @@ export function standUpOpenWeek(input: { now?: Date; leadMinutes?: number | null
   return previous
 }
 
-/** The current Monday reporting period, independent of obsolete facility lead settings. */
-export function reportingWeek(now = new Date()): string { return standUpOpenWeek({ now }) }
+/** Calendar reporting period, matching the workbook and shared facility selection. */
+export function reportingWeek(now = new Date()): string { return mondayOf(shiftDay(easternDay(now), 1)) }
 
 /** Entry stays available while each meeting record locks at its scheduled call. */
 export function entryWindowLine(_leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
