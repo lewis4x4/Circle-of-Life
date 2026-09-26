@@ -165,7 +165,7 @@ UPDATE public.stand_up_revisions SET status='ready',created_at=now()-interval '1
  WHERE report_id=(SELECT id FROM public.stand_up_reports WHERE facility_id=(SELECT fac FROM rs));
 SET LOCAL session_replication_role=origin;
 INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason)
- SELECT org,fac,'stand_up.thursday_census_vs_monday','true'::jsonb,current_date-1,'Probe: compare with Monday' FROM rs;
+ SELECT org,fac,'stand_up.thursday_census_vs_monday','true'::jsonb,(now() AT TIME ZONE 'America/New_York')::date-14,'Probe: compare with Monday' FROM rs;
 DO $$ DECLARE d jsonb; f jsonb; BEGIN
  d:=pg_temp.rs_state('thursday');
  SELECT x INTO f FROM jsonb_array_elements(d->'figures') x WHERE x->>'key'='current_total_census' AND x->>'against'='monday';
@@ -174,9 +174,11 @@ DO $$ DECLARE d jsonb; f jsonb; BEGIN
  IF NOT (d->>'compares_with_monday')::boolean THEN RAISE EXCEPTION 'The disagreement must say it compares with Monday'; END IF;
 END $$;
 
--- 6. Notice delivery: an empty channel list sends nothing.
+-- 6. Notice delivery: an empty channel list sends nothing. The sweep reads the rule on the
+-- Eastern date of the Thursday due time, which can be days back and, in a UTC session after
+-- 00:00, earlier than current_date-1; date the rule before any due date in the open week.
 INSERT INTO public.operating_rules(organization_id,facility_id,rule_key,value,effective_from,change_reason)
- SELECT org,fac,'stand_up.census_notice_channels','[]'::jsonb,current_date-1,'Probe: no notices' FROM rs;
+ SELECT org,fac,'stand_up.census_notice_channels','[]'::jsonb,(now() AT TIME ZONE 'America/New_York')::date-14,'Probe: no notices' FROM rs;
 DELETE FROM public.operating_rules WHERE facility_id=(SELECT fac FROM rs) AND rule_key='stand_up.census_reason_options';
 SELECT pg_temp.rs_login(admin_id,admin_session) FROM rs;
 SET LOCAL ROLE authenticated;
