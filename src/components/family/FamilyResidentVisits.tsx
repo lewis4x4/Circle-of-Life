@@ -51,7 +51,7 @@ export function FamilyResidentVisits({ supabase, residentId }: { supabase: Supab
             <button
               type="button"
               onClick={load}
-              className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground active:bg-muted active:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Try again
             </button>
