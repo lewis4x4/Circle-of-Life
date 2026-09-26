@@ -91,7 +91,7 @@ DO $$ DECLARE f su_fixture%ROWTYPE; rid uuid; vid uuid; vals jsonb; i integer; B
  UPDATE public.stand_up_reports SET version=1,revision_id=vid WHERE id=rid;
  IF NOT EXISTS(SELECT 1 FROM public.stand_up_reports WHERE id=rid AND overtime_minutes IS NULL AND overtime_issue AND values->>'overtime_reported'='17.75') THEN RAISE EXCEPTION 'Legacy issue silently altered'; END IF;
  vals:=vals||'{"overtime_reported":0}';
- INSERT INTO public.stand_up_reports(organization_id,facility_id,week_start,values,status) VALUES(f.org,f.facility,haven.stand_up_week()+7,vals,'draft') RETURNING id INTO rid;
+ INSERT INTO public.stand_up_reports(organization_id,facility_id,week_start,values,status) VALUES(f.org,f.facility,haven.stand_up_open_week(f.facility)+7,vals,'draft') RETURNING id INTO rid;
  INSERT INTO public.stand_up_revisions(report_id,version,values,status,actor_id) VALUES(rid,1,vals,'draft',f.actor) RETURNING id INTO vid;
  UPDATE public.stand_up_reports SET version=1,revision_id=vid WHERE id=rid;
 END $$;

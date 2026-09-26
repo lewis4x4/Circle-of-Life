@@ -79,10 +79,9 @@ export function validateValues(input: unknown): string[] {
  * `public.stand_up_entry_opens_at`, which is what the server actually enforces.
  *
  * All five ALFs keep Eastern wall clock, so every boundary is built by placing a
- * wall-clock time in America/New_York and resolving it to an instant. A lead is
- * wall-clock minutes before the Monday 8:45 a.m. deadline, not elapsed minutes:
- * on the November fall-back weekend a Sunday 12:00 a.m. open is still Sunday
- * 12:00 a.m., even though 33 hours 45 minutes pass before the deadline.
+ * wall-clock time in America/New_York and resolving it to an instant. COL-427:
+ * the next Monday report opens at the previous Monday call, so entry is always
+ * available. Legacy lead settings no longer control the opening boundary.
  */
 export const STAND_UP_DEADLINE_MINUTES = 8 * 60 + 45
 export const STAND_UP_CALL_MINUTES = 9 * 60 + 15
@@ -108,11 +107,11 @@ export function wallClockMinutes(minutes: number): string {
   const hour = Math.floor(minutes / 60); const minute = minutes % 60
   return `${hour % 12 === 0 ? 12 : hour % 12}:${String(minute).padStart(2, '0')} ${hour < 12 ? 'a.m.' : 'p.m.'}`
 }
-/** Sunday 12:00 a.m. Eastern. Null on a facility means this constant. */
+/** Legacy lead values retained for old payloads; they no longer control entry. */
 export const STAND_UP_DEFAULT_ENTRY_OPEN_LEAD_MINUTES = 1965
-/** Monday 7:45 a.m. Eastern: the window never opens after the report is nearly due. */
+/** Minimum accepted legacy lead; retained only for old payload compatibility. */
 export const STAND_UP_ENTRY_OPEN_LEAD_MIN = 60
-/** Saturday 12:00 a.m. Eastern: the window never reaches back into the prior Monday's meeting. */
+/** Maximum accepted legacy lead; retained only for old payload compatibility. */
 export const STAND_UP_ENTRY_OPEN_LEAD_MAX = 3405
 export const STAND_UP_ENTRY_OPEN_CHOICES = [
   { minutes: 3405, label: 'Saturday 12:00 a.m.' },
@@ -165,15 +164,9 @@ const mondayOf = (day: string): string => {
   return shiftDay(day, weekday === 0 ? -6 : 1 - weekday)
 }
 
-/**
- * When a facility's entry window opens for one meeting Monday. A lead is counted
- * back from Monday 8:45 a.m. in calendar terms, so 1,965 lands on Sunday 12:00
- * a.m. in both standard and daylight time.
- */
-export function standUpEntryOpensAt(meetingMonday: string, leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): Date {
-  const fromMidnight = times.dueMinutes - entryOpenLeadMinutes(leadMinutes)
-  const days = Math.floor(fromMidnight / 1440)
-  return easternInstant(shiftDay(meetingMonday, days), fromMidnight - days * 1440)
+/** COL-427: the next Monday report opens as the previous Monday record locks. */
+export function standUpEntryOpensAt(meetingMonday: string, _leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): Date {
+  return easternInstant(shiftDay(meetingMonday, -7), times.callMinutes)
 }
 
 export function getStandUpEntryWindow(input: { meetingMonday: string; leadMinutes?: number | null; now: Date; times?: MondayTimes }): StandUpEntryWindow {
@@ -191,16 +184,11 @@ export function getStandUpEntryWindow(input: { meetingMonday: string; leadMinute
   }
 }
 
-/**
- * The meeting Monday a facility may enter right now: the latest Monday whose
- * window has opened. With the default lead that is the upcoming Monday from
- * Sunday 12:00 a.m. Eastern, which is the behaviour Haven has always had.
- */
+/** The meeting Monday open for entry; advances exactly at the scheduled Monday call. */
 export function standUpOpenWeek(input: { now?: Date; leadMinutes?: number | null; times?: MondayTimes } = {}): string {
   const now = input.now ?? new Date()
   const monday = mondayOf(easternDay(now))
-  // A lead of at most 3,405 minutes reaches back two days, so the open week is
-  // always the upcoming Monday, this one, or the previous one.
+  // Each reporting period runs from the previous Monday call to its own call.
   const previous = shiftDay(monday, -7)
   for (const candidate of [shiftDay(monday, 7), monday]) {
     if (now >= standUpEntryOpensAt(candidate, input.leadMinutes, input.times)) return candidate
@@ -208,26 +196,18 @@ export function standUpOpenWeek(input: { now?: Date; leadMinutes?: number | null
   return previous
 }
 
-/** The organization-default open week. Facility overrides use standUpOpenWeek. */
-export function reportingWeek(now = new Date()): string { return standUpOpenWeek({ now }) }
+/** Calendar reporting period, matching the workbook and shared facility selection. */
+export function reportingWeek(now = new Date()): string { return mondayOf(shiftDay(easternDay(now), 1)) }
 
-/** "Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern", from the schedule. */
-export function entryWindowLine(leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
-  return `Opens ${entryOpenLabel(leadMinutes, times)} · Due Monday ${wallClockMinutes(times.dueMinutes)} · Call ${wallClockMinutes(times.callMinutes)} Eastern`
+/** Entry stays available while each meeting record locks at its scheduled call. */
+export function entryWindowLine(_leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
+  return `Entry available anytime · Due Monday ${wallClockMinutes(times.dueMinutes)} · Record locks Monday ${wallClockMinutes(times.callMinutes)} Eastern`
 }
-/**
- * The weekday-and-time name of an open. The management choices are named for
- * the seeded 8:45 a.m. deadline; against any other deadline the name is
- * worked out from the actual time, so it is never stale.
- */
-export function entryOpenLabel(leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
-  const lead = entryOpenLeadMinutes(leadMinutes)
-  const choice = times.dueMinutes === STAND_UP_DEADLINE_MINUTES ? STAND_UP_ENTRY_OPEN_CHOICES.find(item => item.minutes === lead) : undefined
-  if (choice) return choice.label
-  const opens = standUpEntryOpensAt('2026-09-21', lead, times)
-  return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', hour: 'numeric', minute: '2-digit', hour12: true }).format(opens).replace(' AM', ' a.m.').replace(' PM', ' p.m.').replace(' at ', ' ')
+/** The next Monday reporting period begins at the previous Monday call. */
+export function entryOpenLabel(_leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
+  return `Previous Monday ${wallClockMinutes(times.callMinutes)}`
 }
-/** "Sunday, September 20 at 12:00 a.m. Eastern" for the before-open line. */
+/** The previous Monday call, with its Eastern calendar date, for future reports. */
 export function entryOpensStamp(meetingMonday: string, leadMinutes?: number | null, times: MondayTimes = DEFAULT_MONDAY_TIMES): string {
   const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(standUpEntryOpensAt(meetingMonday, leadMinutes, times))
   const part = (type: string) => parts.find(item => item.type === type)?.value ?? ''

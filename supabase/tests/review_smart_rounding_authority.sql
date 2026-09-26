@@ -1573,6 +1573,7 @@ DECLARE
   v_payload jsonb;
   v_refused boolean := FALSE;
   v_window record;
+  v_probe_at timestamptz := now();
 BEGIN
   SELECT
     * INTO v_window
@@ -1582,8 +1583,11 @@ BEGIN
   PERFORM
     pg_temp.sr_assert (v_window.window_key IS NOT NULL, 'the fixture facility projects no observation window; the cadence copy did not land.');
 
+  -- This probe tests assignment authority, so both synthetic tasks are already
+  -- open at the observation instant regardless of the runner's wall clock.
+  -- The separate review_rounding_window_open.sql probe enforces early refusal.
   INSERT INTO public.resident_observation_tasks (organization_id, facility_id, resident_id, cadence_version_id, window_key, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id)
-    VALUES (v_org, v_facility_a, v_resident, v_active_cadence, v_window.window_key, (now() AT TIME ZONE 'America/New_York')::date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'upcoming', NULL)
+    VALUES (v_org, v_facility_a, v_resident, v_active_cadence, v_window.window_key, (v_probe_at AT TIME ZONE 'America/New_York')::date, v_probe_at - interval '1 minute', v_probe_at + interval '1 minute', v_probe_at + interval '61 minutes', 'upcoming', NULL)
   RETURNING
     id INTO v_unassigned;
 
@@ -1620,7 +1624,7 @@ BEGIN
     VALUES(v_org,v_facility_a,'mood_state','calm','Calm',1,true);
 
   INSERT INTO public.resident_observation_tasks (organization_id, facility_id, resident_id, cadence_version_id, monitoring_order_id, service_date, scheduled_for, due_at, grace_ends_at, status, assigned_staff_id)
-    VALUES (v_org, v_facility_a, v_resident, v_active_cadence, NULL, (now() AT TIME ZONE 'America/New_York')::date, v_window.window_opens_at_utc, v_window.due_at_utc, v_window.window_closes_at_utc, 'upcoming', NULL)
+    VALUES (v_org, v_facility_a, v_resident, v_active_cadence, NULL, (v_probe_at AT TIME ZONE 'America/New_York')::date, v_probe_at - interval '1 minute', v_probe_at + interval '1 minute', v_probe_at + interval '61 minutes', 'upcoming', NULL)
   RETURNING
     id INTO v_assigned;
 

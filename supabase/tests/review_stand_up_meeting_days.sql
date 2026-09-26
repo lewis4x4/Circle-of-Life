@@ -2,7 +2,7 @@
 -- adaptation roll back.
 --
 -- Stand Up meets Monday and Thursday. Thursday takes its times from the runtime
--- schedule, opens when Monday's call starts, stores its own four figures beside
+-- schedule, opens when the previous Thursday call starts, stores its own four figures beside
 -- Monday's submitted ones, is read by recruiters and written only by Stand Up
 -- administrators, and never reaches a publisher or export: the Monday exports
 -- are byte-identical with and without Thursday rows. Every call below fails on
@@ -62,18 +62,19 @@ DO $$ DECLARE org uuid:=(SELECT org FROM md_fixture); BEGIN
  END IF;
 END $$;
 
--- 2. Thursday's window, from the schedule: it opens when Monday's call starts,
+-- 2. Thursday's window, from the schedule: it opens when the previous Thursday call starts,
 --    is due Thursday 8:45 and meets Thursday 9:15 Eastern, on both sides of a
 --    daylight-saving change, and never reaches back into Monday's meeting.
 DO $$ DECLARE org uuid:=(SELECT org FROM md_fixture); f uuid:=(SELECT facility FROM md_fixture); t jsonb; BEGIN
  t:=haven.stand_up_meeting_times(org,f,'thursday','2026-09-21');
- IF t->>'meeting_date'<>'2026-09-24' OR (t->>'entry_opens_at')::timestamptz<>'2026-09-21 13:15:00+00' OR (t->>'entry_due_at')::timestamptz<>'2026-09-24 12:45:00+00'
+ IF t->>'meeting_date'<>'2026-09-24' OR (t->>'entry_opens_at')::timestamptz<>'2026-09-17 13:15:00+00' OR (t->>'entry_due_at')::timestamptz<>'2026-09-24 12:45:00+00'
   OR (t->>'call_at')::timestamptz<>'2026-09-24 13:15:00+00' THEN RAISE EXCEPTION 'Thursday window wrong in daylight time: %',t; END IF;
  t:=haven.stand_up_meeting_times(org,f,'thursday','2026-11-02');
- IF (t->>'entry_opens_at')::timestamptz<>'2026-11-02 14:15:00+00' OR (t->>'call_at')::timestamptz<>'2026-11-05 14:15:00+00' THEN RAISE EXCEPTION 'Thursday window wrong in standard time: %',t; END IF;
- IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-21 13:14:59+00')<>'2026-09-14' THEN RAISE EXCEPTION 'Thursday opened before Monday''s call'; END IF;
- IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-21 13:15:00+00')<>'2026-09-21' THEN RAISE EXCEPTION 'Thursday did not open at Monday''s call'; END IF;
- IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-28 13:14:00+00')<>'2026-09-21' THEN RAISE EXCEPTION 'Thursday closed before the next Monday call'; END IF;
+ IF (t->>'entry_opens_at')::timestamptz<>'2026-10-29 13:15:00+00' OR (t->>'call_at')::timestamptz<>'2026-11-05 14:15:00+00' THEN RAISE EXCEPTION 'Thursday window wrong in standard time: %',t; END IF;
+ IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-17 13:14:59+00')<>'2026-09-14' THEN RAISE EXCEPTION 'Thursday opened before its previous call'; END IF;
+ IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-17 13:15:00+00')<>'2026-09-21' THEN RAISE EXCEPTION 'Thursday did not open at its previous call'; END IF;
+ IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-24 13:14:59+00')<>'2026-09-21' THEN RAISE EXCEPTION 'Thursday closed before its own call'; END IF;
+ IF haven.stand_up_meeting_open_week(org,f,'thursday','2026-09-24 13:15:00+00')<>'2026-09-28' THEN RAISE EXCEPTION 'Thursday did not roll forward exactly at the call'; END IF;
  IF haven.stand_up_meeting_keys('monday') IS NOT NULL THEN RAISE EXCEPTION 'Monday must stay on stand_up_reports'; END IF;
 END $$;
 

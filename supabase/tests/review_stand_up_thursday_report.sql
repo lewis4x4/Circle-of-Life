@@ -15,7 +15,10 @@ CREATE TEMP TABLE th AS SELECT gen_random_uuid() org,gen_random_uuid() ent,gen_r
  gen_random_uuid() admin_id,gen_random_uuid() admin_session,gen_random_uuid() recruiter_id,gen_random_uuid() recruiter_session,
  gen_random_uuid() medtech_id,gen_random_uuid() medtech_session,
  gen_random_uuid() res_a,gen_random_uuid() res_b,gen_random_uuid() res_c,gen_random_uuid() res_d,
- NULL::uuid lead_open,NULL::uuid lead_moved_in,NULL::uuid lead_other;
+ NULL::uuid lead_open,NULL::uuid lead_moved_in,NULL::uuid lead_other,
+ -- Read this calendar week's activity explicitly. The continuously open editor
+ -- may already be preparing next Thursday after the current call.
+ date_trunc('week',clock_timestamp() AT TIME ZONE 'America/New_York')::date report_week;
 INSERT INTO public.organizations(id,name) SELECT org,'Thursday report probe' FROM th;
 INSERT INTO public.entities(id,organization_id,name) SELECT ent,org,'Thursday entity' FROM th;
 INSERT INTO public.facilities(id,entity_id,organization_id,name,address_line_1,city,state,zip,total_licensed_beds)
@@ -84,7 +87,7 @@ UPDATE public.referral_leads SET notes='Prefers a private room.' WHERE id=(SELEC
 -- The administrator reads the report.
 SELECT pg_temp.th_login(admin_id,admin_session) FROM th;
 SET LOCAL ROLE authenticated;
-INSERT INTO th_results SELECT 'admin',public.stand_up_command('report',jsonb_build_object('meeting_day','thursday','facility_id',fac)) FROM th;
+INSERT INTO th_results SELECT 'admin',public.stand_up_command('report',jsonb_build_object('meeting_day','thursday','facility_id',fac,'week_start',report_week)) FROM th;
 RESET ROLE;
 DO $$ DECLARE r jsonb; f jsonb; lead jsonb; kinds text[]; BEGIN
  SELECT value INTO r FROM th_results WHERE name='admin';
@@ -121,7 +124,7 @@ END $$;
 -- The recruiter reads the same report: counts, not names; no admission notes; their own contacts in full.
 SELECT pg_temp.th_login(recruiter_id,recruiter_session) FROM th;
 SET LOCAL ROLE authenticated;
-INSERT INTO th_results SELECT 'recruiter',public.stand_up_command('report',jsonb_build_object('meeting_day','thursday','facility_id',fac)) FROM th;
+INSERT INTO th_results SELECT 'recruiter',public.stand_up_command('report',jsonb_build_object('meeting_day','thursday','facility_id',fac,'week_start',report_week)) FROM th;
 -- A recruiter still cannot write Thursday figures.
 SELECT pg_temp.th_fail(format('SELECT public.stand_up_command(''save'',%L::jsonb)',jsonb_build_object('meeting_day','thursday','facility_id',fac,'week_start',haven_week,
   'expected_version',0,'request_id',gen_random_uuid(),'values','{"current_ar_cents":1,"current_total_census":1,"departures_since_monday":0,"hospital_and_rehab_total":0,"hospital_total":0,"rehab_total":0}'::jsonb)),'access denied')

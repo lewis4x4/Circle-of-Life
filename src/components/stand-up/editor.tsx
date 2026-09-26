@@ -100,7 +100,7 @@ export function StandUpEditor(props: Props) {
   const times = props.times ?? DEFAULT_MONDAY_TIMES;
   const entryWindow = getStandUpEntryWindow({ meetingMonday: week, leadMinutes: props.leadMinutes, now: props.now, times });
   const notOpen = entryWindow.state === 'not_open';
-  const historical = week < currentWeek;
+  const historical = week < currentWeek || props.now >= entryWindow.callAt;
   // Roster suggestions belong to a report that can be entered now. A past
   // meeting and a meeting that has not opened are both outside that.
   const entering = !historical && !notOpen;

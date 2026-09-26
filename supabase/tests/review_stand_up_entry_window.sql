@@ -32,50 +32,46 @@ CREATE FUNCTION pg_temp.ew_fail(sql text,expected text) RETURNS void LANGUAGE pl
  RAISE EXCEPTION 'Expected failure: %',expected;
 END $$;
 
--- 1. The window instants match src/lib/stand-up/model.test.ts row for row.
---    Eight rows, both daylight-saving transitions and a month boundary.
-DO $$ DECLARE bad text; BEGIN
- SELECT string_agg(format('%s lead %s expected %s got %s',m,lead,want,got),'; ') INTO bad FROM (
-  SELECT m,lead,want,(((m + time '08:45') - make_interval(mins => lead)) AT TIME ZONE 'America/New_York') got
-  FROM (VALUES
-   (date '2026-09-21',1965,timestamptz '2026-09-20T04:00:00Z'),
-   (date '2026-09-21',3405,timestamptz '2026-09-19T04:00:00Z'),
-   (date '2026-09-21',885,timestamptz '2026-09-20T22:00:00Z'),
-   (date '2026-09-21',525,timestamptz '2026-09-21T04:00:00Z'),
-   (date '2026-09-21',60,timestamptz '2026-09-21T11:45:00Z'),
-   (date '2026-11-02',1965,timestamptz '2026-11-01T04:00:00Z'),
-   (date '2027-03-15',1965,timestamptz '2027-03-14T05:00:00Z'),
-   (date '2026-11-30',3405,timestamptz '2026-11-28T05:00:00Z')
-  ) v(m,lead,want)) x WHERE got<>want;
- IF bad IS NOT NULL THEN RAISE EXCEPTION 'Entry window instants drifted from the model: %',bad; END IF;
+-- Google/workbook reporting scope remains calendar Monday, independently of
+-- early draft entry. An enabled bridge must still accept the week's workbook.
+DO $$ BEGIN
+ IF haven.stand_up_reporting_week('2026-09-16T12:00:00Z') <> date '2026-09-14'
+  OR haven.stand_up_reporting_week('2026-09-20T04:00:00Z') <> date '2026-09-21'
+  OR haven.stand_up_week() <> haven.stand_up_reporting_week(clock_timestamp()) THEN
+  RAISE EXCEPTION 'Google/calendar reporting week changed with continuous entry'; END IF;
 END $$;
 
--- 2. A facility with no settings row uses the Haven default: Sunday 12:00 a.m.
-DO $$ DECLARE f uuid; BEGIN
- SELECT facility INTO f FROM ew_fixture;
- IF EXISTS(SELECT 1 FROM public.stand_up_facility_settings WHERE facility_id=f) THEN RAISE EXCEPTION 'Probe facility already carries a settings row'; END IF;
- IF haven.stand_up_entry_open_lead_minutes(f)<>1965 THEN RAISE EXCEPTION 'Default lead is not 1965'; END IF;
- IF haven.stand_up_entry_opens_at(f,date '2026-09-21')<>timestamptz '2026-09-20T04:00:00Z' THEN RAISE EXCEPTION 'Default open is not Sunday 12:00 a.m. Eastern'; END IF;
- -- Saturday 23:59 Eastern is still the prior Monday; Sunday 00:01 Eastern is the upcoming one.
- IF haven.stand_up_open_week(f,timestamptz '2026-09-20T03:59:00Z')<>date '2026-09-14' THEN RAISE EXCEPTION 'Saturday 23:59 Eastern opened the upcoming Monday'; END IF;
- IF haven.stand_up_open_week(f,timestamptz '2026-09-20T04:01:00Z')<>date '2026-09-21' THEN RAISE EXCEPTION 'Sunday 00:01 Eastern did not open the upcoming Monday'; END IF;
- -- The organization default week is the same rule, so the overview does not move.
- IF haven.stand_up_open_week(NULL,timestamptz '2026-09-20T04:01:00Z')<>date '2026-09-21' THEN RAISE EXCEPTION 'Organization default week drifted from the facility default'; END IF;
+-- COL-427: the upcoming Monday is editable continuously from the preceding
+-- Monday call, regardless of stored legacy opening leads.
+DO $$ DECLARE f uuid := (SELECT facility FROM ew_fixture); r record; BEGIN
+ FOR r IN SELECT * FROM (VALUES
+  (date '2026-09-21', timestamptz '2026-09-14T13:15:00Z'),
+  (date '2026-11-02', timestamptz '2026-10-26T13:15:00Z'),
+  (date '2027-03-15', timestamptz '2027-03-08T14:15:00Z'),
+  (date '2026-11-30', timestamptz '2026-11-23T14:15:00Z')
+ ) v(meeting_monday, opens_at) LOOP
+  IF haven.stand_up_entry_opens_at(f,r.meeting_monday) <> r.opens_at THEN
+   RAISE EXCEPTION 'Continuous Monday opening/DST mismatch: %',r; END IF;
+  IF haven.stand_up_open_week(f,r.opens_at-interval '1 microsecond') <> r.meeting_monday-7
+   OR haven.stand_up_open_week(f,r.opens_at) <> r.meeting_monday
+   OR haven.stand_up_open_week(f,r.opens_at+interval '1 microsecond') <> r.meeting_monday THEN
+   RAISE EXCEPTION 'Monday call must atomically close the prior ordinary entry and open the next: %',r; END IF;
+ END LOOP;
+ FOR r IN SELECT generate_series(timestamptz '2026-09-14T13:15:00Z',timestamptz '2026-09-21T13:14:00Z',interval '6 hours') instant LOOP
+  IF haven.stand_up_open_week(f,r.instant) <> date '2026-09-21' THEN
+   RAISE EXCEPTION 'Monday entry unavailable during the week: %',r.instant; END IF;
+ END LOOP;
 END $$;
-
--- 3. Sunday 6:00 p.m. rejects 17:59 and accepts 18:00. Saturday 12:00 a.m. reaches a day further.
 INSERT INTO public.stand_up_facility_settings(organization_id,facility_id,entry_open_lead_minutes) SELECT org,facility,885 FROM ew_fixture;
-DO $$ DECLARE f uuid; BEGIN
- SELECT facility INTO f FROM ew_fixture;
- IF haven.stand_up_entry_open_lead_minutes(f)<>885 THEN RAISE EXCEPTION 'Facility setting was not read'; END IF;
- IF haven.stand_up_open_week(f,timestamptz '2026-09-20T21:59:00Z')<>date '2026-09-14' THEN RAISE EXCEPTION 'Sunday 17:59 Eastern opened a window set to 18:00'; END IF;
- IF haven.stand_up_open_week(f,timestamptz '2026-09-20T22:00:00Z')<>date '2026-09-21' THEN RAISE EXCEPTION 'Sunday 18:00 Eastern did not open'; END IF;
- -- A widened facility reaches the upcoming Monday from Saturday midnight.
- UPDATE public.stand_up_facility_settings SET entry_open_lead_minutes=3405 WHERE facility_id=f;
- IF haven.stand_up_open_week(f,timestamptz '2026-09-19T03:59:00Z')<>date '2026-09-14' THEN RAISE EXCEPTION 'Friday 23:59 Eastern opened a Saturday window'; END IF;
- IF haven.stand_up_open_week(f,timestamptz '2026-09-19T04:00:00Z')<>date '2026-09-21' THEN RAISE EXCEPTION 'Saturday 00:00 Eastern did not open the widened window'; END IF;
- -- The organization default is untouched by the override: corporate timing does not move.
- IF haven.stand_up_open_week(NULL,timestamptz '2026-09-19T04:00:00Z')<>date '2026-09-14' THEN RAISE EXCEPTION 'A facility override moved the organization week'; END IF;
+DO $$ DECLARE f uuid := (SELECT facility FROM ew_fixture); lead integer; BEGIN
+ FOREACH lead IN ARRAY ARRAY[60,525,885,1965,3405] LOOP
+  UPDATE public.stand_up_facility_settings SET entry_open_lead_minutes=lead WHERE facility_id=f;
+  IF haven.stand_up_open_week(f,timestamptz '2026-09-18T03:00:00Z') <> date '2026-09-21'
+   OR haven.stand_up_entry_opens_at(f,date '2026-09-21') <> timestamptz '2026-09-14T13:15:00Z' THEN
+   RAISE EXCEPTION 'Legacy opening lead must not restrict continuous entry: %',lead; END IF;
+ END LOOP;
+ IF haven.stand_up_open_week(NULL,timestamptz '2026-09-18T03:00:00Z') <> date '2026-09-21' THEN
+  RAISE EXCEPTION 'Organization default is not continuously open'; END IF;
 END $$;
 DELETE FROM public.stand_up_facility_settings WHERE facility_id=(SELECT facility FROM ew_fixture);
 

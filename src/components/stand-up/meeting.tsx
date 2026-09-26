@@ -40,6 +40,8 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
   const [loading, setLoading] = useState(true);
   const [facilityId, setFacilityId] = useState<string | null>(null);
   const [week, setWeek] = useState('');
+  const [now, setNow] = useState(() => new Date());
+  const clockOffset = useRef(0);
   const dirty = useRef(false);
   const guard = useCallback(() => {
     if (!dirty.current) return true;
@@ -51,6 +53,8 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
     if (initial) setLoading(true);
     try {
       const data = await standUpRequest<MeetingWorkspace>('workspace', { meeting_day: day });
+      clockOffset.current = new Date(data.server_now).getTime() - Date.now();
+      setNow(new Date(data.server_now));
       setWorkspace(data); setError('');
       if (initial) {
         const stored = useFacilityStore.getState().selectedFacilityId;
@@ -71,7 +75,19 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
   const line = workspace ? meetingWindowLine(workspace.schedule, day) : null;
   const selected = workspace?.facilities.find(facility => facility.id === facilityId);
   const openWeek = selected?.open_week ?? workspace?.current_week ?? '';
-  const weeks = workspace ? [...new Set([openWeek, ...workspace.reports.filter(report => !facilityId || report.facility_id === facilityId).map(report => report.week_start)].filter(Boolean))].sort().reverse() : [];
+  // Lock an already-open page at the server's call instant, even before a reload.
+  const callAt = selected?.window?.call_at ?? workspace?.window?.call_at;
+  useEffect(() => {
+    if (!callAt) return;
+    const remaining = new Date(callAt).getTime() - (Date.now() + clockOffset.current);
+    if (remaining <= 0) return;
+    const timer = window.setTimeout(() => {
+      setNow(new Date(Date.now() + clockOffset.current));
+      void reload();
+    }, Math.min(remaining, 2147483647));
+    return () => window.clearTimeout(timer);
+  }, [callAt, reload]);
+  const weeks = workspace ? [...new Set([openWeek, week, ...workspace.reports.filter(report => !facilityId || report.facility_id === facilityId).map(report => report.week_start)].filter(Boolean))].sort().reverse() : [];
   const reportsForWeek = workspace?.reports.filter(report => report.week_start === week) ?? [];
   const baseline = (facility: string): MondaySubmitted | undefined =>
     reportsForWeek.find(report => report.facility_id === facility)?.monday_submitted
@@ -136,7 +152,7 @@ export function MeetingStandUp({ day, picker, reconcileFacilityId }: { day: Meet
         {!selected ? <MeetingOverview facilities={workspace.facilities} reports={reportsForWeek} baseline={baseline} onOpen={chooseFacility} />
           : <MeetingEditor key={`${selected.id}:${week}`} day={day} facility={selected} week={week} openWeek={openWeek}
               report={reportsForWeek.find(report => report.facility_id === selected.id)} monday={baseline(selected.id) ?? null}
-              canEdit={workspace.can_edit} dirty={dirty} onSaved={accept} onError={setError} autoReconcile={selected.id === reconcileFacilityId}
+              canEdit={workspace.can_edit} now={now} dirty={dirty} onSaved={accept} onError={setError} autoReconcile={selected.id === reconcileFacilityId}
               haven={currentReport?.report ?? undefined} onRefreshReport={() => setReportTick(tick => tick + 1)} />}
         {selected && day === 'thursday' && (currentReport?.report ? <ThursdayReportSections report={currentReport.report} />
           : currentReport?.error ? <p role="alert" className="rounded border border-destructive p-3 text-sm">{currentReport.error}</p>
@@ -170,7 +186,7 @@ function MeetingOverview({ facilities, reports, baseline, onOpen }: { facilities
 
 type EditorProps = {
   day: MeetingDay; facility: MeetingFacility; week: string; openWeek: string; report?: MeetingReport; monday: MondaySubmitted
-  canEdit: boolean; dirty: { current: boolean }; onSaved: (report: MeetingReport) => void; onError: (message: string) => void
+  now: Date; canEdit: boolean; dirty: { current: boolean }; onSaved: (report: MeetingReport) => void; onError: (message: string) => void
   /** COL-555: opened from a Reconcile link. */
   autoReconcile?: boolean
   /** COL-754: Haven's own Thursday figures for this facility, to prefill and show beside each input. */
@@ -179,7 +195,7 @@ type EditorProps = {
   onRefreshReport?: () => void
 };
 
-function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, dirty, onSaved, onError, autoReconcile, haven, onRefreshReport }: EditorProps) {
+function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit, now, dirty, onSaved, onError, autoReconcile, haven, onRefreshReport }: EditorProps) {
   const [saved, setSaved] = useState(report);
   const [fields, setFields] = useState(() => fieldsFor(report?.values));
   const [reason, setReason] = useState('');
@@ -190,9 +206,9 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
   const request = useRef<{ key: string; id: string } | null>(null);
   useEffect(() => { dirty.current = changed; return () => { dirty.current = false; }; }, [changed, dirty]);
   const notOpen = week > openWeek;
-  const historical = week < openWeek;
-  const editable = canEdit && !notOpen;
   const meetingWindow = facility.window && facility.window.week_start === week ? facility.window : null;
+  const historical = week < openWeek || !!(meetingWindow && now >= new Date(meetingWindow.call_at));
+  const editable = canEdit && !notOpen;
   let typed: ThursdayValues | null = null; let parseError = '';
   try { typed = Object.fromEntries(THURSDAY_KEYS.map(key => [key, parseThursdayField(key, fields[key])])) as ThursdayValues; } catch (cause) { parseError = cause instanceof Error ? cause.message : 'Check the figures.'; }
   const complete = !!typed && THURSDAY_KEYS.every(key => typed![key] !== null);
@@ -200,14 +216,14 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
   // administrator to verify; blanks stay blank, and nothing saves until they do.
   const prefilled = useRef(false);
   useEffect(() => {
-    if (!haven || prefilled.current || saved || changed || week !== openWeek || !canEdit) return;
+    if (!haven || prefilled.current || saved || changed || historical || week !== openWeek || !canEdit) return;
     prefilled.current = true;
     setFields(fieldsFor(thursdayPrefill(haven, emptyThursdayValues())));
-  }, [haven, saved, changed, week, openWeek, canEdit]);
+  }, [haven, saved, changed, historical, week, openWeek, canEdit]);
   // COL-555: this meeting's census against the roster, with the Reconcile dialog.
   const [reconcileTarget, setReconcileTarget] = useState<CensusDisagreement | null>(null);
   const [disagreementTick, setDisagreementTick] = useState(0);
-  const current = week === openWeek;
+  const current = week === openWeek && !historical;
   // COL-555: Thursday records a reason for a census or hospital figure that
   // differs from the roster, from the facility's reason list (a setting). A
   // draft may keep the difference open; submitting needs the reason.
@@ -279,9 +295,10 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
   return <section aria-label={`${facility.name} ${MEETING_LABELS[day]} report`} className="space-y-4">
     <div className="flex flex-wrap items-baseline justify-between gap-2">
       <h2 className="text-lg font-semibold">{meetingReportState(saved)}</h2>
-      {meetingWindow && <p className="text-sm text-muted-foreground">Due {easternStamp(meetingWindow.entry_due_at)} · Call {easternStamp(meetingWindow.call_at)}</p>}
+      {meetingWindow && <p className="text-sm text-muted-foreground">Due {easternStamp(meetingWindow.entry_due_at)} · Record locks {easternStamp(meetingWindow.call_at)}</p>}
     </div>
-    {notOpen && <p role="status" className="rounded border border-border p-3 text-sm">This report opens {meetingWindow?.entry_opens_at ? easternStamp(meetingWindow.entry_opens_at) : 'after the meeting before it'}.</p>}
+    {notOpen && <p role="status" className="rounded border border-border p-3 text-sm">This report opens {meetingWindow?.entry_opens_at ? easternStamp(meetingWindow.entry_opens_at) : `at the previous ${MEETING_LABELS[day]} call`}.</p>}
+    {historical && <p role="status" className="text-sm">This meeting record is locked. A correction requires a recorded reason and preserves the figures at the call.</p>}
     {saved?.updated_at && <p className="text-xs text-muted-foreground">Last saved {meetingStamp(saved.updated_at)}{saved.updated_by_name ? ` by ${saved.updated_by_name}` : ''}{saved.last_submitted_at ? ` · Submitted ${meetingStamp(saved.last_submitted_at)}` : ''}</p>}
     {/* COL-749 ruling 3: the census bridge heads the building's Thursday section. */}
     {day === 'thursday' && haven?.bridge && <CensusBridge bridge={haven.bridge}
@@ -327,8 +344,8 @@ function MeetingEditor({ day, facility, week, openWeek, report, monday, canEdit,
       {(problem || parseError) && <p role="alert" className="text-sm text-destructive">{problem || parseError}</p>}
       {message && <p role="status" className="text-sm">{message}</p>}
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" disabled={busy || !changed} onClick={() => void save('draft')}>Save draft</Button>
-        <Button disabled={busy || !complete || (!changed && saved?.status === 'ready')} onClick={() => void save('ready')}>Submit {MEETING_LABELS[day]} figures</Button>
+        <Button variant="outline" disabled={busy || !changed || (historical && !reason.trim())} onClick={() => void save('draft')}>Save draft</Button>
+        <Button disabled={busy || !complete || (historical && !reason.trim()) || (!changed && saved?.status === 'ready')} onClick={() => void save('ready')}>Submit {MEETING_LABELS[day]} figures</Button>
         {changed && <Button variant="ghost" disabled={busy} onClick={() => { setFields(fieldsFor(saved?.values)); setChanged(false); setProblem(''); }}>Discard changes</Button>}
       </div>
       {!complete && !parseError && <p className="text-xs text-muted-foreground">Submitting needs all {THURSDAY_KEYS.length} figures. A draft can be saved with blanks.</p>}

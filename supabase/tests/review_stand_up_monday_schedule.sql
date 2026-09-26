@@ -92,7 +92,7 @@ DO $$ DECLARE f record; now_export jsonb; before jsonb; BEGIN
  before:=pg_temp.old_export_history(f.org,f.week,f.week,(now_export->>'archive_as_of')::timestamptz);
  IF (now_export-'monday_call_local') IS DISTINCT FROM before THEN RAISE EXCEPTION 'History export changed with the schedule unchanged: % vs %',now_export,before; END IF;
  IF now_export->>'monday_call_local'<>'09:15' THEN RAISE EXCEPTION 'The archive must state the call it used: %',now_export->>'monday_call_local'; END IF;
- IF haven.stand_up_entry_opens_at(f.fac,f.week+7)<>(((f.week+7)+time '08:45')-make_interval(mins=>haven.stand_up_entry_open_lead_minutes(f.fac))) AT TIME ZONE 'America/New_York' THEN
+ IF haven.stand_up_entry_opens_at(f.fac,f.week+7)<>(f.week+time '09:15') AT TIME ZONE 'America/New_York' THEN
   RAISE EXCEPTION 'Entry window changed with the schedule unchanged'; END IF;
  -- The as-of-the-call snapshot is revision 1 (09:00), not the 09:20 submission.
  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(now_export->'snapshots') s WHERE (s->>'kind')::int=2 AND s->'reports'->0->'values'->>'current_total_census'='1') THEN
@@ -108,15 +108,15 @@ SELECT pg_temp.ms_fail($q$SELECT public.stand_up_command('set_meeting_schedule',
 RESET ROLE;
 DO $$ DECLARE f record; now_export jsonb; BEGIN
  SELECT * INTO f FROM ms;
- IF haven.stand_up_entry_opens_at(f.fac,f.week+7)<>(((f.week+7)+time '09:10')-make_interval(mins=>haven.stand_up_entry_open_lead_minutes(f.fac))) AT TIME ZONE 'America/New_York' THEN
+ IF haven.stand_up_entry_opens_at(f.fac,f.week+7)<>(f.week+time '09:30') AT TIME ZONE 'America/New_York' THEN
   RAISE EXCEPTION 'The entry window did not follow the Monday deadline'; END IF;
  now_export:=haven.stand_up_export_history(f.org,f.week,f.week);
  IF now_export->>'monday_call_local'<>'09:30' THEN RAISE EXCEPTION 'The archive did not follow the Monday call'; END IF;
  -- At a 09:30 call the 09:20 submission is the snapshot.
  IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(now_export->'snapshots') s WHERE (s->>'kind')::int=2 AND s->'reports'->0->'values'->>'current_total_census'='2') THEN
   RAISE EXCEPTION 'Snapshot did not follow the Monday call: %',now_export->'snapshots'; END IF;
- -- Thursday's window opens at Monday's (new) call.
- IF haven.stand_up_meeting_opens_at(f.org,f.fac,'thursday',f.week)<>(f.week+time '09:30') AT TIME ZONE 'America/New_York' THEN RAISE EXCEPTION 'Thursday did not open at Monday''s call'; END IF;
+ -- Thursday entry follows its own previous call, independently of Monday.
+ IF haven.stand_up_meeting_opens_at(f.org,f.fac,'thursday',f.week)<>((f.week-4)+time '09:15') AT TIME ZONE 'America/New_York' THEN RAISE EXCEPTION 'Thursday did not open at its previous call'; END IF;
 END $$;
 -- 3. The Monday workspace states the schedule.
 DO $$ BEGIN

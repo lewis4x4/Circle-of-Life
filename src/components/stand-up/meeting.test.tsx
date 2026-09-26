@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StandUpWorkspace } from './workspace';
 import { useFacilityStore } from '@/hooks/useFacilityStore';
@@ -68,7 +68,7 @@ const facilityReport = {
 };
 const thursdayReport = { meeting_day: 'thursday', generated_at: '2026-09-24T12:30:00Z', actor_role: 'facility_admin', facilities: [facilityReport] };
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 beforeEach(() => {
   mocks.auth.appRole = 'facility_admin';
   mocks.disagreements = [];
@@ -93,8 +93,60 @@ async function openThursday() {
 describe('Stand Up meets Monday and Thursday (COL-752)', () => {
   it('offers Monday and Thursday, and Thursday states the schedule the server returned', async () => {
     await openThursday();
-    expect(screen.getByText('Opens at Monday’s call · Due Thursday 8:45 a.m. · Call 9:15 a.m. Eastern')).toBeInTheDocument();
+    expect(screen.getByText('Entry available anytime · Due Thursday 8:45 a.m. · Record locks Thursday 9:15 a.m. Eastern')).toBeInTheDocument();
     expect(mocks.request).toHaveBeenCalledWith('workspace', { meeting_day: 'thursday' });
+  });
+
+  it('allows Thursday entry before Monday’s call during its open week', async () => {
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (action === 'workspace') return payload.meeting_day === 'thursday'
+        ? thursday({ server_now: '2026-09-18T18:00:00Z', facilities: [{ id: 'a', name: 'Homewood', open_week: '2026-09-21', window: { ...meetingWindow, entry_opens_at: '2026-09-17T13:15:00Z' } }] }) : monday;
+      if (action === 'report') return thursdayReport;
+      throw new Error('Unexpected operation');
+    });
+    await openThursday();
+    expect(screen.getByLabelText('Current census')).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '36' } });
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
+    expect(screen.queryByText(/This meeting record is locked/)).not.toBeInTheDocument();
+  });
+
+  it('requires a recorded correction reason at the call despite a stale open week', async () => {
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday({ server_now: '2026-09-24T13:15:00Z' }) : monday;
+      if (action === 'report') return thursdayReport;
+      throw new Error('Unexpected operation');
+    });
+    await openThursday();
+    expect(screen.getByText(/This meeting record is locked/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '36' } });
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Why this past meeting is changing'), { target: { value: 'Correct a figure after the meeting.' } });
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
+    mocks.request.mockResolvedValueOnce(saved({ status: 'draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await screen.findByText('Draft saved.');
+    expect(mocks.request).toHaveBeenCalledWith('save', expect.objectContaining({ meeting_day: 'thursday', reason: 'Correct a figure after the meeting.' }));
+  });
+
+  it('locks an open Thursday page at the call without discarding typed figures', async () => {
+    vi.useFakeTimers();
+    let reads = 0;
+    mocks.request.mockImplementation(async (action: string, payload: Record<string, unknown>) => {
+      if (action === 'workspace') return payload.meeting_day === 'thursday' ? thursday({ server_now: ++reads === 1 ? '2026-09-24T13:14:59Z' : '2026-09-24T13:15:00Z' }) : monday;
+      if (action === 'report') return thursdayReport;
+      throw new Error('Unexpected operation');
+    });
+    render(<StandUpWorkspace />);
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.change(screen.getByLabelText('Meeting'), { target: { value: 'thursday' } });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    fireEvent.change(screen.getByLabelText('Current census'), { target: { value: '37' } });
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeEnabled();
+    await act(async () => { vi.advanceTimersByTime(1000); await Promise.resolve(); });
+    expect(screen.getByText(/This meeting record is locked/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Current census')).toHaveValue('37');
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled();
   });
 
   it('shows the four Thursday figures beside what was submitted on Monday, and submits them with the meeting day', async () => {

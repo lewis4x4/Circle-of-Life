@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, reportHasFigures, fieldState, fieldDisplay, overtimeNeedsReview, easternStamp, periodRange, sectionPeriodLabel, metricSection, sectionMetrics, METRIC_KEYS, SECTIONS, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, getStandUpEntryWindow, standUpEntryOpensAt, standUpOpenWeek, isEntryOpenLeadMinutes, entryOpenLeadMinutes, entryOpenLabel, entryOpensStamp, entryWindowLine, easternInstant, STAND_UP_DEFAULT_ENTRY_OPEN_LEAD_MINUTES, STAND_UP_ENTRY_OPEN_LEAD_MIN, STAND_UP_ENTRY_OPEN_LEAD_MAX, STAND_UP_ENTRY_OPEN_CHOICES, type StandUpReport } from './model'
+import { derivedValues, emptyValues, reportingWeek, validateValues, deadlinePassed, shiftDay, staffingPeriod, reportState, metricDisplay, reportOvertimeMinutes, reportDeadlineState, reportHasFigures, fieldState, fieldDisplay, overtimeNeedsReview, easternStamp, periodRange, sectionPeriodLabel, metricSection, sectionMetrics, METRIC_KEYS, SECTIONS, FIELD_STATE_TEXT, FIELD_STATE_CODES, FIELD_STATE_VERSION, getStandUpEntryWindow, standUpEntryOpensAt, standUpOpenWeek, entryOpenLabel, entryOpensStamp, entryWindowLine, easternInstant, type StandUpReport } from './model'
 describe('Stand Up reporting contract', () => {
- it('opens upcoming Monday on Eastern Sunday, including DST transition', () => {
-  expect(reportingWeek(new Date('2026-09-13T04:00:00Z'))).toBe('2026-09-14')
-  expect(reportingWeek(new Date('2026-09-13T03:59:59Z'))).toBe('2026-09-07')
+ it('keeps the shared calendar period separate from the next editable meeting', () => {
+  expect(reportingWeek(new Date('2026-09-14T13:14:59Z'))).toBe('2026-09-14')
+  expect(reportingWeek(new Date('2026-09-14T13:15:00Z'))).toBe('2026-09-14')
+  expect(reportingWeek(new Date('2026-09-18T20:00:00Z'))).toBe('2026-09-14')
+  expect(standUpOpenWeek({ now: new Date('2026-09-14T13:15:00Z') })).toBe('2026-09-21')
   expect(reportingWeek(new Date('2026-11-01T06:30:00Z'))).toBe('2026-11-02')
  })
  it('keeps blanks distinct from zero and rejects implicit coercion and unknown metrics', () => {
@@ -27,80 +29,51 @@ describe('Stand Up reporting contract', () => {
  */
 describe('Stand Up entry window', () => {
  const utc = (value: string) => new Date(value)
- it('opens the default lead at Sunday 12:00 a.m. Eastern and closes at the 8:45 a.m. target', () => {
-  const window = getStandUpEntryWindow({ meetingMonday: '2026-09-21', leadMinutes: null, now: utc('2026-09-20T04:00:00Z') })
-  expect(window.leadMinutes).toBe(STAND_UP_DEFAULT_ENTRY_OPEN_LEAD_MINUTES)
-  expect(window.opensAt.toISOString()).toBe('2026-09-20T04:00:00.000Z')
+ it('opens at the previous Monday call and keeps the submission target separate', () => {
+  const window = getStandUpEntryWindow({ meetingMonday: '2026-09-21', leadMinutes: null, now: utc('2026-09-14T13:15:00Z') })
+  expect(window.opensAt.toISOString()).toBe('2026-09-14T13:15:00.000Z')
   expect(window.deadlineAt.toISOString()).toBe('2026-09-21T12:45:00.000Z')
   expect(window.callAt.toISOString()).toBe('2026-09-21T13:15:00.000Z')
   expect(window.staffingPeriodStart.toISOString()).toBe('2026-09-14T04:00:00.000Z')
   expect(window.staffingPeriodEnd.toISOString()).toBe('2026-09-21T04:00:00.000Z')
  })
  it('names not_open, open and past_deadline at the exact Eastern minute', () => {
-  const state = (now: string) => getStandUpEntryWindow({ meetingMonday: '2026-09-21', leadMinutes: null, now: utc(now) }).state
-  expect(state('2026-09-20T03:59:00Z')).toBe('not_open')   // Saturday 23:59 Eastern
-  expect(state('2026-09-20T04:00:00Z')).toBe('open')       // Sunday 00:00 Eastern
-  expect(state('2026-09-21T12:44:00Z')).toBe('open')       // Monday 08:44 Eastern
+  const state = (now: string) => getStandUpEntryWindow({ meetingMonday: '2026-09-21', now: utc(now) }).state
+  expect(state('2026-09-14T13:14:59Z')).toBe('not_open')
+  expect(state('2026-09-14T13:15:00Z')).toBe('open')
+  expect(state('2026-09-21T12:44:59Z')).toBe('open')
   expect(state('2026-09-21T12:45:00Z')).toBe('past_deadline')
  })
- it('holds the wall clock across both daylight-saving transitions', () => {
-  // Fall back: the open is still Sunday 12:00 a.m., though 33h45m pass before the target.
-  const fall = getStandUpEntryWindow({ meetingMonday: '2026-11-02', leadMinutes: null, now: utc('2026-11-01T05:00:00Z') })
-  expect(fall.opensAt.toISOString()).toBe('2026-11-01T04:00:00.000Z')
-  expect(fall.deadlineAt.toISOString()).toBe('2026-11-02T13:45:00.000Z')
+ it('holds the call wall clock across both daylight-saving transitions', () => {
+  const fall = getStandUpEntryWindow({ meetingMonday: '2026-11-02', now: utc('2026-11-01T06:30:00Z') })
+  expect(fall.opensAt.toISOString()).toBe('2026-10-26T13:15:00.000Z')
+  expect(fall.callAt.toISOString()).toBe('2026-11-02T14:15:00.000Z')
+  expect(standUpOpenWeek({ now: utc('2026-11-02T14:14:59Z') })).toBe('2026-11-02')
+  expect(standUpOpenWeek({ now: utc('2026-11-02T14:15:00Z') })).toBe('2026-11-09')
+  const spring = getStandUpEntryWindow({ meetingMonday: '2027-03-15', now: utc('2027-03-14T07:00:00Z') })
+  expect(spring.opensAt.toISOString()).toBe('2027-03-08T14:15:00.000Z')
+  expect(spring.callAt.toISOString()).toBe('2027-03-15T13:15:00.000Z')
   expect(fall.state).toBe('open')
-  // Spring forward: Sunday 12:00 a.m. is still standard time, the target is daylight time.
-  const spring = getStandUpEntryWindow({ meetingMonday: '2027-03-15', leadMinutes: null, now: utc('2027-03-14T04:59:00Z') })
-  expect(spring.opensAt.toISOString()).toBe('2027-03-14T05:00:00.000Z')
-  expect(spring.deadlineAt.toISOString()).toBe('2027-03-15T12:45:00.000Z')
-  expect(spring.state).toBe('not_open')
+  expect(spring.state).toBe('open')
  })
- it('reaches back across a month boundary at the widest allowed lead', () => {
-  expect(standUpEntryOpensAt('2026-11-30', 3405).toISOString()).toBe('2026-11-28T05:00:00.000Z')
-  expect(getStandUpEntryWindow({ meetingMonday: '2026-11-30', leadMinutes: 3405, now: utc('2026-11-28T04:59:00Z') }).state).toBe('not_open')
-  expect(getStandUpEntryWindow({ meetingMonday: '2026-11-30', leadMinutes: 3405, now: utc('2026-11-28T05:00:00Z') }).state).toBe('open')
+ it('ignores legacy facility leads for the opening and current report', () => {
+  for (const leadMinutes of [null, undefined, 60, 525, 885, 1965, 3405, 3406]) {
+   expect(standUpEntryOpensAt('2026-11-30', leadMinutes).toISOString()).toBe('2026-11-23T14:15:00.000Z')
+   expect(standUpOpenWeek({ now: utc('2026-09-14T13:15:00Z'), leadMinutes })).toBe('2026-09-21')
+  }
  })
- it('places each of the four offered choices on its named weekday and hour', () => {
-  expect(STAND_UP_ENTRY_OPEN_CHOICES.map(choice => choice.minutes)).toEqual([3405, 1965, 885, 525])
-  const opens = Object.fromEntries(STAND_UP_ENTRY_OPEN_CHOICES.map(choice => [choice.minutes, standUpEntryOpensAt('2026-09-21', choice.minutes).toISOString()]))
-  expect(opens).toEqual({
-   3405: '2026-09-19T04:00:00.000Z', // Saturday 12:00 a.m. Eastern
-   1965: '2026-09-20T04:00:00.000Z', // Sunday 12:00 a.m. Eastern
-   885: '2026-09-20T22:00:00.000Z',  // Sunday 6:00 p.m. Eastern
-   525: '2026-09-21T04:00:00.000Z',  // Monday 12:00 a.m. Eastern
-  })
-  expect(STAND_UP_ENTRY_OPEN_CHOICES.map(choice => choice.label)).toEqual(STAND_UP_ENTRY_OPEN_CHOICES.map(choice => entryOpenLabel(choice.minutes)))
+ it('keeps a report available every day until the next scheduled call', () => {
+  for (const now of ['2026-09-14T13:15:00Z', '2026-09-15T04:00:00Z', '2026-09-16T18:00:00Z', '2026-09-17T13:15:00Z', '2026-09-18T19:00:00Z', '2026-09-19T04:00:00Z', '2026-09-20T22:00:00Z', '2026-09-21T13:14:59Z']) {
+   expect(standUpOpenWeek({ now: utc(now) })).toBe('2026-09-21')
+   expect(getStandUpEntryWindow({ meetingMonday: '2026-09-21', now: utc(now) }).state).not.toBe('not_open')
+  }
+  expect(standUpOpenWeek({ now: utc('2026-09-21T13:15:00Z') })).toBe('2026-09-28')
  })
- it('rejects a lead outside the bounds and falls back to the default', () => {
-  expect(STAND_UP_ENTRY_OPEN_LEAD_MIN).toBe(60)
-  expect(STAND_UP_ENTRY_OPEN_LEAD_MAX).toBe(3405)
-  expect(isEntryOpenLeadMinutes(59)).toBe(false)
-  expect(isEntryOpenLeadMinutes(3406)).toBe(false)
-  expect(isEntryOpenLeadMinutes(60)).toBe(true)
-  expect(isEntryOpenLeadMinutes(3405)).toBe(true)
-  expect(isEntryOpenLeadMinutes(1965.5)).toBe(false)
-  expect(isEntryOpenLeadMinutes('1965')).toBe(false)
-  for (const rejected of [59, 3406, null, undefined]) expect(entryOpenLeadMinutes(rejected as number)).toBe(1965)
-  // The narrowest allowed window still opens Monday morning before the target.
-  expect(standUpEntryOpensAt('2026-09-21', 60).toISOString()).toBe('2026-09-21T11:45:00.000Z')
- })
- it('advances the open week only when that facility window has opened', () => {
-  // Default lead: unchanged from the behaviour Haven shipped, Sunday midnight Eastern.
-  expect(standUpOpenWeek({ now: utc('2026-09-20T03:59:59Z') })).toBe('2026-09-14')
-  expect(standUpOpenWeek({ now: utc('2026-09-20T04:00:00Z') })).toBe('2026-09-21')
-  expect(reportingWeek(utc('2026-09-13T04:00:00Z'))).toBe('2026-09-14')
-  // A widened facility reaches the upcoming Monday a full day earlier.
-  expect(standUpOpenWeek({ now: utc('2026-09-19T03:59:00Z'), leadMinutes: 3405 })).toBe('2026-09-14')
-  expect(standUpOpenWeek({ now: utc('2026-09-19T04:00:00Z'), leadMinutes: 3405 })).toBe('2026-09-21')
-  // A narrowed facility stays on the prior Monday until Monday morning.
-  expect(standUpOpenWeek({ now: utc('2026-09-21T03:00:00Z'), leadMinutes: 60 })).toBe('2026-09-14')
-  expect(standUpOpenWeek({ now: utc('2026-09-21T11:45:00Z'), leadMinutes: 60 })).toBe('2026-09-21')
- })
- it('writes one operator line for the window and one for a report that has not opened', () => {
-  expect(entryWindowLine(null)).toBe('Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern')
-  expect(entryWindowLine(3405)).toBe('Opens Saturday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern')
-  expect(entryOpensStamp('2026-09-21', null)).toBe('Sunday, September 20 at 12:00 a.m. Eastern')
-  expect(entryOpensStamp('2026-09-21', 885)).toBe('Sunday, September 20 at 6:00 p.m. Eastern')
+ it('writes the always-available entry and scheduled record lock', () => {
+  expect(entryWindowLine(null)).toBe('Entry available anytime · Due Monday 8:45 a.m. · Record locks Monday 9:15 a.m. Eastern')
+  expect(entryWindowLine(3405)).toBe(entryWindowLine(null))
+  expect(entryOpenLabel(885)).toBe('Previous Monday 9:15 a.m.')
+  expect(entryOpensStamp('2026-09-21', null)).toBe('Monday, September 14 at 9:15 a.m. Eastern')
  })
  it('resolves an Eastern wall clock without adding a fixed offset to UTC', () => {
   expect(easternInstant('2026-09-20', 0).toISOString()).toBe('2026-09-20T04:00:00.000Z')
@@ -256,14 +229,16 @@ describe('Monday reads its times from the meeting schedule (COL-805)', () => {
   it('states, opens and closes the window at the scheduled times', async () => {
     const { entryWindowLine, entryOpenLabel, deadlinePassed, getStandUpEntryWindow } = await import('./model')
     const times = { dueMinutes: 540, callMinutes: 570 }
-    // Unchanged schedule: the words are exactly what they were.
-    expect(entryWindowLine(undefined)).toBe('Opens Sunday 12:00 a.m. · Due Monday 8:45 a.m. · Call 9:15 a.m. Eastern')
-    expect(entryWindowLine(undefined, times)).toBe('Opens Sunday 12:15 a.m. · Due Monday 9:00 a.m. · Call 9:30 a.m. Eastern')
-    // A choice is named for when it actually opens against the scheduled deadline.
-    expect(entryOpenLabel(1965, times)).toBe('Sunday 12:15 a.m.')
+    expect(entryWindowLine(undefined)).toBe('Entry available anytime · Due Monday 8:45 a.m. · Record locks Monday 9:15 a.m. Eastern')
+    expect(entryWindowLine(undefined, times)).toBe('Entry available anytime · Due Monday 9:00 a.m. · Record locks Monday 9:30 a.m. Eastern')
+    // The opening follows the call, regardless of the legacy lead or due target.
+    expect(entryOpenLabel(1965, times)).toBe('Previous Monday 9:30 a.m.')
     expect(deadlinePassed('2026-09-21', new Date('2026-09-21T12:50:00Z'))).toBe(true)
     expect(deadlinePassed('2026-09-21', new Date('2026-09-21T12:50:00Z'), times)).toBe(false)
     const window = getStandUpEntryWindow({ meetingMonday: '2026-09-21', now: new Date('2026-09-21T12:00:00Z'), times })
+    expect(window.opensAt.toISOString()).toBe('2026-09-14T13:30:00.000Z')
+    expect(standUpOpenWeek({ now: new Date('2026-09-21T13:29:59Z'), times })).toBe('2026-09-21')
+    expect(standUpOpenWeek({ now: new Date('2026-09-21T13:30:00Z'), times })).toBe('2026-09-28')
     expect(window.deadlineAt.toISOString()).toBe('2026-09-21T13:00:00.000Z')
     expect(window.callAt.toISOString()).toBe('2026-09-21T13:30:00.000Z')
   })
