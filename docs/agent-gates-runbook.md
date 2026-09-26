@@ -67,11 +67,15 @@ This avoids GitHub's suppression of push workflows after a token-driven merge.
 It does not change branch protection or add a service credential.
 
 Dispatched CI stays on `ref: main`, so native checks and the existing failure
-observer identify the same revision. Before classification, it requires the
+observer identify the same revision. Keep the primary workflow's stable name:
+custom run names also change the API's `name` field and break completion routing.
+Before classification, it requires the
 captured `github.sha` to equal the requested SHA and validates the first-parent
 diff boundary. A main advance makes that run fail before any gates execute;
-the reconciler retries the new tip, at most three times. A mismatched dispatch
-cannot supply proof for the newer revision. Existing pending, successful, or
+the reconciler retries the new tip, at most three times. Completed dispatches
+must have a successful revision-validation step before they count as existing
+CI; rejected inputs cannot hide missing gates. A mismatched dispatch cannot
+supply proof for the newer revision. Existing pending, successful, or
 failed runs are retained instead of repeating their gates; failure alerting
 continues to observe actual primary runs. Dispatch/readback failure is a failed
 monitor job, not evidence of healthy CI.
