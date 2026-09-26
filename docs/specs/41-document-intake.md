@@ -14,7 +14,7 @@ Received document → preserved original → authorized reader + Jev processing 
 
 Every filing needs a person's approval in v1. Filing never approves a payment, a clinical fact, a training completion, an insurance acceptance or a Medicaid deadline.
 
-## Data (migration 545)
+## Data (migrations 545, 559-561)
 
 | Table | Holds |
 |---|---|
@@ -28,6 +28,8 @@ Every filing needs a person's approval in v1. Filing never approves a payment, a
 | `document_intake_reviewers` | Named primary / backup per facility, and the custodian for unknown-facility mail. |
 | `document_intake_mailboxes`, `_messages`, `_sender_routes` | Email receipt: per-folder delta cursor, message manifest, authenticated sender → facility. |
 | `document_intake_requests` | Idempotency ledger: same key + same request replays; same key + different request is refused. |
+
+Later migrations: 559 replaces `document_intake_prepare_filing` to take reviewer verdicts on flagged Jev checks (stored at `document_intake_filings.reviewer_changes.checks`). 560 adds `haven.wilson_lower` and the read-only views `document_intake_jev_outcomes` and `document_intake_jev_check_outcomes` (security_invoker). 561 extends `document_intake_worker_subjects` (same signature, grants and `SECURITY DEFINER`): residents carry `admission_date`, `facility` carries names, city, AHCA license number and expiration and licensed beds, and a new `org_facilities` array lists every facility in the organization (`id`, `name`, `legal_name`, `dba`, `city`).
 
 ### Destinations (catalog `destination_kind`)
 
@@ -51,6 +53,25 @@ Every filing needs a person's approval in v1. Filing never approves a payment, a
 - **Code** does every date, amount and identity comparison. Jev answers are stored as returned (question version, model, probabilities); probabilities are never shown as "percent correct".
 - **Paid-call safety:** dispatch intent is written before every call. A lease that expires after dispatch makes the run `uncertain`; nothing is re-sent until a person confirms "send again" (`reprocess` with `accept_possible_duplicate_charge`).
 - Payment evidence (checks, deposit slips) never goes to a reader.
+
+### Per-type evidence and questions (`intake-v2`)
+
+- **Reader copies evidence.** For the catalog code it picks, the reader returns an `evidence` object (short verbatim excerpts, dates, whole numbers, one-sentence descriptions of signature lines), per type plus `COMMON_EVIDENCE`. Evidence is masked with `maskIdentifiers` before storage and before Jev; bad fields become one `reader_evidence_invalid` warning (field names only). Stored at `result.reader.evidence`.
+- **Jev judges, code decides.** Each type has its own question set; Jev is never asked whether something is expired, late, adequate or within a window. Every date window, count and identity comparison runs in code (`supabase/functions/_shared/intake-type-checks.ts`) after Jev, so it can use Jev's classifications. Constants shared with admissions (medical exam window, Form 1823 365-day default) are drift-tested against `src/lib/admissions/`.
+- **Question wording is versioned data** in `supabase/functions/_shared/intake-type-questions.ts`. Each proposal records `jev.questions_version` = `intake-v2/<code>.<n>`. Any wording or rule change to a type bumps that type's `version`; shared wording or builder changes bump `INTAKE_QUESTIONS_VERSION`. Never edit wording without the bump.
+- **What Jev sees:** document type label, title, summary, the evidence, reader notes, page count, names found (person, employee, vendor, agency), candidate labels, and the receiving and sister Circle of Life facility names (`name`, `legal_name`, `dba`, `city`). Never the original, never a date of birth, never ids.
+- **PHI gate (unchanged):** a `contains_phi` type needs `jev_phi_enabled`. With today's settings Jev runs on the non-PHI facility and vendor types only; the resident, Medicaid and staff sets ship ready and switch on with the flag.
+- **Pre-selection:** Jev's destination pick is pre-selected only when its lead over the runner-up clears the margin, Jev's `type_matches` is not "no", and no `dob_matches` check failed for that candidate. The same gate applies to code's own pick; a blocked pick leaves nothing pre-selected, with warning `jev_preselect_blocked`. Margin: `routing_json.document_intake.jev_margin_by_type[<code>]`, else `jev_margin`, else 0.2; values outside 0 to 1 are ignored.
+- **Reviewer verdicts (migration 559):** each Jev check with result Fail or Unknown shows "Was Jev right?" (Right, Wrong, Can't tell). When Jev ran, filing requires a verdict on every flagged check; unknown codes or values are refused. Stored at `document_intake_filings.reviewer_changes.checks`.
+- **Accuracy page** `/admin/document-intake/accuracy` ("Jev accuracy" in the workspace header, same gate as the queue), over views `document_intake_jev_outcomes` and `document_intake_jev_check_outcomes` (security_invoker, migration 560). Per type and current `questions_version`: top pick right (k of n with the Wilson lower bound), the margin recommendation (Collect, Keep, Loosen, Tighten, Off; logic in `src/lib/document-intake/jev-accuracy.ts`), per-check right rate and unknown share, and the misses. The page renders the setting change as SQL for Brian; it never writes a setting.
+
+### Open owner decisions
+
+- Physician assistants as Form 1823 examiners (Jessica): `pa` passes until decided.
+- Florida POA and surrogate execution formalities in `authority_instrument` (Donna): as written until decided.
+- Vendor COI general liability minimum (Brian): `VENDOR_COI_MIN_GL_EACH_OCCURRENCE_CENTS` is null, no check.
+- Freshness rule for Medicaid application bank statements (Jessica): not encoded, no check.
+- Legal entity names for Oakridge, Rising Oaks, Grande Cypress and Plantation (`facilities.legal_name` is null), and Homewood's LLC versus LLLC (Brian, Donna): facility match falls back to name, DBA and address.
 
 ## Splitting
 

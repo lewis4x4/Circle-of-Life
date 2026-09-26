@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { INTAKE_TABS, ITEM_STATUSES } from "@/lib/document-intake/contracts";
+import { INTAKE_TABS, ITEM_STATUSES, type ProposalRow } from "@/lib/document-intake/contracts";
 
 import {
   ageLabel,
   eventLabel,
+  flaggedJevChecks,
   isOverdue,
   jevAnswerLine,
   pagesLabel,
@@ -13,6 +14,8 @@ import {
   stageStatusLabel,
   statusTone,
   tabStatuses,
+  verdictsComplete,
+  verdictsForFiling,
 } from "./model";
 
 describe("intake tabs", () => {
@@ -66,7 +69,7 @@ describe("age and overdue", () => {
 
 describe("honest AI stage wording", () => {
   it("never reads a stage that did not run as a pass", () => {
-    expect(stageStatusLabel("reader", { state: "not_authorized" })).toBe("AI not run — not authorized");
+    expect(stageStatusLabel("reader", { state: "not_authorized" })).toBe("AI not run: not authorized");
     expect(stageStatusLabel("reader", { state: "failed" })).toBe("AI failed");
     expect(stageStatusLabel("jev", { state: "not_applicable" })).toBe("Jev not used for this type");
     expect(stageStatusLabel("reader", undefined, "uncertain")).toBe("AI result unknown");
@@ -96,5 +99,38 @@ describe("history wording", () => {
     expect(principalLabel("person", null)).toBe("A staff member");
     expect(principalLabel("worker", null)).toBe("Haven reader");
     expect(principalLabel("mail_receiver", null)).toBe("Email receipt");
+  });
+});
+
+describe("reviewer verdicts on flagged Jev checks", () => {
+  const checks: ProposalRow["checks"] = [
+    { code: "jev_legible_complete", label: "Legible and complete", result: "pass", source: "jev" },
+    { code: "jev_facility_named", label: "Names this facility", result: "fail", source: "jev" },
+    { code: "jev_signed", label: "Signed", result: "unknown", source: "jev" },
+    { code: "license_current", label: "License current", result: "fail", source: "code" },
+    { code: "reader_pages", label: "Pages read", result: "unknown", source: "reader" },
+  ];
+  const ran = { checks, stage_status: { jev: { state: "ran" as const } } };
+
+  it("flags only Jev checks that failed or are unknown", () => {
+    expect(flaggedJevChecks(ran).map((c) => c.code)).toEqual(["jev_facility_named", "jev_signed"]);
+    expect(flaggedJevChecks(null)).toEqual([]);
+  });
+
+  it("is complete only when every flagged check has a verdict, once Jev ran", () => {
+    expect(verdictsComplete(ran, {})).toBe(false);
+    expect(verdictsComplete(ran, { jev_facility_named: "wrong" })).toBe(false);
+    expect(verdictsComplete(ran, { jev_facility_named: "wrong", jev_signed: "cant_tell" })).toBe(true);
+    expect(verdictsComplete({ checks: [checks[0]!, checks[3]!], stage_status: { jev: { state: "ran" } } }, {})).toBe(true);
+  });
+
+  it("does not ask for verdicts when Jev did not run, or when there is no proposal", () => {
+    expect(verdictsComplete({ checks, stage_status: { jev: { state: "not_authorized" } } }, {})).toBe(true);
+    expect(verdictsComplete({ checks, stage_status: {} }, {})).toBe(true);
+    expect(verdictsComplete(null, {})).toBe(true);
+  });
+
+  it("sends only verdicts for this proposal's flagged Jev checks", () => {
+    expect(verdictsForFiling(ran, { jev_facility_named: "right", jev_legible_complete: "right", stale_code: "wrong" })).toEqual({ jev_facility_named: "right" });
   });
 });

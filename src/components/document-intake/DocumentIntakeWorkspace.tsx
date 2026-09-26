@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Gauge, Plus } from "lucide-react";
 
 import { AdminEmptyState, AdminErrorState, AdminTableLoadingState } from "@/components/common/admin-list-patterns";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form-label";
 import { Input } from "@/components/ui/input";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -161,10 +161,16 @@ export function DocumentIntakeWorkspace({ initialTab }: { initialTab: IntakeTab 
         title="Document Intake"
         subtitle={`Received documents waiting for a person to check and file them. ${scopeName}.`}
         actions={
-          <Button type="button" onClick={() => setUploadOpen(true)}>
-            <Plus className="size-4" aria-hidden />
-            Add documents
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/document-intake/accuracy" className={buttonVariants({ variant: "outline" })}>
+              <Gauge className="size-4" aria-hidden />
+              Jev accuracy
+            </Link>
+            <Button type="button" onClick={() => setUploadOpen(true)}>
+              <Plus className="size-4" aria-hidden />
+              Add documents
+            </Button>
+          </div>
         }
       />
 
@@ -187,7 +193,7 @@ export function DocumentIntakeWorkspace({ initialTab }: { initialTab: IntakeTab 
               <span className="tabular-nums text-muted-foreground">{counts[key]}</span>
             ) : (
               <span className="text-muted-foreground">
-                <span aria-hidden>—</span>
+                <span aria-hidden>·</span>
                 <span className="sr-only">count unavailable</span>
               </span>
             )}
@@ -273,7 +279,7 @@ export function DocumentIntakeWorkspace({ initialTab }: { initialTab: IntakeTab 
                       </Link>
                       {item.catalog_code ? <span className="block truncate text-xs text-muted-foreground">{catalogLabels[item.catalog_code] ?? "Type not listed"}</span> : null}
                     </TableCell>
-                    <TableCell>{item.facility_id ? (facilityNames[item.facility_id] ?? "—") : "Facility unknown"}</TableCell>
+                    <TableCell>{item.facility_id ? (facilityNames[item.facility_id] ?? "Facility not listed") : "Facility unknown"}</TableCell>
                     <TableCell className="whitespace-nowrap tabular-nums">{formatFacilityTimestampEt(item.received_at)}</TableCell>
                     <TableCell>{CHANNEL_LABELS[item.channel]}</TableCell>
                     <TableCell>
@@ -284,7 +290,7 @@ export function DocumentIntakeWorkspace({ initialTab }: { initialTab: IntakeTab 
                         {processingLabel(item.processing_state)}
                       </StatusPill>
                     </TableCell>
-                    <TableCell>{item.assigned_to ? (item.assigned_to === userId ? "Me" : (names[item.assigned_to] ?? "Assigned")) : "—"}</TableCell>
+                    <TableCell>{item.assigned_to ? (item.assigned_to === userId ? "Me" : (names[item.assigned_to] ?? "Assigned")) : "Unassigned"}</TableCell>
                     <TableCell className={cn("whitespace-nowrap text-right tabular-nums", overdue && "font-semibold text-destructive")}>
                       {ageLabel(item.received_at, now)}
                       {overdue ? <span className="sr-only"> (overdue)</span> : null}

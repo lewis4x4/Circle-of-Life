@@ -3,7 +3,7 @@
  * caller keeps for the life of one user action, so "Try again" replays the
  * same request instead of making a second one.
  */
-import type { FilingRow, IntakeCommand, IntakeItem } from "@/lib/document-intake/contracts";
+import type { CheckVerdicts, FilingRow, IntakeCommand, IntakeItem } from "@/lib/document-intake/contracts";
 
 export const INTAKE_API = "/api/admin/document-intake";
 
@@ -30,7 +30,7 @@ export class IntakeRequestError extends Error {
   }
 }
 
-export const STALE_MESSAGE = "This document changed — review the latest version.";
+export const STALE_MESSAGE = "This document changed. Review the latest version.";
 
 export async function intakeFetch<T>(url: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -133,6 +133,8 @@ export type FileBody = {
   title: string;
   document_date?: string | null;
   expiration_date?: string | null;
+  /** Right / Wrong / Can't tell per flagged Jev check code. */
+  check_verdicts?: CheckVerdicts;
 };
 
 export function fileItem(item: Pick<IntakeItem, "id" | "revision">, body: FileBody, requestKey: string) {

@@ -63,6 +63,8 @@ export async function fileDocumentIntakeItem(request: Request, itemId: string) {
         title: destination.title,
         document_date: destination.document_date ?? null,
         expiration_date: destination.expiration_date ?? null,
+        // 559: the reviewer's grade of each flagged Jev check; the RPC validates and stores it.
+        check_verdicts: destination.check_verdicts ?? {},
       },
     } as never,
   );

@@ -484,6 +484,8 @@ Priority is **owner-led** (COL ops + compliance). Typical order of attack:
 | 38 | `26-ambient-intelligence.md` | Ambient Environment Intelligence | `ambient_consent_policies`, `resident_sensor_opt_in`; BLE/MQTT gateway; retention TTL; redaction Edge Function. |
 | 39 | `39-medicaid-benefits-workflow.md` | Medicaid & Benefits case workflow (COL-504/539/549) | `benefits_cases`, `benefits_requirements`, `benefits_documents` (private bucket), `benefits_events`, `benefits_submissions`, `benefits_receipts`, `benefits_history`, `benefits_requests`, `benefits_access_grants`, `benefits_collection_requests`, `benefits_rules`; migrations 445/446/449/451+. Operating rules are effective-dated rows, never code constants. |
 | 40 | `40-floor-tablet-and-kiosk.md` | Shared floor tablets and front-door kiosk (COL-677; children COL-690 to COL-695) | Floor tablet unlock by on-clock roster + timeclock PIN (append-only unlock ledger, server-minted session, lock on idle/hide/heartbeat), `/floor` app over Smart Rounding + Something happened, `/kiosk` staff punch + AHCA visitor sign-in/out, rounding owner from punches; migrations 494 and 495. Design contract `docs/designs/floor-tablet-kiosk/`. Roster roles and idle lock are facility settings, never code constants. |
+| 41 | `41-document-intake.md` | Document Intake (COL-771) | Single intake queue: reader + Jev proposal, person approves every filing; migrations 545 to 548, 559 to 561. |
+| 41 (AI) | `41-document-intake.md` § AI; `supabase/functions/_shared/intake-type-questions.ts` | Jev question sets | Per-type evidence and questions (`intake-v2/<code>.<n>`), code checks in `intake-type-checks.ts`, reviewer verdicts, Jev accuracy page. Wording is versioned data: bump the type's version on any change. |
 
 ---
 

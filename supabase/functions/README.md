@@ -241,4 +241,24 @@ supabase functions deploy grace-redteam-nightly --project-ref manfqmasfqppukpobp
 
 `document-intake-processor` reads Document Intake originals with the reader (Anthropic) and Jev (TypeSafe) and publishes proposals through the `document_intake_worker_*` RPCs (spec `docs/specs/41-document-intake.md`, COL-771). It records dispatch intent before every paid call and never re-sends one whose outcome is unknown. Edge `DOCUMENT_INTAKE_PROCESSOR_SECRET`, `ANTHROPIC_API_KEY`, `TYPESAFE_API_KEY`, optional `DOCUMENT_INTAKE_READER_MODEL`; Vault `document_intake_functions_url`, `document_intake_processor_cron_secret`. The cron (migration 546) is created inactive.
 
+The processor reads these keys from `ai_invocation_policies.routing_json.document_intake` (the PHI and BAA gates on the policy row itself still apply first):
+
+| Key | Type | Effect |
+|---|---|---|
+| `enabled` | boolean | Reader runs only when `true`. |
+| `provider` | string | Reader provider; anything other than `anthropic` blocks the reader. |
+| `jev_enabled` | boolean | Jev runs only when `true` (and the catalog row has `jev_enabled`). |
+| `jev_phi_enabled` | boolean | Jev on `contains_phi` types only when `true`. |
+| `jev_margin` | number, 0 to 1 | Global pre-selection margin: Jev's pick is pre-selected only when its lead over the runner-up exceeds it. Default 0.2. |
+| `jev_margin_by_type` | object, code to number | Per catalog code margin; wins over `jev_margin`. |
+
+Precedence: `jev_margin_by_type[<code>]`, then `jev_margin`, then 0.2. A value that is not a number from 0 to 1 is ignored and the next one applies. A margin of 1 can never be cleared, so Jev still answers but pre-selects nothing. Example:
+
+```json
+{ "document_intake": { "enabled": true, "jev_enabled": true, "jev_phi_enabled": false, "jev_margin": 0.2,
+  "jev_margin_by_type": { "facility_license": 0.1, "vendor_coi": 0.3 } } }
+```
+
+Per-type values come from the Jev accuracy page (`/admin/document-intake/accuracy`), which renders the `update` for a person to run; nothing writes this setting automatically.
+
 `document-intake-mail-sync` reads each active `document_intake_mailboxes` row with Microsoft Graph (read-only, one mailbox by Exchange RBAC), stores the raw message first, then one intake item per accepted attachment; the folder cursor advances only after every message is stored or recorded as an exception. Edge `DOCUMENT_INTAKE_MAIL_SYNC_SECRET`, `MS_GRAPH_TENANT_ID`, `MS_GRAPH_CLIENT_ID`, `MS_GRAPH_CLIENT_SECRET`; Vault `document_intake_mail_sync_cron_secret`. The cron (migration 546) is created inactive.
