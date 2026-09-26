@@ -22,7 +22,7 @@ function validateRun(run, workflowId) {
   requireValue(run.repository?.full_name === REPOSITORY && run.head_branch === "main" && SHA.test(run.head_sha ?? ""), "Unexpected primary CI run source");
 }
 
-export async function reconcile({ api, pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = () => Date.now() }) {
+export async function reconcile({ api }) {
   const workflow = await api("GET", workflowPath);
   requireValue(Number.isSafeInteger(workflow.id) && workflow.state === "active" && workflow.path === ".github/workflows/ci-gates.yml", "Primary CI workflow is not active");
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -42,40 +42,33 @@ export async function reconcile({ api, pause = (ms) => new Promise((resolve) => 
       if (data.workflow_runs.length < 100) break;
       requireValue(page < 5, "Primary CI inventory exceeded its bounded scan");
     }
-    // A raced dispatch is rejected before classification. Its native checks
-    // must never count as proof for the newer SHA captured by GitHub.
-    const valid = existing.find((run) => {
+    let valid;
+    for (const run of existing) {
       // PR runs (including a fork branch named main) are not post-merge CI.
-      if (!["push", "workflow_dispatch"].includes(run.event)) return false;
+      if (!["push", "workflow_dispatch"].includes(run.event)) continue;
       requireValue(run.head_repository?.full_name === REPOSITORY, "Primary CI run came from another head repository");
-      const requested = /^Main CI for ([0-9a-f]{40}) from ([0-9a-f]{40})$/.exec(run.display_title ?? "");
-      return run.event === "push" || (requested?.[1] === sha && requested[2] === base);
-    });
+      if (run.event === "workflow_dispatch" && run.status === "completed") {
+        requireValue(Number.isSafeInteger(run.run_attempt) && run.run_attempt > 0, "Missing dispatch attempt identity");
+        const jobs = await api("GET", `${root}/actions/runs/${run.id}/attempts/${run.run_attempt}/jobs?per_page=100`);
+        requireValue(Array.isArray(jobs.jobs), "Missing dispatch validation evidence");
+        requireValue(jobs.jobs.every((job) => job.run_id === run.id) && (jobs.total_count ?? jobs.jobs.length) <= 100, "Dispatch validation jobs do not match the bounded run inventory");
+        const guard = jobs.jobs.find((job) => job.name === "Classify change risk")?.steps?.find((step) => step.name === "Validate dispatched main revision");
+        // A rejected SHA/base, startup failure, or absent guard cannot stand
+        // in for real post-merge gates. Real gate failures remain failures.
+        if (guard?.conclusion !== "success") continue;
+      }
+      valid = run;
+      break;
+    }
     if (valid) return { action: "existing", sha, run_id: valid.id, status: valid.status, conclusion: valid.conclusion };
 
-    const started = now();
     const result = await api("POST", `${workflowPath}/dispatches`, { ref: "main", inputs: { expected_sha: sha, base_sha: base } });
-    let runId = result?.workflow_run_id;
-    // The 2026 API returns the run id; retain safe readback for older 204 responses.
-    for (let poll = 0; !runId && poll < 10; poll++) {
-      const data = await api("GET", `${workflowPath}/runs?branch=main&event=workflow_dispatch&per_page=100`);
-      requireValue(Array.isArray(data.workflow_runs), "Missing dispatch readback");
-      const run = data.workflow_runs.find((r) => r.display_title === `Main CI for ${sha} from ${base}` && !existing.some((e) => e.id === r.id) && Date.parse(r.created_at) >= started - 10_000);
-      runId = run?.id;
-      if (!runId) await pause(1000);
-    }
+    const runId = result?.workflow_run_id;
     requireValue(Number.isSafeInteger(runId) && runId > 0, "Dispatch was accepted but no run could be verified");
-    let run;
-    for (let poll = 0; poll < 10; poll++) {
-      run = await api("GET", `${root}/actions/runs/${runId}`);
-      validateRun(run, workflow.id);
-      requireValue(run.head_repository?.full_name === REPOSITORY, "Dispatch came from another head repository");
-      if (run.event === "workflow_dispatch" && run.display_title === `Main CI for ${sha} from ${base}`) break;
-      // The run id is returned before GitHub finishes evaluating run-name.
-      // Read the same immutable id; do not submit another dispatch for this delay.
-      if (poll < 9) await pause(1000);
-    }
-    requireValue(run.event === "workflow_dispatch" && run.display_title === `Main CI for ${sha} from ${base}`, "Dispatch readback does not match the requested revision");
+    const run = await api("GET", `${root}/actions/runs/${runId}`);
+    validateRun(run, workflow.id);
+    requireValue(run.head_repository?.full_name === REPOSITORY, "Dispatch came from another head repository");
+    requireValue(run.id === runId && run.event === "workflow_dispatch", "Dispatch readback does not match the accepted run identity");
     if (run.head_sha === sha) return { action: "dispatched", sha, base_sha: base, run_id: runId, url: `https://github.com/${REPOSITORY}/actions/runs/${runId}` };
     // GitHub resolves main when accepting the dispatch. Retry the new tip;
     // the expected-SHA guard makes the raced run fail instead of testing it.

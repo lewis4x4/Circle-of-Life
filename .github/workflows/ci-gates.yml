@@ -1,5 +1,4 @@
 name: CI — segment gates
-run-name: ${{ github.event_name == 'workflow_dispatch' && format('Main CI for {0} from {1}', inputs.expected_sha, inputs.base_sha) || 'CI — segment gates' }}
 
 on:
   push:

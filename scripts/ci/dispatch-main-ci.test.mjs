@@ -7,16 +7,16 @@ const sha = "a".repeat(40);
 const base = "b".repeat(40);
 const newer = "c".repeat(40);
 const wf = { id: 1, path: ".github/workflows/ci-gates.yml", state: "active" };
-const run = (extra = {}) => ({ id: 10, workflow_id: 1, repository: { full_name: REPOSITORY }, head_repository: { full_name: REPOSITORY }, head_branch: "main", head_sha: sha, event: "workflow_dispatch", display_title: `Main CI for ${sha} from ${base}`, status: "queued", conclusion: null, ...extra });
+const run = (extra = {}) => ({ id: 10, run_attempt: 1, workflow_id: 1, repository: { full_name: REPOSITORY }, head_repository: { full_name: REPOSITORY }, head_branch: "main", head_sha: sha, event: "workflow_dispatch", display_title: "CI — segment gates", status: "queued", conclusion: null, ...extra });
 
-function fixture({ existing = [], readback = run(), response = { workflow_run_id: 10 } } = {}) {
+function fixture({ existing = [], readback = run(), response = { workflow_run_id: 10 }, guard = "success" } = {}) {
   const writes = [];
   const api = async (method, endpoint, body) => {
     if (method === "POST") { writes.push({ endpoint, body }); return response; }
     if (endpoint.endsWith("/commits/main")) return { sha, parents: [{ sha: base }] };
     if (endpoint.endsWith("/actions/workflows/ci-gates.yml")) return wf;
     if (endpoint.includes("head_sha=")) return { workflow_runs: existing };
-    if (endpoint.includes("event=workflow_dispatch")) return { workflow_runs: [readback] };
+    if (endpoint.endsWith("/attempts/1/jobs?per_page=100")) return { jobs: [{ run_id: 10, name: "Classify change risk", steps: guard === null ? [] : [{ name: "Validate dispatched main revision", conclusion: guard }] }] };
     if (endpoint.endsWith("/actions/runs/10")) return readback;
     throw new Error(`Unexpected fixture request: ${endpoint}`);
   };
@@ -42,11 +42,10 @@ for (const [status, conclusion] of [["queued", null], ["in_progress", null], ["c
   });
 }
 
-test("older API 204 dispatch is verified rather than assumed successful", async () => {
-  const f = fixture({ response: undefined, readback: run({ created_at: new Date().toISOString() }) });
-  // Undefined must be explicit because destructuring otherwise takes the default.
+test("an accepted dispatch without a returned run id is not assumed successful", async () => {
+  const f = fixture();
   const api = async (...args) => args[0] === "POST" ? (await f.api(...args), undefined) : f.api(...args);
-  assert.equal((await reconcile({ api, pause: async () => {} })).action, "dispatched");
+  await assert.rejects(reconcile({ api }), /no run could be verified/);
 });
 
 test("unverifiable accepted dispatch fails visibly", async () => {
@@ -55,33 +54,33 @@ test("unverifiable accepted dispatch fails visibly", async () => {
   await assert.rejects(reconcile({ api, pause: async () => {} }), /no run could be verified/);
 });
 
-test("accepted run id is reused while GitHub hydrates its run title", async () => {
+test("readback uses the accepted run identity without relying on late display-title metadata", async () => {
   const f = fixture();
   let reads = 0;
   const api = async (...args) => {
-    if (args[1].endsWith("/actions/runs/10")) return ++reads < 3 ? run({ display_title: "CI — segment gates" }) : run();
+    if (args[1].endsWith("/actions/runs/10")) { reads++; return run({ display_title: "not yet hydrated" }); }
     return f.api(...args);
   };
   assert.equal((await reconcile({ api, pause: async () => {} })).action, "dispatched");
-  assert.equal(reads, 3);
+  assert.equal(reads, 1);
   assert.equal(f.writes.length, 1, "metadata delay must not repeat the dispatch");
 });
 
-test("persistently wrong dispatch title remains a visible failure after bounded readback", async () => {
-  const f = fixture({ readback: run({ display_title: "another request" }) });
+test("a different returned run id remains a visible readback failure", async () => {
+  const f = fixture({ readback: run({ id: 11 }) });
   await assert.rejects(reconcile({ api: f.api, pause: async () => {} }), /does not match/);
   assert.equal(f.writes.length, 1);
 });
 
 test("raced dispatch cannot satisfy the newer commit's CI inventory", async () => {
-  const f = fixture({ existing: [run({ display_title: `Main CI for ${base} from ${newer}`, status: "completed", conclusion: "failure" })] });
+  const f = fixture({ existing: [run({ status: "completed", conclusion: "failure" })], guard: "failure" });
   assert.equal((await reconcile({ api: f.api })).action, "dispatched");
   assert.equal(f.writes.length, 1);
 });
 
 test("malformed expected SHA or wrong first parent cannot suppress valid primary CI", async () => {
-  for (const title of [`Main CI for typo from ${base}`, `Main CI for ${sha} from ${newer}`]) {
-    const f = fixture({ existing: [run({ display_title: title, status: "completed", conclusion: "failure" })] });
+  for (const guard of ["failure", "skipped", null]) {
+    const f = fixture({ existing: [run({ status: "completed", conclusion: "failure" })], guard });
     assert.equal((await reconcile({ api: f.api })).action, "dispatched");
   }
 });
@@ -142,6 +141,7 @@ test("workflow wiring guards before classification and keeps main failure observ
   const ci = readFileSync(new URL("../../.github/workflows/ci-gates.yml", import.meta.url), "utf8");
   const monitor = readFileSync(new URL("../../.github/workflows/main-ci-failure-alert.yml", import.meta.url), "utf8");
   assert.match(ci, /workflow_dispatch:/);
+  assert.doesNotMatch(ci, /^run-name:/m, "the existing observer routes by stable workflow name");
   assert.ok(ci.indexOf("Validate dispatched main revision") < ci.indexOf("Classify changed paths"));
   assert.match(ci, /CI_DIFF_BASE: \$\{\{ inputs\.base_sha \|\|/);
   assert.match(ci, /node --test scripts\/ci\/dispatch-main-ci\.test\.mjs/);
