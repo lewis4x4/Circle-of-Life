@@ -39,7 +39,7 @@ export function activityFeedPeriodLabel(days: ActivityFeedPeriodDays): string {
 export const ACTIVITY_FEED_ROW_CAP = 200;
 export const ACTIVITY_FEED_TIME_ZONE = "America/New_York";
 
-export type ActivityFeedKind = "condition" | "behavior" | "adl" | "note";
+export type ActivityFeedKind = "condition" | "behavior" | "adl" | "note" | "check";
 
 export type ActivityFeedFilter = "all" | ActivityFeedKind;
 
@@ -147,6 +147,7 @@ export const ACTIVITY_FEED_FILTER_LABELS: Record<ActivityFeedFilter, string> = {
   behavior: "Behavior",
   adl: "ADL refusals",
   note: "General notes",
+  check: "Safety checks",
 };
 
 export function activityFeedEmptyCopy(window: ActivityFeedWindow): string {
