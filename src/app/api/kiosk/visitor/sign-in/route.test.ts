@@ -39,7 +39,18 @@ describe("POST /api/kiosk/visitor/sign-in", () => {
       p_visiting_name_text: "Test Resident",
       p_purpose: null,
       p_symptoms_reported: false,
+      p_resident_id: null,
     });
+  });
+
+  it("passes a picked resident as p_resident_id with no typed name, and refuses both at once", async () => {
+    const resident = "84ad69f3-911e-4069-9b4f-24aebe591a79";
+    await POST(request({ kind: "provider", client_entry_id: ENTRY, name: "Pat Provider", company: "Synthetic Home Health", resident_id: resident, symptoms: false }));
+    expect(mock.rpc.mock.calls[0]?.[1]).toMatchObject({ p_resident_id: resident, p_visiting_name_text: null });
+    const both = await POST(request({ ...VISIT, resident_id: resident }));
+    expect(both.status).toBe(400);
+    expect((await both.json()).fields.visiting_name).toBeTruthy();
+    expect(mock.rpc).toHaveBeenCalledTimes(1);
   });
 
   it("maps each kind to its visitor_type and passes a reported symptom", async () => {
@@ -76,7 +87,7 @@ describe("POST /api/kiosk/visitor/sign-in", () => {
     const screen = validateKioskSignIn("visitor", { name: VISIT.name, phone: VISIT.phone, visiting_name: "", symptoms: null });
     expect(screen.ok).toBe(false);
     if (!screen.ok) expect(json.fields).toEqual(screen.errors);
-    expect(json.fields).toMatchObject({ visiting_name: "Enter the name of the person you are visiting.", symptoms: "Choose Yes or No." });
+    expect(json.fields).toMatchObject({ visiting_name: "Pick the resident you are seeing, or tap Not listed.", symptoms: "Choose Yes or No." });
   });
 
   it("refuses an unknown kind, a bad entry id and a missing token", async () => {

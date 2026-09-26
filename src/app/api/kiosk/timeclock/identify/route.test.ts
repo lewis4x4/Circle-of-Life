@@ -32,11 +32,42 @@ describe("POST /api/kiosk/timeclock/identify", () => {
     mock.rpc.mockImplementation((name: string) => name === "timeclock_identify"
       ? Promise.resolve({ data: { ok: true, staff_id: staff, facility_id: facility, first_name: "Test", state: "out", next_actions: ["in"], today_worked_minutes: 252 }, error: null })
       : builder);
-    const response = await POST(request({ identifier: "A-100", pin: "123456", staff_id: "attacker", facility_id: "other" }));
+    const response = await POST(request({ identifier: "A-100", pin: "123456", facility_id: "other" }));
     const result = await response.json();
     expect(result).toMatchObject({ next_actions: ["in"], today_worked_minutes: 252, planned_context: { status: "ready", blocks: [{ label: "Custom nine hours" }] } });
     expect(mock.rpc).toHaveBeenCalledWith("schedule_assignment_intervals", expect.objectContaining({ p_staff_id: staff, p_facility_id: facility }), { count: "exact" });
     expect(result).not.toHaveProperty("staff_id"); expect(result).not.toHaveProperty("facility_id");
+  });
+
+  it("identifies a tapped name with p_staff_id and no identifier or badge, and passes tries_left through", async () => {
+    const staff = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    process.env.TIMECLOCK_BADGE_HMAC_SECRET = "x".repeat(32);
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "not_recognized", tries_left: 3 }, error: null });
+    const wrong = await POST(request({ staff_id: staff, pin: "000000" }));
+    expect(wrong.status).toBe(401);
+    expect(await wrong.json()).toEqual({ error: "not_recognized", tries_left: 3 });
+    expect(mock.rpc).toHaveBeenCalledWith("timeclock_identify", { p_device_token: "device-token", p_identifier: "", p_badge_lookup_hmac: null, p_pin: "000000", p_staff_id: staff });
+    delete process.env.TIMECLOCK_BADGE_HMAC_SECRET;
+  });
+
+  it("tells a tapped name it is not set up here, but the employee-number path never says so or counts tries", async () => {
+    const staff = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    for (const code of ["inactive_staff", "not_assigned"]) {
+      mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: code }, error: null });
+      const named = await POST(request({ staff_id: staff, pin: "123456" }));
+      expect(named.status).toBe(403);
+      expect(await named.json()).toEqual({ error: "not_set_up" });
+      mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: code, tries_left: 2 }, error: null });
+      const numbered = await POST(request({ identifier: "A-100", pin: "123456" }));
+      expect(numbered.status).toBe(401);
+      expect(await numbered.json()).toEqual({ error: "not_recognized" });
+    }
+  });
+
+  it("refuses a body naming both a staff id and an employee number, or a staff id that is not a uuid", async () => {
+    expect((await POST(request({ staff_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", identifier: "A-100", pin: "123456" }))).status).toBe(401);
+    expect((await POST(request({ staff_id: "attacker", pin: "123456" }))).status).toBe(401);
+    expect(mock.rpc).not.toHaveBeenCalled();
   });
 
   it("refuses without a device token and never calls the database", async () => {

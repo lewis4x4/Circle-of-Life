@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -175,7 +175,7 @@ describe("sign out", () => {
     const user = userEvent.setup();
     renderLog();
     await screen.findByText("In the building now (1)");
-    await user.click(screen.getByRole("button", { name: "Sign out everyone" }));
+    await user.click(screen.getByRole("button", { name: "Sign out everyone still here" }));
     expect(mocks.confirm).toHaveBeenCalledWith("Sign out the 1 visitor still in the building?");
     await waitFor(() => {
       expect(mocks.rpc).toHaveBeenCalledWith("visitor_sign_out_all_open", { p_facility_id: "fac-1" });
@@ -187,7 +187,7 @@ describe("sign out", () => {
     mocks.confirm.mockReturnValue(false);
     renderLog();
     await screen.findByText("In the building now (1)");
-    await user.click(screen.getByRole("button", { name: "Sign out everyone" }));
+    await user.click(screen.getByRole("button", { name: "Sign out everyone still here" }));
     expect(mocks.rpc).not.toHaveBeenCalledWith("visitor_sign_out_all_open", expect.anything());
   });
 });
@@ -255,9 +255,21 @@ describe("kiosk entries (COL-692)", () => {
     withKiosk({ visitor_company: "Sunshine Hospice", visiting_name_text: "Mrs Carter" });
     renderLog();
     await user.click(await screen.findByRole("button", { name: "Match resident" }));
-    await user.selectOptions(screen.getByLabelText("Resident Mrs Carter is visiting"), "r2");
+    await user.type(screen.getByLabelText("Resident Mrs Carter is visiting"), "ResidentB");
+    await user.click(within(screen.getByRole("list", { name: "Matching residents" })).getByRole("button", { name: "Test ResidentB" }));
+    expect(mocks.rpc).not.toHaveBeenCalledWith("visitor_match_resident", expect.anything());
     await user.click(screen.getByRole("button", { name: "Match" }));
     await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith("visitor_match_resident", { p_entry_id: "k1", p_resident_id: "r2" }));
+  });
+
+  it("lists no resident in Match resident until something is typed, and says when nothing matches", async () => {
+    const user = userEvent.setup();
+    withKiosk({ visitor_company: "Sunshine Hospice", visiting_name_text: "Mrs Carter" });
+    renderLog();
+    await user.click(await screen.findByRole("button", { name: "Match resident" }));
+    expect(screen.queryByRole("list", { name: "Matching residents" })).toBeNull();
+    await user.type(screen.getByLabelText("Resident Mrs Carter is visiting"), "zzz");
+    expect(screen.getByText("No match. Check the spelling.")).toBeTruthy();
   });
 
   it("offers no match for a kiosk entry with nothing typed, or one already matched", async () => {

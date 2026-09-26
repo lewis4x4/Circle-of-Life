@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, type FormEvent } from "react";
+import { forwardRef, useEffect, useRef, type FormEvent } from "react";
 
 import { KIOSK_STAFF_COPY } from "@/lib/kiosk/screens";
 import { cn } from "@/lib/utils";
 
 import { KioskKeypad } from "./KioskKeypad";
-import { KIOSK_PRIMARY } from "./kiosk-styles";
+import { KIOSK_FOCUS, KIOSK_PRIMARY } from "./kiosk-styles";
 import { PIN_LENGTH, type CredentialStage } from "./use-staff-punch";
 
 const BOX = "relative flex h-21 items-center gap-3.5 rounded-[12px] bg-card px-5.5";
@@ -15,9 +15,52 @@ const IDLE = "border-[1.5px] border-input";
 const ERROR_ID = "kiosk-error";
 
 /**
- * Employee number, then PIN (`11`, `11b`). Both boxes are real inputs, so a
- * USB badge reader or a keyboard types into them; `inputMode="none"` keeps the
- * iPad keyboard away and the kiosk keypad does the typing.
+ * The six PIN dots over a real password input, so a keyboard types into it
+ * while `inputMode="none"` keeps the iPad keyboard away. Shared by the
+ * employee-number screen and the tapped-name PIN screen.
+ */
+export const KioskPinField = forwardRef<
+  HTMLInputElement,
+  { id: string; label: string; pin: string; onPin: (value: string) => void; active: boolean; error: string | null; describedBy?: string; onFocus?: () => void }
+>(function KioskPinField({ id, label, pin, onPin, active, error, describedBy, onFocus }, ref) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <label htmlFor={id} className="text-lg font-semibold text-foreground">
+        {label}
+      </label>
+      <div className={cn(BOX, active ? ACTIVE : IDLE)}>
+        {Array.from({ length: PIN_LENGTH }, (_, index) => (
+          <span
+            key={index}
+            aria-hidden
+            className={cn("size-5 rounded-full border-2 border-chrome-primary", index < pin.length ? "bg-chrome-primary" : "bg-transparent")}
+          />
+        ))}
+        <input
+          id={id}
+          ref={ref}
+          type="password"
+          value={pin}
+          onChange={(e) => onPin(e.target.value)}
+          onFocus={onFocus}
+          inputMode="none"
+          pattern="[0-9]*"
+          maxLength={PIN_LENGTH}
+          autoComplete="off"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className="absolute inset-0 h-full w-full cursor-pointer rounded-[12px] bg-transparent text-transparent caret-transparent focus:outline-none"
+        />
+      </div>
+    </div>
+  );
+});
+
+/**
+ * Employee number, then PIN (`11`, `11b`): reached from "Use employee number"
+ * under the name list. Both boxes are real inputs, so a USB badge reader or a
+ * keyboard types into them; `inputMode="none"` keeps the iPad keyboard away
+ * and the kiosk keypad does the typing.
  */
 export function StaffCredentials({
   stage,
@@ -29,6 +72,7 @@ export function StaffCredentials({
   error,
   busy,
   onSubmit,
+  onBackToNames,
 }: {
   stage: CredentialStage;
   onStage: (stage: CredentialStage) => void;
@@ -39,6 +83,7 @@ export function StaffCredentials({
   error: string | null;
   busy: boolean;
   onSubmit: () => void;
+  onBackToNames: () => void;
 }) {
   const numberRef = useRef<HTMLInputElement>(null);
   const pinRef = useRef<HTMLInputElement>(null);
@@ -92,35 +137,17 @@ export function StaffCredentials({
             />
           </div>
         </div>
-        <div className="flex flex-col gap-2.5">
-          <label htmlFor="kiosk-pin" className="text-lg font-semibold text-foreground">
-            {KIOSK_STAFF_COPY.pinLabel}
-          </label>
-          <div className={cn(BOX, stage === "pin" ? ACTIVE : IDLE)}>
-            {Array.from({ length: PIN_LENGTH }, (_, index) => (
-              <span
-                key={index}
-                aria-hidden
-                className={cn("size-5 rounded-full border-2 border-chrome-primary", index < pin.length ? "bg-chrome-primary" : "bg-transparent")}
-              />
-            ))}
-            <input
-              id="kiosk-pin"
-              ref={pinRef}
-              type="password"
-              value={pin}
-              onChange={(e) => onPin(e.target.value)}
-              onFocus={() => onStage("pin")}
-              inputMode="none"
-              pattern="[0-9]*"
-              maxLength={PIN_LENGTH}
-              autoComplete="off"
-              aria-invalid={error ? true : undefined}
-              aria-describedby={describedBy}
-              className="absolute inset-0 h-full w-full cursor-pointer rounded-[12px] bg-transparent text-transparent caret-transparent focus:outline-none"
-            />
-          </div>
-        </div>
+        <KioskPinField
+          ref={pinRef}
+          id="kiosk-pin"
+          label={KIOSK_STAFF_COPY.pinLabel}
+          pin={pin}
+          onPin={onPin}
+          active={stage === "pin"}
+          error={error}
+          describedBy={describedBy}
+          onFocus={() => onStage("pin")}
+        />
         <p className="text-base text-muted-foreground">{stage === "number" ? KIOSK_STAFF_COPY.numberHelper : KIOSK_STAFF_COPY.pinHelper}</p>
         <p id={ERROR_ID} role="status" className="text-base font-semibold text-destructive empty:hidden">
           {error ?? ""}
@@ -130,6 +157,9 @@ export function StaffCredentials({
             {KIOSK_STAFF_COPY.continue}
           </button>
         ) : null}
+        <button type="button" onClick={onBackToNames} className={cn("inline-flex min-h-12 items-center self-start rounded-[8px] text-[17px] font-medium text-foreground underline underline-offset-4", KIOSK_FOCUS)}>
+          {KIOSK_STAFF_COPY.backToNames}
+        </button>
       </div>
       <KioskKeypad
         label="Number pad"

@@ -43,9 +43,9 @@ export function KioskHome() {
         </nav>
         <Link
           href="/kiosk/leaving"
-          className={cn(KIOSK_CARD, "flex h-19 shrink-0 items-center justify-center gap-3.5 text-[22px] font-semibold text-foreground hover:bg-muted/40", KIOSK_FOCUS, KIOSK_PRESS)}
+          className={cn(KIOSK_CARD, "flex min-h-32 shrink-0 items-center justify-center gap-4 text-[26px] font-semibold text-foreground hover:bg-muted/40", KIOSK_FOCUS, KIOSK_PRESS)}
         >
-          <LogOut className="size-6.5" aria-hidden />
+          <LogOut className="size-7.5" strokeWidth={2} aria-hidden />
           {KIOSK_VISITOR_COPY.signOutPrompt}
         </Link>
       </div>

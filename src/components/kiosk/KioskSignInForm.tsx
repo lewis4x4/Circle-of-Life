@@ -24,14 +24,15 @@ import { cn } from "@/lib/utils";
 import { ConfirmPanel } from "./ConfirmPanel";
 import { KioskField } from "./KioskField";
 import { KioskHeader } from "./KioskHeader";
+import { KIOSK_RESIDENT_EMPTY, KioskResidentPicker, type KioskResidentValue } from "./KioskResidentPicker";
 import { YesNoToggle } from "./YesNoToggle";
 import { kioskRequestInit, useKiosk } from "./kiosk-context";
 import { KIOSK_PRIMARY } from "./kiosk-styles";
 
-type TextField = Exclude<KioskFieldName, "symptoms">;
+type TextField = Exclude<KioskFieldName, "symptoms" | "visiting_name">;
 type Values = Record<TextField, string>;
 
-const EMPTY: Values = { name: "", phone: "", company: "", visiting_name: "", purpose: "" };
+const EMPTY: Values = { name: "", phone: "", company: "", purpose: "" };
 
 function responseCode(body: unknown): KioskVisitorErrorCode {
   const code = body && typeof body === "object" ? (body as { error?: unknown }).error : undefined;
@@ -41,7 +42,8 @@ function responseCode(body: unknown): KioskVisitorErrorCode {
 /**
  * `/kiosk/sign-in/[kind]` (`14`, `14b`, `15`, `16`). One layout for every kind;
  * the fields and which are required come from the contract the route checks.
- * The resident is typed, never looked up. One client entry id per form, so a
+ * The resident is picked from a three-letter type-ahead or, behind "Not
+ * listed?", typed for the desk to match. One client entry id per form, so a
  * retried tap signs the visitor in once.
  */
 export function KioskSignInForm({ kind }: { kind: KioskVisitorKind }) {
@@ -51,6 +53,7 @@ export function KioskSignInForm({ kind }: { kind: KioskVisitorKind }) {
   const [clientEntryId] = useState(kioskRandomId);
   const [values, setValues] = useState<Values>(EMPTY);
   const [symptoms, setSymptoms] = useState<boolean | null>(null);
+  const [resident, setResident] = useState<KioskResidentValue>(KIOSK_RESIDENT_EMPTY);
   const [errors, setErrors] = useState<KioskFieldErrors>({});
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -62,10 +65,15 @@ export function KioskSignInForm({ kind }: { kind: KioskVisitorKind }) {
     name: values.name,
     phone: has("phone") ? values.phone : null,
     company: has("company") ? values.company : null,
-    visiting_name: has("visiting_name") ? values.visiting_name : null,
+    visiting_name: has("visiting_name") && resident.mode === "typed" ? resident.name : null,
+    resident_id: has("visiting_name") && resident.mode === "picked" ? resident.match.resident_id : null,
     purpose: has("purpose") ? values.purpose : null,
     symptoms: has("symptoms") ? symptoms : null,
   });
+  // A family visit names who they are seeing before Sign in is offered.
+  const residentRule = definition.fields.find((rule) => rule.name === "visiting_name");
+  const residentAnswered = resident.mode === "picked" || (resident.mode === "typed" && resident.name.trim() !== "");
+  const canSubmit = !residentRule?.required || residentAnswered;
 
   const showErrors = (found: KioskFieldErrors) => {
     setErrors(found);
@@ -160,6 +168,24 @@ export function KioskSignInForm({ kind }: { kind: KioskVisitorKind }) {
         </div>
       );
     }
+    if (rule.name === "visiting_name") {
+      return (
+        <KioskResidentPicker
+          key={rule.name}
+          id={id}
+          label={rule.label}
+          placeholder={rule.placeholder}
+          required={rule.required}
+          markRequired={rule.markRequired}
+          value={resident}
+          error={errors.visiting_name}
+          onChange={(next) => {
+            setResident(next);
+            if (errors.visiting_name) setErrors((current) => ({ ...current, visiting_name: undefined }));
+          }}
+        />
+      );
+    }
     const name = rule.name as TextField;
     return (
       <KioskField
@@ -200,7 +226,7 @@ export function KioskSignInForm({ kind }: { kind: KioskVisitorKind }) {
         </p>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-[15px] text-muted-foreground">{KIOSK_VISITOR_COPY.visitorLogLine}</p>
-          <button type="submit" className={cn(KIOSK_PRIMARY, "h-18 w-75 max-w-full")} disabled={busy}>
+          <button type="submit" className={cn(KIOSK_PRIMARY, "h-18 w-75 max-w-full")} disabled={busy || !canSubmit}>
             <Check className="size-5.5" aria-hidden />
             {KIOSK_SIGN_IN_COPY.submit}
           </button>

@@ -1,17 +1,19 @@
 "use client";
 
 /**
- * The staff punch flow behind `/kiosk/staff` (COL-352 spec 37 §5, kept as is
- * for COL-692): identify with employee number and PIN, offer only the valid
- * next actions, record the punch, and when the network or Haven is down save
- * it on this tablet. The PIN never leaves page memory; errors never say which
- * half was wrong.
+ * The staff punch flow behind `/kiosk/staff` (COL-352 spec 37 §5, kept for
+ * COL-692): tap your name (or type an employee number), enter the PIN, see
+ * only the valid next actions, record the punch, and when the network or
+ * Haven is down save it on this tablet. The PIN never leaves page memory, on
+ * either path. The employee-number path never says which half was wrong; the
+ * name path may say how many tries are left, because the person is already
+ * named on screen.
  */
 
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
-import { kioskRandomId } from "@/lib/kiosk/screens";
+import { KIOSK_STAFF_COPY, kioskRandomId, kioskWrongPinCopy } from "@/lib/kiosk/screens";
 import {
   KIOSK_COPY,
   KIOSK_IDENTIFY_ENDPOINT,
@@ -21,6 +23,7 @@ import {
   type KioskIdentifyResponse,
   type KioskPunchReceipt,
   type KioskPunchRequest,
+  type KioskRosterEntry,
   type PunchType,
 } from "@/lib/timeclock/kiosk-contract";
 import { pinMemory } from "@/lib/timeclock/kiosk-store";
@@ -30,7 +33,8 @@ import { kioskRequestInit, useKiosk } from "./kiosk-context";
 export const PIN_LENGTH = 6;
 const IDENTIFIER_MAX = 64;
 
-export type StaffPhase = "credentials" | "choose" | "confirm";
+/** `roster`: tap your name (the default). `pin`: that person's PIN. `number`: the employee-number screen. */
+export type StaffPhase = "roster" | "pin" | "number" | "choose" | "confirm";
 export type CredentialStage = "number" | "pin";
 
 export type StaffConfirmation = {
@@ -45,19 +49,33 @@ export type StaffConfirmation = {
 
 const OFFLINE_IDENTIFIED: KioskIdentifyResponse = { first_name: "", state: "out", next_actions: [...PUNCH_TYPES], today_worked_minutes: 0 };
 
-function errorCode(body: unknown, status: number): KioskErrorCode {
-  const code = body && typeof body === "object" ? (body as { error?: unknown }).error : undefined;
-  if (typeof code === "string" && code in KIOSK_COPY.errors) return code as KioskErrorCode;
-  return status >= 500 ? "unavailable" : "not_recognized";
+type Failure = { code: KioskErrorCode; triesLeft: number | null };
+
+function readFailure(body: unknown, status: number): Failure {
+  const record = body && typeof body === "object" ? (body as { error?: unknown; tries_left?: unknown }) : {};
+  const code: KioskErrorCode =
+    typeof record.error === "string" && record.error in KIOSK_COPY.errors ? (record.error as KioskErrorCode) : status >= 500 ? "unavailable" : "not_recognized";
+  const triesLeft = typeof record.tries_left === "number" ? record.tries_left : null;
+  return { code, triesLeft };
 }
 
-export function useStaffPunch(options: { newClientPunchId?: () => string } = {}) {
+/** Name-path words for a refused PIN (the employee-number path keeps KIOSK_COPY.errors). */
+function namePathCopy({ code, triesLeft }: Failure): string {
+  if (code === "not_recognized" && triesLeft !== null) return kioskWrongPinCopy(triesLeft);
+  if (code === "locked") return KIOSK_STAFF_COPY.locked;
+  if (code === "not_set_up") return KIOSK_STAFF_COPY.notSetUp;
+  return KIOSK_COPY.errors[code];
+}
+
+export function useStaffPunch(options: { newClientPunchId?: () => string; onThrottled?: () => void } = {}) {
   const router = useRouter();
   const { device, fetchImpl, now, online, markOffline, forgetDevice, refreshPending, store } = useKiosk();
   const newClientPunchId = options.newClientPunchId ?? kioskRandomId;
+  const onThrottled = options.onThrottled;
 
-  const [phase, setPhase] = useState<StaffPhase>("credentials");
+  const [phase, setPhase] = useState<StaffPhase>("roster");
   const [stage, setStage] = useState<CredentialStage>("number");
+  const [picked, setPicked] = useState<KioskRosterEntry | null>(null);
   const [identifier, setIdentifierState] = useState("");
   const [pin, setPinState] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,20 +99,51 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
     setStage("number");
   }, []);
 
+  /** Back to the name list, everything typed cleared. */
   const startOver = useCallback(() => {
     clearCredentials();
+    setPicked(null);
     setError(null);
     setConfirmation(null);
-    setPhase("credentials");
+    setPhase("roster");
+  }, [clearCredentials]);
+
+  const pickName = useCallback(
+    (entry: KioskRosterEntry) => {
+      clearCredentials();
+      setError(null);
+      setPicked(entry);
+      setPhase("pin");
+    },
+    [clearCredentials],
+  );
+
+  const chooseEmployeeNumber = useCallback(() => {
+    clearCredentials();
+    setPicked(null);
+    setError(null);
+    setPhase("number");
   }, [clearCredentials]);
 
   const fail = useCallback(
-    (code: KioskErrorCode) => {
-      setError(KIOSK_COPY.errors[code]);
-      clearCredentials();
-      setPhase("credentials");
+    (failure: Failure) => {
+      if (failure.code === "device_throttled" && picked) {
+        // The name list says until when, and holds the tiles until then.
+        startOver();
+        onThrottled?.();
+        return;
+      }
+      setError(picked ? namePathCopy(failure) : KIOSK_COPY.errors[failure.code]);
+      setPinState("");
+      setIdentified(null);
+      if (picked) {
+        setPhase("pin");
+      } else {
+        clearCredentials();
+        setPhase("number");
+      }
     },
-    [clearCredentials],
+    [picked, startOver, onThrottled, clearCredentials],
   );
 
   const dropDevice = useCallback(async () => {
@@ -107,10 +156,13 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
     setPhase("choose");
   }, []);
 
+  /** The subject of a request: the tapped name, else the typed employee number. */
+  const subject = useCallback((): Pick<KioskPunchRequest, "identifier" | "staff_id"> => (picked ? { staff_id: picked.staff_id } : { identifier: identifier.trim() }), [picked, identifier]);
+
   const identify = useCallback(async () => {
     if (!device || busy) return;
-    if (!identifier.trim() || pin.length !== PIN_LENGTH) {
-      setError(KIOSK_COPY.errors.not_recognized);
+    if ((!picked && !identifier.trim()) || pin.length !== PIN_LENGTH) {
+      setError(picked ? KIOSK_STAFF_COPY.pinNameHelper : KIOSK_COPY.errors.not_recognized);
       return;
     }
     setError(null);
@@ -118,13 +170,13 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
     if (!online) return chooseOffline();
     setBusy(true);
     try {
-      const response = await fetchImpl(KIOSK_IDENTIFY_ENDPOINT, kioskRequestInit(device.token, { method: "POST", json: { identifier: identifier.trim(), pin } }));
+      const response = await fetchImpl(KIOSK_IDENTIFY_ENDPOINT, kioskRequestInit(device.token, { method: "POST", json: { ...subject(), pin } }));
       const body = (await response.json().catch(() => null)) as unknown;
       if (!response.ok) {
-        const code = errorCode(body, response.status);
-        if (code === "unavailable") return chooseOffline();
-        if (code === "device_unknown") return void (await dropDevice());
-        return fail(code);
+        const failure = readFailure(body, response.status);
+        if (failure.code === "unavailable") return chooseOffline();
+        if (failure.code === "device_unknown") return void (await dropDevice());
+        return fail(failure);
       }
       setIdentified(body as KioskIdentifyResponse);
       setPhase("choose");
@@ -134,18 +186,27 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
     } finally {
       setBusy(false);
     }
-  }, [device, busy, identifier, pin, online, chooseOffline, fetchImpl, dropDevice, fail, markOffline]);
+  }, [device, busy, picked, identifier, pin, online, chooseOffline, fetchImpl, subject, dropDevice, fail, markOffline]);
 
   const queueOffline = useCallback(
     async (punchType: PunchType, clientPunchId: string, deviceTime: string) => {
+      // Same handling on both paths: the PIN stays in page memory, never in IndexedDB.
       pinMemory.set(clientPunchId, pin);
-      await store.enqueue({ clientPunchId, identifier: identifier.trim(), punchType, deviceTime, queuedAt: deviceTime });
+      await store.enqueue({
+        clientPunchId,
+        identifier: picked ? "" : identifier.trim(),
+        ...(picked ? { staffId: picked.staff_id } : {}),
+        punchType,
+        deviceTime,
+        queuedAt: deviceTime,
+      });
       await refreshPending();
-      setConfirmation({ firstName: null, displayName: null, punchType, punchedAt: deviceTime, todayWorkedMinutes: null, offline: true });
+      setConfirmation({ firstName: null, displayName: picked?.display_name ?? null, punchType, punchedAt: deviceTime, todayWorkedMinutes: null, offline: true });
       clearCredentials();
+      setPicked(null);
       setPhase("confirm");
     },
-    [pin, identifier, store, refreshPending, clearCredentials],
+    [pin, picked, identifier, store, refreshPending, clearCredentials],
   );
 
   const punch = useCallback(
@@ -158,7 +219,7 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
       try {
         if (!online) return await queueOffline(punchType, clientPunchId, deviceTime);
         const request: KioskPunchRequest = {
-          identifier: identifier.trim(),
+          ...subject(),
           pin,
           punch_type: punchType,
           device_time: deviceTime,
@@ -174,10 +235,10 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
         }
         const body = (await response.json().catch(() => null)) as unknown;
         if (!response.ok) {
-          const code = errorCode(body, response.status);
-          if (code === "unavailable") return await queueOffline(punchType, clientPunchId, deviceTime);
-          if (code === "device_unknown") return void (await dropDevice());
-          return fail(code);
+          const failure = readFailure(body, response.status);
+          if (failure.code === "unavailable") return await queueOffline(punchType, clientPunchId, deviceTime);
+          if (failure.code === "device_unknown") return void (await dropDevice());
+          return fail(failure);
         }
         const receipt = body as KioskPunchReceipt;
         setConfirmation({
@@ -189,13 +250,33 @@ export function useStaffPunch(options: { newClientPunchId?: () => string } = {})
           offline: false,
         });
         clearCredentials();
+        setPicked(null);
         setPhase("confirm");
       } finally {
         setBusy(false);
       }
     },
-    [device, busy, newClientPunchId, now, online, queueOffline, identifier, pin, fetchImpl, markOffline, dropDevice, fail, clearCredentials],
+    [device, busy, newClientPunchId, now, online, queueOffline, subject, pin, fetchImpl, markOffline, dropDevice, fail, clearCredentials],
   );
 
-  return { phase, stage, setStage, identifier, setIdentifier, pin, setPin, busy, error, identified, confirmation, identify, punch, startOver, online };
+  return {
+    phase,
+    stage,
+    setStage,
+    picked,
+    pickName,
+    chooseEmployeeNumber,
+    identifier,
+    setIdentifier,
+    pin,
+    setPin,
+    busy,
+    error,
+    identified,
+    confirmation,
+    identify,
+    punch,
+    startOver,
+    online,
+  };
 }

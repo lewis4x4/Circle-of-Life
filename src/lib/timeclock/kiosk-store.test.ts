@@ -22,6 +22,19 @@ function json(status: number, body: unknown): Response {
 }
 
 describe("replayKioskQueue", () => {
+  it("replays a tapped-name punch as staff_id with no identifier", async () => {
+    const named: QueuedPunch = { ...item("n", 1), identifier: "", staffId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" };
+    const store = createMemoryKioskStore({ device: DEVICE, queue: [named, item("e", 2)] });
+    pinMemory.set("n", "482913");
+    const fetchImpl = vi.fn(async () => json(200, { punch_id: "p" }));
+    await replayKioskQueue({ store, fetchImpl: fetchImpl as unknown as typeof fetch, now: NOW });
+    const bodies = fetchImpl.mock.calls.map((call) => JSON.parse(String((call as unknown as [string, RequestInit])[1].body)));
+    expect(bodies[0]).toMatchObject({ staff_id: named.staffId, pin: "482913", captured_offline: true });
+    expect(bodies[0]).not.toHaveProperty("identifier");
+    expect(bodies[1]).toMatchObject({ identifier: "A-100" });
+    expect(bodies[1]).not.toHaveProperty("staff_id");
+  });
+
   it("replays in capture order, sends the in-memory PIN, and removes sent items", async () => {
     const store = createMemoryKioskStore({ device: DEVICE, queue: [item("c", 3, "out"), item("a", 1), item("b", 2, "meal_start")] });
     pinMemory.set("a", "123456");
@@ -110,5 +123,17 @@ describe("replayKioskQueue", () => {
     const result = await replayKioskQueue({ store, fetchImpl: fetchImpl as unknown as typeof fetch, now: NOW });
     expect(result.sent).toBe(0);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe("roster cache", () => {
+  it("keeps the last name list and forgets it with the device", async () => {
+    const store = createMemoryKioskStore({ device: DEVICE });
+    expect(await store.getRoster()).toBeNull();
+    const roster = { facilityId: "f1", fetchedAt: "2026-09-16T10:00:00.000Z", roster: [{ staff_id: "s1", display_name: "Ashley W." }] };
+    await store.setRoster(roster);
+    expect(await store.getRoster()).toEqual(roster);
+    await store.clearDevice();
+    expect(await store.getRoster()).toBeNull();
   });
 });

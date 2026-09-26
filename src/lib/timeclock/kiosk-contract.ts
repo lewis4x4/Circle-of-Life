@@ -16,8 +16,18 @@ export const KIOSK_DEVICE_HEADER = "x-timeclock-device";
 export const KIOSK_ENROLL_ENDPOINT = "/api/kiosk/timeclock/enroll";
 export const KIOSK_IDENTIFY_ENDPOINT = "/api/kiosk/timeclock/identify";
 export const KIOSK_PUNCH_ENDPOINT = "/api/kiosk/timeclock/punch";
+export const KIOSK_ROSTER_ENDPOINT = "/api/kiosk/timeclock/roster";
 
-/** Error codes the kiosk API returns. Staff-facing copy never distinguishes badge from PIN. */
+/** The kiosk refreshes its name list this often while Staff clock is open. */
+export const KIOSK_ROSTER_REFRESH_MS = 5 * 60 * 1000;
+/** The PIN (and next-action) screen goes back to the name list after this long without input. */
+export const KIOSK_PIN_IDLE_MS = 30_000;
+
+/**
+ * Error codes the kiosk API returns. Staff-facing copy never distinguishes
+ * badge from PIN. `not_set_up` is only ever returned on the name path, where
+ * the person is already named on screen (spec 37 section 12a).
+ */
 export type KioskErrorCode =
   | "device_unknown"
   | "device_throttled"
@@ -28,6 +38,7 @@ export type KioskErrorCode =
   | "code_invalid"
   | "rejected_offline"
   | "invalid_input"
+  | "not_set_up"
   | "unavailable";
 
 export type KioskStaffState = "out" | "in" | "meal";
@@ -54,8 +65,13 @@ export type KioskIdentifyResponse = KioskStaffDisplay & {
   today_worked_minutes: number;
 };
 
+/**
+ * One punch. The employee-number path sends `identifier`; the name path sends
+ * `staff_id` (the tile that was tapped) and no identifier.
+ */
 export type KioskPunchRequest = {
-  identifier: string;
+  identifier?: string;
+  staff_id?: string;
   pin: string;
   punch_type: PunchType;
   device_time: string;
@@ -82,7 +98,16 @@ export type KioskEnrollResponse = {
   facility_name: string;
 };
 
-export type KioskErrorResponse = { error: KioskErrorCode };
+export type KioskErrorResponse = { error: KioskErrorCode; tries_left?: number };
+
+/** One name on the kiosk's Staff clock list: never an employee number. */
+export type KioskRosterEntry = { staff_id: string; display_name: string };
+
+export type KioskRosterResponse = {
+  roster: KioskRosterEntry[];
+  /** Set while too many wrong PINs have throttled this tablet; ISO. */
+  throttled_until: string | null;
+};
 
 /** HTTP status for each database error code (spec 37 §4.1). */
 export const KIOSK_ERROR_STATUS: Record<KioskErrorCode, number> = {
@@ -95,6 +120,7 @@ export const KIOSK_ERROR_STATUS: Record<KioskErrorCode, number> = {
   code_invalid: 401,
   rejected_offline: 422,
   invalid_input: 400,
+  not_set_up: 403,
   unavailable: 503,
 };
 
@@ -112,11 +138,21 @@ export function publicKioskErrorCode(dbCode: string): KioskErrorCode {
     case "code_invalid":
     case "invalid_input":
     case "rejected_offline":
+    case "not_set_up":
     case "unavailable":
       return dbCode;
     default:
       return "not_recognized";
   }
+}
+
+/**
+ * The name path (a tile was tapped): the person is already on screen, so an
+ * inactive or unassigned person may be told so. Everything else is as above.
+ */
+export function publicKioskNameErrorCode(dbCode: string): KioskErrorCode {
+  if (dbCode === "inactive_staff" || dbCode === "not_assigned") return "not_set_up";
+  return publicKioskErrorCode(dbCode);
 }
 
 export const KIOSK_COPY = {
@@ -152,6 +188,7 @@ export const KIOSK_COPY = {
     code_invalid: "That code did not work. Ask for a new one.",
     rejected_offline: "Badge or PIN not recognized",
     invalid_input: "Something was missing. Try again.",
+    not_set_up: "You're not set up to clock in here. Ask your manager.",
     unavailable: "Timeclock is temporarily unavailable. Your punch will be saved on this tablet.",
   } satisfies Record<KioskErrorCode, string>,
   idleReset: "Cleared after 30 seconds without input.",

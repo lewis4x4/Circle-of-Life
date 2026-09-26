@@ -4,12 +4,13 @@ import { logError } from "@/lib/observability/logger";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { KIOSK_DEVICE_HEADER, kioskStaffDisplay, type KioskIdentifyResponse, type PunchType } from "@/lib/timeclock/kiosk-contract";
 import { loadKioskPlannedContext } from "@/lib/timeclock/planned-context";
-import { badgeLookupHmac, isRecord, kioskErrorResponse } from "@/lib/timeclock/server";
+import { isRecord, kioskErrorResponse, kioskSubject, kioskSubjectArgs, kioskSubjectErrorResponse } from "@/lib/timeclock/server";
 
 /**
- * POST /api/kiosk/timeclock/identify — validate the badge or employee number
- * plus PIN and return the valid next actions, so the kiosk shows one button.
- * Counts toward lockouts and throttles exactly like a punch (spec 37 §4.1).
+ * POST /api/kiosk/timeclock/identify — validate a tapped name (`staff_id`) or
+ * the badge or employee number, plus PIN, and return the valid next actions,
+ * so the kiosk shows one button. Counts toward lockouts and throttles exactly
+ * like a punch (spec 37 §4.1). Only the name path hears tries_left.
  */
 export async function POST(request: Request) {
   const deviceToken = request.headers.get(KIOSK_DEVICE_HEADER)?.trim() ?? "";
@@ -22,9 +23,9 @@ export async function POST(request: Request) {
     return kioskErrorResponse("invalid_input");
   }
   if (!isRecord(body)) return kioskErrorResponse("invalid_input");
-  const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
+  const subject = kioskSubject(body);
   const pin = typeof body.pin === "string" ? body.pin : "";
-  if (!identifier || identifier.length > 64 || !/^[0-9]{6}$/.test(pin)) {
+  if (!subject || !/^[0-9]{6}$/.test(pin)) {
     return kioskErrorResponse("not_recognized");
   }
 
@@ -37,8 +38,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await admin.rpc("timeclock_identify", {
     p_device_token: deviceToken,
-    p_identifier: identifier,
-    p_badge_lookup_hmac: badgeLookupHmac(identifier),
+    ...kioskSubjectArgs(subject),
     p_pin: pin,
   });
   if (error) {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   }
   const result = isRecord(data) ? data : {};
   if (result.ok !== true) {
-    return kioskErrorResponse(String(result.error ?? "not_recognized"));
+    return kioskSubjectErrorResponse(subject, result, String(result.error ?? "not_recognized"));
   }
   const response: KioskIdentifyResponse = {
     first_name: String(result.first_name ?? ""),

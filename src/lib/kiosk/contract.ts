@@ -8,8 +8,9 @@
  * visitor calls alike. `/kiosk/setup` enrolls through the existing kiosk
  * enroll route, which only accepts kiosk-kind codes.
  *
- * No resident is ever listed here. The visitor types who they are seeing and
- * the front desk matches it later.
+ * No resident is ever listed in full. The visitor types three letters and picks
+ * from at most six current residents (`visitor_kiosk_resident_matches`), or
+ * types the name and the front desk matches it later.
  */
 
 export { KIOSK_DEVICE_HEADER, KIOSK_ENROLL_ENDPOINT as KIOSK_SETUP_ENDPOINT } from "@/lib/timeclock/kiosk-contract";
@@ -17,6 +18,7 @@ export { KIOSK_DEVICE_HEADER, KIOSK_ENROLL_ENDPOINT as KIOSK_SETUP_ENDPOINT } fr
 export const KIOSK_VISITOR_SIGN_IN_ENDPOINT = "/api/kiosk/visitor/sign-in";
 export const KIOSK_VISITOR_OPEN_ENDPOINT = "/api/kiosk/visitor/open";
 export const KIOSK_VISITOR_SIGN_OUT_ENDPOINT = "/api/kiosk/visitor/sign-out";
+export const KIOSK_VISITOR_RESIDENTS_ENDPOINT = "/api/kiosk/visitor/residents";
 
 /** Any kiosk screen returns home after this long without input. */
 export const KIOSK_IDLE_RESET_MS = 30_000;
@@ -26,6 +28,14 @@ export const KIOSK_CONFIRM_RESET_MS = 5_000;
 export const KIOSK_SIGN_OUT_MIN_LETTERS = 3;
 /** Sign-out lists at most this many open visits. */
 export const KIOSK_SIGN_OUT_MAX_MATCHES = 5;
+/** The sign-out screen returns home after this long without input. */
+export const KIOSK_SIGN_OUT_IDLE_MS = 60_000;
+/** The resident picker asks nothing before this many letters. */
+export const KIOSK_RESIDENT_MIN_LETTERS = 3;
+/** The resident picker shows at most this many residents. */
+export const KIOSK_RESIDENT_MAX_MATCHES = 6;
+/** Wait this long after the last letter before asking, so typing "Carol" is one request, not five. */
+export const KIOSK_SEARCH_DEBOUNCE_MS = 250;
 
 // ---------------------------------------------------------------------------
 // Visitor kinds and their fields
@@ -77,7 +87,8 @@ export const KIOSK_SICK_QUESTION = "Do you have a fever, cough or feel sick toda
 
 const NAME_FIELD: KioskFieldRule = { name: "name", label: "Your name", required: true, placeholder: "First and last name", missing: "Enter your name." };
 const SYMPTOMS_FIELD: KioskFieldRule = { name: "symptoms", label: KIOSK_SICK_QUESTION, required: true, missing: "Choose Yes or No." };
-const RESIDENT_HINT = "Type their name. Staff will match it.";
+/** The resident field: a picker over current residents, or a typed name behind "Not listed?". */
+const RESIDENT_FIELD = { name: "visiting_name", label: "Resident you are seeing", placeholder: "Start typing their first or last name" } as const;
 
 /**
  * Spec 40 §7 field table, in the approved prototype's words
@@ -94,7 +105,7 @@ export const KIOSK_KINDS: Record<KioskVisitorKind, KioskKindDefinition> = {
     fields: [
       NAME_FIELD,
       { name: "phone", label: "Phone", required: false, placeholder: "Optional", hint: "Only used if the building needs to reach you." },
-      { name: "visiting_name", label: "Who are you visiting?", required: true, placeholder: "Resident's name", hint: RESIDENT_HINT, missing: "Enter the name of the person you are visiting." },
+      { ...RESIDENT_FIELD, required: true, missing: "Pick the resident you are seeing, or tap Not listed." },
       SYMPTOMS_FIELD,
     ],
   },
@@ -106,7 +117,7 @@ export const KIOSK_KINDS: Record<KioskVisitorKind, KioskKindDefinition> = {
     fields: [
       NAME_FIELD,
       { name: "company", label: "Agency or practice", required: true, markRequired: true, placeholder: "Hospice, home health, physician office" },
-      { name: "visiting_name", label: "Resident you are seeing", required: false, placeholder: "Resident's name", hint: RESIDENT_HINT },
+      { ...RESIDENT_FIELD, required: false },
       SYMPTOMS_FIELD,
     ],
   },
@@ -147,6 +158,8 @@ export type KioskSignInForm = {
   purpose?: string | null;
   /** Answer to KIOSK_SICK_QUESTION; null until answered. */
   symptoms?: boolean | null;
+  /** The resident picked from the list; never sent with a typed visiting_name. */
+  resident_id?: string | null;
 };
 
 export type KioskSignInRequest = KioskSignInForm & {
@@ -167,7 +180,10 @@ export type KioskValidatedSignIn = {
   visiting_name: string | null;
   purpose: string | null;
   symptoms: boolean;
+  resident_id: string | null;
 };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function clean(value: string | null | undefined): string | null {
   const trimmed = typeof value === "string" ? value.trim() : "";
@@ -187,6 +203,7 @@ export function validateKioskSignIn(
   const company = clean(form.company);
   const visiting = clean(form.visiting_name);
   const purpose = clean(form.purpose);
+  const residentId = clean(form.resident_id);
 
   if (!name) errors.name = kioskMissingCopy(NAME_FIELD);
   else if (name.length > KIOSK_FIELD_LIMITS.name) errors.name = "Use a shorter name.";
@@ -197,12 +214,19 @@ export function validateKioskSignIn(
       if (value) errors[field] = "This form does not ask for that.";
       return;
     }
-    if (rule.required && !value) errors[field] = kioskMissingCopy(rule);
+    // A picked resident answers the resident field.
+    if (rule.required && !value && !(field === "visiting_name" && residentId)) errors[field] = kioskMissingCopy(rule);
     else if (value && value.length > KIOSK_FIELD_LIMITS[field]) errors[field] = "That is too long.";
   };
   checkText("company", company);
   checkText("visiting_name", visiting);
   checkText("purpose", purpose);
+
+  if (residentId) {
+    if (!has("visiting_name")) errors.visiting_name = "This form does not ask for that.";
+    else if (!UUID_RE.test(residentId)) errors.visiting_name = kioskMissingCopy(has("visiting_name")!);
+    else if (visiting) errors.visiting_name = "Pick the resident or type their name, not both.";
+  }
 
   if (phone) {
     if (!has("phone")) errors.phone = "This form does not ask for that.";
@@ -226,6 +250,7 @@ export function validateKioskSignIn(
       visiting_name: visiting,
       purpose,
       symptoms: form.symptoms === true,
+      resident_id: residentId,
     },
   };
 }
@@ -252,6 +277,41 @@ export function kioskPrefixLetterCount(prefix: string): number {
 export type KioskSignOutRequest = { entry_id: string };
 
 export type KioskSignOutResponse = { checked_in_at: string; checked_out_at: string; display_name: string };
+
+// ---------------------------------------------------------------------------
+// Resident picker
+// ---------------------------------------------------------------------------
+
+export type KioskResidentMatch = {
+  resident_id: string;
+  /** Preferred or first name and last initial, e.g. "Martha J." */
+  display_name: string;
+  room: string | null;
+};
+
+export type KioskResidentMatchesResponse = { matches: KioskResidentMatch[] };
+
+/** `Room 12`, or nothing when the resident has no room on file. */
+export function kioskRoomLabel(room: string | null | undefined): string {
+  const value = typeof room === "string" ? room.trim() : "";
+  return value ? `Room ${value}` : "";
+}
+
+/** `Martha J. · Room 12` for the picked state. */
+export function kioskResidentPickedLabel(match: KioskResidentMatch): string {
+  const room = kioskRoomLabel(match.room);
+  return room ? `${match.display_name} · ${room}` : match.display_name;
+}
+
+export const KIOSK_RESIDENT_COPY = {
+  noMatch: "No match. Check the spelling or tap Not listed.",
+  searching: "Looking for the resident.",
+  change: "Change",
+  notListed: "Not listed? Type their name",
+  typedHint: "Staff will confirm who you are visiting.",
+  backToList: "Find them in the list instead",
+  listLabel: "Matching residents",
+} as const;
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -286,8 +346,7 @@ export const KIOSK_VISITOR_ERROR_COPY: Record<KioskVisitorErrorCode, string> = {
 export const KIOSK_VISITOR_COPY = {
   sickWarning: "Please see the front desk before you go in.",
   visitorLogLine: "Your name and times go in the facility visitor log.",
-  /** "When you leave, tap **Leaving? Sign out here** on this tablet." */
-  signOutReminder: { before: "When you leave, tap ", strong: "Leaving? Sign out here", after: " on this tablet." },
-  signOutPrompt: "Leaving? Sign out here",
-  signOutHint: "Type the first 3 letters of your first name",
+  /** "When you leave, tap **Sign out** on the home screen." */
+  signOutReminder: { before: "When you leave, tap ", strong: "Sign out", after: " on the home screen." },
+  signOutPrompt: "Leaving? Sign out",
 } as const;

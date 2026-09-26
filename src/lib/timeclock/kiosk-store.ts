@@ -1,19 +1,22 @@
 /**
  * Kiosk device token and offline punch queue (COL-352, spec 37 §5).
  *
- * The device token and queued punches live in IndexedDB (`haven-timeclock`).
- * The PIN for a queued punch lives only in page memory (`pinMemory`): a reload
- * loses it, and the server records that replay as `pin_unavailable` for the
- * manager. Nothing typed on the kiosk is written to localStorage.
+ * The device token, queued punches and the last good Staff clock name list
+ * live in IndexedDB (`haven-timeclock`). The PIN for a queued punch lives only
+ * in page memory (`pinMemory`) on both the name and the employee-number path:
+ * a reload loses it, and the server records that replay as `pin_unavailable`
+ * for the manager. Nothing typed on the kiosk is written to localStorage.
  */
 
-import { KIOSK_DEVICE_HEADER, KIOSK_PUNCH_ENDPOINT, type KioskPunchRequest, type PunchType } from "@/lib/timeclock/kiosk-contract";
+import { KIOSK_DEVICE_HEADER, KIOSK_PUNCH_ENDPOINT, type KioskPunchRequest, type KioskRosterEntry, type PunchType } from "@/lib/timeclock/kiosk-contract";
 
 const DB_NAME = "haven-timeclock";
 const DB_VERSION = 1;
 const DEVICE_STORE = "device";
 const QUEUE_STORE = "punchQueue";
 const DEVICE_KEY = "device";
+/** The roster rides in the device store under its own key, so no schema upgrade is needed. */
+const ROSTER_KEY = "roster";
 
 /** Queued punches older than this are dropped at replay; the gap surfaces as a missing punch. */
 export const QUEUE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -28,11 +31,21 @@ export type KioskDevice = {
 
 export type QueuedPunch = {
   clientPunchId: string;
+  /** Employee number or badge; empty when the punch came from a tapped name. */
   identifier: string;
+  /** The tapped name's staff id (name path). Replayed as `staff_id`, never with an identifier. */
+  staffId?: string;
   punchType: PunchType;
   /** Device wall clock at capture, ISO. Becomes the punch time on the server. */
   deviceTime: string;
   queuedAt: string;
+};
+
+/** The last Staff clock name list the server gave this tablet, for when it is offline. */
+export type CachedKioskRoster = {
+  facilityId: string;
+  fetchedAt: string;
+  roster: KioskRosterEntry[];
 };
 
 export interface KioskStore {
@@ -43,6 +56,8 @@ export interface KioskStore {
   dequeue(clientPunchId: string): Promise<void>;
   /** Oldest first. */
   listQueue(): Promise<QueuedPunch[]>;
+  getRoster(): Promise<CachedKioskRoster | null>;
+  setRoster(roster: CachedKioskRoster): Promise<void>;
 }
 
 /** PIN by client punch id, page memory only. */
@@ -52,8 +67,9 @@ function sortQueue(items: QueuedPunch[]): QueuedPunch[] {
   return [...items].sort((a, b) => (a.queuedAt < b.queuedAt ? -1 : a.queuedAt > b.queuedAt ? 1 : 0));
 }
 
-export function createMemoryKioskStore(seed: { device?: KioskDevice | null; queue?: QueuedPunch[] } = {}): KioskStore {
+export function createMemoryKioskStore(seed: { device?: KioskDevice | null; queue?: QueuedPunch[]; roster?: CachedKioskRoster | null } = {}): KioskStore {
   let device: KioskDevice | null = seed.device ?? null;
+  let roster: CachedKioskRoster | null = seed.roster ?? null;
   const queue = new Map((seed.queue ?? []).map((item) => [item.clientPunchId, item]));
   return {
     async getDevice() {
@@ -64,6 +80,7 @@ export function createMemoryKioskStore(seed: { device?: KioskDevice | null; queu
     },
     async clearDevice() {
       device = null;
+      roster = null;
     },
     async enqueue(item) {
       queue.set(item.clientPunchId, item);
@@ -73,6 +90,12 @@ export function createMemoryKioskStore(seed: { device?: KioskDevice | null; queu
     },
     async listQueue() {
       return sortQueue([...queue.values()]);
+    },
+    async getRoster() {
+      return roster;
+    },
+    async setRoster(next) {
+      roster = next;
     },
   };
 }
@@ -135,6 +158,7 @@ export function createIndexedDbKioskStore(): KioskStore {
     async clearDevice() {
       await withStore(DEVICE_STORE, "readwrite", (store) => {
         store.delete(DEVICE_KEY);
+        store.delete(ROSTER_KEY);
       });
     },
     async enqueue(item) {
@@ -150,6 +174,20 @@ export function createIndexedDbKioskStore(): KioskStore {
     async listQueue() {
       const rows = await withStore<QueuedPunch[]>(QUEUE_STORE, "readonly", (store) => store.getAll() as IDBRequest<QueuedPunch[]>);
       return sortQueue(rows ?? []);
+    },
+    async getRoster() {
+      const row = await withStore<(CachedKioskRoster & { key: string }) | undefined>(
+        DEVICE_STORE,
+        "readonly",
+        (store) => store.get(ROSTER_KEY) as IDBRequest<(CachedKioskRoster & { key: string }) | undefined>,
+      );
+      if (!row) return null;
+      return { facilityId: row.facilityId, fetchedAt: row.fetchedAt, roster: row.roster };
+    },
+    async setRoster(roster) {
+      await withStore(DEVICE_STORE, "readwrite", (store) => {
+        store.put({ ...roster, key: ROSTER_KEY });
+      });
     },
   };
 }
@@ -202,7 +240,7 @@ export async function replayKioskQueue(input: {
         continue;
       }
       const body: KioskPunchRequest = {
-        identifier: item.identifier,
+        ...(item.staffId ? { staff_id: item.staffId } : { identifier: item.identifier }),
         pin: pinMemory.get(item.clientPunchId) ?? "",
         punch_type: item.punchType,
         device_time: item.deviceTime,
