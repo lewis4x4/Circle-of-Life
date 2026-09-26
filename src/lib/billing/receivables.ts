@@ -55,6 +55,23 @@ export function currentArNotYetSentNote(count: number, formattedCents: string): 
   return `Includes ${formattedCents} in ${count} draft${count === 1 ? "" : "s"} not yet sent.`;
 }
 
+/**
+ * Invoices that went to a payer (COL-709, Brian 2026-09-23: families see sent
+ * invoices only, never drafts). Every billed status, plus `written_off`, which
+ * is only reached from a sent invoice. `void` is ambiguous — most voids are
+ * drafts that were never sent — so a void counts as sent only when it carries
+ * `sent_at`.
+ */
+export const SENT_INVOICE_STATUSES = [...BILLED_INVOICE_STATUSES, "written_off"] as const;
+
+export function wasInvoiceSent(invoice: { status: string; sent_at?: string | null }): boolean {
+  if ((SENT_INVOICE_STATUSES as readonly string[]).includes(invoice.status)) return true;
+  return invoice.status === "void" && Boolean(invoice.sent_at);
+}
+
+/** PostgREST `.or(...)` filter equivalent to `wasInvoiceSent`. */
+export const SENT_INVOICE_POSTGREST_OR = `status.in.(${SENT_INVOICE_STATUSES.join(",")}),and(status.eq.void,sent_at.not.is.null)`;
+
 export type ReceivableInvoiceStatus = (typeof RECEIVABLE_INVOICE_STATUSES)[number];
 
 const RECEIVABLE_SET: ReadonlySet<string> = new Set(RECEIVABLE_INVOICE_STATUSES);

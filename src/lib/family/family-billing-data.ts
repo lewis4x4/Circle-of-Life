@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { isBilledStatus, isReceivableStatus } from "@/lib/billing/receivables";
+import {
+  SENT_INVOICE_POSTGREST_OR,
+  isBilledStatus,
+  isReceivableStatus,
+  wasInvoiceSent,
+} from "@/lib/billing/receivables";
 import { formatFamilyPaymentReference } from "@/lib/family/family-billing-copy";
 import { formatCents } from "@/lib/finance/format-cents";
 import type { Database } from "@/types/database";
@@ -109,17 +114,19 @@ export async function fetchFamilyBillingContext(
   if (!user) return { ok: false, error: "Sign in to view billing." };
 
   const fetchInvoices = async () => {
-    type Invoice = Pick<Database["public"]["Tables"]["invoices"]["Row"], "id" | "resident_id" | "invoice_number" | "invoice_date" | "due_date" | "period_start" | "period_end" | "total" | "balance_due" | "status">;
+    type Invoice = Pick<Database["public"]["Tables"]["invoices"]["Row"], "id" | "resident_id" | "invoice_number" | "invoice_date" | "due_date" | "period_start" | "period_end" | "total" | "balance_due" | "status" | "sent_at">;
     const rows: Invoice[] = [];
     let afterId: string | null = null;
     for (;;) {
-      let query = supabase.from("invoices").select("id,resident_id,invoice_number,invoice_date,due_date,period_start,period_end,total,balance_due,status")
-        .is("deleted_at", null).order("id", { ascending: false }).limit(500);
+      let query = supabase.from("invoices").select("id,resident_id,invoice_number,invoice_date,due_date,period_start,period_end,total,balance_due,status,sent_at")
+        .is("deleted_at", null).or(SENT_INVOICE_POSTGREST_OR).order("id", { ascending: false }).limit(500);
       if (afterId) query = query.lt("id", afterId);
       const result = await query;
       if (result.error) return { data: null, error: result.error };
       const page = result.data ?? [];
-      rows.push(...page);
+      // Families see sent invoices only (COL-709); the filter above and RLS already
+      // enforce it, this keeps a policy regression from reaching the page.
+      rows.push(...page.filter(wasInvoiceSent));
       if (page.length < 500) {
         rows.sort((a,b) => b.invoice_date.localeCompare(a.invoice_date) || b.id.localeCompare(a.id));
         return { data: rows, error: null };
