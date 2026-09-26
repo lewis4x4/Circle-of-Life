@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { FloorErrorCode, FloorRosterResponse } from "@/lib/floor/contract";
 import { resolveFloorDeviceStore, type FloorDevice } from "@/lib/floor/device-store";
@@ -8,7 +8,9 @@ import { countUnsentByOwner, replayFloorQueues } from "@/lib/floor/replay";
 import { fetchFloorRoster } from "@/lib/floor/unlock-client";
 
 /** People clock in and out at the front door all shift; the lock screen asks again this often. */
-const ROSTER_REFRESH_MS = 60_000;
+const ROSTER_REFRESH_MS = 15_000;
+/** A wake or a touch asks again when the names on screen are older than this. */
+const ROSTER_STALE_MS = 5_000;
 
 export type RosterState =
   | { status: "idle" }
@@ -51,9 +53,12 @@ export function useFloorRoster() {
     }
   }, []);
 
+  const lastLoadAt = useRef(0);
+
   const load = useCallback(
     async (showLoading: boolean) => {
       if (!device) return;
+      lastLoadAt.current = Date.now();
       if (showLoading) setRoster({ status: "loading" });
       const result = await fetchFloorRoster(device);
       if (!result.ok) {
@@ -85,10 +90,26 @@ export function useFloorRoster() {
       void load(false);
       void replay();
     };
+    // Someone who just clocked in at the front door walks up to a tablet that has been
+    // asleep (Auto-Lock) or idle: ask again the moment it wakes or is touched, so their
+    // name is there before they look for it, not up to a refresh later.
+    const onWake = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastLoadAt.current < ROSTER_STALE_MS) return;
+      void load(false);
+    };
     window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("pageshow", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("pointerdown", onWake, true);
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("pageshow", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("pointerdown", onWake, true);
     };
   }, [device, load, replay]);
 

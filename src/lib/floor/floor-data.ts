@@ -151,6 +151,47 @@ export function flagFor(resident: FloorResident, signals: ResidentStatusSignals 
 }
 
 /** The rounding queue for the facility (or one resident), with the server's derived status. */
+export type FloorResidentActivity = {
+  /** The newest charted check per resident in the last 24 hours. */
+  lastCheckAt: Map<string, string>;
+  /** Residents with a visitor signed in for them and not yet signed out. */
+  visitorHere: Set<string>;
+};
+
+/**
+ * The Residents list's "Checked 2:40 PM" and "Visitor here": one read of the
+ * last day's charted checks and one of open visits, for the whole building.
+ * Either read failing leaves its half empty; the list still shows.
+ */
+export async function fetchFloorResidentActivity(supabase: Client, facilityId: string, now: Date = new Date()): Promise<FloorResidentActivity> {
+  const since = new Date(now.getTime() - 24 * 60 * 60_000).toISOString();
+  const [logs, visits] = await Promise.all([
+    supabase
+      .from("resident_observation_logs")
+      .select("resident_id, observed_at")
+      .eq("facility_id", facilityId)
+      .gte("observed_at", since)
+      .is("deleted_at", null)
+      .order("observed_at", { ascending: false })
+      .limit(2000),
+    supabase
+      .from("visitor_log_entries" as never)
+      .select("resident_id")
+      .eq("facility_id", facilityId)
+      .not("resident_id", "is", null)
+      .is("checked_out_at", null)
+      .is("voided_at", null)
+      .is("deleted_at", null)
+      .gte("checked_in_at", since),
+  ]);
+  const lastCheckAt = new Map<string, string>();
+  for (const row of (logs.error ? [] : logs.data ?? []) as { resident_id: string; observed_at: string }[]) {
+    if (!lastCheckAt.has(row.resident_id)) lastCheckAt.set(row.resident_id, row.observed_at);
+  }
+  const visitorHere = new Set(((visits.error ? [] : visits.data ?? []) as unknown as { resident_id: string }[]).map((row) => row.resident_id));
+  return { lastCheckAt, visitorHere };
+}
+
 export async function fetchFloorTasks(input: { facilityId: string; residentId?: string; taskId?: string }): Promise<FloorTaskApiRow[]> {
   const params = new URLSearchParams({ facilityId: input.facilityId });
   if (input.residentId) params.set("residentId", input.residentId);

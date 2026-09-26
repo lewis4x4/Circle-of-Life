@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 
 import { fetchFloorCensus, fetchFloorTasks, fetchResidentStatusSignals, flagFor } from "@/lib/floor/floor-data";
-import { clockWithoutDayHalf, fetchResidentDetail, knowBeforeItems, nextOpenCheck, todayCheckItems, type InfoItem } from "@/lib/floor/resident-detail";
+import { clockWithoutDayHalf, fetchResidentDetail, floorVisitorTypeWord, knowBeforeItems, nextOpenCheck, recentCheckItems, type InfoItem } from "@/lib/floor/resident-detail";
 import { facilityDayStartIso, formatShortDate } from "@/lib/floor/shift-window";
 import { formatDisplayTime } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
@@ -31,13 +31,16 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
   const now = useFloorNow();
   const facilityId = facility.facilityId;
   const dayStart = useMemo(() => (now ? facilityDayStartIso(timeZone, now) : null), [timeZone, now]);
+  // The last 24 hours, so the card never empties at midnight. Keyed to the hour so it does not refetch every tick.
+  const hourKey = now ? Math.floor(now.getTime() / 3_600_000) : null;
+  const since = useMemo(() => (hourKey === null ? null : new Date((hourKey - 24) * 3_600_000).toISOString()), [hourKey]);
 
   const census = useFloorQuery(`census:${facilityId}`, () => fetchFloorCensus(supabase, facilityId), 5 * 60_000);
   const signals = useFloorQuery(`signals:${facilityId}`, () => fetchResidentStatusSignals(supabase, facilityId), 60_000);
   const tasks = useFloorQuery(`tasks:resident:${residentId}`, () => fetchFloorTasks({ facilityId, residentId }), 20_000);
   const detail = useFloorQuery(
-    dayStart ? `resident:${residentId}:${dayStart}` : null,
-    () => fetchResidentDetail(supabase, { residentId, facilityId, sinceIso: dayStart as string }),
+    since ? `resident:${residentId}:${since}` : null,
+    () => fetchResidentDetail(supabase, { residentId, facilityId, sinceIso: since as string }),
     30_000,
   );
 
@@ -65,6 +68,11 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
 
   const followUps: InfoItem[] = detailData
     ? [
+        ...detailData.visitorsHere.map((row) => ({
+          key: `visitor-${row.id}`,
+          title: `${row.name} is visiting now`,
+          detail: `${floorVisitorTypeWord(row.type).replace(/^./, (c) => c.toUpperCase())} · since ${formatDisplayTime(row.since, { timeZone })}`,
+        })),
         ...detailData.watches.map((row) => ({
           key: `watch-${row.id}`,
           title: row.label,
@@ -75,6 +83,17 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
           title: row.label,
           detail: `Since ${formatDisplayTime(row.triggeredAt, { timeZone })}`,
         })),
+        ...(detailData.lastHandoff
+          ? [
+              {
+                key: `handoff-${detailData.lastHandoff.id}`,
+                title: detailData.lastHandoff.note,
+                detail: ["Last handoff note", detailData.lastHandoff.shift, detailData.lastHandoff.authorName, formatShortDate(detailData.lastHandoff.createdAt, timeZone)]
+                  .filter(Boolean)
+                  .join(" · "),
+              },
+            ]
+          : []),
       ]
     : [];
 
@@ -91,16 +110,16 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
       {signals.state.status === "error" ? <StatusReadError text="Watch and alert status could not load." onRetry={signals.reload} /> : null}
       <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
         <InfoCard
-          title="Today's checks"
+          title="Recent checks"
           state={tasks.state.status === "error" || detail.state.status === "error" ? "error" : stateOf(detailData ? tasks.state.status : detail.state.status)}
-          items={detailData ? todayCheckItems({ tasks: taskRows, logs: detailData.logsToday, dayStartIso: dayStart, now, timeZone }) : []}
-          emptyText="No checks are set for today."
+          items={detailData ? recentCheckItems({ tasks: taskRows, logs: detailData.logsToday, dayStartIso: dayStart, now, timeZone }) : []}
+          emptyText="No checks in the last 24 hours, and none set for today."
           onRetry={() => {
             tasks.reload();
             detail.reload();
           }}
         />
-        <InfoCard title="Watch and follow-ups" state={stateOf(detail.state.status)} items={followUps} emptyText="No watch or open follow-up." onRetry={detail.reload} />
+        <InfoCard title="Watch and follow-ups" state={stateOf(detail.state.status)} items={followUps} emptyText="No watch, follow-up, handoff note or visitor." onRetry={detail.reload} />
         <InfoCard
           title="Know before you go in"
           state={stateOf(detail.state.status)}

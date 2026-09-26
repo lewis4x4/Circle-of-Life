@@ -1,5 +1,7 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
+
 import type { InfoItem } from "@/lib/floor/resident-detail";
 
 import { FloorStatePanel } from "./FloorStatePanel";
@@ -38,7 +40,14 @@ export function InfoCard({
         <ul>
           {items.map((item) => (
             <li key={item.key} className="flex flex-col gap-0.75 border-b border-border py-3">
-              <span className="break-words text-[15px] font-medium tabular-nums text-foreground">{item.title}</span>
+              {item.tone === "missing" ? (
+                <span className="flex items-start gap-1.5 break-words text-[15px] font-semibold text-floor-warning-text">
+                  <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  {item.title}
+                </span>
+              ) : (
+                <span className="break-words text-[15px] font-medium tabular-nums text-foreground">{item.title}</span>
+              )}
               {item.detail ? <span className="text-[13px] text-muted-foreground">{item.detail}</span> : null}
             </li>
           ))}
