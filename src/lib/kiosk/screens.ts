@@ -39,7 +39,45 @@ export const KIOSK_STAFF_COPY = {
   offlineChoose: "Offline. Choose what you are doing now. It is checked when the tablet reconnects.",
   clears: "This screen clears in 5 seconds.",
   done: "Done",
+  // Name picker (the default Staff clock screen).
+  tapName: "Tap your name",
+  filterLabel: "Find your name",
+  filterPlaceholder: "Type to find your name",
+  notOnList: "Not on the list? Ask your manager to set up your PIN.",
+  useNumber: "Use employee number",
+  backToNames: "Back to names",
+  noFilterMatch: "No name matches that. Check the spelling.",
+  loadingNames: "Loading names.",
+  offlineNoNames: "This tablet is offline and has no saved names yet. Use your employee number.",
+  namesLabel: "Staff names",
+  // PIN after a tapped name.
+  notYouShort: "Not you?",
+  pinNameHelper: "Enter your 6-digit PIN.",
+  locked: "Locked for 15 minutes. Ask a manager to unlock you.",
+  notSetUp: "You're not set up to clock in here. Ask your manager.",
 } as const;
+
+/** "Wrong PIN. 3 tries left." with the number the database returned. */
+export function kioskWrongPinCopy(triesLeft: number): string {
+  if (triesLeft <= 0) return KIOSK_STAFF_COPY.locked;
+  return `Wrong PIN. ${triesLeft} ${triesLeft === 1 ? "try" : "tries"} left.`;
+}
+
+/** "Too many wrong PINs on this tablet. Try again at 7:40 PM." in the facility zone. */
+export function kioskThrottledCopy(throttledUntil: string, timeZone = KIOSK_TIME_ZONE): string {
+  const at = formatKioskClock(throttledUntil, timeZone);
+  return at ? `Too many wrong PINs on this tablet. Try again at ${at}.` : "Too many wrong PINs on this tablet. Try again in a few minutes.";
+}
+
+/** Tapped-name filter: any word of the name, or the whole name, starts with what was typed. */
+export function kioskRosterFilter<T extends { display_name: string }>(roster: T[], query: string): T[] {
+  const typed = query.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!typed) return roster;
+  return roster.filter((entry) => {
+    const name = entry.display_name.toLowerCase();
+    return name.startsWith(typed) || name.split(/\s+/).some((word) => word.startsWith(typed));
+  });
+}
 
 /** "You are off the clock." Off the clock adds the last clock out when the database knows it (kioskStaffStateLine). */
 export const KIOSK_STAFF_STATE_LINE: Record<KioskStaffState, string> = {

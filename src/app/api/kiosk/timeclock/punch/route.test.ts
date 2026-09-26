@@ -46,6 +46,24 @@ describe("POST /api/kiosk/timeclock/punch", () => {
     expect(String(args[1].p_badge_lookup_hmac)).not.toContain("A-100");
   });
 
+  it("records a tapped name's punch with p_staff_id and no identifier, online and as an offline replay", async () => {
+    const staff = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    mock.rpc.mockResolvedValue({
+      data: { ok: true, replayed: false, punch_id: "p1", first_name: "Test", punch_type: "in", punched_at: "2026-09-16T11:02:00.100Z", flags: [], state: "in", next_actions: ["out"], today_worked_minutes: 0 },
+      error: null,
+    });
+    const { identifier: _identifier, ...rest } = GOOD;
+    void _identifier;
+    expect((await POST(request({ ...rest, staff_id: staff }))).status).toBe(200);
+    expect(mock.rpc).toHaveBeenLastCalledWith("timeclock_record_punch", expect.objectContaining({ p_staff_id: staff, p_identifier: "", p_badge_lookup_hmac: null }));
+    expect((await POST(request({ ...rest, staff_id: staff, pin: "", captured_offline: true }))).status).toBe(200);
+    expect(mock.rpc).toHaveBeenLastCalledWith("timeclock_record_punch", expect.objectContaining({ p_staff_id: staff, p_captured_offline: true }));
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "not_recognized", tries_left: 2 }, error: null });
+    expect(await (await POST(request({ ...rest, staff_id: staff }))).json()).toEqual({ error: "not_recognized", tries_left: 2 });
+    mock.rpc.mockResolvedValueOnce({ data: { ok: false, error: "not_recognized", tries_left: 2 }, error: null });
+    expect(await (await POST(request(GOOD))).json()).toEqual({ error: "not_recognized" });
+  });
+
   it("refuses without a device header before touching the database (401)", async () => {
     const response = await POST(request(GOOD, null));
     expect(response.status).toBe(401);

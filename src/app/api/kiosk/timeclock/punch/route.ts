@@ -4,13 +4,14 @@ import { logError } from "@/lib/observability/logger";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { UUID_STRING_RE } from "@/lib/supabase/env";
 import { KIOSK_DEVICE_HEADER, isPunchType, kioskStaffDisplay, type KioskPunchReceipt, type PunchType } from "@/lib/timeclock/kiosk-contract";
-import { badgeLookupHmac, isRecord, kioskErrorResponse } from "@/lib/timeclock/server";
+import { isRecord, kioskErrorResponse, kioskSubject, kioskSubjectArgs, kioskSubjectErrorResponse } from "@/lib/timeclock/server";
 
 /** Database codes that mean "recorded as a sync rejection for the manager" on an offline replay. */
 const OFFLINE_REJECTED = new Set(["not_recognized", "locked", "inactive_staff", "not_assigned", "invalid_next_type", "pin_unavailable", "facility_off"]);
 
 /**
- * POST /api/kiosk/timeclock/punch — record one punch (spec 37 §4.1, §5).
+ * POST /api/kiosk/timeclock/punch — record one punch (spec 37 §4.1, §5) for a
+ * tapped name (`staff_id`) or an employee number or badge (`identifier`).
  * Server time is the punch time when online; the device time rides along and
  * is flagged when it drifts. Idempotent on client_punch_id, so a lost response
  * is safe to retry with the same body.
@@ -27,14 +28,14 @@ export async function POST(request: Request) {
   }
   if (!isRecord(body)) return kioskErrorResponse("invalid_input");
 
-  const identifier = typeof body.identifier === "string" ? body.identifier.trim() : "";
+  const subject = kioskSubject(body);
   const pin = typeof body.pin === "string" ? body.pin : "";
   const punchType = body.punch_type;
   const clientPunchId = typeof body.client_punch_id === "string" ? body.client_punch_id : "";
   const capturedOffline = body.captured_offline === true;
   const deviceTime = typeof body.device_time === "string" ? new Date(body.device_time) : null;
 
-  if (!isPunchType(punchType) || !UUID_STRING_RE.test(clientPunchId) || !identifier || identifier.length > 64) {
+  if (!isPunchType(punchType) || !UUID_STRING_RE.test(clientPunchId) || !subject) {
     return kioskErrorResponse("invalid_input");
   }
   if (!deviceTime || Number.isNaN(deviceTime.getTime())) {
@@ -55,8 +56,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await admin.rpc("timeclock_record_punch", {
     p_device_token: deviceToken,
-    p_identifier: identifier,
-    p_badge_lookup_hmac: badgeLookupHmac(identifier),
+    ...kioskSubjectArgs(subject),
     p_pin: pin,
     p_punch_type: punchType,
     p_device_time: deviceTime.toISOString(),
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     if (capturedOffline && OFFLINE_REJECTED.has(code)) {
       return kioskErrorResponse("rejected_offline");
     }
-    return kioskErrorResponse(code);
+    return kioskSubjectErrorResponse(subject, result, code);
   }
 
   const receipt: KioskPunchReceipt = {

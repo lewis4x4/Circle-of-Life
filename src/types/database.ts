@@ -21672,11 +21672,15 @@ export type Database = {
         | { Args: { p_code: string; p_label: string }; Returns: Json }
         | { Args: { p_code: string; p_device_kind: string; p_label: string }; Returns: Json }
       timeclock_identify: {
-        Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string }
+        Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string; p_staff_id?: string | null }
         Returns: Json
       }
       timeclock_record_punch: {
-        Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string; p_punch_type: string; p_device_time: string; p_client_punch_id: string; p_captured_offline: boolean }
+        Args: { p_device_token: string; p_identifier: string; p_badge_lookup_hmac: string | null; p_pin: string; p_punch_type: string; p_device_time: string; p_client_punch_id: string; p_captured_offline: boolean; p_staff_id?: string | null }
+        Returns: Json
+      }
+      timeclock_kiosk_roster: {
+        Args: { p_device_token: string }
         Returns: Json
       }
       timeclock_create_enrollment_code: {
