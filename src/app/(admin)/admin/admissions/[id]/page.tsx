@@ -326,8 +326,8 @@ export default function AdminAdmissionCaseDetailPage() {
   async function updateCase(
     patch: Partial<Database["public"]["Tables"]["admission_cases"]["Update"]> & { medicaid_gate_override_reason?: string },
     successMessage: string,
-  ) {
-    if (!row) return;
+  ): Promise<boolean> {
+    if (!row) return false;
     setActionLoading(successMessage);
     setActionError(null);
     setActionMessage(null);
@@ -342,8 +342,10 @@ export default function AdminAdmissionCaseDetailPage() {
       setActionMessage(successMessage);
       await load();
       setArrivalRefresh((n) => n + 1);
+      return true;
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not update admission case.");
+      return false;
     } finally {
       setActionLoading(null);
     }
@@ -551,7 +553,7 @@ export default function AdminAdmissionCaseDetailPage() {
               </div>
             )}
 
-            {row.resident_id && <AdmissionMedicaidScreening residentId={row.resident_id} admissionCaseId={row.id} onSaved={() => setMedicaidRefresh((n) => n + 1)} />}
+            {row.resident_id && <AdmissionMedicaidScreening residentId={row.resident_id} admissionCaseId={row.id} onSaved={() => { setMedicaidRefresh((n) => n + 1); setArrivalRefresh((n) => n + 1); }} />}
 
             <div id="admission-documents" />
             <RecordDetailSection
@@ -883,7 +885,7 @@ export default function AdminAdmissionCaseDetailPage() {
                       type="button"
                       variant="outline"
                       disabled={!medicaidOverrideDraft.trim() || !!actionLoading}
-                      onClick={() => void updateCase({ medicaid_gate_override_reason: medicaidOverrideDraft.trim() }, "Medicaid review overridden.").then(() => setMedicaidOverrideDraft(""))}
+                      onClick={() => void updateCase({ medicaid_gate_override_reason: medicaidOverrideDraft.trim() }, "Medicaid review overridden.").then((saved) => { if (saved) setMedicaidOverrideDraft(""); })}
                     >
                       {actionLoading === "Medicaid review overridden." ? <Loader2 className="h-4 w-4 animate-spin" /> : "Record the override"}
                     </Button>
