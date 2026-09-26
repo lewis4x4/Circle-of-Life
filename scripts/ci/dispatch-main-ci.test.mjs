@@ -55,6 +55,24 @@ test("unverifiable accepted dispatch fails visibly", async () => {
   await assert.rejects(reconcile({ api, pause: async () => {} }), /no run could be verified/);
 });
 
+test("accepted run id is reused while GitHub hydrates its run title", async () => {
+  const f = fixture();
+  let reads = 0;
+  const api = async (...args) => {
+    if (args[1].endsWith("/actions/runs/10")) return ++reads < 3 ? run({ display_title: "CI — segment gates" }) : run();
+    return f.api(...args);
+  };
+  assert.equal((await reconcile({ api, pause: async () => {} })).action, "dispatched");
+  assert.equal(reads, 3);
+  assert.equal(f.writes.length, 1, "metadata delay must not repeat the dispatch");
+});
+
+test("persistently wrong dispatch title remains a visible failure after bounded readback", async () => {
+  const f = fixture({ readback: run({ display_title: "another request" }) });
+  await assert.rejects(reconcile({ api: f.api, pause: async () => {} }), /does not match/);
+  assert.equal(f.writes.length, 1);
+});
+
 test("raced dispatch cannot satisfy the newer commit's CI inventory", async () => {
   const f = fixture({ existing: [run({ display_title: `Main CI for ${base} from ${newer}`, status: "completed", conclusion: "failure" })] });
   assert.equal((await reconcile({ api: f.api })).action, "dispatched");

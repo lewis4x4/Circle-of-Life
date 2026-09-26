@@ -65,9 +65,16 @@ export async function reconcile({ api, pause = (ms) => new Promise((resolve) => 
       if (!runId) await pause(1000);
     }
     requireValue(Number.isSafeInteger(runId) && runId > 0, "Dispatch was accepted but no run could be verified");
-    const run = await api("GET", `${root}/actions/runs/${runId}`);
-    validateRun(run, workflow.id);
-    requireValue(run.head_repository?.full_name === REPOSITORY, "Dispatch came from another head repository");
+    let run;
+    for (let poll = 0; poll < 10; poll++) {
+      run = await api("GET", `${root}/actions/runs/${runId}`);
+      validateRun(run, workflow.id);
+      requireValue(run.head_repository?.full_name === REPOSITORY, "Dispatch came from another head repository");
+      if (run.event === "workflow_dispatch" && run.display_title === `Main CI for ${sha} from ${base}`) break;
+      // The run id is returned before GitHub finishes evaluating run-name.
+      // Read the same immutable id; do not submit another dispatch for this delay.
+      if (poll < 9) await pause(1000);
+    }
     requireValue(run.event === "workflow_dispatch" && run.display_title === `Main CI for ${sha} from ${base}`, "Dispatch readback does not match the requested revision");
     if (run.head_sha === sha) return { action: "dispatched", sha, base_sha: base, run_id: runId, url: `https://github.com/${REPOSITORY}/actions/runs/${runId}` };
     // GitHub resolves main when accepting the dispatch. Retry the new tip;
