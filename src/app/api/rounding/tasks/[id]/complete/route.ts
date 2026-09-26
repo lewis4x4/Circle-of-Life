@@ -166,14 +166,19 @@ export async function POST(
       : status === 400 ? "Check the observation time, late-entry reason, and completion details."
       : "Could not save observation. Retry with the same request.";
     const reasonRequired = code === "22023" && logInsertError?.message === "lateReason is required for late entries";
-    const chipRejected = usesChipCapture && code === "22023" && !reasonRequired;
+    // Migration 554: a check charted before its window opens. The message names the opening time.
+    const notOpenYet = code === "22023" && logInsertError?.details === "check_not_open";
+    const chipRejected = usesChipCapture && code === "22023" && !reasonRequired && !notOpenYet;
     return NextResponse.json({
       error: reasonRequired
         ? "Add a reason for this delayed entry, then retry."
+        : notOpenYet
+          ? logInsertError?.message ?? "This check is not open yet. Chart it when its window opens."
         : chipRejected
           ? "Tap at least one meal, mood or medication chip, and confirm where the resident was and how they presented."
           : error,
       reasonRequired,
+      notOpenYet,
     }, { status });
   }
 

@@ -21,6 +21,8 @@ export const ALLOWED_GAPS = {
   546: "claimed by open PR #913 (546_document_intake_schedules.sql); already applied to production and staging",
   547: "claimed by open PR #913 (547_document_intake_facility_enablement.sql); already applied to production and staging",
   548: "claimed by open PR #913 (548_document_intake_facility_mailboxes.sql); already applied to production and staging",
+  // Delete when #924 merges.
+  555: "claimed by open PR #924; 556 (COL-864) was applied to production and staging first",
 };
 
 const pattern = /^(\d{3})_[a-z0-9][a-z0-9_]*\.sql$/;

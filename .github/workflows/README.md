@@ -2,7 +2,7 @@
 
 | Workflow file | Purpose |
 | --- | --- |
-| `ci-gates.yml` | Runs required application/platform checks on every push/PR, one full PostgreSQL replay only for database-sensitive changes, and finance-specific tests only for finance-sensitive changes. Its `Required CI summary` job is the stable branch-protection check. |
+| `ci-gates.yml` | Runs required application/platform checks on every push/PR, one full PostgreSQL replay only for database-sensitive changes, and finance-specific tests only for finance-sensitive changes. Typecheck and vitest run in their own `TypeScript and vitest` job beside `Application and platform gates`, so they no longer add to the replay's wall time; a failure there cancels the rest of a pull request run. Its `Required CI summary` job is the stable branch-protection check and requires both. |
 | `main-ci-failure-alert.yml` | Preserves established main-CI incident routing; an independent observer-health job performs five-minute catch-up, audits old reruns, and retains unfinished runs. |
 | `netlify-production-failure-alert.yml` | Observes the exact Haven production site every five minutes and on main pushes; maintains one assigned production incident with distinct-deploy escalation and publication-backed recovery. Finite dispatch supports isolated synthetic replay. |
 | `ci-nightly.yml` | Runs nightly extended CI (full gate suite + server route probe). |

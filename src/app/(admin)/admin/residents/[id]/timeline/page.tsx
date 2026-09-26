@@ -20,7 +20,7 @@ export default function ResidentTimelinePage() {
         {/* COL-432: the resident <h1> comes from AdminResidentDetailShell; this
             tab adds context copy plus an <h2> section, not a second <h1>. */}
         <p className="text-sm text-muted-foreground">
-          Care events, incidents, condition changes, behavior, shift notes, and observation exceptions in one place.
+          Care events, incidents, condition changes, behavior, shift notes, and safety checks in one place.
         </p>
         <RecordDetailSection title="Entries" description="Newest first, grouped by the facility's day.">
           <ResidentTimeline residentId={residentId} workspace="admin" />

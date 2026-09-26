@@ -34,6 +34,8 @@ function leavingError(code: KioskVisitorErrorCode): string {
  * `/kiosk/leaving`, reached from "Leaving? Sign out" on the home screen.
  * Nothing is listed, and nothing is asked of the server, until three letters
  * are typed; then at most five open visits, first name and last initial only.
+ * First or last name, and close is enough: the database forgives a typo, a
+ * swapped letter or a name that sounds the same (migration 553).
  * A tap asks "Sign out Brian L.?" before anything is written. The shell sends
  * this screen home after 60 seconds without input.
  */

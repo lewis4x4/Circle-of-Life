@@ -37,7 +37,8 @@ const REDIRECT_PROBES = [
   { path: "/caregiver", expected: "/login?next=%2Fcaregiver", shell: "caregiver" },
   { path: "/caregiver/tasks", expected: "/login?next=%2Fcaregiver%2Ftasks", shell: "caregiver" },
   { path: "/caregiver/meds", expected: "/login?next=%2Fcaregiver%2Fmeds", shell: "caregiver" },
-  { path: "/meds", expected: "/login?next=%2Fmeds", shell: "caregiver" },
+  // The configured alias redirects first; the canonical probe above checks authentication separately.
+  { path: "/meds", expected: "/caregiver/meds", shell: "caregiver" },
   { path: "/family", expected: "/login?next=%2Ffamily", shell: "family" },
   { path: "/family/billing", expected: "/login?next=%2Ffamily%2Fbilling", shell: "family" },
   { path: "/family/messages", expected: "/login?next=%2Ffamily%2Fmessages", shell: "family" },

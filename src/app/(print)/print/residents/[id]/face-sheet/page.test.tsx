@@ -82,6 +82,7 @@ function detail(overrides: Partial<ResidentOverviewDetail> = {}): ResidentOvervi
       { id: "c1", name: "Dana Wheeler", relationship: "Daughter", phone: "555-0100", isEmergencyContact: true, isHealthcareProxy: true, isPowerOfAttorney: false, sortOrder: 1, updatedAt: null },
     ],
     recentDailyNotes: [],
+    recentSafetyChecks: [],
     recentAdl: [],
     recentBehavior: [],
     recentConditionChanges: [],

@@ -600,7 +600,7 @@ END $$;
 -- ---------------------------------------------------------------------------
 -- 13. Visitor kiosk.
 -- ---------------------------------------------------------------------------
-DO $$ DECLARE r jsonb; r2 jsonb; f record; c uuid := gen_random_uuid(); res record; e record; BEGIN
+DO $$ DECLARE r jsonb; r2 jsonb; f record; c uuid := gen_random_uuid(); res record; e record; q text; BEGIN
   SELECT * INTO f FROM fk;
   SELECT first_name, last_name INTO res FROM public.residents WHERE id = f.resident;
   -- Floor tokens are not kiosk tokens.
@@ -646,6 +646,12 @@ DO $$ DECLARE r jsonb; r2 jsonb; f record; c uuid := gen_random_uuid(); res reco
   IF NOT (r->'matches' @> jsonb_build_array(jsonb_build_object('resident_id', e.id))) OR jsonb_array_length(r->'matches') > 6 THEN
     RAISE EXCEPTION 'Resident matches wrong: %', r;
   END IF;
+  -- Three letters never forgive (migration 553); four or more do.
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(public.visitor_kiosk_resident_matches(pg_temp.tok('kiosk'), left(e.first_name, 3))->'matches') m
+             JOIN public.residents rr ON rr.id = (m->>'resident_id')::uuid
+             WHERE haven.kiosk_name_match_rank(left(e.first_name, 3), ARRAY[rr.first_name, rr.preferred_name, rr.last_name], false) IS NULL) THEN
+    RAISE EXCEPTION 'Three letters widened the resident list';
+  END IF;
   IF public.visitor_kiosk_resident_matches(pg_temp.tok('floor'), left(e.first_name, 3))->>'error' <> 'device_unknown' THEN
     RAISE EXCEPTION 'A floor token listed residents';
   END IF;
@@ -682,7 +688,25 @@ DO $$ DECLARE r jsonb; r2 jsonb; f record; c uuid := gen_random_uuid(); res reco
   IF r::text LIKE '%Typed resident%' OR r::text LIKE '%' || res.first_name || ' ' || res.last_name || '%' OR r::text LIKE '%555-0100%' OR r::text LIKE '%Quebec%' THEN
     RAISE EXCEPTION 'Open matches leak a resident, typed name, phone or full name: %', r;
   END IF;
-  IF jsonb_array_length(public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), 'vis%')->'matches') <> 0 THEN RAISE EXCEPTION 'Prefix wildcard not escaped'; END IF;
+  -- Migration 553: symbols are ignored rather than read as wildcards; '%' alone lists nothing.
+  IF jsonb_array_length(public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), '%%%')->'matches') <> 0
+     OR jsonb_array_length(public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), '_v%')->'matches') <> 0 THEN
+    RAISE EXCEPTION 'A wildcard listed open visits';
+  END IF;
+  -- Forgiving search (migration 553): last name, a typo, a swap, and a name that sounds the same.
+  FOREACH q IN ARRAY ARRAY['quebec', 'qeubec', 'visitorprobe quebec', 'quebec visitorprobe', 'vistorprobe'] LOOP
+    IF NOT (public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), q)->'matches' @> jsonb_build_array(jsonb_build_object('display_name', 'Visitorprobe Q.'))) THEN
+      RAISE EXCEPTION 'Forgiving sign-out search missed Visitorprobe Quebec for %', q;
+    END IF;
+  END LOOP;
+  IF jsonb_array_length(public.visitor_kiosk_open_matches(pg_temp.tok('kiosk'), 'zulu')->'matches') <> 0 THEN RAISE EXCEPTION 'Sign-out search matched a stranger'; END IF;
+  IF haven.kiosk_name_match_rank('hlal', ARRAY['Abbigail Hall']) IS DISTINCT FROM 1
+     OR haven.kiosk_name_match_rank('hal', ARRAY['Abbigail Hall']) IS DISTINCT FROM 0
+     OR haven.kiosk_name_match_rank('marykate', ARRAY['Mary-Kate Olsen']) IS DISTINCT FROM 0
+     OR haven.kiosk_name_match_rank('hlal', ARRAY['Abbigail Hall'], false) IS NOT NULL
+     OR haven.kiosk_name_match_rank('bob', ARRAY['Abbigail Hall']) IS NOT NULL THEN
+    RAISE EXCEPTION 'kiosk_name_match_rank ranks wrong';
+  END IF;
   FOR i IN 1..6 LOOP
     PERFORM public.visitor_kiosk_sign_in(pg_temp.tok('kiosk'), gen_random_uuid(), 'vendor_contractor', 'Manyprobe ' || i, NULL, 'Probe Co', NULL, NULL, false);
   END LOOP;

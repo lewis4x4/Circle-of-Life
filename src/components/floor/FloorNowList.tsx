@@ -94,7 +94,7 @@ export function FloorNowList({
               pill={{ label: check.timing.label, tone: check.timing.tone }}
               bar={check.timing.bar}
               primaryAction={check.timing.primaryAction}
-              doneHref={`/floor/check/${check.id}`}
+              doneHref={check.timing.chartable ? `/floor/check/${check.id}` : undefined}
               doneLabel={`Done: chart ${FLOOR_CHECK_NAME.toLowerCase()} for ${check.residentName}`}
             />
           ))

@@ -36,6 +36,49 @@ jobs:
           CI_DIFF_HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
           CI_DIFF_MODE: ${{ github.event_name == 'pull_request' && 'merge-base' || 'range' }}
 
+  app-tests:
+    name: TypeScript and vitest
+    # Runs beside `gates` instead of in front of it. Typecheck plus vitest take
+    # 6 to 10 minutes; on a database-sensitive diff the segment runner's
+    # Postgres replay takes about 17 more. Serial, that was a ~32 minute
+    # required check; parallel, the replay is the only long pole.
+    needs: classify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        if: needs.classify.outputs.policy_only != 'true'
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        if: needs.classify.outputs.policy_only != 'true'
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        if: needs.classify.outputs.policy_only != 'true'
+        run: npm ci
+
+      - name: TypeScript and application tests
+        if: needs.classify.outputs.policy_only != 'true'
+        run: npm run typecheck && npm test
+
+      - name: Stop the rest of this pull request run
+        # Keeps the old fail-fast: a type or unit failure used to stop `gates`
+        # before the replay started. Pull requests only, so a main failure
+        # still reaches main-ci-failure-alert as a failure, never a cancel.
+        # `Required CI summary` runs under always() and reports this job's
+        # failure, so the required check still turns red, not grey.
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
+
   gates:
     name: Application and platform gates
     needs: classify
@@ -56,10 +99,6 @@ jobs:
 
       - name: Gate failure regression tests
         run: node --test scripts/ci/classify-changes.test.mjs scripts/ci/release-tree-proof.test.mjs scripts/ci/netlify-production-failure-alert.test.mjs scripts/review-gates.test.mjs scripts/perf/route-load-budget.test.mjs
-
-      - name: TypeScript and application tests
-        if: needs.classify.outputs.policy_only != 'true'
-        run: npm run typecheck && npm test
 
       - uses: denoland/setup-deno@v2
         if: needs.classify.outputs.policy_only != 'true'
@@ -350,13 +389,14 @@ jobs:
   required:
     name: Required CI summary
     if: always()
-    needs: [classify, gates, finance]
+    needs: [classify, app-tests, gates, finance]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Enforce applicable jobs
         env:
           CLASSIFY_RESULT: ${{ needs.classify.result }}
+          APP_TESTS_RESULT: ${{ needs.app-tests.result }}
           GATES_RESULT: ${{ needs.gates.result }}
           FINANCE_RESULT: ${{ needs.finance.result }}
           CLASSIFICATION_SAFE: ${{ needs.classify.outputs.classification_safe }}
@@ -367,6 +407,7 @@ jobs:
           POLICY_ONLY: ${{ needs.classify.outputs.policy_only }}
         run: |
           test "$CLASSIFY_RESULT" = "success"
+          test "$APP_TESTS_RESULT" = "success"
           test "$GATES_RESULT" = "success"
           test "$FINANCE_RESULT" = "success" || test "$FINANCE_RESULT" = "skipped"
           for value in "$CLASSIFICATION_SAFE" "$DATABASE_SENSITIVE" "$FINANCE_SENSITIVE" "$UI_SENSITIVE" "$RELEASE_SENSITIVE" "$POLICY_ONLY"; do
