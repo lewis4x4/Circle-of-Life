@@ -41,7 +41,9 @@ import {
 import { filingReadiness, groupCatalog, hasNoSafeDestination, initialCandidateIndex, type FilingDraft } from "./destination";
 import { DestinationPicker } from "./DestinationPicker";
 import { AssignDialog, ConfirmDialog, DuplicateDialog, FIELD_CLASS, ReasonDialog, SetFacilityDialog } from "./IntakeDialogs";
+import { useCheckVerdicts } from "./JevVerdictControl";
 import { CHANNEL_LABELS, itemTitle, pagesLabel, processingLabel, processingTone, REVIEWABLE_STATUSES, statusLabel, statusTone } from "./model";
+import { VERDICTS_NEEDED_REASON, verdictsComplete, verdictsForFiling } from "./model";
 import { AssessmentSection, FilingReceipt, HistorySection } from "./ReviewSections";
 import { isPdf, SourcePreview, usePdfDocument } from "./SourcePreview";
 import { SplitDialog } from "./SplitDialog";
@@ -106,6 +108,7 @@ export function DocumentIntakeReview({ itemId }: { itemId: string }) {
   const [pdfReload, setPdfReload] = useState(0);
   const [filed, setFiled] = useState<{ href: string } | null>(null);
   const [fileRetry, setFileRetry] = useState(false);
+  const [verdicts, setVerdict] = useCheckVerdicts(detail?.proposal?.id ?? null);
 
   /** One request key per user action, kept only while that action may be retried as-is. */
   const keys = useRef(new Map<string, string>());
@@ -288,6 +291,7 @@ export function DocumentIntakeReview({ itemId }: { itemId: string }) {
           title: draft.title.trim(),
           document_date: draft.documentDate || null,
           expiration_date: draft.expirationDate || null,
+          check_verdicts: verdictsForFiling(detail.proposal, verdicts),
         },
         keyFor("file"),
       );
@@ -300,7 +304,7 @@ export function DocumentIntakeReview({ itemId }: { itemId: string }) {
       if (cause instanceof IntakeRequestError && cause.isRetryable) {
         // Keep the key: "Try again" replays this exact filing.
         setFileRetry(true);
-        setActionError("Filing did not finish. Try again — it will not file twice.");
+        setActionError("Filing did not finish. Try again; it will not file twice.");
         if (cause.filingId) await load();
       } else if (cause instanceof IntakeRequestError && cause.isStale) {
         keys.current.delete("file");
@@ -353,6 +357,7 @@ export function DocumentIntakeReview({ itemId }: { itemId: string }) {
   const claimedByOther = !!item.claimed_by && item.claimed_by !== userId && !!item.claim_expires_at && Date.parse(item.claim_expires_at) > Date.now();
   const custodian = (settings?.custodian_roles ?? ["owner", "org_admin"]).includes(appRole);
   const readiness = filingReadiness(draft, catalogRow, { requirementRequired, facilityKnown: !!item.facility_id });
+  const blockedReason = !readiness.ready ? readiness.reason : verdictsComplete(proposal, verdicts) ? null : VERDICTS_NEEDED_REASON;
   const summaryPages = pagesLabel(proposal?.summary_pages);
   const pageCount = pdf.doc?.numPages ?? item.page_count ?? 0;
   const canSplit = reviewable && isPdf(item) && pageCount > 1;
@@ -511,7 +516,7 @@ export function DocumentIntakeReview({ itemId }: { itemId: string }) {
         </RecordDetailSection>
       ) : null}
 
-      <AssessmentSection item={item} proposal={proposal} />
+      <AssessmentSection item={item} proposal={proposal} verdicts={verdicts} onVerdictChange={reviewable && !claimedByOther ? setVerdict : undefined} />
 
       {reviewable || item.status === "excluded" || item.status === "duplicate" ? (
         <RecordDetailSection title="Actions">
@@ -526,11 +531,11 @@ export function DocumentIntakeReview({ itemId }: { itemId: string }) {
           {reviewable ? (
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" disabled={!readiness.ready || !!busy || claimedByOther} onClick={() => void approve()}>
+                <Button type="button" disabled={!!blockedReason || !!busy || claimedByOther} onClick={() => void approve()}>
                   {busy === "file" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
                   {fileRetry ? "Try again" : "Approve filing"}
                 </Button>
-                {!readiness.ready ? <span className="text-sm text-muted-foreground">{readiness.reason}</span> : null}
+                {blockedReason ? <span className="text-sm text-muted-foreground">{blockedReason}</span> : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" disabled={!!busy} onClick={() => setDialog("assign")}>

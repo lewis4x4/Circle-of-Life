@@ -191,6 +191,43 @@ describe("POST /api/admin/document-intake/items/[itemId]/file", () => {
     expect(clientRpc.mock.calls[1]![1]).toEqual({ p_filing: filingId, p_request_key: deriveRequestKey(requestKey, "complete") });
   });
 
+  it("passes the reviewer's check verdicts inside p_destination (559)", async () => {
+    const state = { filing: "preparing" };
+    const objects: StoredObjects = new Map([[`document-intake/${sourcePath}`, original]]);
+    const { clientRpc } = setup({
+      ...filingRpcs(state),
+      adminRows: { document_intake_filings: [{ id: filingId, organization_id: orgId, get state() { return state.filing; } }] },
+      objects,
+    });
+    const check_verdicts = { jev_signed: "wrong", jev_examiner_signed: "cant_tell", jev_legible_complete: "right" };
+
+    const response = await fileRoute(post({ ...fileBody, check_verdicts }), params({ itemId }));
+
+    expect(response.status).toBe(200);
+    expect((clientRpc.mock.calls[0]![1] as { p_destination: Row }).p_destination.check_verdicts).toEqual(check_verdicts);
+  });
+
+  it("sends an empty verdict object when none were given, and refuses an unknown verdict before any call", async () => {
+    const state = { filing: "preparing" };
+    const objects: StoredObjects = new Map([[`document-intake/${sourcePath}`, original]]);
+    const { clientRpc, adminRpc } = setup({
+      ...filingRpcs(state),
+      adminRows: { document_intake_filings: [{ id: filingId, organization_id: orgId, get state() { return state.filing; } }] },
+      objects,
+    });
+
+    await fileRoute(post(fileBody), params({ itemId }));
+    expect((clientRpc.mock.calls[0]![1] as { p_destination: Row }).p_destination.check_verdicts).toEqual({});
+
+    clientRpc.mockClear();
+    adminRpc.mockClear();
+    const refused = await fileRoute(post({ ...fileBody, check_verdicts: { jev_signed: "maybe" } }), params({ itemId }));
+    expect(refused.status).toBe(400);
+    expect((await refused.json()).outcome).toBe("validation");
+    expect(clientRpc).not.toHaveBeenCalled();
+    expect(adminRpc).not.toHaveBeenCalled();
+  });
+
   it("resumes when the destination object already exists with the same bytes", async () => {
     const state = { filing: "preparing" };
     const objects: StoredObjects = new Map([

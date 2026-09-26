@@ -235,6 +235,65 @@ DO $$ DECLARE f record; filing uuid := (SELECT v::uuid FROM di_state WHERE k='fi
 END $$;
 RESET ROLE;
 
+-- ── 559: reviewers grade each flagged Jev check before filing ──
+SELECT pg_temp.act(admin_u, admin_s) FROM di;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE item uuid := (SELECT v::uuid FROM di_state WHERE k='item'); BEGIN
+  PERFORM public.document_intake_command(item, gen_random_uuid(), (SELECT revision FROM public.document_intake_items WHERE id = item),
+    'reprocess', '{"accept_possible_duplicate_charge":true}'::jsonb);
+END $$;
+RESET ROLE;
+SELECT pg_temp.service();
+DO $$ DECLARE c jsonb; item uuid := (SELECT v::uuid FROM di_state WHERE k='item'); BEGIN
+  c := public.document_intake_worker_claim('probe-worker', 60);
+  IF (c->'item'->>'id')::uuid IS DISTINCT FROM item THEN RAISE EXCEPTION '559: worker claimed the wrong item'; END IF;
+  PERFORM public.document_intake_worker_complete((c->'run'->>'id')::uuid, (c->'run'->>'fence')::uuid, jsonb_build_object(
+    'outcome','proposed','suggested_title','AHCA license','catalog_code','facility_license',
+    'candidates',jsonb_build_array(jsonb_build_object('kind','facility_document','catalog_code','facility_license','subject_id',(SELECT fac FROM di),'label','Intake Facility')),
+    'proposed_candidate',0,
+    'checks',jsonb_build_array(
+      jsonb_build_object('code','jev_legible_complete','label','Legible and complete','result','pass','source','jev'),
+      jsonb_build_object('code','jev_facility_named','label','Names this facility','result','fail','source','jev'),
+      jsonb_build_object('code','jev_signed','label','Signed','result','unknown','source','jev'),
+      jsonb_build_object('code','license_current','label','License current','result','fail','source','code')),
+    'stage_status',jsonb_build_object('reader',jsonb_build_object('state','ran'),'jev',jsonb_build_object('state','ran'))));
+END $$;
+SELECT pg_temp.act(admin_u, admin_s) FROM di;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE item uuid := (SELECT v::uuid FROM di_state WHERE k='item'); rev uuid; p jsonb; msg text; bad jsonb; BEGIN
+  rev := (SELECT revision FROM public.document_intake_items WHERE id = item);
+  -- Unknown key (a code check, not a Jev check), unknown value, and a non-object are all refused.
+  FOREACH bad IN ARRAY ARRAY['{"license_current":"right","jev_facility_named":"wrong","jev_signed":"right"}'::jsonb,
+      '{"jev_facility_named":"maybe","jev_signed":"right"}'::jsonb, '{"jev_facility_named":1,"jev_signed":"right"}'::jsonb,
+      '["jev_facility_named"]'::jsonb] LOOP
+    msg := NULL;
+    BEGIN
+      PERFORM public.document_intake_prepare_filing(item, gen_random_uuid(), rev,
+        jsonb_build_object('catalog_code','facility_license','title','AHCA license','check_verdicts',bad));
+    EXCEPTION WHEN invalid_parameter_value THEN msg := SQLERRM; END;
+    IF msg IS DISTINCT FROM 'Unknown check verdict' THEN RAISE EXCEPTION '559: verdicts % were not refused as unknown (%)', bad, msg; END IF;
+  END LOOP;
+  -- Jev ran: a flagged check left ungraded blocks the filing, with or without the key.
+  FOREACH bad IN ARRAY ARRAY['{"jev_facility_named":"wrong"}'::jsonb, NULL] LOOP
+    msg := NULL;
+    BEGIN
+      PERFORM public.document_intake_prepare_filing(item, gen_random_uuid(), rev,
+        jsonb_strip_nulls(jsonb_build_object('catalog_code','facility_license','title','AHCA license','check_verdicts',bad)));
+    EXCEPTION WHEN invalid_parameter_value THEN msg := SQLERRM; END;
+    IF msg IS DISTINCT FROM 'Tell us whether Jev was right on each flagged check' THEN
+      RAISE EXCEPTION '559: a filing with an ungraded flagged Jev check was not refused (%)', msg; END IF;
+  END LOOP;
+  IF EXISTS (SELECT 1 FROM public.document_intake_filings WHERE item_id = item AND state IN ('preparing','attested')) THEN
+    RAISE EXCEPTION '559: a refused filing reserved a filing row'; END IF;
+  -- Every flagged check graded (a pass check may be graded too): the verdicts land in reviewer_changes.checks.
+  p := public.document_intake_prepare_filing(item, gen_random_uuid(), rev, jsonb_build_object('catalog_code','facility_license','title','AHCA license',
+    'check_verdicts',jsonb_build_object('jev_facility_named','wrong','jev_signed','cant_tell','jev_legible_complete','right')));
+  IF (SELECT reviewer_changes->'checks' FROM public.document_intake_filings WHERE id = (p->>'filing_id')::uuid)
+     IS DISTINCT FROM '{"jev_facility_named":"wrong","jev_signed":"cant_tell","jev_legible_complete":"right"}'::jsonb THEN
+    RAISE EXCEPTION '559: the verdicts were not stored in reviewer_changes.checks'; END IF;
+END $$;
+RESET ROLE;
+
 -- ── Unknown-facility mail stays with the custodian ──
 SELECT pg_temp.service();
 DO $$ DECLARE f record; mb uuid; m jsonb; it jsonb; BEGIN

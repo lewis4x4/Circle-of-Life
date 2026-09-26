@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { RecordDetailSection } from "@/design-system/components/record-detail";
-import { destinationHref, type EventRow, type FilingRow, type IntakeItem, type ProposalRow, type StageStatus } from "@/lib/document-intake/contracts";
+import { destinationHref, type CheckVerdict, type CheckVerdicts, type EventRow, type FilingRow, type IntakeItem, type ProposalRow, type StageStatus } from "@/lib/document-intake/contracts";
 import { enumLabel } from "@/lib/display/enum-label";
 import { formatFacilityTimestampEt } from "@/lib/facility-wall-clock";
 
@@ -15,11 +15,13 @@ import {
   CHECK_RESULT_TONES,
   DESTINATION_KIND_LABELS,
   eventLabel,
+  flaggedJevChecks,
   jevAnswerLine,
   principalLabel,
   stageStatusLabel,
   stageTone,
 } from "./model";
+import { JevVerdictControl } from "./JevVerdictControl";
 
 const OPEN_LABELS: Record<FilingRow["destination_kind"], string> = {
   resident_document: "Open the resident’s documents",
@@ -30,7 +32,18 @@ const OPEN_LABELS: Record<FilingRow["destination_kind"], string> = {
 
 type JevBlock = { model?: string; questions_version?: string; answers?: Record<string, Parameters<typeof jevAnswerLine>[0]> };
 
-export function AssessmentSection({ item, proposal }: { item: Pick<IntakeItem, "processing_state" | "processing_reason">; proposal: ProposalRow | null }) {
+export function AssessmentSection({
+  item,
+  proposal,
+  verdicts = {},
+  onVerdictChange,
+}: {
+  item: Pick<IntakeItem, "processing_state" | "processing_reason">;
+  proposal: ProposalRow | null;
+  /** Reviewer grades of flagged Jev checks; the control shows only while the document can be filed. */
+  verdicts?: CheckVerdicts;
+  onVerdictChange?: (code: string, verdict: CheckVerdict) => void;
+}) {
   const [showJev, setShowJev] = useState(false);
   const reader = proposal?.stage_status?.reader as StageStatus | undefined;
   const jevStatus = proposal?.stage_status?.jev as StageStatus | undefined;
@@ -38,6 +51,7 @@ export function AssessmentSection({ item, proposal }: { item: Pick<IntakeItem, "
   const answers = Object.entries(jev.answers ?? {});
   const checks = proposal?.checks ?? [];
   const warnings = proposal?.warnings ?? [];
+  const flagged = new Set(onVerdictChange ? flaggedJevChecks(proposal).map((c) => c.code) : []);
 
   return (
     <RecordDetailSection title="Assessment" description="What the reader and Jev found. A person decides; nothing here files the document.">
@@ -91,10 +105,15 @@ export function AssessmentSection({ item, proposal }: { item: Pick<IntakeItem, "
           <h3 className="text-xs font-semibold text-muted-foreground">Checks</h3>
           <ul className="grid gap-1 text-sm">
             {checks.map((check) => (
-              <li key={check.code} className="flex flex-wrap items-center gap-2">
-                <StatusPill tone={CHECK_RESULT_TONES[check.result]}>{CHECK_RESULT_LABELS[check.result]}</StatusPill>
-                <span className="text-foreground">{check.label}</span>
-                {check.detail ? <span className="text-muted-foreground">{check.detail}</span> : null}
+              <li key={check.code} className="grid gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill tone={CHECK_RESULT_TONES[check.result]}>{CHECK_RESULT_LABELS[check.result]}</StatusPill>
+                  <span className="text-foreground">{check.label}</span>
+                  {check.detail ? <span className="text-muted-foreground">{check.detail}</span> : null}
+                </div>
+                {onVerdictChange && flagged.has(check.code) ? (
+                  <JevVerdictControl checkLabel={check.label} value={verdicts[check.code] ?? null} onChange={(v) => onVerdictChange(check.code, v)} />
+                ) : null}
               </li>
             ))}
           </ul>
@@ -194,7 +213,7 @@ export function FilingReceipt({
             <dt className="text-muted-foreground">Correction</dt>
             <dd className="text-foreground">
               {filing.correction_reason}
-              {filing.corrected_by ? ` — ${names[filing.corrected_by] ?? "a reviewer"}` : ""}
+              {filing.corrected_by ? ` · ${names[filing.corrected_by] ?? "a reviewer"}` : ""}
               {filing.corrected_at ? `, ${formatFacilityTimestampEt(filing.corrected_at)} ET` : ""}
             </dd>
           </div>

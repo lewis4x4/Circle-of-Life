@@ -1,10 +1,11 @@
 /**
- * Document Intake review UI — display rules (COL-771, DI-03).
+ * Document Intake review UI: display rules (COL-771, DI-03).
  *
  * Pure functions only: the workspace list, the review page and their tests
  * read the same wording from here. Spec: docs/specs/41-document-intake.md.
  */
 import {
+  CHECK_VERDICTS,
   INTAKE_TABS,
   ITEM_STATUS_LABELS,
   PROCESSING_STATE_LABELS,
@@ -12,7 +13,10 @@ import {
   type IntakeTab,
   type ItemStatus,
   type ProcessingState,
+  type ProposalRow,
   type StageStatus,
+  type CheckVerdict,
+  type CheckVerdicts,
 } from "@/lib/document-intake/contracts";
 import { enumLabel } from "@/lib/display/enum-label";
 import type { StatusPillTone } from "@/components/ui/status-pill";
@@ -76,7 +80,7 @@ const HOUR_MS = 3_600_000;
 /** Waiting time in words: "35 min", "5 h", "3 d". */
 export function ageLabel(receivedAt: string, now: number = Date.now()): string {
   const ms = Math.max(0, now - Date.parse(receivedAt));
-  if (!Number.isFinite(ms)) return "—";
+  if (!Number.isFinite(ms)) return "Unknown";
   if (ms < HOUR_MS) return `${Math.max(1, Math.floor(ms / 60_000))} min`;
   if (ms < 48 * HOUR_MS) return `${Math.floor(ms / HOUR_MS)} h`;
   return `${Math.floor(ms / (24 * HOUR_MS))} d`;
@@ -132,15 +136,15 @@ export function stageStatusLabel(stage: StageName, status: StageStatus | undefin
     case "ran":
       return stage === "reader" ? "AI read this document" : "Jev answered";
     case "not_authorized":
-      return `${noun} not run — not authorized`;
+      return `${noun} not run: not authorized`;
     case "not_configured":
-      return `${noun} not run — not set up`;
+      return `${noun} not run: not set up`;
     case "failed":
       return `${noun} failed`;
     case "not_applicable":
       return `${noun} not used for this type`;
     case "skipped":
-      return `${noun} not run — skipped`;
+      return `${noun} not run: skipped`;
   }
 }
 
@@ -159,7 +163,7 @@ type JevAnswerLike = {
   probabilities?: Record<string, number>;
 };
 
-/** "0.82" — always two decimals, never a percent. */
+/** "0.82": always two decimals, never a percent. */
 export function formatProbability(value: number): string {
   return value.toFixed(2);
 }
@@ -167,7 +171,7 @@ export function formatProbability(value: number): string {
 /**
  * A Jev answer as a reviewer reads it: the chosen option and the provider's
  * probability for it ("probability 0.82"). Never "percent correct" and never
- * "confidence" — the number is Jev's, not an accuracy claim.
+ * "confidence". The number is Jev's, not an accuracy claim.
  */
 export function jevAnswerLine(answer: JevAnswerLike): { chosen: string; probability: string | null } {
   if (answer.type === "choice" && answer.choice) {
@@ -185,6 +189,42 @@ export function jevAnswerLine(answer: JevAnswerLike): { chosen: string; probabil
 
 export const CHECK_RESULT_LABELS = { pass: "Pass", fail: "Fail", unknown: "Unknown" } as const;
 export const CHECK_RESULT_TONES: Record<keyof typeof CHECK_RESULT_LABELS, StatusPillTone> = { pass: "success", fail: "danger", unknown: "muted" };
+
+// ── Reviewer verdicts on flagged Jev checks (migration 559) ────────────────
+
+export const CHECK_VERDICT_OPTIONS: ReadonlyArray<{ value: CheckVerdict; label: string }> = CHECK_VERDICTS.map((value) => ({
+  value,
+  label: value === "right" ? "Right" : value === "wrong" ? "Wrong" : "Can’t tell",
+}));
+
+export const VERDICTS_NEEDED_REASON = "Answer “Was Jev right?” on each flagged check.";
+
+function isVerdict(value: unknown): value is CheckVerdict {
+  return (CHECK_VERDICTS as readonly unknown[]).includes(value);
+}
+
+type VerdictProposal = Pick<ProposalRow, "checks" | "stage_status"> | null | undefined;
+
+/** Jev checks the reviewer grades: source jev, result fail or unknown. Pass checks are never asked about. */
+export function flaggedJevChecks(proposal: VerdictProposal): ProposalRow["checks"] {
+  return (proposal?.checks ?? []).filter((c) => c.source === "jev" && (c.result === "fail" || c.result === "unknown"));
+}
+
+/** Mirrors document_intake_prepare_filing: every flagged check needs a verdict, but only when Jev ran. */
+export function verdictsComplete(proposal: VerdictProposal, verdicts: CheckVerdicts): boolean {
+  if (proposal?.stage_status?.jev?.state !== "ran") return true;
+  return flaggedJevChecks(proposal).every((c) => isVerdict(verdicts[c.code]));
+}
+
+/** Only verdicts for this proposal's flagged Jev checks go to the server. */
+export function verdictsForFiling(proposal: VerdictProposal, verdicts: CheckVerdicts): CheckVerdicts {
+  const out: CheckVerdicts = {};
+  for (const c of flaggedJevChecks(proposal)) {
+    const v = verdicts[c.code];
+    if (isVerdict(v)) out[c.code] = v;
+  }
+  return out;
+}
 
 // ── History ────────────────────────────────────────────────────────────────
 

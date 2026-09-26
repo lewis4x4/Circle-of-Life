@@ -1,5 +1,5 @@
 /**
- * Document Intake — shared contract (COL-771, DI-01).
+ * Document Intake: shared contract (COL-771, DI-01).
  *
  * The single TypeScript description of migration 545's tables and RPCs. The
  * review UI, the API routes and the tests import from here; the Edge Function
@@ -161,7 +161,7 @@ export const candidateSchema = z.object({
   kind: z.enum([...DESTINATION_KINDS, "none"]),
   catalog_code: z.string(),
   subject_id: z.string().uuid().nullable(),
-  /** What a reviewer sees, e.g. "Jane Doe — Room 12". Scoped like the item. */
+  /** What a reviewer sees: the name, plus the room for a resident. Scoped like the item. */
   label: z.string(),
   reason: z.string().optional(),
   requirement_id: z.string().uuid().nullable().optional(),
@@ -333,6 +333,13 @@ export const splitBodySchema = z.object({
   excluded_pages: z.array(z.number().int().positive()).default([]),
 });
 
+/** A reviewer's grade of one flagged Jev check at filing (migration 559). */
+export const CHECK_VERDICTS = ["right", "wrong", "cant_tell"] as const;
+export type CheckVerdict = (typeof CHECK_VERDICTS)[number];
+/** { "<check_code>": verdict }; the filing RPC refuses codes that are not the proposal's Jev checks. */
+export const checkVerdictsSchema = z.record(z.string().min(1).max(120), z.enum(CHECK_VERDICTS));
+export type CheckVerdicts = z.infer<typeof checkVerdictsSchema>;
+
 export const fileBodySchema = z.object({
   request_key: requestKey,
   expected_revision: revision,
@@ -342,6 +349,7 @@ export const fileBodySchema = z.object({
   title: z.string().trim().min(1).max(200),
   document_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   expiration_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  check_verdicts: checkVerdictsSchema.optional(),
 });
 
 export const correctBodySchema = z.object({
