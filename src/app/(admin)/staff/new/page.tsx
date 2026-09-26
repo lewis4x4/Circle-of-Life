@@ -147,7 +147,7 @@ export default function AdminNewStaffPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Add staff</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Create a roster row for the selected facility. Linking a login account is done separately.
+            Create a roster row for this facility. Linking a login account is done separately.
           </p>
         </div>
       </div>

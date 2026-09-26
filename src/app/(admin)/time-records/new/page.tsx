@@ -231,7 +231,7 @@ export default function AdminNewTimeRecordPage() {
           <CardHeader>
             <CardTitle>Punch</CardTitle>
             <CardDescription>
-              Staff must belong to the selected facility. Hours compute from clock in/out minus unpaid break time.
+              Staff must belong to this facility. Hours compute from clock in/out minus unpaid break time.
             </CardDescription>
           </CardHeader>
           <CardContent>
