@@ -42,7 +42,7 @@ export function VisitorsInBuilding({
         </h2>
         {openNow.length > 0 ? (
           <Button type="button" variant="outline" size="sm" disabled={busyId === "all"} onClick={onSignOutAll}>
-            Sign out everyone
+            Sign out everyone still here
           </Button>
         ) : null}
       </div>

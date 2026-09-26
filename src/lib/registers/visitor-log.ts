@@ -160,5 +160,26 @@ export function needsResidentMatch(row: VisitorLogRow): boolean {
   return Boolean(row.fromKiosk && row.visitingNameText && !row.visitingResidentId && !row.voidedAt);
 }
 
+/** Residents the Match resident type-ahead shows at most. */
+export const RESIDENT_MATCH_LIMIT = 6;
+
+/**
+ * The desk's Match resident type-ahead, the same shape as the kiosk picker:
+ * first, last or full name starting with what was typed, last name order,
+ * at most six. Nothing until something is typed.
+ */
+export function residentPrefixMatches<T extends { firstName: string; lastName: string }>(residents: T[], query: string): T[] {
+  const prefix = query.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!prefix) return [];
+  return residents
+    .filter((resident) => {
+      const first = resident.firstName.trim().toLowerCase();
+      const last = resident.lastName.trim().toLowerCase();
+      return first.startsWith(prefix) || last.startsWith(prefix) || `${first} ${last}`.startsWith(prefix);
+    })
+    .sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName))
+    .slice(0, RESIDENT_MATCH_LIMIT);
+}
+
 export const VISITOR_LOG_EMPTY_COPY = "Nobody is signed in right now.";
 export const VISITOR_LOG_RANGE_EMPTY_COPY = "No visitors signed in for this range.";
