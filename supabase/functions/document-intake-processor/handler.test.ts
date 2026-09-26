@@ -170,7 +170,8 @@ function harness(opts: {
       if (url.startsWith("https://api.typesafe.ai/")) {
         events.push("fetch:typesafe");
         if (!opts.typesafe) throw new Error("unexpected Jev call");
-        return await opts.typesafe(JSON.parse(String(init?.body)));
+        // Cast: in the combined test:edge run RequestInit resolves to a type without `body`.
+        return await opts.typesafe(JSON.parse(String((init as { body?: unknown } | undefined)?.body)));
       }
       throw new Error(`unexpected fetch ${url}`);
     },
