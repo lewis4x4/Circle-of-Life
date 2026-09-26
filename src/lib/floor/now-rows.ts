@@ -25,6 +25,8 @@ export type CheckTiming = {
   bar: "destructive" | "warning" | "none";
   /** The Done button is filled only when the check needs doing now. */
   primaryAction: boolean;
+  /** The check's window is open (or past), so it can be charted now. */
+  chartable: boolean;
 };
 
 const OVER_STATUSES: ReadonlySet<string> = new Set(["overdue", "critically_overdue", "missed", "escalated"]);
@@ -47,34 +49,58 @@ export function formatUpcomingLabel(minutes: number): string {
   return `In ${Math.floor(minutes / 60)} h`;
 }
 
+/** "Opens in 20 min", "Opens in 8 h". */
+export function formatOpensLabel(minutes: number): string {
+  return `Opens in ${formatUpcomingLabel(minutes).slice(3)}`;
+}
+
 /**
  * One check's timing from the status the server derived (its bands are the
  * facility's configuration) and its due time. The status decides the kind; the
  * clock only fills in the minutes.
+ *
+ * `opensAtIso` is the task's `scheduled_for`, the instant its window opens
+ * (the cadence window's grace before the due time, or a monitoring order's
+ * occurrence). Before it the check cannot be charted: the server refuses it
+ * (migration 553), so the tablet offers no Done and says when it opens.
  */
-export function checkTiming(derivedStatus: ObservationTaskStatus | string, dueAtIso: string, now: Date): CheckTiming {
+export function checkTiming(
+  derivedStatus: ObservationTaskStatus | string,
+  dueAtIso: string,
+  now: Date,
+  opensAtIso?: string | null,
+): CheckTiming {
   const dueMs = new Date(dueAtIso).getTime();
   const nowMs = now.getTime();
+  const opensMs = opensAtIso ? new Date(opensAtIso).getTime() : Number.NaN;
+  const notOpenYet = Number.isFinite(opensMs) && nowMs < opensMs;
   if (DONE_STATUSES.has(derivedStatus)) {
-    return { kind: "done", minutes: 0, label: "Done", tone: "muted", bar: "none", primaryAction: false };
+    return { kind: "done", minutes: 0, label: "Done", tone: "muted", bar: "none", primaryAction: false, chartable: false };
   }
   if (derivedStatus === "excused") {
-    return { kind: "excused", minutes: 0, label: "Excused", tone: "muted", bar: "none", primaryAction: false };
+    return { kind: "excused", minutes: 0, label: "Excused", tone: "muted", bar: "none", primaryAction: false, chartable: false };
   }
   if (OVER_STATUSES.has(derivedStatus)) {
     const minutes = minutesBetween(dueMs, nowMs);
-    return { kind: "over", minutes, label: formatOverLabel(minutes), tone: "danger", bar: "destructive", primaryAction: true };
+    return { kind: "over", minutes, label: formatOverLabel(minutes), tone: "danger", bar: "destructive", primaryAction: true, chartable: true };
+  }
+  if (notOpenYet) {
+    const minutes = Math.max(1, Math.ceil((dueMs - nowMs) / 60_000));
+    const untilOpen = Math.max(1, Math.ceil((opensMs - nowMs) / 60_000));
+    return { kind: "upcoming", minutes, label: formatOpensLabel(untilOpen), tone: "muted", bar: "none", primaryAction: false, chartable: false };
   }
   if (DUE_STATUSES.has(derivedStatus) || dueMs <= nowMs) {
-    return { kind: "due", minutes: 0, label: "Due now", tone: "warning", bar: "warning", primaryAction: true };
+    return { kind: "due", minutes: 0, label: "Due now", tone: "warning", bar: "warning", primaryAction: true, chartable: true };
   }
   const minutes = Math.max(1, Math.ceil((dueMs - nowMs) / 60_000));
-  return { kind: "upcoming", minutes, label: formatUpcomingLabel(minutes), tone: "muted", bar: "none", primaryAction: false };
+  return { kind: "upcoming", minutes, label: formatUpcomingLabel(minutes), tone: "muted", bar: "none", primaryAction: false, chartable: true };
 }
 
 export type FloorTaskApiRow = {
   id: string;
   due_at: string;
+  /** When the check's window opens; before it the check cannot be charted. */
+  scheduled_for?: string | null;
   derived_status: string;
   status?: string;
   assigned_staff_id?: string | null;
@@ -107,7 +133,7 @@ export function selectNowChecks(rows: readonly FloorTaskApiRow[], now: Date, win
   const out: NowCheck[] = [];
   for (const row of rows) {
     const dueMs = new Date(row.due_at).getTime();
-    const timing = checkTiming(row.derived_status, row.due_at, now);
+    const timing = checkTiming(row.derived_status, row.due_at, now, row.scheduled_for);
     if (timing.kind === "done" || timing.kind === "excused") continue;
     if ((timing.kind === "over" || timing.kind === "due") && dueMs < windowStartMs) continue;
     if (timing.kind === "upcoming" && dueMs > horizonMs) continue;
@@ -214,7 +240,7 @@ export function groupRoundsQueue(rows: readonly FloorTaskApiRow[], now: Date, wi
   const sorted = [...rows].sort((a, b) => a.due_at.localeCompare(b.due_at) || a.id.localeCompare(b.id));
   for (const row of sorted) {
     const dueMs = new Date(row.due_at).getTime();
-    const timing = checkTiming(row.derived_status, row.due_at, now);
+    const timing = checkTiming(row.derived_status, row.due_at, now, row.scheduled_for);
     const check: NowCheck = { id: row.id, residentId: row.residents?.id ?? null, residentName: residentNameOf(row.residents), dueAt: row.due_at, timing };
     if (dueMs < startMs) {
       if (timing.kind === "over" || timing.kind === "due") groups.olderOpen += 1;

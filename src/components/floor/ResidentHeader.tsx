@@ -22,6 +22,7 @@ export function ResidentHeader({
   room,
   reason,
   nextCheck,
+  nextOpening,
 }: {
   residentId: string;
   name: string;
@@ -30,6 +31,8 @@ export function ResidentHeader({
   room: string | null;
   reason: string | null;
   nextCheck: { taskId: string; timeLabel: string } | null;
+  /** With nothing to chart now: when the next check opens. A check cannot be charted before its window opens. */
+  nextOpening?: { opensLabel: string } | null;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -67,6 +70,10 @@ export function ResidentHeader({
             <Check className="size-4.5" aria-hidden />
             Chart {nextCheck.timeLabel} check
           </Link>
+        ) : nextOpening ? (
+          <p className="inline-flex h-13 items-center rounded-[10px] border border-border px-5 text-[15px] text-muted-foreground">
+            Next check opens at {nextOpening.opensLabel}
+          </p>
         ) : null}
       </div>
     </div>

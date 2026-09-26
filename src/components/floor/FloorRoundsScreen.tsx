@@ -33,7 +33,7 @@ function Group({ title, checks, rooms, timeZone }: { title: string; checks: read
             pill={{ label: check.timing.label, tone: check.timing.tone }}
             bar={check.timing.bar}
             primaryAction={check.timing.primaryAction}
-            doneHref={check.timing.kind === "done" ? undefined : `/floor/check/${check.id}`}
+            doneHref={check.timing.chartable ? `/floor/check/${check.id}` : undefined}
             doneLabel={`Done: chart ${FLOOR_CHECK_NAME.toLowerCase()} for ${check.residentName}`}
           />
         ))}

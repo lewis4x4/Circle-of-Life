@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 
 import { fetchFloorCensus, fetchFloorTasks, fetchResidentStatusSignals, flagFor } from "@/lib/floor/floor-data";
-import { clockWithoutDayHalf, fetchResidentDetail, knowBeforeItems, nextOpenCheck, todayCheckItems, type InfoItem } from "@/lib/floor/resident-detail";
+import { clockWithoutDayHalf, fetchResidentDetail, knowBeforeItems, nextOpenCheck, nextOpeningCheck, todayCheckItems, type InfoItem } from "@/lib/floor/resident-detail";
 import { facilityDayStartIso, formatShortDate } from "@/lib/floor/shift-window";
 import { formatDisplayTime } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
@@ -62,6 +62,7 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
         ? "On leave"
         : null;
   const next = tasks.state.status === "success" ? nextOpenCheck(taskRows, now) : null;
+  const opening = !next && tasks.state.status === "success" ? nextOpeningCheck(taskRows, now) : null;
 
   const followUps: InfoItem[] = detailData
     ? [
@@ -87,6 +88,7 @@ export function FloorResidentScreen({ residentId }: { residentId: string }) {
         room={resident.room}
         reason={reason}
         nextCheck={next ? { taskId: next.id, timeLabel: clockWithoutDayHalf(next.due_at, timeZone) } : null}
+        nextOpening={opening?.scheduled_for ? { opensLabel: formatDisplayTime(opening.scheduled_for, { timeZone }) } : null}
       />
       {signals.state.status === "error" ? <StatusReadError text="Watch and alert status could not load." onRetry={signals.reload} /> : null}
       <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">

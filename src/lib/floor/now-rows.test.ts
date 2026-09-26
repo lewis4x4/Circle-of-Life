@@ -35,6 +35,17 @@ describe("checkTiming (value-derived pill and bar)", () => {
     expect(checkTiming("upcoming", at("15:00"), NOW)).toMatchObject({ label: "In 80 min" });
   });
 
+  it("before its window opens a check says when it opens and cannot be charted (COL-849 finding)", () => {
+    // The 6:00 AM check, looked at the evening before: the window opens at 6:00.
+    expect(checkTiming("upcoming", at("22:00"), NOW, at("22:00"))).toMatchObject({ kind: "upcoming", label: "Opens in 8 h", chartable: false, primaryAction: false });
+    // A due-soon band from the facility's lead time does not open a window that has not opened.
+    expect(checkTiming("due_soon", at("13:50"), NOW, at("13:50"))).toMatchObject({ kind: "upcoming", label: "Opens in 10 min", chartable: false });
+    // Once the window is open (grace before the due time), the check can be charted before it is due.
+    expect(checkTiming("upcoming", at("14:00"), NOW, at("13:30"))).toMatchObject({ kind: "upcoming", label: "In 20 min", chartable: true });
+    expect(checkTiming("overdue", at("13:30"), NOW, at("13:30"))).toMatchObject({ kind: "over", chartable: true });
+    expect(checkTiming("completed_on_time", at("13:30"), NOW, at("13:30"))).toMatchObject({ kind: "done", chartable: false });
+  });
+
   it("a status the server has not moved yet still reads due once its time passes", () => {
     expect(checkTiming("upcoming", at("13:35"), NOW)).toMatchObject({ kind: "due", label: "Due now" });
   });

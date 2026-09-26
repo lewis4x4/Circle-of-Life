@@ -70,9 +70,15 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
   const [serverWantsReason, setServerWantsReason] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [attempt] = useState(() => ({ requestId: crypto.randomUUID(), observedAt: new Date().toISOString() }));
+  // One observation per screen: the request id and the moment it was charted stay the same
+  // across retries. The moment is taken at the first save, not when the screen opened, so a
+  // check opened just before its window and saved after it opens counts as charted then.
+  const [attempt] = useState(() => ({ requestId: crypto.randomUUID(), observedAt: null as string | null }));
 
-  const timing = useMemo(() => checkTiming(data.task.derived_status, data.task.due_at, now ?? new Date()), [data.task, now]);
+  const timing = useMemo(() => checkTiming(data.task.derived_status, data.task.due_at, now ?? new Date(), data.task.scheduled_for), [data.task, now]);
+  // A check cannot be charted before its window opens (the server refuses it too).
+  const notOpenYet = !timing.chartable && timing.kind === "upcoming";
+  const opensLabel = formatDisplayTime(data.task.scheduled_for ?? data.task.due_at, { timeZone });
   const lateReasonRequired = timing.kind === "over" || serverWantsReason;
   const pronoun = residentPronoun(data.gender);
   const dueLabel = formatDisplayTime(data.task.due_at, { timeZone });
@@ -102,6 +108,7 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
   }
 
   async function save() {
+    if (notOpenYet) return setMessage(`This check opens at ${opensLabel}. Chart it then.`);
     const gaps = floorCheckGaps(draft, { lateReasonRequired });
     if (gaps.length > 0) return setMessage(gaps.join(" "));
     setBusy(true);
@@ -119,7 +126,7 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
       draft: buildFloorCompletionPayload(draft, data.vocab),
       owner,
       requestId: attempt.requestId,
-      observedAt: attempt.observedAt,
+      observedAt: (attempt.observedAt ??= new Date().toISOString()),
     });
     if (result.status === "saved" || result.status === "queued") {
       // Saved: the lists must show it charted. Queued: keep what they hold, so
@@ -156,6 +163,11 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
           </StatusPill>
         }
       />
+      {notOpenYet ? (
+        <div className="border-b border-border bg-chrome-secondary px-6 py-3">
+          <p className="text-sm text-foreground">This check opens at <span className="tabular-nums">{opensLabel}</span>. Chart it then.</p>
+        </div>
+      ) : null}
       {needsClaim ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-chrome-secondary px-6 py-3">
           <p className="text-sm text-foreground">This check is assigned to someone else. Take it to chart it; they stay on its history.</p>
@@ -263,7 +275,7 @@ function CheckForm({ data, onRetry }: { data: FloorCheckData; onRetry: () => voi
           <Link href="/floor" className={cn(FLOOR_OUTLINE_BUTTON, "h-13 rounded-[10px] px-5.5 text-base font-medium")}>
             Cancel
           </Link>
-          <button type="button" onClick={() => void save()} disabled={busy || needsClaim} className={cn(FLOOR_PRIMARY_BUTTON, "h-13 rounded-[10px] px-7 text-base")}>
+          <button type="button" onClick={() => void save()} disabled={busy || needsClaim || notOpenYet} className={cn(FLOOR_PRIMARY_BUTTON, "h-13 rounded-[10px] px-7 text-base")}>
             <Check className="size-4.5" aria-hidden />
             {busy ? "Saving" : "Save check"}
           </button>

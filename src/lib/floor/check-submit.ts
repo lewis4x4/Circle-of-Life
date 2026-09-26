@@ -87,12 +87,16 @@ export async function saveFloorCheck(input: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const json = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string; reasonRequired?: boolean };
+    const json = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string; reasonRequired?: boolean; notOpenYet?: boolean };
     // A conflicting completion is kept in the outbox for reconciliation, as on the caregiver app.
     if (response.status === 409) return await queue();
     if (!response.ok) {
       if (response.status === 400 && json.reasonRequired === true) {
         return { status: "reason_required", message: "This check is late. Say why, then save." };
+      }
+      if (response.status === 400 && json.notOpenYet === true && json.error) {
+        // The server's words name the opening time ("This check opens at 6:00 AM. Chart it then.").
+        return { status: "failed", message: json.error };
       }
       console.error("[floor] completion refused", response.status, json.error);
       return { status: "failed", message: checkFailureCopy(response.status) };
