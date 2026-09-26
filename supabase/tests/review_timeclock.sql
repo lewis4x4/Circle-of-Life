@@ -62,14 +62,14 @@ DO $$ BEGIN
      OR has_table_privilege('authenticated','public.time_punch_corrections','DELETE')
      OR has_table_privilege('anon','public.time_punches','SELECT')
   THEN RAISE EXCEPTION 'Timeclock table grant boundary failed'; END IF;
-  IF has_function_privilege('anon','public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean)','EXECUTE')
-     OR has_function_privilege('authenticated','public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean)','EXECUTE')
-     OR NOT has_function_privilege('service_role','public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean)','EXECUTE')
+  IF has_function_privilege('anon','public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean,uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean,uuid)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean,uuid)','EXECUTE')
      OR has_function_privilege('authenticated','public.timeclock_enroll_device(text,text)','EXECUTE')
-     OR has_function_privilege('authenticated','public.timeclock_identify(text,text,text,text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.timeclock_identify(text,text,text,text,uuid)','EXECUTE')
      OR has_function_privilege('anon','public.timeclock_set_credentials(uuid,text,text,text,text)','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.timeclock_set_credentials(uuid,text,text,text,text)','EXECUTE')
-     OR has_function_privilege('authenticated','haven.timeclock_resolve(text,text,text,text)','EXECUTE')
+     OR has_function_privilege('authenticated','haven.timeclock_resolve(text,text,text,text,uuid)','EXECUTE')
      OR has_function_privilege('service_role','haven.timeclock_effective_punches(uuid,timestamptz,timestamptz)','EXECUTE')
   THEN RAISE EXCEPTION 'Timeclock function grant boundary failed'; END IF;
 END $$;

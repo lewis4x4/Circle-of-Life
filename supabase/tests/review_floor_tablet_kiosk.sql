@@ -18,6 +18,8 @@ DO $$ DECLARE fn text; BEGIN
     'public.visitor_kiosk_sign_in(text,uuid,text,text,text,text,text,text,boolean,uuid)',
     'public.visitor_kiosk_resident_matches(text,text)',
     'public.visitor_kiosk_open_matches(text,text)', 'public.visitor_kiosk_sign_out(text,uuid)',
+    'public.timeclock_kiosk_roster(text)', 'public.timeclock_identify(text,text,text,text,uuid)',
+    'public.timeclock_record_punch(text,text,text,text,text,timestamptz,uuid,boolean,uuid)',
     'public.timeclock_enroll_device(text,text,text)'
   ] LOOP
     IF has_function_privilege('anon', fn, 'EXECUTE') OR has_function_privilege('authenticated', fn, 'EXECUTE')
@@ -55,9 +57,9 @@ DO $$ DECLARE fn text; BEGIN
     RAISE EXCEPTION 'A client write policy exists on floor_unlocks or visitor_log_entries';
   END IF;
   -- One PIN implementation: both callers go through the shared helper, and neither compares a hash itself.
-  IF (SELECT prosrc FROM pg_proc WHERE oid = 'haven.timeclock_resolve(text,text,text,text)'::regprocedure) NOT LIKE '%timeclock_verify_credential_pin%'
+  IF (SELECT prosrc FROM pg_proc WHERE oid = 'haven.timeclock_resolve(text,text,text,text,uuid)'::regprocedure) NOT LIKE '%timeclock_verify_credential_pin%'
      OR (SELECT prosrc FROM pg_proc WHERE oid = 'public.floor_verify_unlock(text,uuid,text,text)'::regprocedure) NOT LIKE '%timeclock_verify_credential_pin%'
-     OR (SELECT prosrc FROM pg_proc WHERE oid = 'haven.timeclock_resolve(text,text,text,text)'::regprocedure) LIKE '%crypt(%'
+     OR (SELECT prosrc FROM pg_proc WHERE oid = 'haven.timeclock_resolve(text,text,text,text,uuid)'::regprocedure) LIKE '%crypt(%'
      OR (SELECT prosrc FROM pg_proc WHERE oid = 'public.floor_verify_unlock(text,uuid,text,text)'::regprocedure) LIKE '%crypt(%' THEN
     RAISE EXCEPTION 'Kiosk and floor do not share one PIN and lockout implementation';
   END IF;
@@ -805,6 +807,46 @@ DO $$ DECLARE r jsonb; r2 jsonb; c uuid := gen_random_uuid(); BEGIN
   r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FA-1', NULL, '000000');
   IF (r->>'ok')::boolean OR r ? 'display_name' THEN RAISE EXCEPTION 'Refusal leaked receipt fields: %', r; END IF;
   IF public.timeclock_identify(pg_temp.tok('floor'), 'FA-1', NULL, '111111')->>'error' <> 'device_unknown' THEN RAISE EXCEPTION 'Floor token identified'; END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 15b. Kiosk name picker (migration 552): the roster names only credentialed,
+-- current staff of this building and never an employee number; tries_left
+-- rides only on the name path (spec 37 section 12a keeps the number path mute).
+-- ---------------------------------------------------------------------------
+DO $$ DECLARE r jsonb; f record; BEGIN
+  SELECT * INTO f FROM fk;
+  UPDATE public.timeclock_credentials SET locked_until = NULL, failed_attempts = 0;
+  UPDATE public.timeclock_devices SET failure_count = 0, failure_window_started_at = NULL, throttled_until = NULL;
+  r := public.timeclock_kiosk_roster(pg_temp.tok('kiosk'));
+  IF NOT (r->>'ok')::boolean OR NOT (r->'roster' @> jsonb_build_array(jsonb_build_object('staff_id', f.a_staff))) THEN
+    RAISE EXCEPTION 'Kiosk roster missing a credentialed staff member: %', r;
+  END IF;
+  IF r::text ILIKE '%employee_number%' OR r::text LIKE '%FA-1%' OR r::text LIKE '%FB-2%' OR r::text ILIKE '%pin%'
+     OR EXISTS (SELECT 1 FROM jsonb_array_elements(r->'roster') m, jsonb_object_keys(m) k WHERE k NOT IN ('staff_id', 'display_name')) THEN
+    RAISE EXCEPTION 'Kiosk roster leaks credential data: %', r;
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(r->'roster') m JOIN public.staff s ON s.id = (m->>'staff_id')::uuid
+    WHERE s.deleted_at IS NOT NULL OR s.employment_status NOT IN ('active', 'on_leave') OR NOT haven.timeclock_assigned_to_facility(s.id, f.facility)
+  ) OR EXISTS (
+    SELECT 1 FROM jsonb_array_elements(r->'roster') m
+    WHERE NOT EXISTS (SELECT 1 FROM public.timeclock_credentials c WHERE c.staff_id = (m->>'staff_id')::uuid)
+  ) THEN
+    RAISE EXCEPTION 'Kiosk roster lists someone who cannot clock in here: %', r;
+  END IF;
+  IF public.timeclock_kiosk_roster(pg_temp.tok('floor'))->>'error' <> 'device_unknown' THEN RAISE EXCEPTION 'A floor token read the kiosk roster'; END IF;
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), NULL, NULL, '000000', f.a_staff);
+  IF r->>'error' <> 'not_recognized' OR (r->>'tries_left')::int <> 4 THEN RAISE EXCEPTION 'Name path wrong PIN answered %', r; END IF;
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FA-1', NULL, '000000');
+  IF r->>'error' <> 'not_recognized' OR r ? 'tries_left' THEN RAISE EXCEPTION 'Employee-number path revealed tries_left: %', r; END IF;
+  r := public.timeclock_record_punch(pg_temp.tok('kiosk'), 'FA-1', NULL, '000000', 'in', clock_timestamp(), gen_random_uuid(), false);
+  IF r ? 'tries_left' THEN RAISE EXCEPTION 'Employee-number punch revealed tries_left: %', r; END IF;
+  -- On the name path the typed identifier is ignored: the tile decides who it is.
+  r := public.timeclock_identify(pg_temp.tok('kiosk'), 'FB-2', NULL, '111111', f.a_staff);
+  IF NOT (r->>'ok')::boolean OR (r->>'staff_id')::uuid <> f.a_staff THEN RAISE EXCEPTION 'Name path identify wrong: %', r; END IF;
+  UPDATE public.timeclock_credentials SET locked_until = NULL, failed_attempts = 0;
+  UPDATE public.timeclock_devices SET failure_count = 0, failure_window_started_at = NULL, throttled_until = NULL;
 END $$;
 
 -- ---------------------------------------------------------------------------
