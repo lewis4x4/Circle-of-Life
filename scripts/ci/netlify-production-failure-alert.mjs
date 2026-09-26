@@ -812,14 +812,35 @@ async function watch(source, github) {
 
 // Compatibility lane: main CI retains its existing active-issue convention.
 // Historical issues are not imported into the observer's versioned ledger.
-// workflow_run remains this lane's trigger; only observer health uses catch-up.
+// Completion events and explicit run-id notifications trigger this lane;
+// only observer health uses historical catch-up.
+export async function resolveMainCiNotification({ eventName, event, github, pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+  if (eventName === 'workflow_run') return event.workflow_run;
+  if (eventName !== 'workflow_dispatch' || !event.inputs?.primary_run_id) return null;
+  const id = Number(event.inputs.primary_run_id);
+  ensure(/^[1-9][0-9]*$/.test(event.inputs.primary_run_id) && Number.isSafeInteger(id), 'main-ci-notification-id');
+  // The terminal job notifies just before its own workflow becomes complete.
+  // Poll only that run; never manufacture a healthy result for unfinished CI.
+  for (let poll = 0; poll < 10; poll++) {
+    const run = await github.request(`/repos/${REPOSITORY}/actions/runs/${id}`);
+    ensure(run.id === id, 'main-ci-notification-run');
+    if (run.status === 'completed') return run;
+    if (poll < 9) await pause(2000);
+  }
+  throw fault('main-ci-notification-incomplete');
+}
+
 async function legacyMainCi(github) {
-  if (process.env.GITHUB_EVENT_NAME !== 'workflow_run') return { unchanged: true };
+  if (!['workflow_run', 'workflow_dispatch'].includes(process.env.GITHUB_EVENT_NAME)) return { unchanged: true };
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
-  const input = event.workflow_run;
+  const input = await resolveMainCiNotification({ eventName: process.env.GITHUB_EVENT_NAME, event, github });
+  if (!input) return { unchanged: true };
   const root = `/repos/${REPOSITORY}`;
   const workflow = await github.request(`${root}/actions/workflows/ci-gates.yml`);
-  if (input?.workflow_id !== workflow.id || input.head_branch !== 'main') return { unchanged: true };
+  if (input?.workflow_id !== workflow.id || input.head_branch !== 'main') {
+    ensure(process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch', 'main-ci-notification-source');
+    return { unchanged: true };
+  }
   const run = await github.request(`${root}/actions/runs/${input.id}/attempts/${input.run_attempt}`);
   ensure(normalizeRun(run, { source: 'main-ci', workflowId: workflow.id, repository: REPOSITORY, now: new Date().toISOString() }), 'main-ci-source');
   if (run.status !== 'completed' || (!failureOutcomes.has(run.conclusion) && run.conclusion !== 'success') || run.conclusion === 'cancelled') return { unchanged: true };

@@ -7,6 +7,12 @@ on:
   schedule:
     - cron: '4-59/5 * * * *'
   workflow_dispatch:
+    inputs:
+      primary_run_id:
+        description: Primary main CI run to observe after completion
+        required: false
+        default: ''
+        type: string
 
 permissions:
   actions: read
@@ -17,7 +23,7 @@ jobs:
   dispatch-primary:
     # PR completion catches automatic merges; the existing five-minute monitor
     # repairs the race where the completion event arrives just before the merge.
-    if: github.repository == 'lewis4x4/Circle-of-Life' && (github.event_name != 'workflow_run' || github.event.workflow_run.event == 'pull_request')
+    if: github.repository == 'lewis4x4/Circle-of-Life' && (github.event_name != 'workflow_dispatch' || inputs.primary_run_id == '') && (github.event_name != 'workflow_run' || github.event.workflow_run.event == 'pull_request')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -40,7 +46,7 @@ jobs:
         run: node scripts/ci/dispatch-main-ci.mjs
 
   main-ci:
-    if: github.repository == 'lewis4x4/Circle-of-Life' && github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.name == 'CI — segment gates'
+    if: github.repository == 'lewis4x4/Circle-of-Life' && ((github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.name == 'CI — segment gates') || (github.event_name == 'workflow_dispatch' && inputs.primary_run_id != ''))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
@@ -60,7 +66,7 @@ jobs:
         run: node scripts/ci/netlify-production-failure-alert.mjs watch main-ci
 
   observer-health:
-    if: github.repository == 'lewis4x4/Circle-of-Life' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main')
+    if: github.repository == 'lewis4x4/Circle-of-Life' && (github.event_name != 'workflow_dispatch' || inputs.primary_run_id == '') && (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:

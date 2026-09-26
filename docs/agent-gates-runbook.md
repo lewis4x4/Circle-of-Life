@@ -80,6 +80,17 @@ failed runs are retained instead of repeating their gates; failure alerting
 continues to observe actual primary runs. Dispatch/readback failure is a failed
 monitor job, not evidence of healthy CI.
 
+The terminal primary job explicitly notifies the same monitor with its immutable
+run id on both passing and failing main runs. The `main-ci` job handles this
+notification as well as ordinary completion events, validates the actual CI
+source/attempt through the existing alert adapter, and briefly waits if the
+notifying workflow is still finishing. Unfinished or invalid notifications fail
+instead of claiming healthy CI. A notification does not invoke reconciliation
+or the separate provider-health audit, avoiding a dispatch loop.
+Main CI concurrency is keyed by revision, so a later policy-only commit cannot
+cancel an earlier database/application gate suite. Updates to the same PR
+continue to replace that PR's older runs.
+
 ### Netlify production failure observation
 
 `scripts/ci/netlify-production-failure-alert.mjs` serves the production observer,

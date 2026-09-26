@@ -3,7 +3,7 @@ import { test } from "node:test";
 import {
   classifyDeploy, initialState, reduceObservation, renderIncident, validateState,
   planRunAudit, reduceRunAudit, reconcileEffects, replayLifecycle, finalizeReplay,
-  createGithubAdapter, collectProvider, normalizeRun,
+  createGithubAdapter, collectProvider, normalizeRun, resolveMainCiNotification,
 } from "./netlify-production-failure-alert.mjs";
 
 // These fixtures are synthetic. No test performs provider or GitHub network I/O.
@@ -392,6 +392,28 @@ test("COL-870: primary dispatch failure and success reach the existing main CI o
   for (const invalid of [{ head_branch: "feature" }, { head_repository: { full_name: "fork/repo" } }, { workflow_id: 10 }, { path: ".github/workflows/netlify-production-failure-alert.yml" }]) {
     assert.equal(normalizeRun({ ...failed, ...invalid }, options), null);
   }
+});
+
+test("COL-870: explicit notification waits for the actual primary workflow to finish", async () => {
+  let reads = 0;
+  const result = await resolveMainCiNotification({ eventName: "workflow_dispatch", event: { inputs: { primary_run_id: "100" } }, pause: async () => {}, github: { request: async (endpoint) => {
+    assert.match(endpoint, /\/actions\/runs\/100$/);
+    reads++;
+    return run("main-ci", { status: reads < 3 ? "in_progress" : "completed", conclusion: reads < 3 ? null : "success" });
+  } } });
+  assert.equal(reads, 3);
+  assert.equal(result.conclusion, "success");
+  const event = { workflow_run: run("main-ci") };
+  assert.equal(await resolveMainCiNotification({ eventName: "workflow_run", event, github: {} }), event.workflow_run);
+});
+
+test("COL-870: invalid or unfinished completion notifications cannot claim healthy CI", async () => {
+  for (const primary_run_id of ["../100", "0", "9007199254740993", "1e2"]) {
+    await assert.rejects(resolveMainCiNotification({ eventName: "workflow_dispatch", event: { inputs: { primary_run_id } }, github: {} }), /main-ci-notification-id/);
+  }
+  assert.equal(await resolveMainCiNotification({ eventName: "schedule", event: {}, github: {} }), null);
+  await assert.rejects(resolveMainCiNotification({ eventName: "workflow_dispatch", event: { inputs: { primary_run_id: "100" } }, pause: async () => {}, github: { request: async () => run("main-ci", { status: "in_progress", conclusion: null }) } }), /main-ci-notification-incomplete/);
+  await assert.rejects(resolveMainCiNotification({ eventName: "workflow_dispatch", event: { inputs: { primary_run_id: "100" } }, github: { request: async () => run("main-ci", { id: 101 }) } }), /main-ci-notification-run/);
 });
 
 test("SEC04/RP01–RP04: finite replay uses the routing adapter without touching a live provider", async () => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { createApi, reconcile, REPOSITORY, validateTarget } from "./dispatch-main-ci.mjs";
+import { createApi, notifyCompletion, reconcile, REPOSITORY, validateTarget } from "./dispatch-main-ci.mjs";
 
 const sha = "a".repeat(40);
 const base = "b".repeat(40);
@@ -137,6 +137,15 @@ test("transport uses explicit dispatch-capable permissions without leaking API e
   });
 });
 
+test("terminal primary CI explicitly notifies the existing observer by immutable run id", async () => {
+  const calls = [];
+  const result = await notifyCompletion({ runId: 42, api: async (...args) => { calls.push(args); return { workflow_run_id: 43 }; } });
+  assert.deepEqual(calls, [["POST", `/repos/${REPOSITORY}/actions/workflows/main-ci-failure-alert.yml/dispatches`, { ref: "main", inputs: { primary_run_id: "42" } }]]);
+  assert.deepEqual(result, { action: "notified", primary_run_id: 42, observer_run_id: 43 });
+  for (const runId of [0, -1, NaN, "42"]) await assert.rejects(notifyCompletion({ runId, api: async () => { throw new Error("must not call API"); } }), /requires a run id/);
+  await assert.rejects(notifyCompletion({ runId: 42, api: async () => undefined }), /was not verified/);
+});
+
 test("workflow wiring guards before classification and keeps main failure observation", () => {
   const ci = readFileSync(new URL("../../.github/workflows/ci-gates.yml", import.meta.url), "utf8");
   const monitor = readFileSync(new URL("../../.github/workflows/main-ci-failure-alert.yml", import.meta.url), "utf8");
@@ -153,4 +162,15 @@ test("workflow wiring guards before classification and keeps main failure observ
   assert.match(job, /cancel-in-progress: false/);
   assert.match(job, /workflow_run\.event == 'pull_request'/);
   assert.match(monitor, /workflow_run\.head_branch == 'main'.*workflow_run\.name == 'CI — segment gates'/);
+  const notification = ci.split("      - name: Notify main CI completion observer")[1];
+  assert.match(notification, /if: always\(\).*refs\/heads\/main.*workflow_dispatch/);
+  assert.match(notification, /dispatch-main-ci\.mjs notify/);
+  assert.match(monitor, /inputs\.primary_run_id != ''/);
+  assert.match(job, /inputs\.primary_run_id == ''/, "completion notification cannot restart reconciliation");
+});
+
+test("a later policy-only main commit cannot cancel an earlier main gate suite", () => {
+  const ci = readFileSync(new URL("../../.github/workflows/ci-gates.yml", import.meta.url), "utf8");
+  assert.match(ci, /github\.event\.pull_request\.number \|\| github\.sha/);
+  assert.doesNotMatch(ci, /github\.event\.pull_request\.number \|\| github\.ref/);
 });
